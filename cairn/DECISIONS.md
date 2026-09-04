@@ -4022,3 +4022,62 @@ every rule it states stands.
   a report of a build passing this static check and then failing to run, which
   is the candidate row's promotion condition rather than a defect in the rule;
   or by a caller who wanted the partial registration this ends.
+
+## D084 — What an extraction produced is its file list and the disk, and the refusals below it describe the directory they looked at (2026-09-03, from M105; annotates D083 by re-partitioning the two refusals it defines, and narrows D082's carve-out to a state read off the disk; every rule D082, D083 and D046 state otherwise stands)
+
+`install_on_win()` decided what an extraction had produced from libarchive's
+returned file list alone. A path on that list holding nothing therefore
+counted as produced, and the consequences ran through every question below the
+extraction. A required program listed and never written was refused as a
+program that "cannot be used", which is false of a path with no file on it. A
+refusal told the caller that whatever the archive did unpack was "still in
+that directory" even where the directory held none of it. And the guard
+deciding whether this call could take its own install directory back read the
+same list, so a call that created a directory, listed three paths and wrote
+none of them kept an empty directory it had made.
+
+**The rule now.** Everything below a successful extraction asks one set: the
+paths the extraction reported, intersected with the paths that are there when
+the check runs. All four sites read it — the guard that decides whether the
+install directory may still be taken back, the partition into produced and
+absent programs, the empty-extraction guard, and the arm selector that words
+the refusal. A required program on the list with nothing at its path is
+`tidymedia_program_not_extracted`; `tidymedia_program_unusable` is left to the
+three forms that are files — empty, a directory, no executable bit — which is
+the only class of thing "cannot be used" is true of.
+
+**D082's give-back boundary now keys on the disk.** D082 carves the
+below-extraction refusals out of the leaves-it-as-found rule because the
+archive's files are in the install directory and a caller told the build failed
+is left the build to look at. That reason is about files, so the carve-out now
+begins where files do: where the reported paths are all absent, the refusal
+takes back a directory this call created and says so, exactly as D082 has it,
+and where some are there it leaves them and names the directory holding them.
+The boundary is unchanged; what changed is that the call reads the disk to
+find it rather than trusting a list.
+
+**What the conjunction cannot separate.** Both halves of the absent case land
+in one class: a program the archive never contained, and one the extraction
+reported writing and that is not there. A caller matching on the condition
+class alone sees a single event. The refusal separates them in its message —
+where a listed path holds nothing it says the extraction reported writing that
+file and it is not there — and that is deliberately a message and not a class.
+Adding a third class to an exported function was rejected at M105's plan gate:
+no real archive has produced the state, and the disposition is the same either
+way, since neither is a program this install can register. The alternative
+would be reopened by a caller who needs to tell the two apart in code.
+
+**The cause this is reachable through.** Not a corrupt archive: libarchive
+reporting a path it did not write would be a bug in libarchive. The reachable
+cause is something removing the file between the extraction and the check —
+antivirus quarantine of an unpacked `.exe` is the one that happens on Windows,
+which is the only platform this function runs on. That is why the refusal
+names it: it is the one cause a caller can act on. The window is the same one
+D083 disclosed and for the same reason — closing it would mean holding each
+file open across the check, the handle behaviour D082 measured as impossible
+to promise on Windows.
+
+- **Falsified by** a caller who needs to tell an archive that never contained
+  a program apart from one whose file vanished, in code rather than in prose;
+  or by a report of the existence test refusing a build whose files are
+  genuinely there.

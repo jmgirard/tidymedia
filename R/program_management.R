@@ -665,6 +665,22 @@ tm_extracted_programs <- function(files, programs) {
   programs[tolower(paste0("bin/", programs, ".exe")) %in% found]
 }
 
+# Which of the paths `tm_unpack()` reported are under `dir` now. The file list
+# is what libarchive says it wrote, and it is not the same question as what is
+# there: a build the antivirus quarantines between the extraction and the
+# check is listed and gone. Everything below the extraction asks THIS set
+# rather than the list, so one meaning of "produced" holds across the whole
+# path and no refusal describes a directory it has not looked at (M105).
+# Separators are normalized the way `tm_extracted_programs()` normalizes them.
+# Case is NOT: that helper folds case to match a reported path against a
+# program name, which is a comparison between two strings, while this one asks
+# the filesystem, which answers for the target's own rules -- case-insensitive
+# on Windows, the only platform this runs on (M105 review F12).
+tm_files_on_disk <- function(files, dir) {
+  rel <- sub("^[.]/", "", gsub("\\\\", "/", as.character(files)))
+  rel[file.exists(file.path(dir, rel))]
+}
+
 # Close `con` where it is still open, and do nothing where the callee already
 # closed it: `isOpen()` itself errors on a connection that has been destroyed,
 # so the test and the close share one handler.
@@ -700,10 +716,18 @@ tm_install_binary <- function(install_dir, program) {
 # What it deliberately does not do is RUN the program: that would be the first
 # probe in this seam to execute a downloaded binary, and it would turn a slow
 # or blocked spawn into an install failure (M104).
+#
+# It answers one logical per path. Both readers are already vectorized, so the
+# elementwise `&` is what the caller wanted anyway -- the whole produced set is
+# asked in one call rather than through a `vapply()` -- and it is what retires
+# the `!is.na(info$size)` clause the scalar `&&` needed: `size` is NA exactly
+# where `isdir` is, and `FALSE & NA` is FALSE, so the first clause already
+# decides an absent path. The answer is unnamed: `Sys.which()` names its
+# result and `file.info()` names its rows, and neither name belongs to this
+# question (M105).
 tm_usable_binary <- function(path) {
   info <- file.info(path, extra_cols = FALSE)
-  !is.na(info$isdir) && !info$isdir &&
-    !is.na(info$size) && info$size > 0 &&
+  !is.na(info$isdir) & !info$isdir & info$size > 0 &
     unname(Sys.which(path)) != ""
 }
 
@@ -794,12 +818,17 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #' created and could not remove again is named the same way.
 #'
 #' Two refusals sit outside that rule, both of them below a successful
-#' extraction: `tidymedia_program_not_extracted`, where the archive did not
-#' contain a required program, and `tidymedia_program_unusable`, where it
-#' produced one that cannot be used. Each says so, and the unpacked files stay
-#' where they are. It is the files that put those refusals outside the rule,
-#' so where the archive unpacked no files at all the rule applies to
-#' `tidymedia_program_not_extracted` like any other: a directory this call
+#' extraction: `tidymedia_program_not_extracted`, where a required program is
+#' not at the path it would be installed to, and `tidymedia_program_unusable`,
+#' where a file is at that path and cannot be used. Each says so, and the
+#' unpacked files stay where they are. What the extraction produced is read
+#' from the archive's own file list and from the install directory together,
+#' so a path the archive listed and did not leave behind -- an unpacked
+#' program an antivirus quarantined, say -- is refused as a program that is
+#' not there rather than as one that cannot be used, and the error says the
+#' extraction reported writing it. It is the unpacked files that put these
+#' refusals outside the rule, so where none of them are there the rule applies
+#' to `tidymedia_program_not_extracted` like any other: a directory this call
 #' created is removed again, and the error says so instead.
 #'
 #' @param download_url A string indicating the location of the FFmpeg
@@ -828,13 +857,13 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #'   fetched or read (`tidymedia_checksum_unavailable`), a digest that did not
 #'   match the downloaded archive (`tidymedia_checksum_mismatch`), an archive
 #'   that could not be unpacked (`tidymedia_archive_unreadable`), a
-#'   required program the archive did not contain
+#'   required program that is not at the path it would be installed to
 #'   (`tidymedia_program_not_extracted`), and a required program the archive
 #'   produced in a form that cannot be used (`tidymedia_program_unusable`).
 #'   Every one of these aims to leave the install directory as the call found
 #'   it, except the last two, which leave the files the archive did unpack --
-#'   and `tidymedia_program_not_extracted` is back inside the rule where the
-#'   archive unpacked none. Removal is best-effort: on Windows a
+#'   and `tidymedia_program_not_extracted` is back inside the rule where none
+#'   of the archive's files are there. Removal is best-effort: on Windows a
 #'   partly-written file cannot be deleted while the extraction library still
 #'   holds it, and the error names what it could not remove. See Details.
 #' @seealso [set_program()] to register an existing binary, and [find_ffmpeg()]
@@ -1079,20 +1108,36 @@ install_on_win <- function(download_url = NULL,
     )
   }
   # From here the extraction has succeeded and its files are in the install
-  # directory, so nothing below may take that directory back (M103 AC4).
-  unpacked_here <- length(produced$files) > 0L
+  # directory, so nothing below may take that directory back (M103 AC4). What
+  # counts as "its files" is the reported list intersected with the disk, and
+  # every question below asks that one set: a list entry holding nothing is a
+  # file no caller can be sent to, and a directory holding none of them is one
+  # this call may still take back (M105).
+  on_disk <- tm_files_on_disk(produced$files, install_dir)
+  unpacked_here <- length(on_disk) > 0L
   # Register what the extraction actually produced, and nothing else: a
   # remembered location pointing at a file the archive never contained is a
-  # worse state than no remembered location at all. What THIS extraction
-  # produced is read off its own file list, never off the install directory:
-  # `install_dir` defaults to one stable path across installs and the
-  # extraction does not clear it, so a directory listing would count a
-  # previous run's binaries as this build's. The required programs are
-  # checked before the first write, so a build missing one leaves every
-  # existing remembered location as it was.
-  unpacked <- tm_extracted_programs(produced$files, tm_install_registers)
+  # worse state than no remembered location at all. Which paths are candidates
+  # is still read off this extraction's own file list, never off a listing of
+  # the install directory: `install_dir` defaults to one stable path across
+  # installs and the extraction does not clear it, so a directory listing
+  # would count a previous run's binaries as this build's. Each of those paths
+  # is then asked whether it is there. That narrows the candidates to this
+  # build's own list; it does not prove the file AT such a path was written by
+  # this extraction rather than left by an earlier one, which `file.exists()`
+  # cannot tell and nothing below asks it to (M105 review F6). The required
+  # programs are checked before the first write, so
+  # a build missing one leaves every existing remembered location as it was.
+  unpacked <- tm_extracted_programs(on_disk, tm_install_registers)
   absent_required <- setdiff(tm_install_required, unpacked)
   if (length(absent_required)) {
+    # The required programs the extraction REPORTED and did not leave behind,
+    # told apart from the ones it never claimed: they are the same refusal --
+    # neither is a program this install can register -- but only one of them
+    # has a cause the caller can act on (M105).
+    vanished <- intersect(
+      absent_required, tm_extracted_programs(produced$files, tm_install_required)
+    )
     # The directories this call made come back before the message is built,
     # for the same reason the unreadable-archive refusal does it there: the
     # caller reads the message once, and it has to describe the state they
@@ -1100,31 +1145,55 @@ install_on_win <- function(download_url = NULL,
     # is not empty, so an extraction that wrote files keeps its directory of
     # its own accord and the guard below is what decides the wording.
     kept_created <- created_dirs
-    if (!length(produced$files)) {
+    if (!length(on_disk)) {
       kept_created <- tm_remove_created_dirs(created_dirs)
     }
     kept <- cli::cli_vec(kept_created, list("vec-trunc" = Inf))
+    # Where every missing program is one the extraction REPORTED, "did not
+    # produce" would contradict the line below it, which says the extraction
+    # reported writing exactly those paths. The archive listed them; what it
+    # did not do is leave them behind (M105 review F2).
+    headline <- if (length(vanished) == length(absent_required)) {
+      "The archive did not leave behind {.and {.file {absent_required}}}."
+    } else {
+      "The archive did not produce {.and {.file {absent_required}}}."
+    }
+    # An extraction that reported no files at all and one that reported files
+    # and left none of them are the same disposition and not the same event,
+    # and only the second has a report to be absent from. Saying "none of the
+    # files the extraction reported are there" of an empty report implies a
+    # report that never happened, which is the wording M103 had exact before
+    # this milestone re-pointed the guard (M105 review F3).
+    nothing_there <- if (length(produced$files)) {
+      "None of the files the extraction reported are there."
+    } else {
+      "The archive produced no files at all."
+    }
     cli::cli_abort(
       c(
-        "The archive did not produce {.and {.file {absent_required}}}.",
-        "i" = "Looked for {.and {.file {paste0(\"bin/\", absent_required,
-               \".exe\")}}} under {.file {install_dir}}.",
-        if (length(produced$files)) {
-          c("i" = "Nothing was registered; whatever the archive did unpack is
-                   still in that directory.")
+        headline,
+        "i" = "Looked for {.and {.file {tm_install_binary(install_dir,
+               absent_required)}}}.",
+        if (length(vanished)) {
+          c("!" = "The extraction reported writing {.and {.file
+                   {tm_install_binary(install_dir, vanished)}}}, but
+                   {cli::qty(length(vanished))}{?it is/they are} not there.
+                   Antivirus quarantine after extraction is the usual cause.")
+        },
+        if (length(on_disk)) {
+          c("i" = "Nothing was registered; the files the extraction did
+                   produce are in {.file {install_dir}}.")
         } else if (!dir.exists(install_dir)) {
-          c("i" = "The archive produced no files at all. Nothing was
-                   registered, and this call has removed the install directory
-                   it created.")
+          c("i" = "{nothing_there} Nothing was registered, and this call has
+                   removed the install directory it created.")
         } else if (length(kept)) {
-          c("i" = "The archive produced no files at all. Nothing was
-                   registered, and this call created {cli::qty(length(kept))}
-                   {?this directory/these directories} and could not remove
-                   {cli::qty(length(kept))}{?it/them} again: {.file {kept}}.")
+          c("i" = "{nothing_there} Nothing was registered, and this call
+                   created {cli::qty(length(kept))}{?this directory/these
+                   directories} and could not remove {cli::qty(length(kept))}
+                   {?it/them} again: {.file {kept}}.")
         } else {
-          c("i" = "The archive produced no files at all. Nothing was
-                   registered, and the install directory holds what it held
-                   when this call started.")
+          c("i" = "{nothing_there} Nothing was registered, and the install
+                   directory holds what it held when this call started.")
         }
       ),
       class = "tidymedia_program_not_extracted"
@@ -1136,11 +1205,7 @@ install_on_win <- function(download_url = NULL,
   # registering the ones that happened to come first. The whole set is
   # partitioned once here; the two branches below dispose of the required and
   # the optional halves (M104 AC1).
-  unusable <- unpacked[!vapply(
-    unpacked,
-    function(program) tm_usable_binary(tm_install_binary(install_dir, program)),
-    logical(1)
-  )]
+  unusable <- unpacked[!tm_usable_binary(tm_install_binary(install_dir, unpacked))]
   unusable_required <- intersect(tm_install_required, unusable)
   if (length(unusable_required)) {
     # Nothing here touches the install directory. This sits below a successful

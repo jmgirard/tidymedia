@@ -407,14 +407,29 @@ tm_mock_install <- function(confirm = NULL,
         # the mock has to leave files behind: `unpack` is how a test says
         # which programs this build contained.
         bin <- file.path(dir, "bin")
-        dir.create(bin, recursive = TRUE, showWarnings = FALSE)
+        # `spoil` names, per program, which of the four unusable forms to
+        # plant instead of a working stub (M104 AC4). Every form is still
+        # LISTED in the return value below, because the list is what the
+        # extraction reported and the check exists to disagree with it.
+        forms <- vapply(
+          unpack,
+          function(program) {
+            if (program %in% names(spoil)) spoil[[program]] else "good"
+          },
+          character(1)
+        )
+        # `bin/` is created only where something is going to be written into
+        # it. An extraction whose every path is `absent` created nothing, so
+        # it leaves the install directory as empty as it found it -- which is
+        # the state M105's all-absent refusal describes, and an unconditional
+        # `bin/` here would make that directory non-empty and put the
+        # refusal's directory-removal arm out of reach.
+        if (any(forms != "absent")) {
+          dir.create(bin, recursive = TRUE, showWarnings = FALSE)
+        }
         for (program in unpack) {
           exe <- file.path(bin, paste0(program, ".exe"))
-          # `spoil` names, per program, which of the four unusable forms to
-          # plant instead of a working stub (M104 AC4). Every form is still
-          # LISTED in the return value below, because the list is what the
-          # extraction reported and the check exists to disagree with it.
-          form <- if (program %in% names(spoil)) spoil[[program]] else "good"
+          form <- forms[[program]]
           switch(
             form,
             # Listed and never created: nothing is written at all.
@@ -1001,6 +1016,32 @@ test_that("tm_extracted_programs() reads the path shapes libarchive can report",
     ),
     character(0)
   )
+})
+
+test_that("tm_files_on_disk() reads the same path shapes, and answers for the disk", {
+  # The companion to the test above, and for the same reason: the separator
+  # normalization exists for Windows and no other test in this suite executes
+  # it -- with it removed, every assertion below but the last still passed
+  # (M105 review F5).
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "bin"))
+  file.create(file.path(dir, "bin", "ffmpeg.exe"))
+  file.create(file.path(dir, "bin", "ffprobe.exe"))
+
+  # A backslash entry and a `./`-prefixed entry both resolve; the answer is
+  # the entry as reported, normalized, and not the path it was tested at.
+  expect_identical(
+    tm_files_on_disk(c("bin\\ffmpeg.exe", "./bin/ffprobe.exe"), dir),
+    c("bin/ffmpeg.exe", "bin/ffprobe.exe")
+  )
+  # It is the disk that decides, not the list: a path the list names and the
+  # directory does not hold drops out, which is the whole point of the helper.
+  expect_identical(
+    tm_files_on_disk(c("bin/ffmpeg.exe", "bin/ffplay.exe"), dir),
+    "bin/ffmpeg.exe"
+  )
+  expect_identical(tm_files_on_disk("bin/ffplay.exe", dir), character(0))
+  expect_identical(tm_files_on_disk(character(0), dir), character(0))
 })
 
 test_that("only the programs the extraction produced are registered", {
@@ -1999,10 +2040,22 @@ test_that("a successful unpack that produced no files takes back the directory i
   expect_false(dir.exists(made))
   expect_false(dir.exists(dirname(made)))
   msg <- cli::ansi_strip(conditionMessage(cnd))
-  expect_match(msg, "produced no files at all", fixed = TRUE)
+  # The extraction reported NOTHING, so the exact sentence is the one about an
+  # empty archive; "none of the files it reported are there" would imply a
+  # report that never happened (M105 review F3).
+  expect_match(msg, "The archive produced no files at all", fixed = TRUE)
+  expect_no_match(msg, "the extraction reported are there", fixed = TRUE)
   expect_match(msg, "removed the install directory it created", fixed = TRUE)
   # And it does not tell the caller to go and look in a directory that is gone.
-  expect_false(grepl("still in that directory", msg, fixed = TRUE))
+  expect_no_match(msg, "the files the extraction did produce are in", fixed = TRUE)
+  # Nothing was on the list, so nothing "vanished": the quarantine line and
+  # the headline that goes with it are for a path the extraction CLAIMED, and
+  # neither may be said of a program the archive never mentioned. Without the
+  # `vanished` intersect both would be said here (M105 review F1).
+  expect_no_match(msg, "reported writing", fixed = TRUE)
+  expect_no_match(msg, "Antivirus quarantine", fixed = TRUE)
+  expect_no_match(msg, "did not leave behind", fixed = TRUE)
+  expect_match(msg, "The archive did not produce", fixed = TRUE)
 })
 
 test_that("a successful unpack that produced no files leaves a directory it found alone", {
@@ -2026,8 +2079,10 @@ test_that("a successful unpack that produced no files leaves a directory it foun
   expect_true(dir.exists(found))
   expect_identical(readLines(file.path(found, "keep.txt")), "the caller's own file")
   msg <- cli::ansi_strip(conditionMessage(cnd))
-  expect_match(msg, "produced no files at all", fixed = TRUE)
+  expect_match(msg, "The archive produced no files at all", fixed = TRUE)
+  expect_no_match(msg, "the extraction reported are there", fixed = TRUE)
   expect_match(msg, "holds what it held when this call started", fixed = TRUE)
+  expect_no_match(msg, "reported writing", fixed = TRUE)
 })
 
 test_that("a successful unpack that produced files but no required program keeps its directory", {
@@ -2058,8 +2113,8 @@ test_that("a successful unpack that produced files but no required program keeps
   expect_true("readme.txt" %in% list.files(made, recursive = TRUE))
   expect_true(dir.exists(made))
   expect_match(
-    cli::ansi_strip(conditionMessage(cnd)), "still in that directory",
-    fixed = TRUE
+    cli::ansi_strip(conditionMessage(cnd)),
+    "the files the extraction did produce are in", fixed = TRUE
   )
 })
 
@@ -2067,10 +2122,18 @@ test_that("a successful unpack that produced files but no required program keeps
 # Every program registers, or none does (M104) --------------------------------
 
 # The four forms a produced path takes when the archive listed it and what is
-# on disk cannot be used, as `tm_mock_install(spoil = )` plants them. Named
+# on disk is not a program this install can register, as
+# `tm_mock_install(spoil = )` plants them. Three of them are files that cannot
+# be used; `absent` is no file at all, and M105 disposes it as such. Named
 # once so the AC4 tests and the AC2/AC3 ones cannot drift apart about which
 # form is which.
 tm_unusable_forms <- c("absent", "empty", "dir", "noexec")
+
+# Every registered program planted `absent`: the extraction lists three paths
+# and creates none of them, which is the state AC3 is about (M105).
+tm_all_absent <- stats::setNames(
+  rep("absent", length(tm_install_registers)), tm_install_registers
+)
 
 test_that("a produced program that cannot be used stops every registration", {
   # AC1. The config root is NOT empty when the call starts: `ffmpeg` already
@@ -2171,15 +2234,37 @@ test_that("a produced ffplay that cannot be used leaves the install successful",
   expect_false(file.exists(tm_config_file("ffplay", config$new)))
 })
 
-# AC4: each of the four planted forms is disposed the way AC2 states, at a
-# required program. One test per form, so a form that stops being refused
-# names itself rather than hiding inside a loop's first failure.
-tm_expect_required_refusal <- function(form) {
+# Which refusal a planted form is due. `absent` is no file at all, so nothing
+# there can be called unusable; the other three are files the check refuses on
+# their own account (M105).
+tm_refusal_class <- function(form) {
+  if (identical(form, "absent")) {
+    "tidymedia_program_not_extracted"
+  } else {
+    "tidymedia_program_unusable"
+  }
+}
+
+# AC4 (M104) and AC2 (M105): each of the four planted forms is disposed the
+# way the criteria state, at each of the two required programs and at both in
+# one call. One test per form and plant location, so a form or a location that
+# stops being refused names itself rather than hiding inside a loop's first
+# failure.
+tm_expect_required_refusal <- function(form, where = "ffprobe",
+                                       class = tm_refusal_class(form)) {
   config <- tm_redirect_config()
   tm_redirect_data()
   withr::local_options(cli.width = 1000)
+  # The config root is NOT empty when the call starts: `ffplay` already has a
+  # remembered location pointing somewhere else, so an unchanged file list
+  # afterwards says the install wrote nothing rather than saying there was
+  # nothing to overwrite. The file's CONTENTS are read back too, because the
+  # snapshot records names and not bytes.
+  kept <- tm_stub_executable("already remembered")
+  tm_write_location(config$new, "ffplay", kept)
+
   d <- file.path(withr::local_tempdir(), "ffmpeg")
-  spoil <- stats::setNames(form, "ffprobe")
+  spoil <- stats::setNames(rep(form, length(where)), where)
   rec <- tm_mock_install(
     confirm = function(prompt) TRUE, real_set = TRUE, spoil = spoil
   )
@@ -2189,21 +2274,28 @@ tm_expect_required_refusal <- function(form) {
     install_on_win(install_dir = d, archive_checksum = rec$digest),
     error = function(cnd) cnd
   )
-  expect_s3_class(cnd, "tidymedia_program_unusable")
+  expect_s3_class(cnd, class)
   expect_identical(blamed_verb(cnd), "install_on_win")
   msg <- cli::ansi_strip(conditionMessage(cnd))
-  expect_match(msg, "ffprobe", fixed = TRUE)
-  expect_match(msg, tm_install_binary(d, "ffprobe"), fixed = TRUE)
+  for (program in where) {
+    expect_match(msg, program, fixed = TRUE)
+    expect_match(msg, tm_install_binary(d, program), fixed = TRUE)
+  }
   expect_no_match(msg, "Can't find an executable", fixed = TRUE)
   expect_identical(tm_roots_snapshot(config$root), before)
+  expect_identical(readLines(tm_config_file("ffplay", config$new)), kept)
   expect_identical(tm_dir_snapshot(d), rec$after_extract)
   invisible(cnd)
 }
 
 test_that("a path the extraction listed and did not create is refused", {
-  # AC4, form 1. The premise: nothing is at that path at all.
+  # AC4, form 1. The premise: nothing is at that path at all -- which is why
+  # M105 routes it to the archive-did-not-produce refusal rather than to the
+  # cannot-be-used one: there is no produced file here to call unusable.
   cnd <- tm_expect_required_refusal("absent")
-  expect_s3_class(cnd, "tidymedia_program_unusable")
+  expect_no_match(
+    cli::ansi_strip(conditionMessage(cnd)), "cannot be used", fixed = TRUE
+  )
 })
 
 test_that("a produced path created as an empty file is refused", {
@@ -2223,6 +2315,127 @@ test_that("a produced path with no executable bit is refused", {
   skip_on_os("windows")
   tm_expect_required_refusal("noexec")
 })
+
+# Refusals key on what is on disk (M105) --------------------------------------
+
+# AC2's other two plant locations: the same four forms at `ffmpeg`, and at
+# both required programs in one call. The ffprobe column is the four M104
+# tests above.
+for (tm_form in tm_unusable_forms) {
+  test_that(paste0("a required program planted ", tm_form, " at ffmpeg is refused"), {
+    if (identical(tm_form, "noexec")) skip_on_os("windows")
+    tm_expect_required_refusal(tm_form, "ffmpeg")
+  })
+  test_that(paste0("both required programs planted ", tm_form, " are refused together"), {
+    if (identical(tm_form, "noexec")) skip_on_os("windows")
+    # Both entries named in one message, so the plural is exercised by two
+    # programs rather than asserted of one.
+    tm_expect_required_refusal(tm_form, c("ffmpeg", "ffprobe"))
+  })
+}
+
+test_that("a listed path that was never created is not reported as unusable", {
+  # AC1, read off the whole message rather than off one line of it. The two
+  # prohibited phrases are the two things this refusal must not say: a path
+  # holding nothing is not a file that "cannot be used", and the file the
+  # caller was sent looking for is not "still in that directory".
+  config <- tm_redirect_config()
+  tm_redirect_data()
+  withr::local_options(cli.width = 1000)
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE, real_set = TRUE,
+    spoil = c(ffprobe = "absent")
+  )
+
+  cnd <- tryCatch(
+    install_on_win(install_dir = d, archive_checksum = rec$digest),
+    error = function(cnd) cnd
+  )
+  expect_s3_class(cnd, "tidymedia_program_not_extracted")
+  expect_identical(blamed_verb(cnd), "install_on_win")
+
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  expect_match(msg, tm_install_binary(d, "ffprobe"), fixed = TRUE)
+  expect_no_match(msg, "cannot be used", fixed = TRUE)
+  expect_no_match(msg, "still in that directory", fixed = TRUE)
+  # The premise this test rests on: the extraction REPORTED that path, so the
+  # refusal is the disk's answer and not the archive list's.
+  expect_match(msg, "reported writing", fixed = TRUE)
+  # And the arm is the one for a directory that does hold the rest of the
+  # build, which is what makes the two prohibitions above non-vacuous.
+  expect_true(file.exists(tm_install_binary(d, "ffmpeg")))
+  expect_match(msg, "the files the extraction did produce are in", fixed = TRUE)
+  expect_false(file.exists(tm_config_file("ffmpeg", config$new)))
+})
+
+test_that("an extraction that listed everything and created nothing gives back the directory it made", {
+  # AC3, first directory case. Every registered program is planted `absent`,
+  # so the extraction's list names three paths and the install directory holds
+  # none of them -- the state in which D082's give-back rule applies to this
+  # refusal like any other, because there is nothing unpacked to point the
+  # caller at.
+  tm_redirect_config()
+  tm_redirect_data()
+  withr::local_options(cli.width = 1000)
+  made <- file.path(withr::local_tempdir(), "made", "ffmpeg")
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE, real_set = TRUE, spoil = tm_all_absent
+  )
+
+  cnd <- tryCatch(
+    install_on_win(install_dir = made, archive_checksum = rec$digest),
+    error = function(cnd) cnd
+  )
+  expect_s3_class(cnd, "tidymedia_program_not_extracted")
+  expect_false(dir.exists(made))
+  expect_false(dir.exists(dirname(made)))
+
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  expect_match(msg, "None of the files the extraction reported are there", fixed = TRUE)
+  expect_match(msg, "removed the install directory it created", fixed = TRUE)
+  # It does not send the caller to a directory that is gone.
+  expect_no_match(msg, "the files the extraction did produce are in", fixed = TRUE)
+  expect_no_match(msg, "still in that directory", fixed = TRUE)
+  # The other half of F1/F2: here the extraction DID claim every missing
+  # program, so the quarantine line is said and the headline is the one that
+  # does not contradict it. "Did not produce" would (M105 review F2).
+  expect_match(msg, "reported writing", fixed = TRUE)
+  expect_match(msg, "Antivirus quarantine", fixed = TRUE)
+  expect_match(msg, "The archive did not leave behind", fixed = TRUE)
+  expect_no_match(msg, "The archive did not produce", fixed = TRUE)
+})
+
+test_that("an extraction that listed everything and created nothing leaves a directory it found alone", {
+  # AC3, second directory case: the same all-absent state, but the install
+  # directory was already there and holds a file of the caller's. Nothing to
+  # give back, and the message says what the directory holds.
+  tm_redirect_config()
+  tm_redirect_data()
+  withr::local_options(cli.width = 1000)
+  found <- file.path(withr::local_tempdir(), "found")
+  dir.create(found)
+  writeLines("the caller's own file", file.path(found, "keep.txt"))
+  rec <- tm_mock_install(
+    confirm = function(prompt) TRUE, real_set = TRUE, spoil = tm_all_absent
+  )
+
+  cnd <- tryCatch(
+    install_on_win(install_dir = found, archive_checksum = rec$digest),
+    error = function(cnd) cnd
+  )
+  expect_s3_class(cnd, "tidymedia_program_not_extracted")
+  expect_true(dir.exists(found))
+  expect_identical(readLines(file.path(found, "keep.txt")), "the caller's own file")
+
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  expect_match(msg, "None of the files the extraction reported are there", fixed = TRUE)
+  expect_match(msg, "holds what it held when this call started", fixed = TRUE)
+  expect_no_match(msg, "the files the extraction did produce are in", fixed = TRUE)
+  expect_match(msg, "The archive did not leave behind", fixed = TRUE)
+  expect_no_match(msg, "The archive did not produce", fixed = TRUE)
+})
+
 
 test_that("a directory planted at ffplay's path is informed about, not refused", {
   # AC4's second half: one of the four forms is also disposed at an optional
@@ -2316,3 +2529,140 @@ test_that("an install directory written with a tilde is not refused as unusable"
   }
 })
 
+
+# tm_usable_binary(), directly (M105) -----------------------------------------
+
+# The six inputs AC5 names, built once. `good` and `empty` are both
+# executable, so the size clause is the only thing between them: an empty file
+# with the bit set resolves through `Sys.which()` exactly as a real program
+# does, which is the Windows truncation the check exists to catch.
+tm_usable_fixtures <- function(env = parent.frame()) {
+  dir <- withr::local_tempdir(.local_envir = env)
+  make <- function(name, bytes, mode) {
+    path <- file.path(dir, name)
+    if (bytes) writeLines("stub program", path) else file.create(path)
+    Sys.chmod(path, mode)
+    path
+  }
+  subdir <- file.path(dir, "subdir.exe")
+  dir.create(subdir)
+  list(
+    good = make("good.exe", TRUE, "0755"),
+    absent = file.path(dir, "absent.exe"),
+    empty = make("empty.exe", FALSE, "0755"),
+    dir = subdir,
+    noexec = make("noexec.exe", TRUE, "0644")
+  )
+}
+
+test_that("tm_usable_binary() answers for a file, an absent path, an empty file and a directory", {
+  # AC5, the four forms every platform has. The TRUE case is the control: it
+  # is asserted here so a check that answered FALSE for everything could not
+  # pass the three refusals below it.
+  f <- tm_usable_fixtures()
+  expect_true(tm_usable_binary(f$good))
+  expect_false(tm_usable_binary(f$absent))
+  expect_false(tm_usable_binary(f$empty))
+  expect_false(tm_usable_binary(f$dir))
+  # The premise the empty case rests on: it is refused for its size and not
+  # for failing to resolve, which is what makes it a different case from
+  # `absent`. Asserted by what resolved, not by the string: Windows answers
+  # with the 8.3 short form of the same file, so path identity is not the
+  # portable way to say "this resolved".
+  expect_true(file.exists(f$empty))
+  resolved <- unname(Sys.which(f$empty))
+  expect_false(resolved == "")
+  expect_identical(basename(resolved), basename(f$empty))
+  expect_equal(unname(file.size(resolved)), 0)
+})
+
+test_that("tm_usable_binary() refuses a file with no executable bit", {
+  # AC5, form 5. POSIX only: Windows has no such bit, so there is no such
+  # state to plant there -- which is the reason the check does not rest on
+  # `Sys.which()` alone.
+  skip_on_os("windows")
+  f <- tm_usable_fixtures()
+  expect_false(tm_usable_binary(f$noexec))
+  # And the premise: it is a real, non-empty file, so the bit is what decides.
+  expect_gt(file.size(f$noexec), 0)
+})
+
+test_that("tm_usable_binary() refuses a tilde-relative path naming a good program", {
+  # AC5, form 6 -- the M104 review F1 disagreement, asserted at the helper
+  # rather than only through the install: `file.info()` expands `~` and
+  # `Sys.which()` does not, so a tilde path is a non-empty file to one clause
+  # and absent to the other. `tm_install_binary()` is what keeps this out of
+  # the install by expanding where the path is built; the helper itself still
+  # answers FALSE, and this is the test that says so.
+  skip_on_os("windows")
+  home <- withr::local_tempdir()
+  withr::local_envvar(HOME = home)
+  # The instrument, asserted rather than assumed.
+  expect_identical(normalizePath(path.expand("~")), normalizePath(home))
+  exe <- file.path(home, "good.exe")
+  writeLines("stub program", exe)
+  Sys.chmod(exe, "0755")
+
+  expect_false(tm_usable_binary("~/good.exe"))
+  # The same file, expanded, is usable -- so the FALSE above is the tilde and
+  # not the file.
+  expect_true(tm_usable_binary(path.expand("~/good.exe")))
+})
+
+test_that("tm_usable_binary() refuses a directory on its own account", {
+  # AC4. `Sys.which()` refuses a directory on macOS (measured 2026-09-03), so
+  # on that platform the directory clause could be doing nothing and the tests
+  # above would not notice. Mocking `Sys.which()` to resolve the directory
+  # takes that answer away: what is left to refuse it is the `!info$isdir`
+  # clause. Deleting that clause makes this expectation fail (checked at M105
+  # T4), which is what says the clause is load-bearing on the one platform
+  # this install runs on but cannot be measured on.
+  f <- tm_usable_fixtures()
+  local_mocked_bindings(
+    Sys.which = function(names) stats::setNames(names, names), .package = "base"
+  )
+  # The mock does what the test needs it to do: the directory now resolves.
+  expect_identical(unname(Sys.which(f$dir)), f$dir)
+  expect_false(tm_usable_binary(f$dir))
+  # And the mock has not turned the check into one that refuses everything.
+  expect_true(tm_usable_binary(f$good))
+})
+
+test_that("tm_usable_binary() answers elementwise", {
+  # AC5's vector half. One call over the six paths returns exactly what the
+  # six one-path calls return, unnamed -- `Sys.which()` names its result and
+  # `file.info()` names its rows, so an unnamed answer is a promise about this
+  # function rather than about either of them.
+  skip_on_os("windows")
+  # The sixth path is AC5's sixth input and not a stand-in for it: a
+  # tilde-relative path naming a NON-EMPTY EXECUTABLE, which is the one form
+  # whose two readers disagree. A tilde path naming nothing would be refused
+  # by the same clause as `absent` and would leave that disagreement untested
+  # in the vector shape.
+  home <- withr::local_tempdir()
+  withr::local_envvar(HOME = home)
+  expect_identical(normalizePath(path.expand("~")), normalizePath(home))
+  tilde_exe <- file.path(home, "good.exe")
+  writeLines("stub program", tilde_exe)
+  Sys.chmod(tilde_exe, "0755")
+  expect_true(tm_usable_binary(path.expand("~/good.exe")))
+
+  f <- tm_usable_fixtures()
+  paths <- c(f$good, f$absent, f$empty, f$dir, f$noexec, "~/good.exe")
+  one_at_a_time <- vapply(paths, tm_usable_binary, logical(1), USE.NAMES = FALSE)
+
+  expect_identical(tm_usable_binary(paths), one_at_a_time)
+  expect_identical(tm_usable_binary(paths), c(TRUE, rep(FALSE, 5L)))
+  expect_null(names(tm_usable_binary(paths)))
+})
+
+test_that("tm_usable_binary() answers once per element, whatever the length", {
+  # The three shapes AC5 names beside the six-path vector: a repeat answers
+  # twice, a length-1 vector answers length 1, and a zero-length vector
+  # answers `logical(0)` rather than erroring or answering for nothing.
+  f <- tm_usable_fixtures()
+  expect_identical(tm_usable_binary(c(f$good, f$good)), c(TRUE, TRUE))
+  expect_identical(tm_usable_binary(c(f$empty, f$empty)), c(FALSE, FALSE))
+  expect_identical(tm_usable_binary(f$good), TRUE)
+  expect_identical(tm_usable_binary(character(0)), logical(0))
+})

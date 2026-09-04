@@ -8,7 +8,7 @@ _Last hygiene check: 2026-09-03 (M104 done, PR #108 squash-merged and archived; 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M105 | `install_on_win()`'s refusals say what is on disk | planned | — | normal | milestones/M105-install-refusals-key-on-disk.md |
+| M105 | `install_on_win()`'s refusals say what is on disk | review | — | normal | milestones/M105-install-refusals-key-on-disk.md |
 | M104 | `install_on_win()` registers every program or none | done | — | normal | milestones/archive/M104-install-registers-all-or-none.md |
 | M100 | Hardware encoding is a backend vocabulary, and videotoolbox is the second member | done | M099 | normal | milestones/archive/M100-videotoolbox-backend.md |
 | M101 | `install_on_win()` asks before it downloads and installs | done | — | normal | milestones/archive/M101-install-on-win-confirmation.md |

@@ -110,12 +110,16 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
 
 - `check_dim()` accepts any `x`/`y` expression string across all dim verbs
   (noted as future hardening in the M07 review) — not a regression.
-- API naming & docs assessed by M22 (`cairn/references/naming-docs-audit-M22.md`):
-  overloaded `get_*` prefix, `acodec`/`vcodec` and `ts_start`/`ts_stop` arg drift,
-  unused tidy-eval reexports, and thin `@seealso` cross-linking. The target scheme
-  is proposed as draft D014; renames + gap-fill land in the M22 execution
-  follow-up under a clean-break policy. Naming conventions will be added here when
-  D014 is ratified.
+- Container names are written by hand in three places outside the generated
+  enumeration, and would contradict `multi_audio_extensions` if that vector moved.
+  Two exemplars name `.mka`/`.m4a` — `audio_stream_extras$separation_container`
+  (`R/audio-stream-doc.R:133-141`) and the cli messages at `R/ffmpeg.R:745`, `:859`
+  — and both separation help pages hand-write `.avi`/`.nut` as containers the
+  vector does not hold. All four read correctly against the vector as it stands
+  (verified 2026-09-03); a removal from `multi_audio_extensions` would falsify the
+  exemplars, and an addition of `.avi` or `.nut` would make each help page contradict
+  itself. Accepted rather than carried as planned work — routed from candidates
+  2026-09-03; added 2026-08-31 — M091 review F4 r3, F1 r4; M093 review F5; D069; D071.
 - Four of M092's instrument tests bind less than the gap they close. `test-ffm-batch.R`'s
   `run_with_progress()` contract test asserts the properties of its own stub, never the
   `run_one` closure defined inline in `ffm_batch()`; the batch case-fold test in

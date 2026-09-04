@@ -1,13 +1,13 @@
 # M107: A backend with no encoder for the codec's family is refused by the verb the caller typed, `fallback` or not
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
 - **Resolves:** —
 - **Surface tier:** user-facing — it moves the blamed frame of an abort exported verbs raise
-- **Branch/PR:** —
+- **Branch/PR:** `m107-out-of-table-refusal-at-the-verb`
 
 ## Goal
 
@@ -105,6 +105,9 @@ videotoolbox baseline for the probe grid.
 - 2026-09-04: plan gate chose fixing the blame defect in this milestone over pinning it and routing the fix, and over `/hotfix`, because the fix needs a D-entry — `check_hardware_available()`'s early return encodes D035/D074's siting reasoning and its comment states a false premise — and `/hotfix` writes none; falsified by the fix landing with no rule worth recording.
 - 2026-09-04: plan gate chose keeping the abort under `fallback = TRUE` over falling back to software, because it is current behaviour and what `@param fallback` documents at eleven blocks, so only the blamed frame changes; falsified by a report of a caller who set `fallback = TRUE` expecting a wrong backend/codec pair to be tolerated.
 - 2026-09-04: plan gate chose bounding AC1's verb axis by `nvenc_hardware_exports()` over the 14 with a `video_codec` formal and over one exemplar pair, because a seventeenth verb then joins on its own; falsified by an export the NAMESPACE filter admits that cannot reach the check at all.
+- 2026-09-04: implement gate chose fixing the unmappable-codec class alongside the out-of-table class, because the front door must infer the family before it can test the table, so both classes move together; falsified by a caller who wants an unrecognized `video_codec` tolerated under `fallback = TRUE`.
+- 2026-09-04: implement gate chose adding the sixth wrong form to the shared `tm_nvenc_wrong_forms()` table over a seam-test-local one, accepting a re-measurement of `tm_nvenc_dropped_master()`, `tm_nvenc_mismatch_master()` and the two pinned sweep counts; falsified by the re-measurement proving unstable.
+- 2026-09-04: T1 red, measured on the branch: 24 of the 84 AC1 cells (14 reachable members x 3 omitted pairs x 2 fallback arms) blamed `purrr::pmap` instead of the member -- all 24 under `fallback = TRUE`, at the 8 members that fan out (`anonymize_video_batch`, `compare_videos_batch`, `crop_video_batch`, `picture_in_picture_batch`, `segment_video`, `segment_video_batch`, `separate_audio_video_batch`, `standardize_video_batch`). AC2's 10 cells and the domain test were green already.
 
 ## Decisions
 

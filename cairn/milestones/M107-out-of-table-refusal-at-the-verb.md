@@ -164,6 +164,9 @@ emits a message containing "falling back". No cell aborted.
 from this milestone file). `devtools::check()`: **Status OK, 0 errors / 0
 warnings / 0 notes**, 5m 37.6s -- so no new NOTE, the bound the criterion sets.
 The `spelling.Rout` comparison the first implement-side run tripped is OK here.
+Re-measured after the fix-now commit, since it reworded NEWS: **Status OK, 0
+errors / 0 warnings / 0 notes**, 5m 23.2s, `spelling.Rout` comparison OK; the
+suite and `document()` unchanged at 12,181 passes and no diff.
 
 ### Consistency gate
 
@@ -288,3 +291,10 @@ hold as written under every fix, and F1's behaviour change falls outside every
 criterion's domain. F1/F3/F4 were defects in what the branch CLAIMED, not in
 what it does, and the claims are corrected on the branch. Status stays `review`;
 no defect return, no amendment return.
+
+### PR conversation
+
+Read once immediately before the merge gate: `pulls/111/reviews` empty,
+`issues/111/comments` empty, and the `reviewThreads` query returns no
+unresolved thread (`hasNextPage` false). Nothing to triage; the blocking rule
+does not fire.

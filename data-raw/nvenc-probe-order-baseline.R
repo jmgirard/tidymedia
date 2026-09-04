@@ -179,8 +179,15 @@ nvenc_order_set_codec <- function(args, level) {
   args
 }
 
-nvenc_order_pools <- list(present = c("h264_nvenc", "hevc_nvenc", "av1_nvenc"),
-                          absent = character())
+# Derived from `hardware_backend_families()` through the shared helper
+# (`tm_nvenc_encoder_pools()`, tests/testthat/helper-timeout-sweep.R, sourced
+# above), never spelled out here: one definition of "a build with the nvenc
+# encoders" for this grid, the AC1 sweep and the seam test alike (M107). Two
+# levels, matching what the grid crosses; the `hw` loop below reaches
+# videotoolbox against the nvenc pool on purpose, which is the arm where the
+# availability abort is what a caller would get if the check under test did not
+# fire first.
+nvenc_order_pools <- tm_nvenc_encoder_pools()
 
 # -- running the grid --------------------------------------------------------
 

@@ -74,7 +74,7 @@ videotoolbox baseline for the probe grid.
       Correct the early return's comment, whose premise ("`fallback = TRUE`
       returns above, so this call can only pass or abort") is false — the
       refusal reaches `hardware_encoder()` through the mapper first. T1 green.
-- [ ] T3: Derive the mocked encoder pools from `hardware_backend_families()` in
+- [x] T3: Derive the mocked encoder pools from `hardware_backend_families()` in
       one helper, at three levels (nvenc-present, videotoolbox-present, absent),
       and route the three literal spellings through it: `tm_nvenc_encoder_pools()`
       (`tests/testthat/helper-timeout-sweep.R:1390`), `seam_pools()`
@@ -82,12 +82,16 @@ videotoolbox baseline for the probe grid.
       (`data-raw/nvenc-probe-order-baseline.R:182`). Keep the existing
       nvenc-pool-under-videotoolbox cell, which
       `test-codec-seam-bound.R:19-23` records as the harder half.
-- [ ] T4: Cross the third pool level into `test-codec-seam-bound.R`'s existing
+- [x] T4: Cross the third pool level into `test-codec-seam-bound.R`'s existing
       `hw` loop, keeping the zero-probe assertion and the discrimination control
       in every arm. Add a sixth wrong form to `tm_nvenc_wrong_forms()` — a
       well-formed clean token naming no codec — since the five held forms all
-      vary malformedness and none reaches `codec_family()`; the seam test's
-      `expect_setequal`/`expect_length` pins move with it.
+      vary malformedness and none reaches `codec_family()`. Amended
+      2026-09-04: the sixth form is `tm_nvenc_unmappable_codec()`, a helper of
+      its own rather than a sixth entry in `tm_nvenc_wrong_forms()` -- see the
+      work log for the measurement. The seam test's `expect_setequal`/
+      `expect_length` pins therefore stay at five, and gain a pair over
+      `seam_pools()`.
 - [ ] T5: Add `"videotoolbox"` to the probe grid's `hw` loop
       (`data-raw/nvenc-probe-order-baseline.R:224`) and regenerate
       `data-raw/nvenc-probe-order-merge-base.rds` as a forward baseline.
@@ -110,6 +114,9 @@ videotoolbox baseline for the probe grid.
 - 2026-09-04: T1 red, measured on the branch: 24 of the 84 AC1 cells (14 reachable members x 3 omitted pairs x 2 fallback arms) blamed `purrr::pmap` instead of the member -- all 24 under `fallback = TRUE`, at the 8 members that fan out (`anonymize_video_batch`, `compare_videos_batch`, `crop_video_batch`, `picture_in_picture_batch`, `segment_video`, `segment_video_batch`, `separate_audio_video_batch`, `standardize_video_batch`). AC2's 10 cells and the domain test were green already.
 - 2026-09-04: T2 green. The family sweep moved above `check_hardware_available()`'s `fallback` early return and each family goes through `hardware_encoder()` there, so the table lookup runs on both arms while the availability probe below still returns early. All 24 red cells now name their own member. Both false comments corrected (the early return's, and `resolve_hw_encoder()`'s claim that `fallback = TRUE` always returns above). `devtools::test()`: 0 failures, 10 warnings, 18 skips, 12128 passes -- the M095/M096 argument-outranks-the-probe sweeps and their two pinned counts unchanged, so the new front-door refusals displaced no error a caller had already earned.
 - 2026-09-04: `test-nvenc-front-door.R`'s AC4 test "fallback = TRUE never lets the front door refuse an unmappable codec" asserted the defect (blame NOT the verb) and was rewritten to assert the verb, plus a new sibling pinning that an in-table encoder the build lacks still reaches the per-row fallback. The section header narrowed from "reaches no front-door guard" to "reaches no AVAILABILITY guard".
+- 2026-09-04: T3 done. `tm_hardware_encoder_pools()` (helper-timeout-sweep.R) derives three pool levels from `hardware_backend_families()`; `tm_nvenc_encoder_pools()`, `seam_pools()` and `nvenc_order_pools` all read it, and no encoder triple is spelled out in a test or generator any more. `test-nvenc-probe-blame.R` clean, so the derivation is behaviour-neutral for the AC1 sweep.
+- 2026-09-04: T4 done, with a minor amendment to its own text. Adding the sixth form to the shared `tm_nvenc_wrong_forms()` was measured rather than estimated: 1535 cells to 1842, kept 1093 to 1235, dropped 442 to 607, and 26 new `member/arg -> <none>` entries in `tm_corrupt_dropped_master()`'s census -- entries recording that `"notacodec"` is a legal value for those arguments, not that a guard caught it. That table's contract is values wrong on the type / token-shape / missingness / length / container axes, which a well-formed legal string is not, and its census is asserted as a two-way difference from a fixed earlier ref, so honouring the design would mean re-measuring that ref with six forms. Second implement gate chose a separate `tm_nvenc_unmappable_codec()` helper instead, over re-measuring and over dropping the case; one definition, no recorded baseline moves. The seam test gained the unmappable-token cell over all six (pool x backend) arms at zero probes, and its discrimination control now runs in every backend arm against that backend's own pool rather than only nvenc's.
+- 2026-09-04: correction to the first implement gate: the cost I put to the user for the shared-table option (two recorded tables, two counts) understated it -- four tables, five counts, across three files. The corrected figures were measured and re-put at a second gate before anything was written.
 
 ## Decisions
 

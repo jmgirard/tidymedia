@@ -1251,6 +1251,21 @@ tm_nvenc_wrong_forms <- function() {
   )
 }
 
+# tm_nvenc_unmappable_codec(): a codec token that is WELL FORMED and names no
+# codec family -- deliberately NOT a member of the table above (M107).
+#
+# The seam test wants a `video_codec` that survives `check_token()` and is then
+# refused by `codec_family()`, because all five forms above are refused by a
+# type or shape check and none of them gets that far. It is a separate helper
+# rather than a sixth entry because the table above is a table of values that
+# are WRONG for any argument, spanning type, token shape, missingness, length
+# and container, and "notacodec" is none of those: it is a legal string
+# everywhere except as a `video_codec` under a hardware backend. Crossing it
+# over every formal of every member was measured 2026-09-04 -- 1535 cells to
+# 1842, and 26 new census entries recording that nothing refuses it -- which is
+# a measurement of its legality, not of a guard.
+tm_nvenc_unmappable_codec <- function() "notacodec"
+
 # tm_nvenc_wrong_arg_cells(): every (member, other formal, wrong form) cell.
 #
 # The members are computed -- `tm_timeout_domain()` filtered to the ones whose
@@ -1383,14 +1398,44 @@ tm_nvenc_sweep <- function(cells, encoders, limit = NULL) {
   out
 }
 
+# tm_hardware_encoder_pools(): the mocked builds every instrument in this repo
+# hands `cached_encoder_names()`, DERIVED from `hardware_backend_families()`
+# rather than spelled out (M107). Three levels:
+#
+#   nvenc         every encoder the nvenc row covers, and nothing else
+#   videotoolbox  every encoder the videotoolbox row covers, and nothing else
+#   absent        no encoder at all
+#
+# Derived because the literal `c("h264_nvenc", "hevc_nvenc", "av1_nvenc")` had
+# been written out at three sites, and a fourth family added to the nvenc row
+# would have left all three describing a build the package no longer resolves
+# against. The encoder name is the family and the backend joined by "_", which
+# is how FFmpeg spells every member of both rows and how `hardware_encoder()`
+# builds the name it looks for.
+#
+# A cross-backend level is deliberately NOT collapsed away: mocking the nvenc
+# pool while asking for `hardware = "videotoolbox"` is the harder half of a
+# cross, because there the availability abort is what the caller would get if
+# the check under test did not fire first.
+tm_hardware_encoder_pools <- function() {
+  fams <- asNamespace("tidymedia")$hardware_backend_families()
+  pools <- lapply(names(fams), function(hw) paste0(fams[[hw]], "_", hw))
+  names(pools) <- names(fams)
+  c(pools, list(absent = character()))
+}
+
 # tm_nvenc_encoder_pools(): the two mocked answers AC1 crosses every kept cell
 # with -- a build that has the nvenc encoders and one that has none. The second
 # is what makes the availability abort fire, and so what a cell must survive for
 # the argument error to have outranked the probe.
+#
+# Two levels, not the three above: adding a videotoolbox level here would add a
+# third arm to a sweep whose recorded master tables are keyed on the nvenc
+# probe, which is a different measurement from the one AC1 makes.
 tm_nvenc_encoder_pools <- function() {
   list(
-    present = c("h264_nvenc", "hevc_nvenc", "av1_nvenc"),
-    absent = character()
+    present = tm_hardware_encoder_pools()$nvenc,
+    absent = tm_hardware_encoder_pools()$absent
   )
 }
 

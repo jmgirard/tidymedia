@@ -97,7 +97,7 @@ videotoolbox baseline for the probe grid.
       `data-raw/nvenc-probe-order-merge-base.rds` as a forward baseline.
       Measured cost ≈1.5× on a 25 s / 3040-row working-tree run (2026-09-04).
       No criterion binds this: it is an instrument property.
-- [ ] T6: Record D085 — an out-of-table pair is a wrong argument, not an absent
+- [x] T6: Record D085 — an out-of-table pair is a wrong argument, not an absent
       encoder, so it is sited at the front door on both `fallback` arms.
       Annotate D035, D074 and D076 with no forward pointer (IP4). Update
       `NEWS.md`; confirm `@param fallback`'s existing wording still holds.
@@ -119,6 +119,8 @@ videotoolbox baseline for the probe grid.
 - 2026-09-04: correction to the first implement gate: the cost I put to the user for the shared-table option (two recorded tables, two counts) understated it -- four tables, five counts, across three files. The corrected figures were measured and re-put at a second gate before anything was written.
 - 2026-09-04: T5 done, widened past its own text. The `hw` loop reads `hardware_backends()` rather than gaining one literal, and the pool axis gained a level per backend for the same reason: with only the nvenc and empty pools, every videotoolbox cell at `fallback = FALSE` would have been the availability abort, so the arm would have measured a build that never lists its encoders. `nvenc_order_vacuous()`'s carve-out re-keyed from `pool == "absent"` to the pool not naming the cell's backend. 3,040 rows to 6,840 (2.25x, not the 1.5x the task estimated for the `hw` axis alone), 62 s per ref.
 - 2026-09-04: `data-raw/nvenc-probe-order-merge-base.rds` re-recorded at `96e973b` (master tip) as a forward baseline, replacing the `b538e63` M095-era grid the file had carried since M095: 6,840 rows, 0 vacuous on both refs, and 0 rows on both the contract and the wide diff against the working tree. Zero is the honest answer and not a silent instrument: the grid crosses only `libx264` and the NULL sentinel, both h264, and M107's subject is a family no backend covers -- so the grid says M107 disturbed nothing it watches, and AC1's own sweep is what measures the change. The script header now carries the fixture's provenance (source ref, generator call, no seed), which it had never recorded.
+- 2026-09-04: T6 done. D085 recorded, its heading naming what it annotates (D035's front-door licence, D074 property 1's per-row class, D076's early return); the three older entries are not edited (IP4). `NEWS.md` gains a Bug fixes entry. `@param fallback`'s existing wording at eleven blocks already says an out-of-table pair aborts whatever `fallback` says and needed no change; `devtools::document()` produces no diff.
+- 2026-09-04: the NEWS entry also claims the unmappable-codec class, which no test bound, so the AC1 sweep gained a third arm for it -- every reachable member x backend x fallback arm, each with a mapping-codec control asserted not refused in that same cell first, so a refusal is the token's and not the cell's.
 
 ## Decisions
 

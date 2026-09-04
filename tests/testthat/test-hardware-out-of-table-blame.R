@@ -149,6 +149,62 @@ test_that("an out-of-table pair is refused by the verb on both fallback arms", {
   expect_equal(bad, character())
 })
 
+test_that("a codec naming no family at all is refused by the verb too", {
+  # The second class the same siting fixes, and the one NEWS.md's entry claims
+  # alongside the first: `codec_family()` has to place the token before the
+  # table can be consulted at all, so a token it cannot place is refused at the
+  # same front door, on the same two arms. Blamed one frame down before M107,
+  # exactly as the out-of-table pair was.
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  fc <- oot_family_codecs()
+  codec <- tm_nvenc_unmappable_codec()
+
+  # A generous build, for the sweep above's reason: nothing here is refused for
+  # want of an encoder.
+  fams <- hardware_backend_families()
+  withr::local_options(tidymedia.hardware_encoders = unlist(
+    lapply(names(fams), function(hw) paste0(fams[[hw]], "_", hw)),
+    use.names = FALSE
+  ))
+
+  # The control first: the same call with a codec that DOES map is not refused
+  # at all in these cells, so a refusal below is the token's and not the cell's.
+  bad <- character()
+  for (nm in oot_members()$reachable) {
+    for (hw in hardware_backends()) {
+      for (fb in c(FALSE, TRUE)) {
+        label <- paste(nm, hw, fb, sep = "/")
+        ok <- tryCatch(
+          do.call(nm, oot_args(nm, specs, fc[["h264"]], hw, fb),
+                  envir = asNamespace("tidymedia")),
+          error = function(e) e
+        )
+        if (inherits(ok, "error")) {
+          bad <- c(bad, paste0(label, " -> control refused: ", blamed_verb(ok)))
+          next
+        }
+        cnd <- tryCatch(
+          do.call(nm, oot_args(nm, specs, codec, hw, fb),
+                  envir = asNamespace("tidymedia")),
+          error = function(e) e
+        )
+        if (!inherits(cnd, "error")) {
+          bad <- c(bad, paste0(label, " -> <not refused>"))
+          next
+        }
+        msg <- cli::ansi_strip(conditionMessage(cnd))
+        if (!identical(blamed_verb(cnd), nm) ||
+            !grepl("No hardware encoder family maps to that codec", msg,
+                   fixed = TRUE)) {
+          bad <- c(bad, paste0(label, " -> ", blamed_verb(cnd)))
+        }
+      }
+    }
+  }
+  expect_equal(bad, character())
+})
+
 test_that("an in-table encoder the build lacks still falls back with a message", {
   # The no-regression half. `fallback = TRUE` must keep meaning what
   # `@param fallback` documents for the pairs the table DOES hold: a build

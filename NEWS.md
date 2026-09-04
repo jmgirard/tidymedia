@@ -710,6 +710,21 @@
 
 ## Bug fixes
 
+* Asking for hardware encoding with a codec the backend cannot encode is now
+  refused by the function you called, whatever `fallback` is set to. NVIDIA
+  nvenc has no ProRes encoder and Apple videotoolbox has neither ProRes nor
+  AV1, so a call naming one of those was always an error — but with
+  `fallback = TRUE` the eight verbs that fan out over rows or
+  segments reported it as
+  ``Error in `purrr::pmap(jobs, .f, ...)` `` with `In index: 1` beneath it: a
+  dependency's name and an internal row number in place of the function you
+  typed. With `fallback = FALSE` the same call already named the verb. A
+  `video_codec` that matches no codec family at all — a typo, say — moved the
+  same way. `fallback` is for a machine whose FFmpeg was built without an
+  encoder, and that behaviour is unchanged: a codec the backend does cover but
+  this build does not list still falls back to software with a message. No call
+  that used to work is refused now; only the name in the error has changed.
+
 * `segment_video()` now refuses an `outfiles` value it cannot use — a number,
   `NA`, a list holding one, or a character vector with a missing value in it —
   and names itself when it does. The value used to travel into the per-segment

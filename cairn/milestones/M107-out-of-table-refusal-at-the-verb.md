@@ -59,7 +59,7 @@ videotoolbox baseline for the probe grid.
 
 ## Tasks
 
-- [ ] T1: Write the sweep first, red. Build each export's valid argument cell
+- [x] T1: Write the sweep first, red. Build each export's valid argument cell
       from `tm_timeout_call_specs()` (`tests/testthat/helper-timeout-sweep.R`),
       never by hand — a hand-built cell aborts on a missing required argument
       and masks the case (measured 2026-09-04: 12 of 14 verbs did). Cross
@@ -68,7 +68,7 @@ videotoolbox baseline for the probe grid.
       for AC2. An export whose formals carry no `video_codec` is recorded
       unreachable by reading its formals, never skipped by name. Record the red
       set; do not predict it.
-- [ ] T2: Fix `check_hardware_available()` (`R/ffmpeg.R:3300-3320`) so the
+- [x] T2: Fix `check_hardware_available()` (`R/ffmpeg.R:3300-3320`) so the
       out-of-table refusal fires at the front door on both `fallback` arms while
       an absent in-table encoder still returns early under `fallback = TRUE`.
       Correct the early return's comment, whose premise ("`fallback = TRUE`
@@ -108,6 +108,8 @@ videotoolbox baseline for the probe grid.
 - 2026-09-04: implement gate chose fixing the unmappable-codec class alongside the out-of-table class, because the front door must infer the family before it can test the table, so both classes move together; falsified by a caller who wants an unrecognized `video_codec` tolerated under `fallback = TRUE`.
 - 2026-09-04: implement gate chose adding the sixth wrong form to the shared `tm_nvenc_wrong_forms()` table over a seam-test-local one, accepting a re-measurement of `tm_nvenc_dropped_master()`, `tm_nvenc_mismatch_master()` and the two pinned sweep counts; falsified by the re-measurement proving unstable.
 - 2026-09-04: T1 red, measured on the branch: 24 of the 84 AC1 cells (14 reachable members x 3 omitted pairs x 2 fallback arms) blamed `purrr::pmap` instead of the member -- all 24 under `fallback = TRUE`, at the 8 members that fan out (`anonymize_video_batch`, `compare_videos_batch`, `crop_video_batch`, `picture_in_picture_batch`, `segment_video`, `segment_video_batch`, `separate_audio_video_batch`, `standardize_video_batch`). AC2's 10 cells and the domain test were green already.
+- 2026-09-04: T2 green. The family sweep moved above `check_hardware_available()`'s `fallback` early return and each family goes through `hardware_encoder()` there, so the table lookup runs on both arms while the availability probe below still returns early. All 24 red cells now name their own member. Both false comments corrected (the early return's, and `resolve_hw_encoder()`'s claim that `fallback = TRUE` always returns above). `devtools::test()`: 0 failures, 10 warnings, 18 skips, 12128 passes -- the M095/M096 argument-outranks-the-probe sweeps and their two pinned counts unchanged, so the new front-door refusals displaced no error a caller had already earned.
+- 2026-09-04: `test-nvenc-front-door.R`'s AC4 test "fallback = TRUE never lets the front door refuse an unmappable codec" asserted the defect (blame NOT the verb) and was rewritten to assert the verb, plus a new sibling pinning that an in-table encoder the build lacks still reaches the per-row fallback. The section header narrowed from "reaches no front-door guard" to "reaches no AVAILABILITY guard".
 
 ## Decisions
 

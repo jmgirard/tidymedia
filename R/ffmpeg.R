@@ -3276,12 +3276,18 @@ resolve_hw_encoder <- function(video_codec,
   # two copies of the wording and the firing condition is exactly the drift the
   # single site exists to make impossible.
   #
-  # This call is reached on the `fallback = FALSE` arm only, and it is reached
-  # only for a pair the table HOLDS. A pair the table omits never gets this far:
-  # the predicate above goes through the mapper, so hardware_encoder() refuses
-  # it there, on either arm (M107). The comment here used to claim
-  # `fallback = TRUE` always returned above -- it returns only when the
-  # predicate answers, and for an out-of-table pair the predicate aborts.
+  # This call is reached on BOTH arms, and only for a pair the table HOLDS.
+  # On `fallback = TRUE` it is reached whenever the encoder IS available, since
+  # the `&&` above is then FALSE and nothing returns (measured 2026-09-04:
+  # resolve_hw_encoder("libx264", "nvenc", TRUE) against a build listing
+  # h264_nvenc returns "h264_nvenc" through this line). A pair the table omits
+  # never gets this far on either arm, but by different routes: on
+  # `fallback = TRUE` the predicate above goes through the mapper and
+  # hardware_encoder() refuses it there, while on `fallback = FALSE` the `&&`
+  # short-circuits and the predicate never runs -- there the refusal comes from
+  # check_hardware_available()'s own table sweep, one line below (M107). The
+  # comment here used to claim `fallback = TRUE` always returned above; it
+  # returns only when the predicate answers.
   check_hardware_available(video_codec, hardware, fallback, call = call)
   hardware_encoder(family, hardware, call = call)
 }

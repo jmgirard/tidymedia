@@ -722,8 +722,17 @@
   `video_codec` that matches no codec family at all — a typo, say — moved the
   same way. `fallback` is for a machine whose FFmpeg was built without an
   encoder, and that behavior is unchanged: a codec the backend does cover but
-  this build does not list still falls back to software with a message. No call
-  that used to work is refused now; only the name in the error has changed.
+  this build does not list still falls back to software with a message.
+
+  No call that used to succeed is refused now. Three things about the refusal
+  itself do change, all of them because it now happens before any row is
+  built. It no longer carries the `In index:` line, so a batch of many rows
+  says which codec and backend are wrong but not which row named them. Rows
+  earlier in the table no longer print their "falling back" messages first,
+  since nothing is built before the refusal. And when one call names codecs
+  from several families — a `video_codec` column mixing them — the wrong-codec
+  complaint now comes first, where before you could see a "not available on
+  this machine" complaint about an earlier, valid codec instead.
 
 * `segment_video()` now refuses an `outfiles` value it cannot use — a number,
   `NA`, a list holding one, or a character vector with a missing value in it —

@@ -1433,9 +1433,12 @@ tm_hardware_encoder_pools <- function() {
 # third arm to a sweep whose recorded master tables are keyed on the nvenc
 # probe, which is a different measurement from the one AC1 makes.
 tm_nvenc_encoder_pools <- function() {
+  # `[[` and not `$`: a renamed or restructured nvenc row must ERROR here.
+  # Under `$` it would return NULL, both pool levels would answer "no encoders",
+  # and AC1's present/absent discrimination would go vacuous with nothing red.
   list(
-    present = tm_hardware_encoder_pools()$nvenc,
-    absent = tm_hardware_encoder_pools()$absent
+    present = tm_hardware_encoder_pools()[["nvenc"]],
+    absent = tm_hardware_encoder_pools()[["absent"]]
   )
 }
 

@@ -127,6 +127,8 @@ videotoolbox baseline for the probe grid.
 
 - 2026-09-04: /milestone-review checkpoint 2. AC3 verified and ticked (`devtools::check()` Status OK, 0/0/0); consistency gate passes in both halves; the blame-history and prior-review lenses reported no findings. The [O] diff-bug lens is still running and CI on PR #111 is pending.
 
+- 2026-09-04: /milestone-review, [O] lens returned nine findings. Six fixed on the branch (F1/F3/F4 reworded the NEWS entry, whose "only the name in the error has changed" claim three measured consequences falsify; F2 rewrote T2's replacement comment, false in both its new claims; F6 `$`->`[[`; F8 derived a re-hard-coded count), two rejected (F7 pre-existing, F9 stale), one routed to a candidate row at hygiene (F5, the jobs-column list branch the sweep never reaches). No finding demonstrates a criterion failing, so no return floor fires. Affected tests and the full suite re-run green; `devtools::check()` re-running over the reworded NEWS.
+
 ## Decisions
 
 ## Review
@@ -201,4 +203,88 @@ rather than the docs-only single lens).
   lesson's site is untouched here. Secondary surface probe
   `gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1` returned `[]`, so
   no per-PR thread walk was paid for.
-- **[O] diff-bug: PENDING.**
+- **[O] diff-bug: nine findings**, verified individually against the
+  implementation and recorded below with dispositions. It also cleared, by its
+  own account: the committed `.rds` matches its stated 6,840 rows / `96e973b`
+  ref / 3x3 cross, `nvenc_order_vacuous()`'s re-keying is correct for all nine
+  cells, every front-door call site validates the token above
+  `check_hardware_available()` so moving `codec_family()` onto the
+  `fallback = TRUE` arm displaces no type error, `families` is safely empty for
+  a zero-row jobs table, and `@param fallback` already covers the case.
+
+#### Findings and dispositions
+
+**F1 (fix now, fixed).** The new family sweep runs over every family before the
+availability loop, so on `fallback = FALSE` a multi-family `video_codec` list
+whose first family is in-table-but-unbuilt and whose second is out-of-table now
+reports the out-of-table pair where master reported the availability failure.
+Verified by evaluating master's `check_hardware_available()` beside the
+branch's: `list("libx264", "prores_ks")`, `hardware = "nvenc"`,
+`fallback = FALSE`, empty build -- master `nvenc encoder "h264_nvenc" is not
+available.`, branch `nvenc has no "prores" encoder.` The new precedence is the
+one D075 wants (an argument outranks the machine), so the behaviour stands; what
+was wrong was the claim. NEWS said "only the name in the error has changed",
+which this falsifies. NEWS reworded to state the precedence change.
+
+**F2 (fix now, fixed).** T2's replacement comment in `resolve_hw_encoder()`
+(`R/ffmpeg.R:3279`) was false in both new claims -- the exact failure class T2
+existed to fix. "Reached on the `fallback = FALSE` arm only" is wrong: with
+`fallback = TRUE` and the encoder present the `&&` is FALSE and control falls
+through (measured -- `resolve_hw_encoder("libx264", "nvenc", TRUE)` against a
+build listing `h264_nvenc` returns `"h264_nvenc"` through that line). "The
+predicate above ... refuses it there, on either arm" is wrong on the FALSE arm,
+where `&&` short-circuits and the predicate never runs. Comment rewritten to
+both routes, with the measurement beside it.
+
+**F3 (fix now, fixed).** The refusal no longer carries `In index: N`, so a
+batch says which codec and backend are wrong but not which row named them --
+the reach of ROADMAP candidate M100 Out (e), widened here and unnoted. Fixed as
+prose: NEWS now states it. The candidate row is extended at hygiene.
+
+**F4 (fix now, fixed).** Rows earlier in a mixed table no longer print their
+"falling back" messages before the abort, since nothing is built before the
+refusal. Also a user-visible consequence riding on the "only the frame moved"
+claim; NEWS now states it.
+
+**F5 (follow-up).** AC1's sweep reaches `check_hardware_available()` only
+through the scalar `video_codec`: no `tm_timeout_call_specs()` cell carries a
+`video_codec` jobs column, so the `is.list()` list branch -- the column shape
+D085 describes -- is bound by one hand-written cell in
+`test-nvenc-front-door.R:250`. A regression sweeping `families[1]` would pass
+84 of the 86 AC1 cells. Real coverage gap, not an AC failure (AC1's text names
+a `video_codec`, not a path). Routed to a candidate row at hygiene.
+
+**F6 (fix now, fixed).** `tm_hardware_encoder_pools()$nvenc` degrades to `NULL`
+on a renamed row, which would make both pool levels answer "no encoders" and
+AC1's discrimination vacuous with nothing red. Changed to `[[`, which errors.
+
+**F7 (reject).** `nvenc_order_pools <- tm_hardware_encoder_pools()` is
+evaluated at source time against the currently loaded namespace, so a
+historical ref is mocked with today's table. True, but not introduced here: the
+literal it replaced was equally a snapshot of the table at writing time, and no
+worse. Rejected as a pre-existing property the diff did not introduce.
+
+**F8 (fix now, fixed).** `expect_length(seam_pools(), 3L)` re-hard-coded the
+count the derivation removed. Changed to
+`length(hardware_backends()) + 1L`, which keeps the duplicate-name guard the
+literal gave while a third backend no longer fails it spuriously.
+
+**F9 (reject).** AC3 unticked while the work log recorded it measured. Stale --
+the reviewer read the branch before this review's own AC3 tick, which is the
+verification mark AC fencing requires and which this session wrote.
+
+#### Fix-now re-verification
+
+After F1/F2/F3/F4/F6/F8: `test-codec-seam-bound.R`, `test-hardware-out-of-table-blame.R`,
+`test-nvenc-front-door.R` and `test-nvenc-probe-blame.R` all green;
+`devtools::test()` 0 failures / 12,181 passes unchanged; `devtools::document()`
+no diff; `tests/spelling.R` "All Done!" on the reworded NEWS. `devtools::check()`
+re-run recorded below.
+
+#### Return floor
+
+No actioned finding demonstrates an acceptance criterion failing: AC1 and AC2
+hold as written under every fix, and F1's behaviour change falls outside every
+criterion's domain. F1/F3/F4 were defects in what the branch CLAIMED, not in
+what it does, and the claims are corrected on the branch. Status stays `review`;
+no defect return, no amendment return.

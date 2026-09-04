@@ -69,7 +69,7 @@ test_that("a wrong codec token is refused before the build is asked anything", {
   # cell M106 relied on is still here.
   expect_setequal(names(seam_pools()),
                   c(hardware_backends(), "absent"))
-  expect_length(seam_pools(), 3L)
+  expect_length(seam_pools(), length(hardware_backends()) + 1L)
 
   # The option seam returns above cached_encoder_names(), so leaving it set
   # would make every cell below measure the option and never the mock.

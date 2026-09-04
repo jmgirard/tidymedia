@@ -2722,3 +2722,112 @@ test_that("tm_os() falls back to .Platform where Sys.info() is unimplemented", {
   expect_identical(tm_os(info = NULL, os_type = "windows"), "windows")
   expect_identical(tm_os(info = NULL, os_type = "unix"), "unix")
 })
+
+
+# install_on_win()'s platform gate -----------------------------------------
+
+# The four calls in `install_on_win()` that spend something, each replaced by a
+# stub that aborts. Between them they cover every cost the call can incur: the
+# unverified-source notice is the first thing said to the caller, `tm_confirm()`
+# the first thing asked of them, `dir.create()` the first write, and `tm_fetch()`
+# the first byte off the network. A gate that fires above all four has spent
+# nothing, and the abort a stub raises is a plain error carrying its own text,
+# so a stub that IS reached fails the test by name rather than by class.
+tm_forbid_spending <- function(env = parent.frame()) {
+  boom <- function(what) function(...) stop(paste0("reached ", what))
+  testthat::local_mocked_bindings(
+    tm_confirm = boom("tm_confirm()"),
+    tm_fetch = boom("tm_fetch()"),
+    .env = env
+  )
+  testthat::local_mocked_bindings(
+    cli_inform = boom("cli::cli_inform()"),
+    .package = "cli",
+    .env = env
+  )
+  testthat::local_mocked_bindings(
+    dir.create = boom("dir.create()"),
+    .package = "base",
+    .env = env
+  )
+}
+
+test_that("a platform that is not Windows is refused before anything is spent", {
+  # Two named platforms and one the routing table does not know, so the gate is
+  # shown to refuse on "not windows" rather than on a list of what to deny.
+  for (os in c("darwin", "linux", "freebsd")) {
+    testthat::local_mocked_bindings(tm_os = function(...) os)
+    tm_forbid_spending()
+    expect_error(
+      install_on_win(),
+      class = "tidymedia_wrong_platform"
+    )
+  }
+})
+
+test_that("the wrong-platform refusal names the platform and its route", {
+  routes <- list(
+    darwin = "brew install ffmpeg",
+    linux = "sudo apt-get install ffmpeg"
+  )
+  other <- setdiff(unlist(routes), character())
+
+  for (os in c("darwin", "linux", "freebsd")) {
+    testthat::local_mocked_bindings(tm_os = function(...) os)
+    tm_forbid_spending()
+    cnd <- expect_error(
+      install_on_win(),
+      class = "tidymedia_wrong_platform"
+    )
+    # The message asserted is the condition's own, not anything emitted beside
+    # it: a route printed by a separate `cli_inform()` would leave this blind.
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    expect_match(msg, os, fixed = TRUE)
+    expect_match(msg, "set_program()", fixed = TRUE)
+    if (!is.null(routes[[os]])) {
+      expect_match(msg, routes[[os]], fixed = TRUE)
+      # And only its own route: the two package managers are named one at a
+      # time, so a message listing both would pass a one-sided check.
+      for (wrong in setdiff(other, routes[[os]])) {
+        expect_no_match(msg, wrong, fixed = TRUE)
+      }
+    } else {
+      # A platform the table does not know gets no package-manager advice the
+      # package cannot stand behind (M108's gate).
+      for (wrong in other) {
+        expect_no_match(msg, wrong, fixed = TRUE)
+      }
+    }
+    # The seam's value travels on the condition, in the `tm_`-prefixed field
+    # data fields take (D062), so a caller can branch on it without parsing.
+    expect_identical(cnd$tm_platform, os)
+  }
+})
+
+test_that("the gate refuses nothing on Windows", {
+  # The control: the same stubs, the same call, a seam reporting `windows`, and
+  # execution reaches the confirmation instead of stopping above it. Three
+  # argument shapes, because the gate sits above the two argument defaults and
+  # below the argument checks, and a shape that skipped it would be a gate
+  # reading something other than the platform.
+  shapes <- list(
+    default = list(),
+    named_dir = list(install_dir = file.path(tempdir(), "m108-install")),
+    other_source = list(
+      download_url = "https://example.invalid/ffmpeg.7z",
+      archive_checksum = strrep("a", 64L)
+    )
+  )
+  for (shape in names(shapes)) {
+    testthat::local_mocked_bindings(tm_os = function(...) "windows")
+    reached <- FALSE
+    testthat::local_mocked_bindings(
+      tm_confirm = function(...) {
+        reached <<- TRUE
+        FALSE
+      }
+    )
+    expect_false(do.call(install_on_win, shapes[[shape]]))
+    expect_true(reached)
+  }
+})

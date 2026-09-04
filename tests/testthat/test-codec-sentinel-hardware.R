@@ -86,10 +86,11 @@ test_that("the sentinel takes the hardware encoder when the build lists it", {
 })
 
 test_that("the pool is what decides, and hardware = \"none\" ignores it", {
-  # The discrimination check for the three tests above: the same call with the
-  # same sentinel emits no -codec:v when no backend is asked for, whichever
-  # pool is mocked. A suite where the pool were not being read would pass the
-  # tests above and this one identically.
+  # The backend is what makes the pool matter at all: the same sentinel emits no
+  # -codec:v when no backend is asked for, even on the pool that DOES list the
+  # encoder -- so nothing above is a property of the sentinel alone. (The
+  # discrimination on the pool itself is tests 1 and 3: the same call, the same
+  # backend, opposite outcomes from opposite pools.)
   dir <- withr::local_tempdir()
   p <- sentinel_paths(dir)
   local_sentinel_pool(c("h264_nvenc", "hevc_nvenc", "av1_nvenc"))

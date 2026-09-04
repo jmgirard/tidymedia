@@ -225,44 +225,44 @@ nvenc_order_baseline <- function(ref = NULL, root = ".", sample = NULL) {
       levels <- if (spec$has_vc) names(nvenc_order_video_codecs) else "absent"
       for (hw in c("none", "nvenc")) {
         for (fb in c(FALSE, TRUE)) {
-        for (vc in levels) {
-          args <- spec$args
-          if (spec$has_vc) args <- nvenc_order_set_codec(args, vc)
-          args$hardware <- hw
-          args$fallback <- fb
-          obs <- tryCatch(
-            withCallingHandlers(
-              {
-                # By NAME, never by function object: `do.call(f, ...)` records
-                # the anonymous object as the condition call and hides the blame
-                # target this grid exists to watch.
-                out <- do.call(spec$name, args, envir = env)
-                txt <- gsub(dir, "<dir>", as.character(out), fixed = TRUE)
-                txt <- gsub(tempdir(), "<tmp>", txt, fixed = TRUE)
-                list(kind = "compiled",
-                     outcome = paste(txt, collapse = " ||| "),
-                     call = NA_character_)
-              },
-              # The `fallback = TRUE` arm emits a message rather than aborting;
-              # muffling it keeps the cell's outcome the compiled command.
-              message = function(m) invokeRestart("muffleMessage")
-            ),
-            error = function(e) {
-              cl <- conditionCall(e)
-              list(kind = "abort",
-                   outcome = paste(cli::ansi_strip(conditionMessage(e)),
-                                   collapse = "\n"),
-                   call = if (is.null(cl)) NA_character_ else
-                     paste(deparse(cl[[1]]), collapse = ""))
-            }
-          )
-          rows[[length(rows) + 1]] <- data.frame(
-            member = spec$name, cell = spec$cell, hardware = hw,
-            fallback = fb, pool = pool, video_codec = vc, kind = obs$kind,
-            outcome = obs$outcome, call = obs$call,
-            stringsAsFactors = FALSE
-          )
-        }
+          for (vc in levels) {
+            args <- spec$args
+            if (spec$has_vc) args <- nvenc_order_set_codec(args, vc)
+            args$hardware <- hw
+            args$fallback <- fb
+            obs <- tryCatch(
+              withCallingHandlers(
+                {
+                  # By NAME, never by function object: `do.call(f, ...)` records
+                  # the anonymous object as the condition call and hides the blame
+                  # target this grid exists to watch.
+                  out <- do.call(spec$name, args, envir = env)
+                  txt <- gsub(dir, "<dir>", as.character(out), fixed = TRUE)
+                  txt <- gsub(tempdir(), "<tmp>", txt, fixed = TRUE)
+                  list(kind = "compiled",
+                       outcome = paste(txt, collapse = " ||| "),
+                       call = NA_character_)
+                },
+                # The `fallback = TRUE` arm emits a message rather than aborting;
+                # muffling it keeps the cell's outcome the compiled command.
+                message = function(m) invokeRestart("muffleMessage")
+              ),
+              error = function(e) {
+                cl <- conditionCall(e)
+                list(kind = "abort",
+                     outcome = paste(cli::ansi_strip(conditionMessage(e)),
+                                     collapse = "\n"),
+                     call = if (is.null(cl)) NA_character_ else
+                       paste(deparse(cl[[1]]), collapse = ""))
+              }
+            )
+            rows[[length(rows) + 1]] <- data.frame(
+              member = spec$name, cell = spec$cell, hardware = hw,
+              fallback = fb, pool = pool, video_codec = vc, kind = obs$kind,
+              outcome = obs$outcome, call = obs$call,
+              stringsAsFactors = FALSE
+            )
+          }
         }
       }
     }
@@ -301,7 +301,10 @@ nvenc_order_vacuous <- function(baseline) {
 # argument error, with the blamed frame unmoved. That it saw them is also this
 # grid's discrimination check -- an instrument that reported nothing there would
 # be reporting nothing anywhere. A later milestone's own figure is recorded in
-# that milestone's file, never here.
+# that milestone's file, never here. The figure is also not re-derivable by this
+# script as it now stands: M106 both crossed `video_codec` and dropped that
+# argument's wrong-form cells, so the grid the 27 was measured over no longer
+# exists here.
 #
 # The two baselines must cover the same cells. Matching runs over `after`'s keys,
 # so a row present only in `before` would vanish silently -- and "empty" is the

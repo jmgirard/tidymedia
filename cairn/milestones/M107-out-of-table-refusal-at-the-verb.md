@@ -1,6 +1,6 @@
 # M107: A backend with no encoder for the codec's family is refused by the verb the caller typed, `fallback` or not
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -121,6 +121,7 @@ videotoolbox baseline for the probe grid.
 - 2026-09-04: `data-raw/nvenc-probe-order-merge-base.rds` re-recorded at `96e973b` (master tip) as a forward baseline, replacing the `b538e63` M095-era grid the file had carried since M095: 6,840 rows, 0 vacuous on both refs, and 0 rows on both the contract and the wide diff against the working tree. Zero is the honest answer and not a silent instrument: the grid crosses only `libx264` and the NULL sentinel, both h264, and M107's subject is a family no backend covers -- so the grid says M107 disturbed nothing it watches, and AC1's own sweep is what measures the change. The script header now carries the fixture's provenance (source ref, generator call, no seed), which it had never recorded.
 - 2026-09-04: T6 done. D085 recorded, its heading naming what it annotates (D035's front-door licence, D074 property 1's per-row class, D076's early return); the three older entries are not edited (IP4). `NEWS.md` gains a Bug fixes entry. `@param fallback`'s existing wording at eleven blocks already says an out-of-table pair aborts whatever `fallback` says and needed no change; `devtools::document()` produces no diff.
 - 2026-09-04: the NEWS entry also claims the unmappable-codec class, which no test bound, so the AC1 sweep gained a third arm for it -- every reachable member x backend x fallback arm, each with a mapping-codec control asserted not refused in that same cell first, so a refusal is the token's and not the cell's.
+- 2026-09-04: AC3 measured. `devtools::test()`: 0 failures, 10 warnings, 18 skips, 12,158 passes. `devtools::document()`: no diff. `devtools::check()`: Status OK, 0 errors / 0 warnings / 0 notes. The first check run had 1 NOTE -- `spelling.Rout` differing on "ProRes" and "behaviour" from the new NEWS entry -- fixed by rewording to the encoder-name spellings the wordlist already carries and to US "behavior", not by adding wordlist entries. Status to review.
 
 ## Decisions
 

@@ -40,6 +40,20 @@
 ### Configuration
 
 - [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+  now decides what an archive produced by looking at the install
+  directory as well as at the archive’s own file list. A path the
+  archive listed and did not leave behind – an unpacked program an
+  antivirus quarantined between the extraction and the check, which is
+  how this happens – used to be refused as a program that “cannot be
+  used”, which is not true of a path with no file on it, and the same
+  refusal could tell you the unpacked files were still in a directory
+  that held none of them. A required program that is not at its path now
+  raises `tidymedia_program_not_extracted` rather than
+  `tidymedia_program_unusable`; the error says the extraction reported
+  writing that file and it is not there; and an install directory the
+  call created and then found empty is removed again.
+
+- [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
   now registers every program the archive produced, or none of them. It
   used to register them one program at a time, so a build it could not
   use was registered in pieces: a truncated `ffprobe.exe` was remembered

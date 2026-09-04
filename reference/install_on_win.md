@@ -60,13 +60,13 @@ own rather than returning: a download that did not deliver
 fetched or read (`tidymedia_checksum_unavailable`), a digest that did
 not match the downloaded archive (`tidymedia_checksum_mismatch`), an
 archive that could not be unpacked (`tidymedia_archive_unreadable`), a
-required program the archive did not contain
+required program that is not at the path it would be installed to
 (`tidymedia_program_not_extracted`), and a required program the archive
 produced in a form that cannot be used (`tidymedia_program_unusable`).
 Every one of these aims to leave the install directory as the call found
 it, except the last two, which leave the files the archive did unpack –
-and `tidymedia_program_not_extracted` is back inside the rule where the
-archive unpacked none. Removal is best-effort: on Windows a
+and `tidymedia_program_not_extracted` is back inside the rule where none
+of the archive's files are there. Removal is best-effort: on Windows a
 partly-written file cannot be deleted while the extraction library still
 holds it, and the error names what it could not remove. See Details.
 
@@ -108,13 +108,19 @@ directory this call created and could not remove again is named the same
 way.
 
 Two refusals sit outside that rule, both of them below a successful
-extraction: `tidymedia_program_not_extracted`, where the archive did not
-contain a required program, and `tidymedia_program_unusable`, where it
-produced one that cannot be used. Each says so, and the unpacked files
-stay where they are. It is the files that put those refusals outside the
-rule, so where the archive unpacked no files at all the rule applies to
-`tidymedia_program_not_extracted` like any other: a directory this call
-created is removed again, and the error says so instead.
+extraction: `tidymedia_program_not_extracted`, where a required program
+is not at the path it would be installed to, and
+`tidymedia_program_unusable`, where a file is at that path and cannot be
+used. Each says so, and the unpacked files stay where they are. What the
+extraction produced is read from the archive's own file list and from
+the install directory together, so a path the archive listed and did not
+leave behind – an unpacked program an antivirus quarantined, say – is
+refused as a program that is not there rather than as one that cannot be
+used, and the error says the extraction reported writing it. It is the
+unpacked files that put these refusals outside the rule, so where none
+of them are there the rule applies to `tidymedia_program_not_extracted`
+like any other: a directory this call created is removed again, and the
+error says so instead.
 
 ## See also
 

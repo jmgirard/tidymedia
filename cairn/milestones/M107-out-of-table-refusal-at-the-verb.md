@@ -129,6 +129,8 @@ videotoolbox baseline for the probe grid.
 
 - 2026-09-04: /milestone-review, [O] lens returned nine findings. Six fixed on the branch (F1/F3/F4 reworded the NEWS entry, whose "only the name in the error has changed" claim three measured consequences falsify; F2 rewrote T2's replacement comment, false in both its new claims; F6 `$`->`[[`; F8 derived a re-hard-coded count), two rejected (F7 pre-existing, F9 stale), one routed to a candidate row at hygiene (F5, the jobs-column list branch the sweep never reaches). No finding demonstrates a criterion failing, so no return floor fires. Affected tests and the full suite re-run green; `devtools::check()` re-running over the reworded NEWS.
 
+- 2026-09-04: step-7 approval: PR #111 approved for merge.
+
 ## Decisions
 
 ## Review

@@ -27,11 +27,21 @@
 #                  forms `tm_nvenc_wrong_forms()` holds (a number, a
 #                  token-invalid string, NA, a length-2 vector, a list)
 #
-# crossed with three dimensions the reorder could plausibly disturb:
+# crossed with four dimensions the reorder could plausibly disturb:
 #
-#   hardware  "none" / "nvenc"    -- whether the probe runs at all
-#   fallback  FALSE / TRUE        -- which branch of the resolver runs
-#   pool      present / absent    -- what the mocked build answers
+#   hardware     "none" / "nvenc"    -- whether the probe runs at all
+#   fallback     FALSE / TRUE        -- which branch of the resolver runs
+#   pool         present / absent    -- what the mocked build answers
+#   video_codec  caller / sentinel   -- a codec the caller named, or M34/D016's
+#                                       NULL "leave the codec alone" sentinel
+#
+# `video_codec` is crossed rather than pinned to one re-encoding token (M106).
+# Pinning left the sentinel arm of every cell unprobed, which is the arm where
+# `resolve_hw_encoder()` takes its own branch: it assumes the h264 family rather
+# than inferring one, and under `fallback = TRUE` it returns the sentinel rather
+# than a software codec. A member with no `video_codec` formal
+# (`format_for_web()`, `format_for_web_batch()`) has nothing to cross and
+# records `absent`.
 #
 # The wrong-form cells are a SUPERSET of AC1's kept cells: AC1 drops a cell whose
 # reference refusal comes from a frame below the member, and AC2 has no reason to
@@ -117,8 +127,13 @@ nvenc_order_specs <- function(dir, sample) {
 
 # Every (member, cell) pair: the valid cell plus one per (other formal, wrong
 # form). `hardware` is excluded because it is a crossed dimension below, `...`
-# because it is not nameable, and `fallback` because it is crossed too -- a cell
-# that overwrote it would silently leave one arm of that cross unprobed.
+# because it is not nameable, and `fallback` and `video_codec` because they are
+# crossed too -- a cell that overwrote one would silently leave one arm of that
+# cross unprobed.
+#
+# Each spec records whether its member carries a `video_codec` formal, which is
+# what the runner crosses on: the value itself is set there, per level, never
+# here.
 nvenc_order_cells <- function(env, members, specs) {
   forms <- tm_nvenc_wrong_forms()
   out <- list()
@@ -126,24 +141,42 @@ nvenc_order_cells <- function(env, members, specs) {
     fmls <- names(formals(get(nm, envir = env, inherits = FALSE)))
     base <- specs[[nm]]
     if (is.null(base)) stop("no valid argument cell recorded for ", nm)
-    # A `"copy"` default under `hardware = "nvenc"` is a contradiction the verb
-    # refuses on its own (D036), which would leave every cell of that member
-    # measuring the contradiction rather than the reorder.
-    if ("video_codec" %in% fmls) base$video_codec <- "libx264"
+    has_vc <- "video_codec" %in% fmls
     if ("parallel" %in% fmls) base$parallel <- FALSE
     if ("run" %in% fmls) base$run <- FALSE
     out[[paste0(nm, " || valid")]] <- list(name = nm, cell = "valid",
-                                           args = base)
-    for (arg in setdiff(fmls, c("hardware", "fallback", "..."))) {
+                                           args = base, has_vc = has_vc)
+    for (arg in setdiff(fmls, c("hardware", "fallback", "video_codec", "..."))) {
       for (form in names(forms)) {
         args <- base
         args[[arg]] <- forms[[form]]
         out[[paste0(nm, " || ", arg, "/", form)]] <-
-          list(name = nm, cell = paste0(arg, "/", form), args = args)
+          list(name = nm, cell = paste0(arg, "/", form), args = args,
+               has_vc = has_vc)
       }
     }
   }
   out
+}
+
+nvenc_order_video_codecs <- list(
+  # A `"copy"` default under `hardware = "nvenc"` is a contradiction the verb
+  # refuses on its own (D036), which would leave every cell of that member
+  # measuring the contradiction rather than the reorder -- so the caller arm
+  # names a re-encoding token rather than leaving the member's own default.
+  caller = "libx264",
+  # M34/D016's "leave the codec alone" sentinel.
+  sentinel = NULL
+)
+
+# Set one crossed `video_codec` level on one cell's argument list.
+#
+# `args["video_codec"] <- list(NULL)`, never `args$video_codec <- NULL`: the
+# second DELETES the element, which would hand the member its own default and
+# make the sentinel arm measure something else entirely.
+nvenc_order_set_codec <- function(args, level) {
+  args["video_codec"] <- nvenc_order_video_codecs[level]
+  args
 }
 
 nvenc_order_pools <- list(present = c("h264_nvenc", "hevc_nvenc", "av1_nvenc"),
@@ -152,8 +185,8 @@ nvenc_order_pools <- list(present = c("h264_nvenc", "hevc_nvenc", "av1_nvenc"),
 # -- running the grid --------------------------------------------------------
 
 # Run every cell against `ref`, returning one row per (cell, hardware, fallback,
-# pool). A compiled command records its bytes with paths scrubbed; a refusal
-# records the blamed frame and the message.
+# pool, video_codec). A compiled command records its bytes with paths scrubbed;
+# a refusal records the blamed frame and the message.
 nvenc_order_baseline <- function(ref = NULL, root = ".", sample = NULL) {
   env <- codec_guard_env(ref, root)
   members <- nvenc_order_members(env, nvenc_order_exports(ref, root))
@@ -187,9 +220,14 @@ nvenc_order_baseline <- function(ref = NULL, root = ".", sample = NULL) {
            envir = env)
     for (key in names(cells)) {
       spec <- cells[[key]]
+      # A member with no `video_codec` formal has nothing to cross: one level,
+      # recorded as `absent` so its rows are still keyed on the column.
+      levels <- if (spec$has_vc) names(nvenc_order_video_codecs) else "absent"
       for (hw in c("none", "nvenc")) {
         for (fb in c(FALSE, TRUE)) {
+        for (vc in levels) {
           args <- spec$args
+          if (spec$has_vc) args <- nvenc_order_set_codec(args, vc)
           args$hardware <- hw
           args$fallback <- fb
           obs <- tryCatch(
@@ -220,10 +258,11 @@ nvenc_order_baseline <- function(ref = NULL, root = ".", sample = NULL) {
           )
           rows[[length(rows) + 1]] <- data.frame(
             member = spec$name, cell = spec$cell, hardware = hw,
-            fallback = fb, pool = pool, kind = obs$kind,
+            fallback = fb, pool = pool, video_codec = vc, kind = obs$kind,
             outcome = obs$outcome, call = obs$call,
             stringsAsFactors = FALSE
           )
+        }
         }
       }
     }
@@ -256,11 +295,13 @@ nvenc_order_vacuous <- function(baseline) {
 # Rows whose kind, compiled command, blamed frame or message differs -- the
 # widest comparison, reported for the reader rather than for AC2.
 #
-# On this milestone it is NOT empty and must not be: the 27 rows it returns are
-# the defect being fixed, each an abort whose message changed from "nvenc is not
-# available" to the caller's own argument error, with the blamed frame unmoved.
-# That it sees them is also this grid's discrimination check -- an instrument
-# that reported nothing here would be reporting nothing anywhere.
+# On M095, the milestone this file was written for, it was NOT empty and had to
+# not be: the 27 rows it returned were the defect being fixed, each an abort
+# whose message changed from "nvenc is not available" to the caller's own
+# argument error, with the blamed frame unmoved. That it saw them is also this
+# grid's discrimination check -- an instrument that reported nothing there would
+# be reporting nothing anywhere. A later milestone's own figure is recorded in
+# that milestone's file, never here.
 #
 # The two baselines must cover the same cells. Matching runs over `after`'s keys,
 # so a row present only in `before` would vanish silently -- and "empty" is the
@@ -293,7 +334,8 @@ nvenc_order_contract_diff <- function(before, after) {
 # Line `before` up with `after`, refusing a comparison over mismatched grids.
 nvenc_order_align <- function(before, after) {
   key <- function(d) {
-    paste(d$member, d$cell, d$hardware, d$fallback, d$pool, sep = "\037")
+    paste(d$member, d$cell, d$hardware, d$fallback, d$pool, d$video_codec,
+          sep = "\037")
   }
   only_before <- setdiff(key(before), key(after))
   only_after <- setdiff(key(after), key(before))
@@ -310,7 +352,7 @@ nvenc_order_report <- function(b, after, changed) {
   data.frame(
     member = after$member[changed], cell = after$cell[changed],
     hardware = after$hardware[changed], fallback = after$fallback[changed],
-    pool = after$pool[changed],
+    pool = after$pool[changed], video_codec = after$video_codec[changed],
     before_kind = b$kind[changed], after_kind = after$kind[changed],
     before_call = b$call[changed], after_call = after$call[changed],
     before_outcome = b$outcome[changed], after_outcome = after$outcome[changed],

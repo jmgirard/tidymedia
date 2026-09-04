@@ -3367,6 +3367,15 @@ apply_video_codec <- function(object, video_codec, hardware = "none",
 # arguments. Splitting the seam is what lets standardize_pipeline() check the
 # token where the pair used to sit and emit the codec after its last
 # machine-independent check, with neither half moving relative to anything else.
+#
+# The halves are separately CALLABLE and no longer separately SKIPPABLE (M106).
+# The emit half checks the token itself, above its resolver call, so a pipeline
+# that reaches emit_video_codec() without a check_video_codec() above it emits
+# nothing unchecked -- the ordering property is a property of the code rather
+# than of what each future caller remembers to do. The two calls a
+# check-then-emit caller now makes are idempotent: check_video_codec() reads
+# `video_codec` and returns, so the second pass over a token the first accepted
+# cannot change what the caller is told.
 
 # check_video_codec(): the user's token, validated before family inference so
 # the error is the same under hardware = "none" and "nvenc" (parity with
@@ -3381,8 +3390,17 @@ check_video_codec <- function(video_codec, call = rlang::caller_env()) {
 # add it to the pipeline. Under hardware = "nvenc" this is where the build-time
 # capability probe runs, so this half is what a pipeline sinks below its
 # argument checks. The NULL sentinel emits nothing at all.
+#
+# The token check ABOVE the resolver, never below it and never left to the
+# caller (M106). Both orderings refuse the same calls; only this one refuses
+# them for the caller's own reason, because resolve_hw_encoder() consults this
+# FFmpeg build under hardware = "nvenc" and would otherwise be free to answer
+# "that encoder is not available" about a token that was never a codec name.
+# A caller that checked already pays a second check that cannot change its
+# answer; a caller that did not is no longer able to skip one.
 emit_video_codec <- function(object, video_codec, hardware = "none",
                              fallback = FALSE, call = rlang::caller_env()) {
+  check_video_codec(video_codec, call = call)
   video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
   if (is.null(video_codec)) {
     return(object)

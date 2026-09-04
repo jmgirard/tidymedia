@@ -7,7 +7,7 @@
 - **Principles touched:** IP1
 - **Resolves:** —
 - **Surface tier:** user-facing — it moves the blamed frame of an abort exported verbs raise
-- **Branch/PR:** `m107-out-of-table-refusal-at-the-verb`
+- **Branch/PR:** `m107-out-of-table-refusal-at-the-verb` / https://github.com/jmgirard/tidymedia/pull/111
 
 ## Goal
 
@@ -38,13 +38,13 @@ videotoolbox baseline for the probe grid.
 
 ## Acceptance criteria
 
-- [ ] AC1: For every export `nvenc_hardware_exports()` returns, a `video_codec`
+- [x] AC1: For every export `nvenc_hardware_exports()` returns, a `video_codec`
       whose family the named backend has no encoder for aborts naming that
       export's own frame under `fallback = TRUE`, as it already does under
       `fallback = FALSE`, over every `(backend, family)` pair
       `hardware_backends()` × `hardware_codec_families()` holds and
       `hardware_backend_families()` omits.
-- [ ] AC2: An encoder `hardware_backend_families()` does hold but the build does
+- [x] AC2: An encoder `hardware_backend_families()` does hold but the build does
       not list still falls back to software with a message rather than aborting
       under `fallback = TRUE`, for every `(backend, family)` pair that table
       holds.
@@ -123,6 +123,38 @@ videotoolbox baseline for the probe grid.
 - 2026-09-04: the NEWS entry also claims the unmappable-codec class, which no test bound, so the AC1 sweep gained a third arm for it -- every reachable member x backend x fallback arm, each with a mapping-codec control asserted not refused in that same cell first, so a refusal is the token's and not the cell's.
 - 2026-09-04: AC3 measured. `devtools::test()`: 0 failures, 10 warnings, 18 skips, 12,158 passes. `devtools::document()`: no diff. `devtools::check()`: Status OK, 0 errors / 0 warnings / 0 notes. The first check run had 1 NOTE -- `spelling.Rout` differing on "ProRes" and "behaviour" from the new NEWS entry -- fixed by rewording to the encoder-name spellings the wordlist already carries and to US "behavior", not by adding wordlist entries. Status to review.
 
+- 2026-09-04: /milestone-review, in progress. PR #111 opened draft; `master` unmoved since the branch was cut. AC1 and AC2 verified and ticked against fresh evidence; AC3 has `devtools::test()` and `devtools::document()` recorded and `devtools::check()` still running. `cairn_validate` 16/16, no advisories; `pkgdown::check_pkgdown()` clean; NEWS carries the entry and names no milestone. Three review lenses spawned, none reported yet.
+
 ## Decisions
 
 ## Review
+
+Evidence gathered 2026-09-04 on `m107-out-of-table-refusal-at-the-verb` at
+`a964042`, against `master` unmoved since the branch was cut (0 behind).
+PR: https://github.com/jmgirard/tidymedia/pull/111
+
+**AC1 — verified.** `test-hardware-out-of-table-blame.R`, 30 passing
+expectations, 0 failures. Domain measured from the package rather than listed:
+`nvenc_hardware_exports()` returns 16 exports, 14 of them reachable (the two
+recorded unreachable by their own formals are `format_for_web` and
+`format_for_web_batch`, neither carrying a `video_codec` argument);
+`hardware_backends()` x `hardware_codec_families()` is 2 x 4 = 8 pairs, of
+which `hardware_backend_families()` omits 3 -- `(videotoolbox, av1)`,
+`(nvenc, prores)`, `(videotoolbox, prores)`. 14 x 3 x 2 fallback arms = **84
+cells**, every one aborting with the calling export's own frame and the
+sentence `<backend> has no "<family>" encoder.`; frame and message are both
+asserted, so a cell that kept the frame but changed the sentence would fail.
+The build is answered generously through the option seam (every encoder either
+backend could have is listed), so no cell can be refused for an absent encoder
+instead. The unmappable-codec class NEWS also claims carries its own arm: 14 x
+2 backends x 2 arms = **56 cells**, each preceded by a mapping-codec control in
+the same cell asserted NOT refused, so the refusal is the token's.
+
+**AC2 — verified.** Same file, the in-table half: under an empty build
+(`tidymedia.hardware_encoders = character()`) every one of the 5 held pairs at
+each of the 14 reachable members = **70 cells** returns without aborting and
+emits a message containing "falling back". No cell aborted.
+
+**AC3 — in progress.** `devtools::test()`: 0 failures, 10 warnings, 18 skips,
+**12,181 passes**. `devtools::document()`: no diff (`git status` clean apart
+from this milestone file). `devtools::check()`: PENDING.

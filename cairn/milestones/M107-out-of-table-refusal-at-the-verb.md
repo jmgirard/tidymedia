@@ -131,6 +131,8 @@ videotoolbox baseline for the probe grid.
 
 - 2026-09-04: step-7 approval: PR #111 approved for merge.
 
+- 2026-09-04: CI wait hit the harness ceiling before the checks landed. Fresh `gh pr checks 111` at that point: `pkgdown` pass (2m33s), the other seven pending. The moved watcher was stopped with TaskStop; nothing is left armed at the merge. PR #111 is ready for review, unmerged, with the step-7 approval recorded above; re-entering via `/milestone-review M107` re-derives the state.
+
 ## Decisions
 
 ## Review

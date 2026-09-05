@@ -4,7 +4,7 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M108: `install_on_win()` refuses on a platform it cannot install for, before it spends anything
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -91,7 +91,7 @@ sited above the argument checks → rejected at this gate, work log records it.
       branching on the real host rather than on a mock.
 - [x] T5: Update the roxygen block (`@details`, `@return`, `@seealso`), run
       `devtools::document()`, add the `NEWS.md` bullet.
-- [ ] T6: Append the D-entry recording that the installer surface stays one
+- [x] T6: Append the D-entry recording that the installer surface stays one
       platform and where the gate sits; run `devtools::check()` and the suite.
 
 ## Work log
@@ -107,9 +107,12 @@ sited above the argument checks → rejected at this gate, work log records it.
 - 2026-09-04: T3: `tm_forbid_spending()` stubs base `dir.create()` only under `writes = TRUE`: a base-namespace stub is also what waldo uses to build a diff, so any `expect_identical()` under it dies in testthat's reporter. AC1's test, which compares nothing, carries the four-stub claim; AC2's runs on the other three.
 - 2026-09-04: T4: `tests/testthat/test-install-platform.R` added -- two tests, no skips, branching on `Sys.info()[["sysname"]]` rather than on a mock. The non-Windows branch has no stub between the call and a download, so a gate that did not fire would fail it by installing FFmpeg. Locally (darwin) the refusal branch runs and passes; the Windows branch is only exercisable on the `windows-latest` CI leg, and its expectations match AC3's mocked control.
 - 2026-09-04: T5: `@details` gained a Windows-only paragraph naming the two package-manager routes and `set_program()`; `@return` reads seven rather than six and lists `tidymedia_wrong_platform` first, so its "the last two" clause still points at the same two conditions. `@seealso` already named `set_program()` and is unchanged. `devtools::document()` rewrote `man/install_on_win.Rd`; `NEWS.md` gained a Configuration bullet. Suite 0 failures, 12234 passing -- one run in this task reported a single failure in an FFmpeg execution test that did not reproduce, its console carrying "Interrupted system call".
+- 2026-09-04: T6: D086 appended, recording the one-platform installer surface, the gate's siting below the argument checks and above every cost, why the gate is an allow-list, and why the seam has an unmocked test of its own. `devtools::check()` 0 errors / 0 warnings / 0 notes; suite 0 failures.
 - 2026-09-04: implement gate chose naming only `set_program()` on a platform that is neither Windows, macOS nor Linux over adding a generic package-manager line, and chose repeating the Homebrew and apt routes in `?install_on_win`'s Details over a Windows-only sentence.
 - 2026-09-04: plan gate chose an unmocked per-runner assertion over mocked coverage plus a seam unit test because every other criterion runs through a mock, so a seam never wired to the host would satisfy all of them and ship broken for the one platform the function serves (audit F9); falsified by the three tests proving flaky on a runner for a reason that is not the seam.
 
 ## Decisions
+
+- The one-platform installer surface, the gate's siting, and the allow-list: **D086** in `cairn/DECISIONS.md`.
 
 ## Review

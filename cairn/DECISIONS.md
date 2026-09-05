@@ -4127,3 +4127,51 @@ out-of-table pair aborts whatever `fallback` says, and needed no change.
 backend/codec pair, or an unrecognized codec name, to be tolerated rather than
 refused; or by a build appearing that makes one of these pairs a question about
 the machine after all.
+
+## D086 — The installer surface stays one platform, and the platform gate sits below the argument checks and above every cost (2026-09-04, from M108; applies D036's and D043's ordering to a machine fact that no argument can change, and applies D062's field-naming rule to a new class; D036, D043, D062, D080 and D081 all stand)
+
+**The rule.** `install_on_win()` installs on Windows and refuses everywhere
+else. The refusal is an allow-list on one seam, `tm_os()`: anything that is not
+`windows` aborts with `tidymedia_wrong_platform`, carrying the seam's value in
+`tm_platform` and naming, where the package knows one, the route that platform
+does have — `brew install ffmpeg`, `sudo apt-get install ffmpeg` — and
+`set_program()` on every platform.
+
+**Why one platform and not three.** The function has always installed a Windows
+build and looked for `.exe` files in it; what was missing was the refusal, so
+a macOS or Linux caller was asked for consent and then downloaded and unpacked
+that build. The fix could have been a downloader for each platform instead.
+It is not, under GP1: `brew` and `apt` are one line each and keep FFmpeg
+updated afterwards, while each downloader would need its own source, its own
+digest format — johnvansickle publishes `.md5`, not the SHA-256 D081 bought —
+its own architecture matrix, and the M102–M105 hardening arc repeated for it.
+A refusal that names the one-line route is the whole of what the two platforms
+were owed.
+
+**Siting, and what decides it.** The gate sits below the four argument checks
+and above every cost. Below the checks, because D036 and D043 put a cheap value
+refusal above an availability check and an argument mistake is worth reporting
+on any machine; a caller who passed a malformed digest hears about the digest,
+on Windows and on macOS alike. Above every cost, because the platform is
+knowable before anything is spent: nothing has been said to the caller, asked
+of them, written, or fetched by the time it fires. The four calls that spend
+something — the unverified-source notice, the consent prompt, the first
+`dir.create()`, the first fetch — are all below it, and a test binds each to a
+stub that aborts if reached.
+
+**Why an allow-list.** A deny-list naming the platforms with a route would let
+FreeBSD, Solaris, and the coarse `unix` the seam falls back to when `Sys.info()`
+is unimplemented download a Windows build. Refusing on "not Windows" and
+looking the route up separately means an unknown platform is refused and simply
+told to point tidymedia at a build it already has: advice the package cannot
+stand behind is worse than none.
+
+**Why the seam is a seam.** Every other test of the gate holds `tm_os()` at a
+value it chose, so a seam wired to nothing would satisfy all of them. One test
+file asks the machine instead and skips on nothing, asserting a different
+outcome on each of the three CI runners.
+
+**Falsified by** a report from a macOS or Linux user for whom the package
+manager route is unavailable or insufficient, or by a non-Windows caller
+confused at being asked to fix an argument for a call that cannot work on
+their machine.

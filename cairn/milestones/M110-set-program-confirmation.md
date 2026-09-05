@@ -112,3 +112,5 @@ Rejected, with reasons:
 - **[O]10 — the prompt derives the config file path a second time rather than reusing the write's.** Both derivations are `tm_config_file(program, config_dir)` on the same two values inside one call, so they cannot diverge; restructuring the helper signature at review buys nothing and costs risk.
 
 Post-fix verification: `devtools::test()` 12614 pass / 0 fail / 18 skip; `devtools::document()` no diff; per-criterion counts unchanged except the two new tests (AC-adjacent, not criterion evidence).
+
+**PR conversation (#114), read once before the merge gate:** no reviews, no conversation comments, no unresolved review threads. Nothing to triage; the blocking rule does not fire.

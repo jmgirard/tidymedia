@@ -106,6 +106,7 @@ URL-bearing form, which is legal and stays.
 - 2026-09-05: review opened PR #115 (draft). AC2, AC3, AC4 and AC5 verified with fresh evidence and ticked; AC1 and AC6 still running (`--as-cran`, `devtools::test()`, `devtools::check()`), three fresh-context reviewers still running. `cairn_validate` passes; `devtools::document()` no diff.
 - 2026-09-05: gate directed fix-now on review findings 1, 4 and 7. Added `^tests/testthat/testthat-problems\.rds$` to `.Rbuildignore`; rewrote the NEWS tarball bullet so it no longer says the two `.rds` files were never part of the package or that testthat writes `_problems/`; added a header line to `tools/pkgdown_duplicate_topics.R` naming its `yaml` requirement. Finding 6's section move stays rejected: the dev-version block has no `## Documentation` section, and creating one for a single bullet is churn. AC1, AC3 and AC6 re-run against the fixed tree.
 - 2026-09-05: step-7 approval: PR #115 approved for merge. Finding 2 (the script's silent skip of parenthesised entries) accepted as a follow-up candidate row; findings 3, 5, 6, 8, 9 and 10 rejected with reasons recorded above.
+- 2026-09-05: CI wait hit the harness ceiling with checks still pending (pkgdown pass, seven legs pending); watcher stopped, no merge made. Approval marker `cairn/.merge-approved` stands for PR #115; re-enter at `/milestone-review M111`, which re-derives the check and merge state.
 
 ## Decisions
 

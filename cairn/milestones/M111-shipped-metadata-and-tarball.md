@@ -76,7 +76,7 @@ URL-bearing form, which is legal and stays.
       alone, which a `paste0()` would defeat.
 - [ ] T3: Delete `tests/testthat/_problems/`; record its one file's fate in
       the work log so the deletion is not silent.
-- [ ] T4: Point `README.Rmd:74`'s Homebrew URL at the branch Homebrew
+- [x] T4: Point `README.Rmd:74`'s Homebrew URL at the branch Homebrew
       documents today, re-knit with `devtools::build_readme()`, and run
       `urlchecker::url_check()`.
 - [ ] T5: Collapse `_pkgdown.yml:120-123`'s duplicate rows to one topic and
@@ -96,6 +96,7 @@ URL-bearing form, which is legal and stays.
 - 2026-09-05: discovered sub-task under T3 — `_problems/` is in `.gitignore` but was not in `.Rbuildignore`, so `R CMD build` shipped it. Added `^tests/testthat/_problems$` so a later failing run cannot put it back in the tarball; the directory is deleted as well, not merely hidden.
 - 2026-09-05: checkpoint, work half-done. T1-T5 edits are in the tree; no task checked off, `devtools::test()` still running past 10 minutes and README not yet re-knitted.
 - 2026-09-05: T1 done. `devtools::test()` clean over the rewritten DESCRIPTION (FAIL 0 | WARN 10 | SKIP 18 | PASS 12614, 22m34s), `devtools::document()` produces no diff, `spelling::spell_check_package()` finds nothing.
+- 2026-09-05: T4 done. Homebrew's installer URL moved from `install/master/` to `install/HEAD/`; README re-knitted. `urlchecker::url_check()` then found a second URL needing a change, the lifecycle badge's `https://www.tidyverse.org/lifecycle/#experimental` (301). Its redirect target `https://tidyverse.org/lifecycle/` returns 404 — measured 2026-09-05 with `curl -sI` — so urlchecker's own suggestion was not taken; the badge now points at `https://lifecycle.r-lib.org/articles/stages.html#experimental` (200). Re-run over 24 URLs: "All URLs are correct!".
 
 ## Decisions
 

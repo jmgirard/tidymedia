@@ -1,6 +1,6 @@
 # M110: `set_program()` asks before it remembers a location
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -47,8 +47,8 @@
 - [x] T4: Pass `confirm = FALSE` at `install_on_win()`'s registration loop (`:1354`).
 - [x] T5: Tests in `tests/testthat/test-program-management.R` for AC1, AC2, AC4, AC5, AC6. Keep any base-namespace stub out of the tests that compare values — under a `dir.create()` stub `expect_identical()` dies inside waldo (the M108 lesson) — so AC1's byte comparison observes the disk rather than a stub.
 - [x] T6: Test for AC3: a full install run counting `utils::menu()` calls, asserting one, over an archive producing fewer than three programs as well as all three.
-- [ ] T7: Roxygen for `confirm` and the corrected `@return`, then `devtools::document()`; update the four in-repo scripted callers (`test-program-management.R:56`, `test-audio-track-drop.R:151` among them) and the `\dontrun` example at `:195`.
-- [ ] T8: `NEWS.md` entry naming the new argument, the refusal and the breaking change; `README.Rmd` line 50 plus `devtools::build_readme()`; `devtools::check()`.
+- [x] T7: Roxygen for `confirm` and the corrected `@return`, then `devtools::document()`; update the four in-repo scripted callers (`test-program-management.R:56`, `test-audio-track-drop.R:151` among them) and the `\dontrun` example at `:195`.
+- [x] T8: `NEWS.md` entry naming the new argument, the refusal and the breaking change; `README.Rmd` line 50 plus `devtools::build_readme()`; `devtools::check()`.
 
 ## Work log
 
@@ -59,6 +59,8 @@
 - 2026-09-05: plan gate chose refusing a non-interactive call over proceeding-with-disclosure, because one contract for "no one can be asked" is what D080 already bought at the installer and a second answer at a second site would need its own entry; the user waived the pre-1.0 deprecation cycle for the break this causes. Falsified by an unattended workflow that must register a location and cannot pass `confirm = FALSE`.
 - 2026-09-05: T5 added five tests (AC1, AC2, AC4, AC5, AC6); suite 12586 pass / 0 fail. Seven mutation probes each reddened it: creating the config dir above the consent, `caller_env()` for the blame, dropping the escape-hatch bullet, interpolating the location instead of using a cli field, naming the `Sys.which()` resolution, a visible `FALSE`, and forgetting the capability memo on the decline path.
 - 2026-09-05: T6 counts the ask at `utils::menu()` over both a three-program and a two-program archive; suite 12600 pass / 0 fail. Dropping `confirm = FALSE` from the registration loop turns the count into four and reddens both halves.
+- 2026-09-05: T7 landed with T3 (the roxygen for `confirm`, `call` and the corrected `@return`, and the second `\dontrun` example); `devtools::document()` produces no diff.
+- 2026-09-05: T8 added one `NEWS.md` breaking-changes entry pair, the README note and its knit (only the two `temp_libpath` lines reverted, M089), and `unclassed` to `inst/WORDLIST`, which the spelling check had turned into the run's one NOTE. `devtools::check()` 0 errors / 0 warnings / 0 notes.
 - 2026-09-05: plan gate chose showing the location as typed over showing it beside its `Sys.which()` resolution, because the file records the typed string and a prompt naming something else asks consent for a write that will not happen. Falsified by a report of a caller approving a bare program name and being surprised by which binary it later resolved to.
 - 2026-09-05: T1 built `tm_set_details()`/`tm_set_prompt()`; the implementation gate chose a cli file field over `tm_cli_escape()` for the prompt's two values, because that is what `tm_install_details()` already uses and doubling the escape prints stray braces. T1's task text amended to name the field.
 - 2026-09-05: T4 pulled ahead of T3 — the suite cannot be clean between T2 and T4, since `install_on_win()` would otherwise ask once per registered program.

@@ -1,13 +1,13 @@
 # M111: The shipped metadata and the tarball say what CRAN's incoming checks expect
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — DESCRIPTION and the tarball's contents are what an installer and the CRAN page show
-- **Branch/PR:** —
+- **Branch/PR:** `m111-shipped-metadata-and-tarball`
 
 ## Goal
 
@@ -91,6 +91,10 @@ URL-bearing form, which is legal and stays.
 - 2026-09-05: criteria audit ran in FULL mode (user-facing tier), fresh-context [O] reader. Returned four findings against this milestone's draft: the `tools:::.check_package_description()` criteria were vacuous, "not a restatement of the Title" was unmechanizable, the NOTE-count baseline was unfixed, and the `*_location.rds` basename grep already passed before any deletion. All four fixed before writing; none needed a gate question.
 - 2026-09-05: plan gate chose `R CMD check --as-cran` with the incoming checks forced on over `tools:::.check_package_description()`, because the latter runs no title-case or boilerplate check at all — measured 2026-09-05, it returns empty against the current defective DESCRIPTION under both `strict = FALSE` and `strict = TRUE`. Falsified by an `--as-cran` run that stays silent on a Title CRAN then rejects by hand.
 - 2026-09-05: plan gate chose to assert the removals against the BUILT TARBALL's contents over a grep for the removed basenames in the sources, because the sources never name them — the grep passes today, before any deletion. Falsified by a `.Rbuildignore` rule that hides a file from the tarball while it stays on disk and in the installed package.
+- 2026-09-05: implement started on `m111-shipped-metadata-and-tarball`. Gate chose the Title "Media File Preprocessing and Metadata for the 'tidyverse'" over a title-cased copy of the shipped wording, and chose page names (`find_program`, `set_program`) over the `find_ffmpeg`/`set_ffmpeg` aliases in the reference index so the MediaInfo functions are visible when scanning.
+- 2026-09-05: T3's deleted file, `tests/testthat/_problems/test-timeout-silence-55.R`, held a stale copy of `test-timeout-silence.R:59`'s `tm_timeout_absorbers()` assertion, omitting `separate_audio_video` — the live assertion supersedes it, so the deletion loses nothing.
+- 2026-09-05: discovered sub-task under T3 — `_problems/` is in `.gitignore` but was not in `.Rbuildignore`, so `R CMD build` shipped it. Added `^tests/testthat/_problems$` so a later failing run cannot put it back in the tarball; the directory is deleted as well, not merely hidden.
+- 2026-09-05: checkpoint, work half-done. T1-T5 edits are in the tree; no task checked off, `devtools::test()` still running past 10 minutes and README not yet re-knitted.
 
 ## Decisions
 

@@ -71,7 +71,7 @@ one to ask, add `confirm = FALSE`.
 **macOS Homebrew Install**
 
 1. Open the macOS Terminal or Linux shell prompt.
-2. Install [Homebrew](https://brew.sh/) by entering this code into your terminal:<br />`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"`
+2. Install [Homebrew](https://brew.sh/) by entering this code into your terminal:<br />`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 3. Enter this code into your terminal:<br />`brew install ffmpeg`
 
 **macOS Manual Install**

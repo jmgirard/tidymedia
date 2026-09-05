@@ -1,6 +1,5 @@
 Package: tidymedia
-Title: Tools for working with media files within R and the
-    tidyverse
+Title: Media File Preprocessing and Metadata for the 'tidyverse'
 Version: 0.1.0.9000
 Authors@R: 
     person(given = "Jeffrey",
@@ -8,9 +7,13 @@ Authors@R:
            role = c("aut", "cre"),
            email = "me@jmgirard.com",
            comment = c(ORCID = "0000-0002-7359-3746"))
-Description: The goal of tidymedia is to provide tools for
-    easily working with media (e.g., image, audio, and video) files within
-    R and the tidyverse.
+Description: Batch preprocessing and metadata extraction for audio,
+    video and image files, built on the command-line programs 'FFmpeg'
+    (<https://ffmpeg.org/>) and 'MediaInfo'
+    (<https://mediaarea.net/en/MediaInfo>). Trim, crop, scale, convert and
+    standardize files one at a time or across a whole directory, and read
+    container and stream metadata back as tibbles for use with the
+    'tidyverse'.
 License: GPL-3
 URL: https://github.com/jmgirard/tidymedia,
     https://jmgirard.github.io/tidymedia/

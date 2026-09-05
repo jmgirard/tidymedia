@@ -5,14 +5,14 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Tools for working with media files within R and the tidyverse • tidymedia</title>
+<title>Media File Preprocessing and Metadata for the tidyverse • tidymedia</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Tools for working with media files within R and the tidyverse">
-<meta name="description" content="The goal of tidymedia is to provide tools for easily working with media (e.g., image, audio, and video) files within R and the tidyverse.">
-<meta property="og:description" content="The goal of tidymedia is to provide tools for easily working with media (e.g., image, audio, and video) files within R and the tidyverse.">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Media File Preprocessing and Metadata for the tidyverse">
+<meta name="description" content="Batch preprocessing and metadata extraction for audio, video and image files, built on the command-line programs FFmpeg (&lt;https://ffmpeg.org/&gt;) and MediaInfo (&lt;https://mediaarea.net/en/MediaInfo&gt;). Trim, crop, scale, convert and standardize files one at a time or across a whole directory, and read container and stream metadata back as tibbles for use with the tidyverse.">
+<meta property="og:description" content="Batch preprocessing and metadata extraction for audio, video and image files, built on the command-line programs FFmpeg (&lt;https://ffmpeg.org/&gt;) and MediaInfo (&lt;https://mediaarea.net/en/MediaInfo&gt;). Trim, crop, scale, convert and standardize files one at a time or across a whole directory, and read container and stream metadata back as tibbles for use with the tidyverse.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -112,7 +112,7 @@
 <p><strong>macOS Homebrew Install</strong></p>
 <ol style="list-style-type: decimal">
 <li>Open the macOS Terminal or Linux shell prompt.</li>
-<li>Install <a href="https://brew.sh/" class="external-link">Homebrew</a> by entering this code into your terminal:<br><code>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"</code>
+<li>Install <a href="https://brew.sh/" class="external-link">Homebrew</a> by entering this code into your terminal:<br><code>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</code>
 </li>
 <li>Enter this code into your terminal:<br><code>brew install ffmpeg</code>
 </li>
@@ -146,11 +146,11 @@
 <span>  <span class="fu"><a href="reference/ffm_codec.html">ffm_codec</a></span><span class="op">(</span>video <span class="op">=</span> <span class="st">"libx264"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/ffm_drop.html">ffm_drop</a></span><span class="op">(</span>streams <span class="op">=</span> <span class="st">"audio"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmprcJIaC/temp_libpath4da96721ddb1/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmpOLq5Tw/temp_libpath1850a235a2fbd/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""</span></span></code></pre></div>
 <p>Common tasks have their own verbs (Layer 2). Pass <code>run = FALSE</code> to see the command without executing it:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/extract_audio.html">extract_audio</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.aac"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmprcJIaC/temp_libpath4da96721ddb1/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:0\" \"audio.aac\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmpOLq5Tw/temp_libpath1850a235a2fbd/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:0\" \"audio.aac\""</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="read-metadata-as-tibbles">Read metadata as tibbles<a class="anchor" aria-label="anchor" href="#read-metadata-as-tibbles"></a>
@@ -241,7 +241,7 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://www.tidyverse.org/lifecycle/#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
+<li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
 <li><a href="https://github.com/jmgirard/tidymedia/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/jmgirard/tidymedia/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
 <li><a href="https://app.codecov.io/gh/jmgirard/tidymedia" class="external-link"><img src="https://codecov.io/gh/jmgirard/tidymedia/graph/badge.svg" alt="Codecov test coverage"></a></li>
 </ul>

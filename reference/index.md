@@ -6,8 +6,7 @@ What tidymedia is for and how its three layers fit together.
 
 - [`tidymedia`](https://jmgirard.github.io/tidymedia/reference/tidymedia-package.md)
   [`tidymedia-package`](https://jmgirard.github.io/tidymedia/reference/tidymedia-package.md)
-  : tidymedia: Tools for working with media files within R and the
-  tidyverse
+  : tidymedia: Media File Preprocessing and Metadata for the 'tidyverse'
 
 ## Concepts
 

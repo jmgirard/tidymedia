@@ -37,6 +37,23 @@
   `|>`, a form R gained in 4.1.0 — and it sits above the highest R
   version any declared dependency floor asks for.
 
+- The package’s `Title` and `Description` now say what tidymedia does
+  rather than restating its own name. The title reads “Media File
+  Preprocessing and Metadata for the ‘tidyverse’”, and the description
+  names the two batch jobs the package is built around — transforming
+  files and reading their metadata back as tibbles — along with the two
+  programs it drives. This is what an installer and a package index show
+  before anyone opens the help pages.
+
+- The built package no longer carries three paths it has no use for: two
+  `inst/extdata/*_location.rds` files, which held a remembered binary
+  location until that moved to the user’s own configuration directory
+  and which nothing has read since, and a `tests/testthat/_problems/`
+  scratch directory left over from a local test run. Both kinds of
+  leftover a failing test run can produce — that directory and
+  testthat’s own `testthat-problems.rds` — are now ignored at build
+  time, so a later failing run cannot put either back.
+
 ### Configuration
 
 - [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)

@@ -10,12 +10,12 @@
 Source:
 [`DESCRIPTION`](https://github.com/jmgirard/tidymedia/blob/master/DESCRIPTION)
 
-Girard J (2026). *tidymedia: Tools for working with media files within R
-and the tidyverse*. R package version 0.1.0.9000,
+Girard J (2026). *tidymedia: Media File Preprocessing and Metadata for
+the 'tidyverse'*. R package version 0.1.0.9000,
 <https://github.com/jmgirard/tidymedia>.
 
     @Manual{,
-      title = {tidymedia: Tools for working with media files within R and the tidyverse},
+      title = {tidymedia: Media File Preprocessing and Metadata for the 'tidyverse'},
       author = {Jeffrey Girard},
       year = {2026},
       note = {R package version 0.1.0.9000},

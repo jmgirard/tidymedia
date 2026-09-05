@@ -117,6 +117,7 @@ any kind: a change there would move this milestone's surface tier.
 
 - 2026-09-05: T6: the four-gap D072 ledger written into `## Decisions` as one table — (a) and (d) closed, (b) and (c) pruned with reasons. `devtools::document()` produced no diff; `devtools::check()` 0 errors, 0 warnings, 0 notes; `devtools::test()` 0 failed, 0 errors, 12,440 passed, 18 skipped.
 - 2026-09-05: status to review; all six tasks checked.
+- 2026-09-05: step-7 approval: PR #113 approved for merge (second gate round, after F2's fix was reverted and the finding rejected).
 - 2026-09-05: review: gate directed fixes for F1 and F2. F1 fixed by a superseding `## Decisions` correction. F2's fix was written, shown not to close the blind spot the finding names, and reverted; the finding is rejected with that measurement recorded. No acceptance criterion was affected by either, so no re-verification was owed and none of the six boxes moved.
 - 2026-09-05: review: AC6 verified — `devtools::check()` 0/0/0 and `devtools::test()` 12,468 tests, 0 failed, 0 errors, 18 skipped; consistency gate passes. Three review lenses ran; 13 findings logged, awaiting triage at the gate. PR #113's reviews, comments and unresolved threads are all empty.
 - 2026-09-05: review: draft PR #113 opened; AC1-AC5 verified with fresh evidence and their boxes ticked; `cairn_validate` 16/16 with no advisories, `pkgdown::check_pkgdown()` clean, `devtools::document()` no diff, `devtools::check()` 0 errors / 0 warnings / 0 notes. AC6's `devtools::test()` count re-run and the diff-bug review lens still outstanding.

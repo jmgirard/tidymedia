@@ -1,13 +1,13 @@
 # M109: The codec seam's four instrument gaps are triaged under D072, and the two with a path to a user are closed
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** internal — the deliverable is two test instruments, a data-generation script, and a tracking ledger
-- **Branch/PR:** —
+- **Branch/PR:** `m109-codec-seam-gap-triage`
 
 ## Goal
 
@@ -69,7 +69,7 @@ any kind: a change there would move this milestone's surface tier.
 
 ## Tasks
 
-- [ ] T1: Add a wrong-form `video_codec` cell class to `nvenc_order_cells()`
+- [x] T1: Add a wrong-form `video_codec` cell class to `nvenc_order_cells()`
       (`data-raw/nvenc-probe-order-baseline.R:161-184`) that carries the form as the
       cell's own `video_codec` value instead of returning the argument to the
       `setdiff()` at `:173`, so the `caller`/`sentinel` cross at `:186-204` and
@@ -105,6 +105,7 @@ any kind: a change there would move this milestone's surface tier.
 - 2026-09-05: plan gate chose a two-family jobs column with the omitted family in a non-first position for gap (d) over a one-element list because a one-element column passes a `families[1]` regression unchanged; falsified by a mutation the two-family cell misses that a one-element cell catches.
 - 2026-09-05: AC5 lost its "the ROADMAP candidate row is deleted in the same commit" clause after the gate: the plan commit absorbs a promoted candidate row, so that half was satisfied before implementation began. The ledger clause is unchanged.
 - 2026-09-05: criteria audit ran in reduced mode (internal tier). One finding: AC3's restriction "fans out through a jobs table" was decided by the author's judgment rather than a procedure. Fixed at the gate — rewritten to `oot_members()$reachable` whose `formals()` include `jobs` — and re-checked clean by the same reader.
+- 2026-09-05: T1: `nvenc_order_cells()` gained a `video_codec/<form>` class beside the caller/sentinel cross, and the spec flag the runner reads was renamed `has_vc` -> `cross_vc` because it now means "the runner sets this cell's `video_codec`", which the new class makes false for a member that does have the formal. Grid on the working tree: 7,200 rows (was 6,840), 360 of them the new class, 0 vacuous, all 360 aborts.
 
 ## Decisions
 

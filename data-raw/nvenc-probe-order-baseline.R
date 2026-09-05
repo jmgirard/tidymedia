@@ -26,6 +26,11 @@
 #   <arg>/<form>   that cell with one formal replaced by one of the five wrong
 #                  forms `tm_nvenc_wrong_forms()` holds (a number, a
 #                  token-invalid string, NA, a length-2 vector, a list)
+#   video_codec/<form>   the same five forms in `video_codec` itself, for a
+#                  member that has the formal (M109). These are the one class
+#                  the `video_codec` cross below does not reach, because the
+#                  cell has already set the argument; they record `absent` on
+#                  that column.
 #
 # crossed with four dimensions the reorder could plausibly disturb:
 #
@@ -38,7 +43,11 @@
 #   video_codec  caller / sentinel   -- a codec the caller named, or M34/D016's
 #                                       NULL "leave the codec alone" sentinel
 #
-# `video_codec` is crossed rather than pinned to one re-encoding token (M106).
+# `video_codec` is crossed rather than pinned to one re-encoding token (M106),
+# and the wrong-form cells M106 dropped when it did that are back beside the
+# cross rather than inside it (M109): the cross keeps every arm, and a
+# malformed token still gets its compiled bytes or its refusal recorded at
+# every (hardware, fallback, pool) combination.
 # Pinning left the sentinel arm of every cell unprobed, which is the arm where
 # `resolve_hw_encoder()` takes its own branch: it assumes the h264 family rather
 # than inferring one, and under `fallback = TRUE` it returns the sentinel rather
@@ -149,15 +158,24 @@ nvenc_order_specs <- function(dir, sample) {
   tm_timeout_call_specs(dir)
 }
 
-# Every (member, cell) pair: the valid cell plus one per (other formal, wrong
-# form). `hardware` is excluded because it is a crossed dimension below, `...`
-# because it is not nameable, and `fallback` and `video_codec` because they are
-# crossed too -- a cell that overwrote one would silently leave one arm of that
-# cross unprobed.
+# Every (member, cell) pair: the valid cell, one per (other formal, wrong form),
+# and one per wrong form of `video_codec` itself. `hardware` is excluded because
+# it is a crossed dimension below, `...` because it is not nameable, and
+# `fallback` because it is crossed too -- a cell that overwrote one would
+# silently leave one arm of that cross unprobed.
 #
-# Each spec records whether its member carries a `video_codec` formal, which is
-# what the runner crosses on: the value itself is set there, per level, never
-# here.
+# `video_codec` is excluded from that same loop for the same reason and then
+# given its own cell class (M109), because both things are wanted: the
+# caller/sentinel cross intact on every other cell, and a malformed token's
+# compiled bytes or refusal recorded at every (hardware, fallback, pool)
+# combination. A wrong-form `video_codec` cell carries the form as its own
+# value and opts out of the cross -- `cross_vc = FALSE`, the same flag a member
+# with no `video_codec` formal carries -- so the runner records it once per
+# combination under the `absent` level rather than twice under two levels that
+# it has already overwritten.
+#
+# Each spec records whether the RUNNER sets that cell's `video_codec`, never
+# whether the member has the formal: the two differ exactly on this new class.
 nvenc_order_cells <- function(env, members, specs) {
   forms <- tm_nvenc_wrong_forms()
   out <- list()
@@ -169,15 +187,31 @@ nvenc_order_cells <- function(env, members, specs) {
     if ("parallel" %in% fmls) base$parallel <- FALSE
     if ("run" %in% fmls) base$run <- FALSE
     out[[paste0(nm, " || valid")]] <- list(name = nm, cell = "valid",
-                                           args = base, has_vc = has_vc)
+                                           args = base, cross_vc = has_vc)
     for (arg in setdiff(fmls, c("hardware", "fallback", "video_codec", "..."))) {
       for (form in names(forms)) {
         args <- base
         args[[arg]] <- forms[[form]]
         out[[paste0(nm, " || ", arg, "/", form)]] <-
           list(name = nm, cell = paste0(arg, "/", form), args = args,
-               has_vc = has_vc)
+               cross_vc = has_vc)
       }
+    }
+    if (!has_vc) next
+    for (form in names(forms)) {
+      args <- base
+      # `args["video_codec"] <- list(value)`, never `args$video_codec <- value`
+      # (M106). All three spellings agree on the five forms this table holds --
+      # measured 2026-09-05, `[[<-` and `[<-` both STORE a `list(1)` rather
+      # than splicing it -- and they part company on NULL, which `$<-` and
+      # `[[<-` delete, handing the member its own default instead of the
+      # sentinel -- which is why `nvenc_order_set_codec()` below spells it
+      # this way, and why a sixth form added to the table cannot break this
+      # loop by being NULL.
+      args["video_codec"] <- list(forms[[form]])
+      out[[paste0(nm, " || video_codec/", form)]] <-
+        list(name = nm, cell = paste0("video_codec/", form), args = args,
+             cross_vc = FALSE)
     }
   }
   out
@@ -254,9 +288,12 @@ nvenc_order_baseline <- function(ref = NULL, root = ".", sample = NULL) {
            envir = env)
     for (key in names(cells)) {
       spec <- cells[[key]]
-      # A member with no `video_codec` formal has nothing to cross: one level,
-      # recorded as `absent` so its rows are still keyed on the column.
-      levels <- if (spec$has_vc) names(nvenc_order_video_codecs) else "absent"
+      # A cell the runner does not set `video_codec` on has nothing to cross:
+      # one level, recorded as `absent` so its rows are still keyed on the
+      # column. Two cell classes carry that flag -- a member with no
+      # `video_codec` formal, and a wrong-form `video_codec` cell, which holds
+      # its own value (M109).
+      levels <- if (spec$cross_vc) names(nvenc_order_video_codecs) else "absent"
       # Every backend the table names, not `"nvenc"` alone (M107). videotoolbox
       # postdates M095's reorder, so no pre-reorder ref carries it and this arm
       # can only be a FORWARD baseline -- a record of what the backend does now,
@@ -266,7 +303,7 @@ nvenc_order_baseline <- function(ref = NULL, root = ".", sample = NULL) {
         for (fb in c(FALSE, TRUE)) {
           for (vc in levels) {
             args <- spec$args
-            if (spec$has_vc) args <- nvenc_order_set_codec(args, vc)
+            if (spec$cross_vc) args <- nvenc_order_set_codec(args, vc)
             args$hardware <- hw
             args$fallback <- fb
             obs <- tryCatch(

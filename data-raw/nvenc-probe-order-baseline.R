@@ -93,6 +93,13 @@
 # holds, because the grid crosses only the h264 family and M107's subject is a
 # family no backend covers.
 #
+# Re-recorded again 2026-09-05 at the SAME ref, forward through the wrong-form
+# `video_codec` cells M109 added: 7,200 rows, 0 vacuous. The ref is unmoved and
+# so is its code, so this is a widening rather than a new measurement, and it
+# was checked as one -- all 6,840 rows the previous object held reproduced with
+# the same kind, outcome and blamed frame, and the 360 rows of difference are
+# exactly the new cell class.
+#
 #   source("data-raw/nvenc-probe-order-baseline.R")
 #   before <- readRDS("data-raw/nvenc-probe-order-merge-base.rds")
 #   #   or, to re-derive it:
@@ -100,9 +107,10 @@
 #   after  <- nvenc_order_baseline()          # the working tree
 #   nvenc_order_vacuous(before)               # empty: every `valid` cell compiled
 #   nvenc_order_vacuous(after)
-#   nvenc_order_contract_diff(before, after)  # AC2: must be empty
-#   nvenc_order_diff(before, after)           # the widest view: the 27 message
-#                                             #   moves this milestone makes
+#   nvenc_order_contract_diff(before, after)  # M095's AC2: must be empty
+#   nvenc_order_diff(before, after)           # the widest view: every message
+#                                             #   move as well, read by the
+#                                             #   milestone doing the diffing
 
 source(file.path("data-raw", "codec-guard-baseline.R"))
 # For `tm_nvenc_wrong_forms()` and `tm_timeout_call_specs()` alone, so the five
@@ -384,8 +392,11 @@ nvenc_order_vacuous <- function(baseline) {
 # grid's discrimination check -- an instrument that reported nothing there would
 # be reporting nothing anywhere. A later milestone's own figure is recorded in
 # that milestone's file, never here. The figure is also not re-derivable by this
-# script as it now stands: M106 both crossed `video_codec` and dropped that
-# argument's wrong-form cells, so the grid the 27 was measured over no longer
+# script as it now stands: M095 pinned `video_codec` to one token and carried
+# that argument's wrong-form cells in the ordinary per-formal loop, where M106
+# crossed the argument and dropped those cells and M109 put them back beside
+# the cross under their own level. Both the cross and the restored cells add
+# rows M095 never measured, so the grid the 27 was measured over no longer
 # exists here.
 #
 # The two baselines must cover the same cells. Matching runs over `after`'s keys,

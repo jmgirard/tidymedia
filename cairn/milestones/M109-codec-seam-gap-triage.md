@@ -75,7 +75,7 @@ any kind: a change there would move this milestone's surface tier.
       `setdiff()` at `:173`, so the `caller`/`sentinel` cross at `:186-204` and
       `:259-270` stays whole and the new cells take that cross's `absent` level.
       Set every value with `args["video_codec"] <- list(form)`, never `$<-` (M106).
-- [ ] T2: Re-record `data-raw/nvenc-probe-order-merge-base.rds` forward through
+- [x] T2: Re-record `data-raw/nvenc-probe-order-merge-base.rds` forward through
       `nvenc_order_baseline(attr(x, "ref"))` at the ref the object already carries,
       and update the header's row count and provenance (`:68-96`, `:81-85`) and the
       note at `:349-352` that says the grid the 27 was measured over no longer exists.
@@ -106,6 +106,8 @@ any kind: a change there would move this milestone's surface tier.
 - 2026-09-05: AC5 lost its "the ROADMAP candidate row is deleted in the same commit" clause after the gate: the plan commit absorbs a promoted candidate row, so that half was satisfied before implementation began. The ledger clause is unchanged.
 - 2026-09-05: criteria audit ran in reduced mode (internal tier). One finding: AC3's restriction "fans out through a jobs table" was decided by the author's judgment rather than a procedure. Fixed at the gate — rewritten to `oot_members()$reachable` whose `formals()` include `jobs` — and re-checked clean by the same reader.
 - 2026-09-05: T1: `nvenc_order_cells()` gained a `video_codec/<form>` class beside the caller/sentinel cross, and the spec flag the runner reads was renamed `has_vc` -> `cross_vc` because it now means "the runner sets this cell's `video_codec`", which the new class makes false for a member that does have the formal. Grid on the working tree: 7,200 rows (was 6,840), 360 of them the new class, 0 vacuous, all 360 aborts.
+
+- 2026-09-05: T2: `nvenc-probe-order-merge-base.rds` re-recorded at the ref it already carried (`96e973b`): 7,200 rows, 0 vacuous. All 6,840 rows the previous object held reproduced with the same kind, outcome and blamed frame, and the 360 rows of difference are exactly the new `video_codec/<form>` class. Header provenance, the usage block's stale M095 figure, and the note on why M095's grid is no longer re-derivable all updated.
 
 ## Decisions
 

@@ -3176,3 +3176,49 @@ test_that("a location with no executable aborts by name, blaming the export that
     expect_identical(rlang::call_name(conditionCall(cnd)), fn)
   }
 })
+
+test_that("an approved install asks exactly once and still registers what it produced", {
+  # AC3. Counted at menu(), below tm_confirm(), so the real confirmation seam
+  # and the real set_program() both run: a registration that asked again would
+  # be a second call here. `real_set = TRUE` also means the registrations are
+  # read back off disk rather than off the mock's record.
+  asks <- 0L
+  rlang::local_interactive()
+  testthat::local_mocked_bindings(
+    menu = function(choices, graphics = FALSE, title = NULL) {
+      asks <<- asks + 1L
+      1L
+    },
+    .package = "utils"
+  )
+
+  # All three programs.
+  tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  all_three <- tm_mock_install(real_set = TRUE)
+  expect_true(install_on_win(install_dir = d, archive_checksum = all_three$digest))
+  expect_identical(asks, 1L)
+  for (program in tm_install_registers) {
+    expect_true(file.exists(tm_config_file(program)), label = program)
+    expect_identical(readLines(tm_config_file(program)),
+                     tm_install_binary(d, program), label = program)
+  }
+
+  # And an archive producing fewer than three: the count does not follow the
+  # number of registrations, so a per-program ask would show up here as two.
+  asks <- 0L
+  tm_redirect_config()
+  d2 <- file.path(withr::local_tempdir(), "ffmpeg")
+  partial <- tm_mock_install(unpack = c("ffmpeg", "ffprobe"), real_set = TRUE)
+  expect_message(
+    expect_true(install_on_win(install_dir = d2, archive_checksum = partial$digest)),
+    "ffplay"
+  )
+  expect_identical(asks, 1L)
+  expect_identical(readLines(tm_config_file("ffmpeg")),
+                   tm_install_binary(d2, "ffmpeg"))
+  expect_identical(readLines(tm_config_file("ffprobe")),
+                   tm_install_binary(d2, "ffprobe"))
+  expect_false(file.exists(tm_config_file("ffplay")))
+})

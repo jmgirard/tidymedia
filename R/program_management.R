@@ -344,6 +344,16 @@ tm_install_routes <- c(
   linux = "sudo apt-get install ffmpeg"
 )
 
+# The name a caller would recognize, for the uname words that are not one.
+# `tm_os()` speaks uname's vocabulary, which is what the condition carries and
+# what a bug report wants; a macOS caller told only "darwin" has to know that
+# is their machine. Platforms whose uname word is already the familiar name --
+# `linux`, `windows`, `freebsd` -- are absent and get no parenthetical.
+tm_os_names <- c(
+  darwin = "macOS",
+  sunos = "Solaris"
+)
+
 # Of those three, the two the package itself calls. `ffplay` is reachable only
 # through find_ffplay()/set_ffplay() and nothing in tidymedia invokes it, so a
 # build that omits it is an install worth completing; a build with no `ffmpeg`
@@ -949,15 +959,31 @@ install_on_win <- function(download_url = NULL,
     # Single-bracket, so a platform the table does not name gives NA rather
     # than a subscript error.
     route <- unname(tm_install_routes[platform])
+    known <- unname(tm_os_names[platform])
+    # The two bullets below are written as a pair per platform rather than as
+    # one line plus an optional one: with no route to name, "Then point
+    # tidymedia at it" would promise a step that is not there and refer to
+    # nothing, which is what the platforms this allow-list exists to serve --
+    # FreeBSD, Solaris, the coarse `unix` fallback -- would read.
+    advice <- if (is.na(route)) {
+      c("i" = "Point tidymedia at an FFmpeg build you already have with
+               {.fun set_program}.")
+    } else {
+      c(
+        "i" = "Install FFmpeg with {.code {route}}.",
+        "i" = "Then point tidymedia at it with {.fun set_program}, or at a
+               build you already have."
+      )
+    }
     cli::cli_abort(
       c(
         "{.fun install_on_win} installs FFmpeg on Windows only.",
-        "x" = "This session is running on {platform}.",
-        if (!is.na(route)) {
-          c("i" = "Install FFmpeg with {.code {route}}.")
+        "x" = if (is.na(known)) {
+          "This session is running on {platform}."
+        } else {
+          "This session is running on {platform} ({known})."
         },
-        "i" = "Then point tidymedia at it with {.fun set_program}, or at a
-               build you already have."
+        advice
       ),
       class = "tidymedia_wrong_platform",
       tm_platform = platform

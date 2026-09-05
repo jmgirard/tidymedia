@@ -32,9 +32,12 @@ test_that("the gate's real verdict follows the real platform", {
     expect_true(reached)
   } else {
     # The macos-latest and ubuntu-latest legs, and any developer machine that
-    # is not Windows. No stub stands between the call and a download here --
-    # the gate is the only thing stopping it, so a gate that did not fire
-    # would fail this test by trying to install FFmpeg.
+    # is not Windows. Nothing is mocked, so a gate that did not fire would
+    # fail this test on the class: execution would carry on to the real
+    # `tm_confirm()`, which aborts `tidymedia_confirmation_unavailable` in a
+    # non-interactive session. Nothing would be downloaded -- the consent
+    # refusal is what stands between this call and the network, and the point
+    # here is that the platform gate should have stopped it first.
     cnd <- expect_error(install_on_win(), class = "tidymedia_wrong_platform")
     expect_identical(cnd$tm_platform, host)
     expect_match(

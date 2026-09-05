@@ -2792,13 +2792,49 @@ tm_forbid_spending <- function(writes = TRUE, env = parent.frame()) {
 test_that("a platform that is not Windows is refused before anything is spent", {
   # Two named platforms and one the routing table does not know, so the gate is
   # shown to refuse on "not windows" rather than on a list of what to deny.
+  #
+  # Two sources, because the four stubs are not all on one call's path: the
+  # default source has a published digest, so its call never reaches the
+  # unverified-source notice at all and that stub would sit there proving
+  # nothing. A caller-named source with no digest is the shape that does reach
+  # it, and running both is what makes the four-stub claim true of the pair.
+  sources <- list(
+    default = list(),
+    unverified = list(download_url = "https://example.invalid/ffmpeg.7z")
+  )
   for (os in c("darwin", "linux", "freebsd")) {
-    testthat::local_mocked_bindings(tm_os = function(...) os)
-    tm_forbid_spending()
-    expect_error(
-      install_on_win(),
-      class = "tidymedia_wrong_platform"
-    )
+    for (source in names(sources)) {
+      testthat::local_mocked_bindings(tm_os = function(...) os)
+      tm_forbid_spending()
+      expect_error(
+        do.call(install_on_win, sources[[source]]),
+        class = "tidymedia_wrong_platform"
+      )
+    }
+  }
+})
+
+test_that("an argument mistake still reports on a platform that cannot install", {
+  # D086 sites the gate BELOW the four argument checks so a caller hears about
+  # a malformed argument on any machine, and nothing else in the suite pins
+  # that: the existing cases that would break if the gate were hoisted mock no
+  # seam, so on the windows-latest leg they pass whatever the ordering is, and
+  # a hoisted gate would ship green.
+  testthat::local_mocked_bindings(tm_os = function(...) "darwin")
+  tm_forbid_spending(writes = FALSE)
+
+  bad <- list(
+    confirm = list(confirm = "yes"),
+    install_dir = list(install_dir = 42L),
+    download_url = list(download_url = 42L),
+    archive_checksum = list(archive_checksum = "nope")
+  )
+  for (arg in names(bad)) {
+    cnd <- expect_error(do.call(install_on_win, bad[[arg]]))
+    # The argument error, not the platform refusal: the class discriminates,
+    # and the message names the argument the caller got wrong.
+    expect_false(inherits(cnd, "tidymedia_wrong_platform"))
+    expect_match(cli::ansi_strip(conditionMessage(cnd)), arg, fixed = TRUE)
   }
 })
 

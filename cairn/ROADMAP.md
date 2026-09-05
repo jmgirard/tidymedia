@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-09-05 (M108 close: row to done, summary archived, M102 pruned under terminal-row retention. Eight pass-2 review findings — two fixed on the branch, three rejected, one already fixed, one filed as the `tm_forbid_spending()` candidate row; the M108-Out downloader row records the plan gate's GP1 decline. `cairn_validate` 16/16, no advisories. ROADMAP was 1,091 bytes over its 24,000 budget before this pass: eleven candidate rows were compressed to clear it. LESSONS gained M108's waldo/base-stub line by pruning the stalest.)_
+_Last hygiene check: 2026-09-05 (M109 close: row to done, summary archived, live milestone file deleted. Thirteen review findings — one fixed on the branch by a superseding correction, twelve rejected with recorded reasons, none moving a criterion; no candidate row absorbed a deferral, so nothing was filed. `cairn_validate` 17/17, no advisories. M104 pruned under terminal-row retention. LESSONS took M109's jobs-column-duplication line by retiring M60's renormalization half, a completed one-time repo event.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M109 | The codec seam's four instrument gaps are triaged under D072, and the two with a path to a user are closed | review | — | normal | milestones/M109-codec-seam-gap-triage.md |
+| M109 | The codec seam's four instrument gaps are triaged under D072, and the two with a path to a user are closed | done | — | normal | milestones/archive/M109-codec-seam-gap-triage.md |
 | M108 | `install_on_win()` refuses on a platform it cannot install for, before it spends anything | done | — | normal | milestones/archive/M108-install-refuses-wrong-platform.md |
 | M107 | A backend with no encoder for the codec's family is refused by the verb the caller typed, `fallback` or not | done | — | normal | milestones/archive/M107-out-of-table-refusal-at-the-verb.md |
 | M106 | The codec seam is bound and the probe grid covers the codec sentinel | done | — | normal | milestones/archive/M106-codec-seam-bound-sentinel-covered.md |
 | M105 | `install_on_win()`'s refusals say what is on disk | done | — | normal | milestones/archive/M105-install-refusals-key-on-disk.md |
-| M104 | `install_on_win()` registers every program or none | done | — | normal | milestones/archive/M104-install-registers-all-or-none.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

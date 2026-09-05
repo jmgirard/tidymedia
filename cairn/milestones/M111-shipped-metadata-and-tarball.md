@@ -7,7 +7,7 @@
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — DESCRIPTION and the tarball's contents are what an installer and the CRAN page show
-- **Branch/PR:** `m111-shipped-metadata-and-tarball`
+- **Branch/PR:** `m111-shipped-metadata-and-tarball` / https://github.com/jmgirard/tidymedia/pull/115
 
 ## Goal
 
@@ -35,18 +35,18 @@ URL-bearing form, which is legal and stays.
       `_R_CHECK_CRAN_INCOMING_=TRUE` and `_R_CHECK_CRAN_INCOMING_REMOTE_=FALSE`,
       reports no NOTE naming the `Title` field or the `Description` field.
       Evidence: the check's complete NOTE list, quoted.
-- [ ] AC2: `Title` is in title case and writes 'tidyverse' in single quotes;
+- [x] AC2: `Title` is in title case and writes 'tidyverse' in single quotes;
       `Description` writes 'FFmpeg', 'MediaInfo' and 'tidyverse' in single
       quotes, contains neither the substring "The goal of" nor a leading
       "tidymedia", and runs to at least two sentences. Evidence: both fields
       quoted verbatim, with each clause checked against the quoted bytes.
-- [ ] AC3: The tarball `R CMD build` produces contains no path matching
+- [x] AC3: The tarball `R CMD build` produces contains no path matching
       `extdata/ffmpeg_location.rds`, `extdata/mediainfo_location.rds`, or
       `testthat/_problems/`. Evidence: `tar -tzf` over the built tarball,
       grepped for the three patterns, showing no hits and a non-zero total.
-- [ ] AC4: `urlchecker::url_check()` over the package reports no URL needing a
+- [x] AC4: `urlchecker::url_check()` over the package reports no URL needing a
       change. Evidence: the checker's full output.
-- [ ] AC5: No topic name appears more than once across `_pkgdown.yml`'s
+- [x] AC5: No topic name appears more than once across `_pkgdown.yml`'s
       `contents:` entries, verified by a script that parses the file and
       reports every repeated entry, and `pkgdown::check_pkgdown()` passes.
       Evidence: both outputs.
@@ -103,7 +103,38 @@ URL-bearing form, which is legal and stays.
 - 2026-09-05: T6 done. `R CMD check --as-cran` over the built tarball with `_R_CHECK_CRAN_INCOMING_=TRUE` and `_R_CHECK_CRAN_INCOMING_REMOTE_=FALSE`: Status 1 NOTE, and the NOTE's whole body is the maintainer line plus "Version contains large components (0.1.0.9000)" — the dev-version suffix, whose bump this milestone puts Out. No NOTE names `Title` or `Description`. `devtools::test()` FAIL 0 | WARN 10 | SKIP 18 | PASS 12614; `devtools::check()` 0 errors, 0 warnings, 0 notes (17m5s); `devtools::document()` produces no diff.
 - 2026-09-05: added two NEWS.md entries under Requirements, for the rewritten `Title`/`Description` and for the three paths the tarball no longer carries.
 - 2026-09-05: all six tasks checked, status set to review.
+- 2026-09-05: review opened PR #115 (draft). AC2, AC3, AC4 and AC5 verified with fresh evidence and ticked; AC1 and AC6 still running (`--as-cran`, `devtools::test()`, `devtools::check()`), three fresh-context reviewers still running. `cairn_validate` passes; `devtools::document()` no diff.
 
 ## Decisions
 
 ## Review
+
+Evidence gathered 2026-09-05 on `m111-shipped-metadata-and-tarball` at `0b587c2`,
+against `master` at `b6f195c`. PR #115.
+
+- AC2 — PASS. `Title:` reads verbatim `Media File Preprocessing and Metadata for
+  the 'tidyverse'`; `Description:` reads verbatim `Batch preprocessing and
+  metadata extraction for audio, video and image files, built on the
+  command-line programs 'FFmpeg' (<https://ffmpeg.org/>) and 'MediaInfo'
+  (<https://mediaarea.net/en/MediaInfo>). Trim, crop, scale, convert and
+  standardize files one at a time or across a whole directory, and read
+  container and stream metadata back as tibbles for use with the 'tidyverse'.`
+  Checked against those bytes by script: every Title word capitalized except the
+  minor words `and`, `for`, `the` and the quoted package name `'tidyverse'`,
+  which keeps its own lowercase spelling; `'tidyverse'` single-quoted in the
+  Title; `'FFmpeg'`, `'MediaInfo'` and `'tidyverse'` each single-quoted in the
+  Description; substring `The goal of` absent; Description does not start with
+  `tidymedia`; sentence count 2.
+- AC3 — PASS. `R CMD build` produced `tidymedia_0.1.0.9000.tar.gz`, 254 paths.
+  `tar -tzf` grepped for the three patterns: `extdata/ffmpeg_location.rds` 0
+  hits, `extdata/mediainfo_location.rds` 0 hits, `testthat/_problems/` 0 hits.
+  The surviving `inst/extdata/` is the three files that should ship
+  (`mediainfo_template_brief.txt`, `mediainfo_template_extended.txt`,
+  `sample.mp4`).
+- AC4 — PASS. `urlchecker::url_check()` over 24 URLs: `All URLs are correct!`,
+  no row reported and nothing to change.
+- AC5 — PASS. `Rscript tools/pkgdown_duplicate_topics.R` exits 0: 80 contents
+  entries against 81 `man/` topics, `entries matching no topic: none`,
+  `repeated topics: none`. `pkgdown::check_pkgdown()`: `No problems found.`
+  (The one `man/` topic outside the index is `tidyeval.Rd`, a boilerplate
+  doc-only topic with no export; `check_pkgdown()` is silent on it.)

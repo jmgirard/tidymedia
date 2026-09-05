@@ -37,10 +37,12 @@ nothing is verified and the call says so.}
 \value{
 A logical indicating whether the installation was successful.
 \code{FALSE} is returned by a declined confirmation and by a failure to create
-the install directory. Seven other outcomes abort with a condition of
+the install directory. Eight other outcomes abort with a condition of
 their own rather than returning: a call made on a platform this function
-does not install for (\code{tidymedia_wrong_platform}), a download that did not
-deliver (\code{tidymedia_download_unavailable}), a published digest that could not be
+does not install for (\code{tidymedia_wrong_platform}), a confirmation that
+could not be asked for because the session has no one to ask
+(\code{tidymedia_confirmation_unavailable}), a download that did not deliver
+(\code{tidymedia_download_unavailable}), a published digest that could not be
 fetched or read (\code{tidymedia_checksum_unavailable}), a digest that did not
 match the downloaded archive (\code{tidymedia_checksum_mismatch}), an archive
 that could not be unpacked (\code{tidymedia_archive_unreadable}), a

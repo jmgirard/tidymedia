@@ -4,7 +4,7 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M108: `install_on_win()` refuses on a platform it cannot install for, before it spends anything
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -58,10 +58,14 @@ sited above the argument checks → rejected at this gate, work log records it.
       running host and the gate's real verdict follows it: `install_on_win()`
       aborts `tidymedia_wrong_platform` on `macos-latest` and
       `ubuntu-latest`, and reaches `tm_confirm()` on `windows-latest`.
-- [x] AC5: `?install_on_win`'s `@return` lists `tidymedia_wrong_platform`
-      among the outcomes that abort and its count reads seven rather than six;
-      its `@details` states the call installs on Windows only. `NEWS.md`
-      carries a bullet for the new refusal.
+- [ ] AC5: `man/install_on_win.Rd`'s `\value` — the rendering of
+      `?install_on_win`'s `@return` — names among the outcomes that abort both
+      `tidymedia_wrong_platform` and `tidymedia_confirmation_unavailable`, and
+      also every condition class named among the outcomes that abort in
+      `git show master:man/install_on_win.Rd`'s `\value`; the number word
+      introducing that list states the number of distinct classes the list
+      names. Its `\details` states the call installs on Windows only.
+      `NEWS.md` carries a bullet for the new refusal.
 - [x] AC6: `devtools::check()` clean (0 errors / 0 warnings) and
       `devtools::test()` green.
 
@@ -71,7 +75,7 @@ sited above the argument checks → rejected at this gate, work log records it.
 - AC2 → T2, T3
 - AC3 → T2, T3
 - AC4 → T1, T4
-- AC5 → T5
+- AC5 → T5, T7
 - AC6 → T6
 
 ## Tasks
@@ -93,6 +97,13 @@ sited above the argument checks → rejected at this gate, work log records it.
       `devtools::document()`, add the `NEWS.md` bullet.
 - [x] T6: Append the D-entry recording that the installer surface stays one
       platform and where the gate sits; run `devtools::check()` and the suite.
+- [x] T7: Rewrite the `@return` enumeration so it keeps every class it already
+      named, adds `tidymedia_confirmation_unavailable` beside
+      `tidymedia_wrong_platform`, and opens with a number word matching the
+      list; run `devtools::document()`. Add a test asserting
+      `install_on_win()` aborts `tidymedia_confirmation_unavailable` from its
+      own frame when the seam reports `windows` and no one can be asked, so the
+      newly documented outcome is pinned rather than recited.
 
 ## Work log
 
@@ -112,6 +123,9 @@ sited above the argument checks → rejected at this gate, work log records it.
 - 2026-09-04: plan gate chose an unmocked per-runner assertion over mocked coverage plus a seam unit test because every other criterion runs through a mock, so a seam never wired to the host would satisfy all of them and ship broken for the one platform the function serves (audit F9); falsified by the three tests proving flaky on a runner for a reason that is not the seam.
 - 2026-09-04: review gate directed all six actioned findings fixed. O2 (routeless message), O4 (uname word alone), O1 (siting untested), O5 (a stub never on the path), O6 (a false comment) landed; the O1 test is discriminated by hoisting the gate, which turns it red, and the O5 pair now runs a caller-named source with no digest so the unverified-source stub is reached. O3 is held: fixing it makes the `@return` count eight, which falsifies AC5's "reads seven rather than six" -- routed to the user as an amendment question.
 - 2026-09-04: amendment return: AC5 — "its `@return` lists `tidymedia_wrong_platform` among the outcomes that abort and its count reads eight rather than six, `tidymedia_confirmation_unavailable` among them". The criterion pinned a count of seven; eight classed aborts are reachable, the enumeration having omitted `tidymedia_confirmation_unavailable` since before M108. User chose correcting the criterion over waiving it or shipping the under-count. Review stops here; the amendment is the only work convened.
+- 2026-09-04: re-audit: AC5 (full) — returned four findings on the drafted replacement: F1 the count clause was self-referential, so a page listing only the two named classes would satisfy it while dropping the six already documented; F2 it presupposed a number word without requiring one; F3 it conflated the roxygen source with the rendered Rd and left the counted span open; F4 nothing binds the newly named class to reachability. F1-F3 were fixed by adopting the reader's alternative wording verbatim at the mini gate; F4 was disposed by adding T7's reachability test rather than accepting.
+- 2026-09-04: amendment return: AC5 — "`man/install_on_win.Rd`'s `\value` — the rendering of `?install_on_win`'s `@return` — names among the outcomes that abort both `tidymedia_wrong_platform` and `tidymedia_confirmation_unavailable`, and also every condition class named among the outcomes that abort in `git show master:man/install_on_win.Rd`'s `\value`; the number word introducing that list states the number of distinct classes the list names." This supersedes the draft clause in this milestone's earlier amendment-return line of the same date, which was written before the wording was audited: one return, not two.
+- 2026-09-04: T7: `@return` rewritten to keep all six classes it already named, add `tidymedia_confirmation_unavailable` beside `tidymedia_wrong_platform`, and open with "Eight"; `devtools::document()` re-rendered `man/install_on_win.Rd`. Added a test that `install_on_win()` aborts `tidymedia_confirmation_unavailable` from its own frame with the seam at `windows` and nothing mocked below the gate; renaming the class in `tm_confirm()` turns it and four others red. Suite 0 failures, 12251 passing. Status back to review.
 
 ## Decisions
 

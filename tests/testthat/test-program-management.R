@@ -2904,3 +2904,26 @@ test_that("the gate refuses nothing on Windows", {
     expect_true(reached)
   }
 })
+
+
+test_that("install_on_win() aborts tidymedia_confirmation_unavailable from its own frame", {
+  # AC5 documents this outcome in `@return`, so something has to hold it true.
+  # `tm_confirm()` has its own test of the refusal, but nothing asserted that
+  # the class is reachable THROUGH this function -- the documented promise is
+  # about what a caller of `install_on_win()` can catch, and a refactor that
+  # answered the prompt some other way would make the help page lie with the
+  # suite green.
+  tm_local_windows()
+  # Not mocked: the real `tm_confirm()` runs, and `rlang::is_interactive()` is
+  # FALSE under testthat, so it takes the refusal branch on its own.
+  cnd <- expect_error(
+    install_on_win(install_dir = withr::local_tempdir()),
+    class = "tidymedia_confirmation_unavailable"
+  )
+  # And it is raised against this function's frame, not the helper's, so the
+  # error a caller reads names the call they made (D074).
+  expect_match(
+    rlang::expr_deparse(conditionCall(cnd))[[1]],
+    "install_on_win", fixed = TRUE
+  )
+})

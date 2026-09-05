@@ -3004,7 +3004,11 @@ tm_set_refusal_cell <- function(state, program, mode, stub) {
     dir.create(dir, recursive = TRUE)
     if (state == "occupied") {
       tm_write_location(dir, program, "/a/prior/location")
-      tm_write_location(dir, "ffprobe", "/another/prior/location")
+      # A second, DIFFERENT program, so the cell compares a two-file directory
+      # for every member of the vocabulary. Naming one literally would collapse
+      # this cell to one file on the iteration that names it.
+      other <- setdiff(tm_program_vocabulary, program)[[1]]
+      tm_write_location(dir, other, "/another/prior/location")
     }
   }
   before <- tm_dir_state(dir)
@@ -3153,7 +3157,7 @@ test_that("a set_* call returns TRUE or FALSE invisibly, and the Rd page says bo
 
   rd <- rd_sources()
   skip_if(is.null(rd), "no Rd source in this run")
-  hit <- rd[grepl("^set_program\\.Rd$|set_program", names(rd))]
+  hit <- rd[grepl("^set_program\\.Rd$", names(rd))]
   expect_length(hit, 1L)
   value <- sub("(?s).*\\\\value\\{", "", hit[[1]], perl = TRUE)
   value <- sub("(?s)\n\\}.*", "", value, perl = TRUE)
@@ -3175,6 +3179,42 @@ test_that("a location with no executable aborts by name, blaming the export that
     expect_s3_class(cnd, "tidymedia_program_not_found")
     expect_identical(rlang::call_name(conditionCall(cnd)), fn)
   }
+})
+
+test_that("a set_* argument refusal blames the export the caller typed", {
+  # Review finding: the argument checkers ran with their own `caller_env()`
+  # default, so `set_ffmpeg(x, confirm = "yes")` was blamed on
+  # `set_program("ffmpeg", location, confirm = confirm, call = ...)` -- a
+  # function the caller never typed, with the threading shown. The same
+  # concern AC6 pins for the not-found abort, on the argument-check path.
+  fns <- tm_namespace_set_exports()
+  for (fn in fns) {
+    bad_bool <- tryCatch(
+      do.call(fn, c(tm_set_export_args(fn, "/bin/ls"), list(confirm = "yes"))),
+      error = function(cnd) cnd
+    )
+    expect_identical(rlang::call_name(conditionCall(bad_bool)), fn, label = fn)
+
+    bad_loc <- tryCatch(do.call(fn, tm_set_export_args(fn, 1L)),
+                        error = function(cnd) cnd)
+    expect_identical(rlang::call_name(conditionCall(bad_loc)), fn, label = fn)
+  }
+
+  # And the program vocabulary, which only set_program() exposes.
+  bad_program <- tryCatch(set_program("bogus", "/bin/ls"),
+                          error = function(cnd) cnd)
+  expect_identical(rlang::call_name(conditionCall(bad_program)), "set_program")
+})
+
+test_that("the not-found abort carries the program and the location it refused", {
+  # Review finding: the class was added without the data fields D062's family
+  # names, so a handler had to regex the cli-formatted message to learn which
+  # program and which location failed.
+  missing <- file.path(withr::local_tempdir(), "no-such-executable")
+  cnd <- tryCatch(set_ffprobe(missing), error = function(cnd) cnd)
+  expect_s3_class(cnd, "tidymedia_program_not_found")
+  expect_identical(cnd$tm_program, "ffprobe")
+  expect_identical(cnd$tm_location, missing)
 })
 
 test_that("an approved install asks exactly once and still registers what it produced", {

@@ -221,13 +221,21 @@ set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
                          location, confirm = TRUE,
                          call = rlang::current_env()) {
   
-  # Validate arguments
-  program <- rlang::arg_match(program)
-  rlang::check_string(location)
-  rlang::check_bool(confirm)
+  # Validate arguments. Every refusal here carries `call` for the same reason
+  # the not-found abort below does: a wrapper's caller typed set_ffmpeg(), and
+  # under the checkers' own `caller_env()` default they are shown
+  # set_program()'s frame instead -- the deparsed internal call, threaded
+  # arguments and all. D074's siting has each export refuse its own arguments;
+  # the wrappers reach the same outcome by naming the frame, since the
+  # not-found and consent refusals below sit too deep in this shared body to
+  # be re-called at four front doors.
+  program <- rlang::arg_match(program, error_call = call)
+  rlang::check_string(location, call = call)
+  rlang::check_bool(confirm, call = call)
   if (Sys.which(location) == "") {
     cli::cli_abort("Can't find an executable at {.file {location}}.",
-                   class = "tidymedia_program_not_found", call = call)
+                   class = "tidymedia_program_not_found", call = call,
+                   tm_program = program, tm_location = location)
   }
   
   # Find where to save user configuration data (tools::R_user_dir(), M097)

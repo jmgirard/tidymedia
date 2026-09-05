@@ -405,7 +405,10 @@
   rather than assume consent, which is the same contract `install_on_win()`
   already has. This breaks unattended scripts that call these functions:
   pass `confirm = FALSE` to write without being asked. `install_on_win()`
-  passes it internally, so an approved install still asks exactly once.
+  passes it internally, so an approved install still asks exactly once. A call
+  in `.Rprofile` is a third case: the session counts as interactive there, so
+  the call now prompts while R starts up rather than refusing -- pass
+  `confirm = FALSE` there too.
 
 * These five functions now return `TRUE` or `FALSE`, invisibly, saying whether
   the location was written. They previously documented a logical and returned

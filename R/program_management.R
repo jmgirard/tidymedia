@@ -182,28 +182,52 @@ run_program <- function(location, args, program = "the program",
 #' Once this file exists, a location remembered by a version of tidymedia
 #' before 0.2.0 is no longer read.
 #'
+#' Because the call writes a file that outlives the session, it asks for
+#' confirmation first and writes nothing until it has it. The prompt names the
+#' location as you typed it -- which is what gets written -- and the full path
+#' of the file that would record it. Declining leaves the config directory
+#' exactly as it was. In a session with no one to ask, the call refuses rather
+#' than assume consent; pass \code{confirm = FALSE} to write without being
+#' asked, which is what an unattended script wants.
+#'
 #' @param program A string indicating which program to set the location for.
 #' @param location A string containing the location of the program.
-#' @return A logical indicating whether the program location was set properly.
+#' @param confirm Whether to ask before writing the remembered location.
+#'   \code{TRUE} (the default) asks and, in a non-interactive session, refuses.
+#'   \code{FALSE} writes without asking.
+#' @param call The environment a refusal is reported from, so each wrapper is
+#'   blamed rather than \code{set_program()} itself. Rarely set directly.
+#' @return Invisibly, \code{TRUE} where the location was written and
+#'   \code{FALSE} where the caller declined to write it.
 #'
 #' @seealso [find_program()] to locate a configured binary, and
 #'   [install_on_win()] to download FFmpeg on Windows.
 #' @family program management functions
 #' @examples
 #' \dontrun{
-#' # Point tidymedia at a binary in a non-standard location
+#' # Point tidymedia at a binary in a non-standard location; asks first
 #' set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")
+#'
+#' # In an unattended script, where there is no one to ask
+#' set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe", confirm = FALSE)
 #' }
 #' @export
+# `call` defaults to this frame rather than `rlang::caller_env()`: only a
+# direct set_program() call reaches the default, and under caller_env() that
+# call is blamed on whatever frame invoked it -- NULL at the console, so the
+# refusal names no function at all (M100). The four wrappers pass their own
+# frames, so each refusal names the export the caller actually typed.
 set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
-                         location, confirm = TRUE) {
+                         location, confirm = TRUE,
+                         call = rlang::current_env()) {
   
   # Validate arguments
   program <- rlang::arg_match(program)
   rlang::check_string(location)
   rlang::check_bool(confirm)
   if (Sys.which(location) == "") {
-    cli::cli_abort("Can't find an executable at {.file {location}}.")
+    cli::cli_abort("Can't find an executable at {.file {location}}.",
+                   class = "tidymedia_program_not_found", call = call)
   }
   
   # Find where to save user configuration data (tools::R_user_dir(), M097)
@@ -219,6 +243,7 @@ set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
     details <- tm_set_details(program, location, config_dir)
     approved <- tm_confirm(
       tm_set_prompt(program, location, config_dir),
+      call = call,
       "i" = "Pass {.code confirm = FALSE} to set the location without being asked.",
       "i" = tm_cli_escape(details[[1]]),
       "i" = tm_cli_escape(details[[2]])
@@ -246,7 +271,7 @@ set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
 #' @rdname set_program
 #' @export
 set_mediainfo <- function(location, confirm = TRUE) {
-  set_program("mediainfo", location, confirm = confirm)
+  set_program("mediainfo", location, confirm = confirm, call = rlang::current_env())
 }
 
 # set_ffmpeg() ------------------------------------------------------------
@@ -254,19 +279,19 @@ set_mediainfo <- function(location, confirm = TRUE) {
 #' @rdname set_program
 #' @export
 set_ffmpeg <- function(location, confirm = TRUE) {
-  set_program("ffmpeg", location, confirm = confirm)
+  set_program("ffmpeg", location, confirm = confirm, call = rlang::current_env())
 }
 
 #' @rdname set_program
 #' @export
 set_ffprobe <- function(location, confirm = TRUE) {
-  set_program("ffprobe", location, confirm = confirm)
+  set_program("ffprobe", location, confirm = confirm, call = rlang::current_env())
 }
 
 #' @rdname set_program
 #' @export
 set_ffplay <- function(location, confirm = TRUE) {
-  set_program("ffplay", location, confirm = confirm)
+  set_program("ffplay", location, confirm = confirm, call = rlang::current_env())
 }
 
 

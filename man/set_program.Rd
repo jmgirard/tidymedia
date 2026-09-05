@@ -8,23 +8,36 @@
 \alias{set_ffplay}
 \title{Set the location of a dependency program}
 \usage{
-set_program(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"), location)
+set_program(
+  program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
+  location,
+  confirm = TRUE,
+  call = rlang::current_env()
+)
 
-set_mediainfo(location)
+set_mediainfo(location, confirm = TRUE)
 
-set_ffmpeg(location)
+set_ffmpeg(location, confirm = TRUE)
 
-set_ffprobe(location)
+set_ffprobe(location, confirm = TRUE)
 
-set_ffplay(location)
+set_ffplay(location, confirm = TRUE)
 }
 \arguments{
 \item{program}{A string indicating which program to set the location for.}
 
 \item{location}{A string containing the location of the program.}
+
+\item{confirm}{Whether to ask before writing the remembered location.
+\code{TRUE} (the default) asks and, in a non-interactive session, refuses.
+\code{FALSE} writes without asking.}
+
+\item{call}{The environment a refusal is reported from, so each wrapper is
+blamed rather than \code{set_program()} itself. Rarely set directly.}
 }
 \value{
-A logical indicating whether the program location was set properly.
+Invisibly, \code{TRUE} where the location was written and
+\code{FALSE} where the caller declined to write it.
 }
 \description{
 The location is remembered across sessions in a file named
@@ -33,10 +46,22 @@ which \code{\link[=find_program]{find_program()}} reads whenever the program is 
 Once this file exists, a location remembered by a version of tidymedia
 before 0.2.0 is no longer read.
 }
+\details{
+Because the call writes a file that outlives the session, it asks for
+confirmation first and writes nothing until it has it. The prompt names the
+location as you typed it -- which is what gets written -- and the full path
+of the file that would record it. Declining leaves the config directory
+exactly as it was. In a session with no one to ask, the call refuses rather
+than assume consent; pass \code{confirm = FALSE} to write without being
+asked, which is what an unattended script wants.
+}
 \examples{
 \dontrun{
-# Point tidymedia at a binary in a non-standard location
+# Point tidymedia at a binary in a non-standard location; asks first
 set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")
+
+# In an unattended script, where there is no one to ask
+set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe", confirm = FALSE)
 }
 }
 \seealso{

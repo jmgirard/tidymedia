@@ -418,3 +418,15 @@ gate, and M107's check-ordering precedent is the one D086 invokes rather than
 one it contradicts. No archived lesson addresses `Sys.info()`,
 `.Platform$OS.type`, or single-bracket named-vector lookup, so there is no
 precedent here to regress against.
+
+#### PR-conversation read (2026-09-04, PR #112)
+
+No reviews of any state, and no unresolved review threads (GraphQL
+`reviewThreads` filtered to `isResolved: false`, one page, `hasNextPage`
+false). One conversation comment, from a bot.
+
+- conversation: codecov[bot] PR #112 — noted. Reports all modified and
+  coverable lines covered by tests, project coverage 98.28% against master's
+  98.26% (+0.01%), 30 lines added and 30 hit, misses unchanged at 69. Requests
+  nothing. Author type `Bot`, so it does not touch the merge chip; coverage is
+  diagnostic here and never gates a merge.

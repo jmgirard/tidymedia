@@ -2,18 +2,17 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-09-05 (M109 close: row to done, summary archived, live milestone file deleted. Thirteen review findings — one fixed on the branch by a superseding correction, twelve rejected with recorded reasons, none moving a criterion; no candidate row absorbed a deferral, so nothing was filed. `cairn_validate` 17/17, no advisories. M104 pruned under terminal-row retention. LESSONS took M109's jobs-column-duplication line by retiring M60's renormalization half, a completed one-time repo event.)_
+_Last hygiene check: 2026-09-05 (M110 close: row to done, summary archived, live milestone file deleted. Eleven review findings — six fixed on the branch, one absorbed into the unclassed-aborts candidate row, four rejected with recorded reasons; none reached the return floor. One `codecov[bot]` PR comment, noted. `cairn_validate` 16/16 with no advisories; M105 pruned under terminal-row retention. LESSONS folded M110's argument-checker half into the M100 `call`-threading line and, at the byte cap with no retirement earned, pruned M60's `.git-blame-ignore-revs` line — a completed one-time repo event whose two live traps CLAUDE.md's conventions own.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M110 | `set_program()` asks before it remembers a location | review | — | normal | milestones/M110-set-program-confirmation.md |
+| M110 | `set_program()` asks before it remembers a location | done | — | normal | milestones/archive/M110-set-program-confirmation.md |
 | M109 | The codec seam's four instrument gaps are triaged under D072, and the two with a path to a user are closed | done | — | normal | milestones/archive/M109-codec-seam-gap-triage.md |
 | M108 | `install_on_win()` refuses on a platform it cannot install for, before it spends anything | done | — | normal | milestones/archive/M108-install-refuses-wrong-platform.md |
 | M107 | A backend with no encoder for the codec's family is refused by the verb the caller typed, `fallback` or not | done | — | normal | milestones/archive/M107-out-of-table-refusal-at-the-verb.md |
 | M106 | The codec seam is bound and the probe grid covers the codec sentinel | done | — | normal | milestones/archive/M106-codec-seam-bound-sentinel-covered.md |
-| M105 | `install_on_win()`'s refusals say what is on disk | done | — | normal | milestones/archive/M105-install-refusals-key-on-disk.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

@@ -4,7 +4,7 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M108: `install_on_win()` refuses on a platform it cannot install for, before it spends anything
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -111,6 +111,7 @@ sited above the argument checks → rejected at this gate, work log records it.
 - 2026-09-04: implement gate chose naming only `set_program()` on a platform that is neither Windows, macOS nor Linux over adding a generic package-manager line, and chose repeating the Homebrew and apt routes in `?install_on_win`'s Details over a Windows-only sentence.
 - 2026-09-04: plan gate chose an unmocked per-runner assertion over mocked coverage plus a seam unit test because every other criterion runs through a mock, so a seam never wired to the host would satisfy all of them and ship broken for the one platform the function serves (audit F9); falsified by the three tests proving flaky on a runner for a reason that is not the seam.
 - 2026-09-04: review gate directed all six actioned findings fixed. O2 (routeless message), O4 (uname word alone), O1 (siting untested), O5 (a stub never on the path), O6 (a false comment) landed; the O1 test is discriminated by hoisting the gate, which turns it red, and the O5 pair now runs a caller-named source with no digest so the unverified-source stub is reached. O3 is held: fixing it makes the `@return` count eight, which falsifies AC5's "reads seven rather than six" -- routed to the user as an amendment question.
+- 2026-09-04: amendment return: AC5 — "its `@return` lists `tidymedia_wrong_platform` among the outcomes that abort and its count reads eight rather than six, `tidymedia_confirmation_unavailable` among them". The criterion pinned a count of seven; eight classed aborts are reachable, the enumeration having omitted `tidymedia_confirmation_unavailable` since before M108. User chose correcting the criterion over waiving it or shipping the under-count. Review stops here; the amendment is the only work convened.
 
 ## Decisions
 

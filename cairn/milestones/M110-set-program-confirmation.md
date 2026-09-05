@@ -74,6 +74,7 @@
 - 2026-09-05: CI wait hit the harness ceiling with R-CMD-check still running on 7219c25 (macos green, five legs in progress); watcher stopped, not merged. Resume at /milestone-review M110, which re-derives the state.
 - 2026-09-05: resume: PR #114 OPEN, all criteria ticked against recorded evidence, prior approval on record; master unmoved (branch 12 ahead, 0 behind) and fully pushed, so step 3's evidence stands. PR conversation re-read: no reviews, no comments, no unresolved threads.
 - 2026-09-05: step-7 approval: PR #114 approved for merge.
+- 2026-09-05: CI wait hit the harness ceiling a second time, on the run the approval commit 1cf4c94 started (33981447495): macos-latest and pkgdown green, windows-latest, the four ubuntu R-CMD-check legs and test-coverage still in progress at the 600s ceiling. Watcher stopped, merge not attempted; `cairn/.merge-approved` written and unconsumed. Resume at /milestone-review M110.
 
 ## Decisions
 

@@ -65,7 +65,7 @@ URL-bearing form, which is legal and stays.
 
 ## Tasks
 
-- [ ] T1: Rewrite `Title` and `Description` in `DESCRIPTION:2-13`. The
+- [x] T1: Rewrite `Title` and `Description` in `DESCRIPTION:2-13`. The
       Description says what the package does with 'FFmpeg' and 'MediaInfo' —
       batch transformation and metadata extraction as tibbles — rather than
       restating the Title.
@@ -95,6 +95,7 @@ URL-bearing form, which is legal and stays.
 - 2026-09-05: T3's deleted file, `tests/testthat/_problems/test-timeout-silence-55.R`, held a stale copy of `test-timeout-silence.R:59`'s `tm_timeout_absorbers()` assertion, omitting `separate_audio_video` — the live assertion supersedes it, so the deletion loses nothing.
 - 2026-09-05: discovered sub-task under T3 — `_problems/` is in `.gitignore` but was not in `.Rbuildignore`, so `R CMD build` shipped it. Added `^tests/testthat/_problems$` so a later failing run cannot put it back in the tarball; the directory is deleted as well, not merely hidden.
 - 2026-09-05: checkpoint, work half-done. T1-T5 edits are in the tree; no task checked off, `devtools::test()` still running past 10 minutes and README not yet re-knitted.
+- 2026-09-05: T1 done. `devtools::test()` clean over the rewritten DESCRIPTION (FAIL 0 | WARN 10 | SKIP 18 | PASS 12614, 22m34s), `devtools::document()` produces no diff, `spelling::spell_check_package()` finds nothing.
 
 ## Decisions
 

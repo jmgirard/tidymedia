@@ -1,6 +1,6 @@
 # M109: The codec seam's four instrument gaps are triaged under D072, and the two with a path to a user are closed
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -93,7 +93,7 @@ any kind: a change there would move this milestone's surface tier.
       tree — run `test-hardware-out-of-table-blame.R` against it, record which cells
       redden and confirm the scalar-only cells stay green, then confirm the unmutated
       tree is green. Revert the scratch tree.
-- [ ] T6: Write the four-row D072 ledger into `## Decisions` as one table, one row per
+- [x] T6: Write the four-row D072 ledger into `## Decisions` as one table, one row per
       gap (class, reason), never one sub-heading per gap (M092's line-cap lesson);
       run `devtools::document()`, `devtools::check()` and `devtools::test()`.
 
@@ -115,6 +115,20 @@ any kind: a change there would move this milestone's surface tier.
 
 - 2026-09-05: T5: the defect was planted in a full package copy under the scratch dir (`R/ffmpeg.R:3360` narrowed to `families[1]`) and the file run there, so the repo was never dirty. `test-hardware-out-of-table-blame.R` reddens: 21 of its 126 out-of-table cells fail, every one of them a jobs-form cell on the `fallback = TRUE` arm, each reblamed from the verb onto `purrr::pmap` — D035's own defect. All 84 scalar cells stay green, so the scalar form cannot see this mutation at all. Unmutated tree: 0 failed, 0 errors, 209 passed.
 
+- 2026-09-05: T6: the four-gap D072 ledger written into `## Decisions` as one table — (a) and (d) closed, (b) and (c) pruned with reasons. `devtools::document()` produced no diff; `devtools::check()` 0 errors, 0 warnings, 0 notes; `devtools::test()` 0 failed, 0 errors, 12,440 passed, 18 skipped.
+- 2026-09-05: status to review; all six tasks checked.
+
 ## Decisions
+
+### The four codec-seam instrument gaps, triaged under D072 (2026-09-05)
+
+D072's test is whether the gap lets a defect in shipped behaviour reach a user. Two of the four have that path and are closed here; the other two grade an artifact that is correct, so they are pruned with their reasons, not deferred again. Gap letters are the absorbed candidate row's own (M106 review F1/F2/F3; M107 review F5).
+
+| Gap | Class | Reason |
+|---|---|---|
+| (a) Crossing `video_codec` forced it out of `nvenc_order_cells()`'s wrong-form set, so a malformed token's compiled bytes went unrecorded and only its blamed frame was kept | close | A path to a user: `check_video_codec()`'s token refusal is what makes a malformed `video_codec` name the caller's own argument rather than the machine. With that refusal removed, 18 grid rows change — six reblame the error from `standardize_video` onto `ffm_codec`, twelve keep the verb's name and change what it says (T3). The grid as M106 left it reported none of them. |
+| (b) `apply_video_codec()`'s `check_video_codec()` call is redundant with the emit half's | prune | The artifact it grades is correct. `R/ffmpeg.R:3403-3409` already records the duplication as deliberate: the emit half checks the token itself, so no pipeline can reach the resolver with an unchecked one, and `check_video_codec()` reads its argument and returns, so the second pass cannot change what a caller is told. Nothing a user observes turns on the redundancy. |
+| (c) `tm_hw_encoder_checked_before()` reads position, not dataflow | prune | The artifact it grades is correct. The ledger's computed domain is three sites; the one literal site has no token to check, and both symbol sites hold their check at the top of a straight-line body above the resolver — measured 2026-09-05, neither reassigns `video_codec` between the two, the only assignment above each resolver call being that call's own. A dataflow reading returns what the positional one returns on every member of the domain today. A weaker instrument, not a defect. |
+| (d) M107's AC1 sweep reached `check_hardware_available()` only through the scalar `video_codec`, leaving the `is.list()` arm on one hand-written cell | close | A path to a user: narrowing the family loop above that arm to its first family leaves a `_batch` caller's out-of-table row blamed on `purrr::pmap` instead of the verb the caller typed — D035's own defect, and what M107 exists to prevent. 21 of the sweep's 126 cells redden under that mutation and all 84 scalar cells stay green (T5), so the scalar-only sweep could not see it. |
 
 ## Review

@@ -1,13 +1,13 @@
 # M112: No export publishes the internal `call` argument, and the duplicate exports are settled
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
 - **Resolves:** —
 - **Surface tier:** user-facing — an exported signature and the Rd usage line a reader copies from
-- **Branch/PR:** —
+- **Branch/PR:** `m112-unpublish-the-call-argument`
 
 ## Goal
 
@@ -68,7 +68,7 @@ row.
 
 ## Tasks
 
-- [ ] T1: Write the AC1 sweep first and see it red — two hits — before any
+- [x] T1: Write the AC1 sweep first and see it red — two hits — before any
       source change.
 - [ ] T2: Extract `tm_set_program(program, location, confirm, call)` from
       `R/program_management.R:220-280`; `set_program()` and the four `set_*()`
@@ -93,6 +93,9 @@ row.
 - 2026-09-05: created by /milestone-plan.
 - 2026-09-05: criteria audit ran in FULL mode (user-facing tier), fresh-context [O] reader. Returned three findings against this milestone's draft: the `call` sweep quantified over exports but enumerated `man/*.Rd`, which records no export status; the blame criterion varied location only, not refusal form, against the M100/M110 lesson; and the draft did not cite M110's standing decision at all. The first two were fixed before writing; the third went to the question gate as its own question.
 - 2026-09-05: plan gate chose extracting an internal implementation over leaving `call` published, because M110's recorded objection was to re-calling the checkers at four wrappers under D074's siting rule, which an internal implementation does not do — no body is duplicated. Falsified by a refusal whose frame changes under the extraction, which AC2's table is built to catch.
+- 2026-09-05: implementation gate chose dropping both duplicate exports — `ffm()` and `mediainfo_summary()` — over keeping either, on the measurement that `ffm_files(` has 234 call sites to a bare `ffm(`'s 9, which reverses T5's premise that removing `ffm()` is the larger change. T5's claim holds only inside `@examples` (26 `ffm(` to 21 `ffm_files(`).
+- 2026-09-05: implementation gate waived the deprecation cycle for both alias removals and the `call` removal, under D014's pre-0.2.0 clean-break policy; no `lifecycle` shim.
+- 2026-09-05: T1 sweep written and seen red at `tests/testthat/test-exported-call-formal.R:32` naming exactly `hardware_encoder` and `set_program` over a domain of 88 exported functions. Its positive control (a real formal named `call`, from `hardware_encoder_available()`) and its independent domain assertion both pass, so a later green is the two exports losing the formal rather than the detector going blind.
 - 2026-09-05: plan gate chose a sweep over `getNamespaceExports()` over a grep of `man/*.Rd` usage blocks, because `.Rd` files carry no export status — only 1 of 82 is marked internal — so the grep cannot partition its hits. Falsified by an export whose formals a static sweep cannot read.
 
 ## Decisions

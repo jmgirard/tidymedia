@@ -4,9 +4,9 @@
 \name{tidymedia-package}
 \alias{tidymedia}
 \alias{tidymedia-package}
-\title{tidymedia: Tools for working with media files within R and the tidyverse}
+\title{tidymedia: Media File Preprocessing and Metadata for the 'tidyverse'}
 \description{
-The goal of tidymedia is to provide tools for easily working with media (e.g., image, audio, and video) files within R and the tidyverse.
+Batch preprocessing and metadata extraction for audio, video and image files, built on the command-line programs 'FFmpeg' (\url{https://ffmpeg.org/}) and 'MediaInfo' (\url{https://mediaarea.net/en/MediaInfo}). Trim, crop, scale, convert and standardize files one at a time or across a whole directory, and read container and stream metadata back as tibbles for use with the 'tidyverse'.
 }
 \details{
 tidymedia is organized in three layers. Layer 0 passes raw arguments to the

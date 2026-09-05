@@ -196,11 +196,12 @@ run_program <- function(location, args, program = "the program",
 #' }
 #' @export
 set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
-                         location) {
+                         location, confirm = TRUE) {
   
   # Validate arguments
   program <- rlang::arg_match(program)
   rlang::check_string(location)
+  rlang::check_bool(confirm)
   if (Sys.which(location) == "") {
     cli::cli_abort("Can't find an executable at {.file {location}}.")
   }
@@ -208,6 +209,22 @@ set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
   # Find where to save user configuration data (tools::R_user_dir(), M097)
   config_dir <- tm_config_dir()
   config_file <- tm_config_file(program, config_dir)
+  
+  # Consent comes before anything is created or written, so a decline -- and a
+  # refusal for want of anyone to ask -- leaves the config directory exactly as
+  # it was found. The refusal names the same two items the prompt would have,
+  # and the escape hatch by the argument's own name (M38/M40: the seam carries
+  # no argument name of its own).
+  if (confirm) {
+    details <- tm_set_details(program, location, config_dir)
+    approved <- tm_confirm(
+      tm_set_prompt(program, location, config_dir),
+      "i" = "Pass {.code confirm = FALSE} to set the location without being asked.",
+      "i" = tm_cli_escape(details[[1]]),
+      "i" = tm_cli_escape(details[[2]])
+    )
+    if (!approved) return(invisible(FALSE))
+  }
   
   # Create configuration directory if needed
   if (!dir.exists(config_dir)) dir.create(config_dir, recursive = TRUE)
@@ -220,34 +237,36 @@ set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
   # all four programs: cheap, and it cannot be forgotten when a second
   # capability memo is added later.
   forget_ffmpeg_capabilities()
+
+  invisible(TRUE)
 }
 
 # set_mediainfo() ---------------------------------------------------------
 
 #' @rdname set_program
 #' @export
-set_mediainfo <- function(location) {
-  set_program("mediainfo", location)
+set_mediainfo <- function(location, confirm = TRUE) {
+  set_program("mediainfo", location, confirm = confirm)
 }
 
 # set_ffmpeg() ------------------------------------------------------------
 
 #' @rdname set_program
 #' @export
-set_ffmpeg <- function(location) {
-  set_program("ffmpeg", location)
+set_ffmpeg <- function(location, confirm = TRUE) {
+  set_program("ffmpeg", location, confirm = confirm)
 }
 
 #' @rdname set_program
 #' @export
-set_ffprobe <- function(location) {
-  set_program("ffprobe", location)
+set_ffprobe <- function(location, confirm = TRUE) {
+  set_program("ffprobe", location, confirm = confirm)
 }
 
 #' @rdname set_program
 #' @export
-set_ffplay <- function(location) {
-  set_program("ffplay", location)
+set_ffplay <- function(location, confirm = TRUE) {
+  set_program("ffplay", location, confirm = confirm)
 }
 
 
@@ -1383,8 +1402,11 @@ install_on_win <- function(download_url = NULL,
       }
     ))
   }
+  # `confirm = FALSE`: the install's own prompt above already named every one
+  # of these overwrites by full path, so asking again here would ask a second
+  # time for consent already given -- once per program, at that.
   for (program in setdiff(unpacked, unusable)) {
-    set_program(program, tm_install_binary(install_dir, program))
+    set_program(program, tm_install_binary(install_dir, program), confirm = FALSE)
   }
 
   TRUE

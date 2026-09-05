@@ -53,7 +53,7 @@ test_that("set_program() writes exactly at tools::R_user_dir(\"tidymedia\", \"co
   withr::local_envvar(R_USER_CONFIG_DIR = config)
   stub <- tm_stub_executable()
 
-  for (program in tm_program_vocabulary) set_program(program, stub)
+  for (program in tm_program_vocabulary) set_program(program, stub, confirm = FALSE)
 
   expected <- file.path(
     tools::R_user_dir("tidymedia", "config"),
@@ -493,8 +493,9 @@ tm_mock_install <- function(confirm = NULL,
   # install writes can be read back off disk rather than off the record.
   if (!real_set) {
     testthat::local_mocked_bindings(
-      set_program = function(program, location) {
-        add("set", list(program = program, location = location))
+      set_program = function(program, location, confirm = TRUE) {
+        add("set", list(program = program, location = location,
+                        confirm = confirm))
         invisible(NULL)
       },
       .env = env

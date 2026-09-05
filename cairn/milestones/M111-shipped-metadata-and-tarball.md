@@ -224,6 +224,20 @@ Findings and dispositions (rank order as reported):
 10. `README.md` embeds a machine-specific temp path in two chunk outputs.
     Pre-existing; the plan routes README's unguarded chunks to M114. Rejected.
 
+### Re-verification after the gate's fix-now work
+
+All six criteria re-executed at `e064e5a`, the tree that carries the three
+fix-now edits. Every result is unchanged: `R CMD build` 254 paths with 0 hits
+for each of the three patterns (and 0 for `testthat-problems`, the newly guarded
+path); `R CMD check --as-cran` `Status: 1 NOTE`, the same maintainer line plus
+`Version contains large components (0.1.0.9000)`, no NOTE naming `Title` or
+`Description`; `devtools::test()` `FAIL 0 | WARN 10 | SKIP 18 | PASS 12614`;
+`devtools::check()` `0 errors | 0 warnings | 0 notes` (17m 21.3s);
+`devtools::document()` no diff; `tools/pkgdown_duplicate_topics.R` exit 0 with
+80 entries, none repeated, none unmatched; `cairn_validate.py` all checks
+passed. `urlchecker::url_check()` was not re-run — the fix-now edits touch no
+URL, and the earlier run over 24 URLs stands.
+
 ### Consistency gate
 
 `cairn_validate.py` exit 0, all 16 checks PASS and all 7 advisories OK — the

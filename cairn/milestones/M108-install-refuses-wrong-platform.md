@@ -58,7 +58,7 @@ sited above the argument checks → rejected at this gate, work log records it.
       running host and the gate's real verdict follows it: `install_on_win()`
       aborts `tidymedia_wrong_platform` on `macos-latest` and
       `ubuntu-latest`, and reaches `tm_confirm()` on `windows-latest`.
-- [ ] AC5: `man/install_on_win.Rd`'s `\value` — the rendering of
+- [x] AC5: `man/install_on_win.Rd`'s `\value` — the rendering of
       `?install_on_win`'s `@return` — names among the outcomes that abort both
       `tidymedia_wrong_platform` and `tidymedia_confirmation_unavailable`, and
       also every condition class named among the outcomes that abort in
@@ -126,6 +126,7 @@ sited above the argument checks → rejected at this gate, work log records it.
 - 2026-09-04: re-audit: AC5 (full) — returned four findings on the drafted replacement: F1 the count clause was self-referential, so a page listing only the two named classes would satisfy it while dropping the six already documented; F2 it presupposed a number word without requiring one; F3 it conflated the roxygen source with the rendered Rd and left the counted span open; F4 nothing binds the newly named class to reachability. F1-F3 were fixed by adopting the reader's alternative wording verbatim at the mini gate; F4 was disposed by adding T7's reachability test rather than accepting.
 - 2026-09-04: amendment return: AC5 — "`man/install_on_win.Rd`'s `\value` — the rendering of `?install_on_win`'s `@return` — names among the outcomes that abort both `tidymedia_wrong_platform` and `tidymedia_confirmation_unavailable`, and also every condition class named among the outcomes that abort in `git show master:man/install_on_win.Rd`'s `\value`; the number word introducing that list states the number of distinct classes the list names." This supersedes the draft clause in this milestone's earlier amendment-return line of the same date, which was written before the wording was audited: one return, not two.
 - 2026-09-04: T7: `@return` rewritten to keep all six classes it already named, add `tidymedia_confirmation_unavailable` beside `tidymedia_wrong_platform`, and open with "Eight"; `devtools::document()` re-rendered `man/install_on_win.Rd`. Added a test that `install_on_win()` aborts `tidymedia_confirmation_unavailable` from its own frame with the seam at `windows` and nothing mocked below the gate; renaming the class in `tm_confirm()` turns it and four others red. Suite 0 failures, 12251 passing. Status back to review.
+- 2026-09-04: review pass 2 re-ran every criterion against head 1800936 after the AC5 amendment: `master` had not moved, all six verified (suite 688 passing over the two M108 files with 0 skips, `devtools::check()` 0/0/0, all ten CI checks green including `windows-latest`), AC5 ticked, `cairn_validate` 16/16 with no advisories fired, and the three-lens fan-out returned seven findings from the diff lens and none from the other two. Defect-return count 0; the AC5 amendment return stays on its own track.
 
 ## Decisions
 
@@ -133,7 +134,9 @@ sited above the argument checks → rejected at this gate, work log records it.
 
 ## Review
 
-### Acceptance-criteria evidence (2026-09-04, branch head f62b082, PR #112)
+### Pass 1 (2026-09-04, branch head f62b082, PR #112)
+
+#### Acceptance-criteria evidence
 
 - **AC1 — verified.** `testthat::test_file("tests/testthat/test-program-management.R")`:
   0 failures, 667 passing. The AC1 test loops the seam over `darwin`, `linux`
@@ -168,7 +171,7 @@ sited above the argument checks → rejected at this gate, work log records it.
 - **AC6 — verified.** `devtools::check()`: 0 errors, 0 warnings, 0 notes
   (20m 37s). `devtools::test()` green via the suite runs above.
 
-### Consistency gate
+#### Consistency gate
 
 `cairn_validate.py` exit 0 — 16 PASS, 7 advisories all OK, no `release window`
 flag. No `DESIGN.md` principle changed, so `cairn_impact.py` did not apply.
@@ -177,7 +180,7 @@ Toolchain slot: `devtools::document()` produced no diff in `man/` or
 `README.md` are untouched by the branch and in sync; `NEWS.md` carries the
 entry; the branch adds no new top-level file; `devtools::check()` clean.
 
-### Independent review — three fresh-context lenses
+#### Independent review — three fresh-context lenses
 
 Surface tier user-facing, so the full three-lens fan-out ran. Findings below
 verbatim in substance, most severe first per lens, each with its disposition.
@@ -188,12 +191,12 @@ verbatim in substance, most severe first per lens, each with its disposition.
   vanishes on the Windows leg.** Hoisting the gate above `rlang::check_bool()`
   in a scratch copy produced 9 failures, all from M103's exit census, none from
   M108's own tests; those cases mock no seam, so on `windows-latest` they pass
-  and a hoisted gate ships green. Reproduced. Disposition: TBD at gate.
+  and a hoisted gate ships green. Reproduced. Disposition: FIXED on the branch. `test-program-management.R:2818` now pins the gate below the four argument checks by asserting each malformed argument reports its own error rather than the platform refusal; hoisting the gate turns it red.
 - **O2 — the refusal message loses its antecedent on a platform with no
   route.** On `freebsd`/`sunos`/`unix` the "Install FFmpeg with …" bullet is
   dropped but the next still opens "Then point tidymedia at it …" — "then"
   names a step that is not there and "it" refers to nothing. Confirmed against
-  the messages captured for AC2. Disposition: TBD at gate.
+  the messages captured for AC2. Disposition: FIXED on the branch. The advice bullets are written as a pair per platform, so a routeless platform gets one self-contained line naming `set_program()` and no dangling "Then".
 - **O3 — `@return`'s enumeration is incomplete and the diff re-counted it
   without noticing.** `install_on_win()` also aborts
   `tidymedia_confirmation_unavailable` (via `tm_confirm()`), so eight classed
@@ -201,32 +204,31 @@ verbatim in substance, most severe first per lens, each with its disposition.
   `windows` seam non-interactively: class
   `tidymedia_confirmation_unavailable`. The omission predates M108, but the
   diff rewrote the sentence, so the wrong count is newly asserted.
-  Disposition: TBD at gate.
+  Disposition: AMENDMENT RETURN. The fix makes the count eight, which falsified AC5's "reads seven rather than six". Routed to the user, who chose correcting the criterion; AC5 was amended and T7 rewrote the enumeration. Re-verified in pass 2.
 - **O4 — the message names the uname word where every other surface names the
   OS.** A macOS caller reads "running on darwin" while NEWS, `@details` and
   the Rd all say "macOS". AC2-compliant, but nothing links the two.
-  Disposition: TBD at gate.
+  Disposition: FIXED on the branch. The message names the OS beside the uname word where `tm_os_names` has one — `darwin (macOS)`, `sunos (Solaris)`.
 - **O5 — the `cli_inform` stub in `tm_forbid_spending()` is never on the
   path.** The default `download_url` has a sidecar, so
   `is.null(archive_checksum) && is.null(sidecar_url)` is FALSE and the
   unverified-source notice is skipped; three of the four stubs discriminate,
   not four. Confirmed at `R/program_management.R:989`. The gate is still
   proven above every cost, being proven above `tm_confirm()`, which comes
-  first. Disposition: TBD at gate.
+  first. Disposition: FIXED on the branch. The AC1 test now runs a caller-named source with no digest as well as the default, so the unverified-source notice is on the path; re-measured in pass 2, all four stubs discriminate across the pair.
 - **O6 — `test-install-platform.R`'s comment misdescribes a failed gate.** It
   claims a gate that did not fire "would fail this test by trying to install
   FFmpeg"; under testthat `rlang::is_interactive()` is FALSE, so the real
   `tm_confirm()` aborts first and nothing is downloaded. Confirmed by this
   review's own mutation run, which failed with "Can't ask for confirmation in
-  a non-interactive session." Disposition: TBD at gate.
+  a non-interactive session." Disposition: FIXED on the branch. The comment now says a gate that did not fire would fail on the class, the real `tm_confirm()` aborting first in a non-interactive session.
 - **O7 — the seam's host-binding assertion is duplicated verbatim** across
-  `test-install-platform.R` and `test-program-management.R`. Disposition: TBD
-  at gate.
+  `test-install-platform.R` and `test-program-management.R`. Disposition: REJECTED. The duplication is deliberate: `test-install-platform.R` is the one file that skips nothing on any runner, and its own copy of the host-binding assertion is what makes AC4 self-contained there.
 - **O8 — `tm_os()` has no guard for a non-NULL `Sys.info()` lacking
   `sysname`**, which would raise an unclassed subscript error. Not reachable
-  on any real platform. Disposition: TBD at gate.
+  on any real platform. Disposition: REJECTED. Not reachable on any real platform — where `Sys.info()` is non-NULL it carries `sysname`.
 - **O9 — one roxygen line at 85 columns** (`R/program_management.R:901`), an
-  unwrapped straggler from the edit. Disposition: TBD at gate.
+  unwrapped straggler from the edit. Disposition: FIXED on the branch. The line is wrapped.
 
 What the lens verified as correct: the gate sits above both argument defaults,
 the unverified-source notice, `tm_confirm()`, `dir.create()` and the first
@@ -249,3 +251,170 @@ predicate mismatch, M102's exit census, M103's symlink escape, M104's
 and none is reintroduced; M104's regression test still runs below the gate via
 `tm_local_windows()`. The GitHub inline-review probe returned empty, so the PR
 walk was correctly skipped.
+
+### Pass 2 (2026-09-04, branch head 1800936, PR #112)
+
+Re-entered at step 1 after the AC5 amendment and T7. `master` had not moved
+(branch 0 behind, 10 ahead), so no merge was needed and pass 1's tree is a
+strict ancestor of this one. Every criterion is re-executed here against the
+current head; pass 1's evidence stands only for the tree it names.
+
+#### Acceptance-criteria evidence
+
+- **AC1 — verified.** `testthat::test_local(filter = "program-management|
+  install-platform")`: FAIL 0, WARN 0, SKIP 0, PASS 688. The AC1 test loops the
+  seam over `darwin`, `linux` and `freebsd` and, within each, over two source
+  shapes — the package default and a caller-named `download_url` with no digest
+  — with `tm_forbid_spending()` binding all four spending calls (`tm_confirm`,
+  `tm_fetch`, `cli::cli_inform`, base `dir.create`) to stubs that abort by
+  name. Every iteration reaches `tidymedia_wrong_platform` instead.
+  Discrimination measured by mutation: replacing the gate predicate with
+  `FALSE` turned the two files red at 5 failures — `test-install-platform.R:41`,
+  the two M103 exit-census cases at `test-program-management.R:1742` and
+  `:1759`, and the two M108 cases at `:2809` and `:2851` — the M108 ones failing
+  with `reached tm_confirm()`, a stub name rather than a class. The
+  `cli::cli_inform` stub was measured separately to be on the path (O5's fix):
+  under the same mutation, the caller-named source with no digest fails with
+  `reached cli::cli_inform()`, so all four stubs discriminate across the pair.
+- **AC2 — verified.** Message text read off the caught condition
+  (`conditionMessage()`) with the seam driven through five values. `darwin`:
+  "This session is running on darwin (macOS)." plus "Install FFmpeg with
+  `brew install ffmpeg`." — the apt route absent. `linux`: "running on linux"
+  plus "Install FFmpeg with `sudo apt-get install ffmpeg`." — the brew route
+  absent. `freebsd`, `sunos`, `unix`: the platform named, one advice line
+  naming `set_program()`, neither package manager. Every value named
+  `set_program()`; every condition carried class `tidymedia_wrong_platform` and
+  `tm_platform` equal to the seam's value.
+- **AC3 — verified.** The Windows control passes in the same green run: seam at
+  `windows`, all three argument shapes (defaults; caller-supplied
+  `install_dir`; non-default `download_url` with `archive_checksum`) reach the
+  `tm_confirm()` stub and return `FALSE`.
+- **AC4 — verified on all three runners.** `test-install-platform.R` runs 4
+  expectations with 0 skips and asserts the seam equals
+  `tolower(Sys.info()[["sysname"]])`; locally (darwin) the refusal branch runs
+  unmocked, with nothing between the call and a download but the gate. On PR
+  #112 every leg is green — see the merge-gate CI line below for the run this
+  head produced.
+- **AC6 — verified.** `devtools::check()` on head 1800936: Status OK,
+  0 errors / 0 warnings / 0 notes, 17m 0.9s. `devtools::test()` green (counts
+  in the work log). All ten CI checks on PR #112 pass at this head, including
+  `windows-latest (release)` (14m 35s), `macos-latest (release)` (9m 16s) and
+  the four `ubuntu-latest` legs (release / devel / oldrel-1 / 4.1.0) — which is
+  also AC4's per-runner evidence, `test-install-platform.R` skipping nothing on
+  any of them.
+- **AC5 — verified.** Read mechanically out of `man/install_on_win.Rd`'s
+  `\value` block and compared with `git show master:man/install_on_win.Rd`'s.
+  Master's `\value` names 6 distinct classes; HEAD's names 8 — the same 6 with
+  nothing dropped, plus `tidymedia_wrong_platform` and
+  `tidymedia_confirmation_unavailable`. The number word introducing the list is
+  "Eight", matching the 8 distinct classes the list names. `\details` opens
+  "This call installs on Windows only." `NEWS.md` carries a Configuration
+  bullet for the refusal naming `tidymedia_wrong_platform` and both
+  package-manager routes. T7's reachability test holds the newly documented
+  class true of the function rather than recited: with the seam at `windows`
+  and nothing mocked below the gate, `install_on_win()` aborts
+  `tidymedia_confirmation_unavailable` with `conditionCall()` naming
+  `install_on_win`.
+
+#### Consistency gate
+
+Universal: `cairn_validate.py` exit 0 — 16 PASS, 7 advisories OK, the `release
+window` advisory not fired. The branch changes no `DESIGN.md` principle, so
+`cairn_impact.py` does not apply. Toolchain (`r-package` profile's
+`consistency-gate` slot): `devtools::document()` left `man/` and `NAMESPACE`
+unchanged; `pkgdown::check_pkgdown()` reports no problems; `README.Rmd` and
+`README.md` are untouched by the branch; `NEWS.md` carries the entry for the
+user-visible change; the branch adds no top-level file and no exported object,
+so no `.Rbuildignore` or `_pkgdown.yml` row is owed; `devtools::check()` clean
+(see AC6).
+
+#### Independent review — three fresh-context lenses
+
+Surface tier user-facing, so the full three-lens fan-out ran again on the
+current head, each lens with its own evidence base. Findings verbatim in
+substance, most severe first per lens, each with its disposition.
+
+**Diff-bug lens (Opus).** Eight findings.
+
+- **P1 — the friendly-OS-name branch is new code that no test discriminates.**
+  `tm_os_names` (`R/program_management.R:352-356`) and the `is.na(known)` fork
+  in the abort message (`:964`, `:983-987`) were added to answer pass 1's O4,
+  but nothing asserts the parenthetical: the AC2 test checks only the uname
+  word, `set_program()` and the route inversion, and `test-install-platform.R`
+  checks only `host`. Deleting `tm_os_names` and collapsing the message to
+  "This session is running on {platform}." leaves the whole suite green — a
+  feature-removal that passes. Confirmed independently: `grep -rn
+  "macOS\|Solaris\|tm_os_names" tests/` finds no hit in any platform-gate
+  test. Coverage rather than criterion failure — AC2 does not require the
+  parenthetical. Disposition: TBD at gate.
+- **P2 — two of `tm_forbid_spending()`'s four stubs can never fire, so AC1's
+  "binds those four calls to stubs which abort if reached" is nominal for half
+  of them.** On the default-source path `tm_confirm`'s stub is the first
+  spending call reached, and on the caller-named-source path
+  `cli::cli_inform`'s is; `dir.create` and `tm_fetch` both sit strictly below
+  `tm_confirm` (`R/program_management.R:1043`, `:1063`, `:1075`), so no
+  mutation of the gate can reach either stub. The gate's position above the
+  first write and the first fetch follows from source order, not from an
+  assertion. Confirmed by reading the call order. Disposition: TBD at gate.
+- **P3 — this milestone's own AC5 evidence was false of the current head** and
+  every pass-1 finding was still recorded "Disposition: TBD at gate" while the
+  work log said the gate had directed them fixed. Disposition: ALREADY FIXED
+  in this pass, independently of the finding — pass 1's block is now scoped to
+  the head it names, its dispositions are recorded, and AC5 is re-verified
+  above against head 1800936. (Reported by the lens as two findings, 3 and 4;
+  merged here, being one record defect.)
+- **P4 — the seam's host-binding assertion is duplicated verbatim** at
+  `test-install-platform.R:14` and `test-program-management.R:2707`. Raised in
+  pass 1 as O7. Disposition: TBD at gate.
+- **P5 — `tm_os()` raises an unclassed subscript error if `Sys.info()` is
+  non-NULL but lacks `sysname`** (`R/program_management.R:319-324`). Not
+  reachable on any platform R runs on. Raised in pass 1 as O8. Disposition:
+  TBD at gate.
+- **P6 — `other <- setdiff(unlist(routes), character())`**
+  (`test-program-management.R:2846`) is a no-op wrapper around
+  `unlist(routes)` that only drops names, but reads as if it excluded
+  something. Disposition: TBD at gate.
+- **P7 — `tm_install_routes` and `tm_os_names` sit under the
+  `# install_on_win() ---` section header** (`R/program_management.R:342`,
+  `:352`) while the seam producing the keys they are indexed by lives under
+  `# Platform ---` (`:301-324`). Organizational nit. Disposition: TBD at gate.
+
+What the lens verified as correct: the gate sits below all four argument checks
+and above both argument defaults, the unverified-source notice, `tm_confirm()`,
+`dir.create()` and the first `tm_fetch()`; both message shapes render as AC2
+requires and O2's dangling antecedent is genuinely fixed; the allow-list is an
+allow-list, discriminated by the `freebsd` iteration; `tm_platform` follows
+D062; `tm_confirm()` already passes `call = rlang::caller_env()`, so T7's
+`conditionCall` assertion is meaningful; the `\value` list names eight distinct
+classes including all six from master and the "except the last two" clause
+still points at the same pair; `man/` matches the roxygen; AC4's file skips
+nothing and its Windows branch spends no bandwidth; `tm_local_windows()` holds
+only the seam and cannot leak between M103 census cases; the D086 siting test
+turns red on all four argument shapes when the gate is hoisted, so O1 is fixed;
+NEWS's `.exe`-only claim is true of the code and README contradicts nothing;
+no added line exceeds 80 columns, so O9 is fixed; no new dependency floor.
+
+**Blame-history lens (Sonnet).** No defects. `tm_os()` is called exactly once
+in `R/program_management.R` — the new gate — and nothing else in
+`install_on_win()` branches on it, so `tm_local_windows()` holding the seam at
+`windows` defeats no assertion M102-M105 made: the `.exe`-only path logic was
+already Windows-only by construction. M101's confirmation-refusal test still
+asserts what M101 intended; M102's classed-exit census invariant is respected
+by the new classed abort; M103's symlink-escape and M104's
+`Sys.which()`/`file.info()` fixes are untouched by a seam that does no path
+handling. D062's field naming and D036/D043's ordering precedent are applied as
+D086 records them. It re-raised the pass-1 O7 and O8 shapes, already carried
+above as P4 and P5.
+
+**Prior-review lens (Sonnet).** No findings. The GitHub inline-review probe
+(`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1`) returned `[]` —
+no inline review comments at all, bot or human — so the per-PR walk was
+correctly skipped. On the primary surface it read the archived review records
+of M101-M105 and M107 plus `LESSONS.md` against the touched files and found
+nothing reintroduced: M101's `interactive()` predicate mismatch, M102's
+registration-reads-disk defect, M103's symlink escape, M104's `~`-relative path
+disagreement and M105's extraction messaging are all untouched by the platform
+gate, and M107's check-ordering precedent is the one D086 invokes rather than
+one it contradicts. No archived lesson addresses `Sys.info()`,
+`.Platform$OS.type`, or single-bracket named-vector lookup, so there is no
+precedent here to regress against.

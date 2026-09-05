@@ -822,6 +822,13 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #' downloads a third-party build and overwrites remembered program locations,
 #' it asks for confirmation first and does nothing at all until it has it.
 #'
+#' This call installs on Windows only. On any other platform it refuses before
+#' it says, asks, writes, or downloads anything, and the error names the
+#' platform it found. Elsewhere FFmpeg comes from the system's own package
+#' manager -- `brew install ffmpeg` on macOS, `sudo apt-get install ffmpeg` on
+#' Linux -- and [set_program()] points tidymedia at a build that is already
+#' installed, on every platform.
+#'
 #' The archive is checked against a SHA-256 digest before anything is unpacked,
 #' and no program location is remembered unless the extraction actually
 #' produced that program. For the package's own default source the digest is
@@ -890,9 +897,10 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #'   nothing is verified and the call says so.
 #' @return A logical indicating whether the installation was successful.
 #'   `FALSE` is returned by a declined confirmation and by a failure to create
-#'   the install directory. Six other outcomes abort with a condition of their
-#'   own rather than returning: a download that did not deliver
-#'   (`tidymedia_download_unavailable`), a published digest that could not be
+#'   the install directory. Seven other outcomes abort with a condition of
+#'   their own rather than returning: a call made on a platform this function
+#'   does not install for (`tidymedia_wrong_platform`), a download that did not
+#'   deliver (`tidymedia_download_unavailable`), a published digest that could not be
 #'   fetched or read (`tidymedia_checksum_unavailable`), a digest that did not
 #'   match the downloaded archive (`tidymedia_checksum_mismatch`), an archive
 #'   that could not be unpacked (`tidymedia_archive_unreadable`), a

@@ -31,6 +31,15 @@
 
 ## Configuration
 
+* `install_on_win()` now refuses on a platform it cannot install for, before
+  it downloads, writes, or asks anything. It always installed a Windows build
+  and only ever looked for `.exe` files in it; called on macOS or Linux it
+  used to ask for consent and then download and unpack that build anyway. It
+  now aborts with `tidymedia_wrong_platform`, naming the platform it found and
+  where FFmpeg comes from there -- `brew install ffmpeg` on macOS,
+  `sudo apt-get install ffmpeg` on Linux -- and `set_program()` on any
+  platform, for a build that is already installed.
+
 * `install_on_win()` now decides what an archive produced by looking at the
   install directory as well as at the archive's own file list. A path the
   archive listed and did not leave behind -- an unpacked program an antivirus

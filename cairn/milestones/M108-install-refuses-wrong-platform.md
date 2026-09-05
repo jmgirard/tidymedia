@@ -127,6 +127,8 @@ sited above the argument checks → rejected at this gate, work log records it.
 - 2026-09-04: amendment return: AC5 — "`man/install_on_win.Rd`'s `\value` — the rendering of `?install_on_win`'s `@return` — names among the outcomes that abort both `tidymedia_wrong_platform` and `tidymedia_confirmation_unavailable`, and also every condition class named among the outcomes that abort in `git show master:man/install_on_win.Rd`'s `\value`; the number word introducing that list states the number of distinct classes the list names." This supersedes the draft clause in this milestone's earlier amendment-return line of the same date, which was written before the wording was audited: one return, not two.
 - 2026-09-04: T7: `@return` rewritten to keep all six classes it already named, add `tidymedia_confirmation_unavailable` beside `tidymedia_wrong_platform`, and open with "Eight"; `devtools::document()` re-rendered `man/install_on_win.Rd`. Added a test that `install_on_win()` aborts `tidymedia_confirmation_unavailable` from its own frame with the seam at `windows` and nothing mocked below the gate; renaming the class in `tm_confirm()` turns it and four others red. Suite 0 failures, 12251 passing. Status back to review.
 - 2026-09-04: review pass 2 re-ran every criterion against head 1800936 after the AC5 amendment: `master` had not moved, all six verified (suite 688 passing over the two M108 files with 0 skips, `devtools::check()` 0/0/0, all ten CI checks green including `windows-latest`), AC5 ticked, `cairn_validate` 16/16 with no advisories fired, and the three-lens fan-out returned seven findings from the diff lens and none from the other two. Defect-return count 0; the AC5 amendment return stays on its own track.
+- 2026-09-04: review gate chose fixing the two cheap instrument findings and filing the third over fixing all three, merging as-is, or stopping. P1 (the friendly OS name asserted by no test) and P6 (a no-op `setdiff`) landed on the branch, both test-only; the AC2 test now runs `sunos` too and pins the whole sentence per platform, and collapsing the message back turns it red at 2 failures. P2 (two of the four spending stubs unreachable by construction) goes to a candidate row. P4, P5 and P7 rejected with reasons in the Review section.
+- 2026-09-04: step-7 approval: PR #112 approved for merge.
 
 ## Decisions
 
@@ -346,7 +348,7 @@ substance, most severe first per lens, each with its disposition.
   feature-removal that passes. Confirmed independently: `grep -rn
   "macOS\|Solaris\|tm_os_names" tests/` finds no hit in any platform-gate
   test. Coverage rather than criterion failure — AC2 does not require the
-  parenthetical. Disposition: TBD at gate.
+  parenthetical. Disposition: FIXED at the gate. The AC2 test now loops `sunos` as well and asserts the whole sentence — "running on darwin (macOS).", "running on sunos (Solaris).", "running on linux.", "running on freebsd." — over whitespace-flattened text, with the expected names held in the test rather than read from `tm_os_names`. Discrimination measured: collapsing the message back to "This session is running on {platform}." turns the two files red at 2 failures; restored, 698 passing, 0 skips.
 - **P2 — two of `tm_forbid_spending()`'s four stubs can never fire, so AC1's
   "binds those four calls to stubs which abort if reached" is nominal for half
   of them.** On the default-source path `tm_confirm`'s stub is the first
@@ -355,7 +357,7 @@ substance, most severe first per lens, each with its disposition.
   `tm_confirm` (`R/program_management.R:1043`, `:1063`, `:1075`), so no
   mutation of the gate can reach either stub. The gate's position above the
   first write and the first fetch follows from source order, not from an
-  assertion. Confirmed by reading the call order. Disposition: TBD at gate.
+  assertion. Confirmed by reading the call order. Disposition: FOLLOW-UP. Recorded as a ROADMAP candidate row at the post-merge hygiene pass. Closing it means restructuring the guard so the two earlier stubs pass through rather than abort, which changes what the test proves about the first two calls in order to reach the last two; not worth doing under the gate, and the gate's position above the write and the fetch is not in doubt — it is above `tm_confirm()`, which precedes both.
 - **P3 — this milestone's own AC5 evidence was false of the current head** and
   every pass-1 finding was still recorded "Disposition: TBD at gate" while the
   work log said the gate had directed them fixed. Disposition: ALREADY FIXED
@@ -365,19 +367,18 @@ substance, most severe first per lens, each with its disposition.
   merged here, being one record defect.)
 - **P4 — the seam's host-binding assertion is duplicated verbatim** at
   `test-install-platform.R:14` and `test-program-management.R:2707`. Raised in
-  pass 1 as O7. Disposition: TBD at gate.
+  pass 1 as O7. Disposition: REJECTED. The duplication is deliberate: `test-install-platform.R` is the one file that skips nothing on any runner, and its own copy of the host-binding assertion is what makes AC4 readable and self-contained there. Same reason pass 1 rejected O7.
 - **P5 — `tm_os()` raises an unclassed subscript error if `Sys.info()` is
   non-NULL but lacks `sysname`** (`R/program_management.R:319-324`). Not
-  reachable on any platform R runs on. Raised in pass 1 as O8. Disposition:
-  TBD at gate.
+  reachable on any platform R runs on. Raised in pass 1 as O8. Disposition: REJECTED. Unreachable — where `Sys.info()` is non-NULL it carries `sysname` on every platform R runs on. Same reason pass 1 rejected O8.
 - **P6 — `other <- setdiff(unlist(routes), character())`**
   (`test-program-management.R:2846`) is a no-op wrapper around
   `unlist(routes)` that only drops names, but reads as if it excluded
-  something. Disposition: TBD at gate.
+  something. Disposition: FIXED at the gate. `setdiff(unlist(routes), character())` is now `unname(unlist(routes))`, which is what it always did.
 - **P7 — `tm_install_routes` and `tm_os_names` sit under the
   `# install_on_win() ---` section header** (`R/program_management.R:342`,
   `:352`) while the seam producing the keys they are indexed by lives under
-  `# Platform ---` (`:301-324`). Organizational nit. Disposition: TBD at gate.
+  `# Platform ---` (`:301-324`). Organizational nit. Disposition: REJECTED. A section-header placement nit on two constants; the comment above each already says which seam's vocabulary it is keyed by.
 
 What the lens verified as correct: the gate sits below all four argument checks
 and above both argument defaults, the unverified-source notice, `tm_confirm()`,
@@ -430,3 +431,16 @@ false). One conversation comment, from a bot.
   98.26% (+0.01%), 30 lines added and 30 hit, misses unchanged at 69. Requests
   nothing. Author type `Bot`, so it does not touch the merge chip; coverage is
   diagnostic here and never gates a merge.
+
+#### Gate triage (2026-09-04)
+
+The maintainer chose fix-two, file-one, merge over fixing all three, merging
+as-is, or stopping. Fixed on the branch: P1 and P6, both test-only. Filed as a
+candidate row: P2, written at the post-merge hygiene pass. Rejected with the
+reasons logged above: P4, P5, P7. P3 was already fixed in this pass. No finding
+demonstrated an acceptance criterion failing, so none met the return floor; the
+defect-return count for M108 stays 0, and the one AC5 amendment return stays on
+its own track.
+
+After the fixes: `testthat::test_local(filter = "program-management|
+install-platform")` FAIL 0, WARN 0, SKIP 0, PASS 698.

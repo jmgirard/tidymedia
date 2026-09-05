@@ -2843,9 +2843,13 @@ test_that("the wrong-platform refusal names the platform and its route", {
     darwin = "brew install ffmpeg",
     linux = "sudo apt-get install ffmpeg"
   )
-  other <- setdiff(unlist(routes), character())
+  other <- unname(unlist(routes))
+  # The name a caller would recognize, where the uname word is not one. Held
+  # here rather than read from `tm_os_names` so the expectation is stated
+  # independently of the table under test.
+  known <- list(darwin = "macOS", sunos = "Solaris")
 
-  for (os in c("darwin", "linux", "freebsd")) {
+  for (os in c("darwin", "linux", "freebsd", "sunos")) {
     testthat::local_mocked_bindings(tm_os = function(...) os)
     tm_forbid_spending(writes = FALSE)
     cnd <- expect_error(
@@ -2857,6 +2861,19 @@ test_that("the wrong-platform refusal names the platform and its route", {
     msg <- cli::ansi_strip(conditionMessage(cnd))
     expect_match(msg, os, fixed = TRUE)
     expect_match(msg, "set_program()", fixed = TRUE)
+    # And where the uname word is not the name a caller knows the platform by,
+    # that name is beside it -- and where it IS, nothing is added. cli wraps
+    # the bullet, so the whitespace is flattened before the sentence is read.
+    flat <- gsub("[[:space:]]+", " ", msg)
+    expect_match(
+      flat,
+      if (is.null(known[[os]])) {
+        paste0("running on ", os, ".")
+      } else {
+        paste0("running on ", os, " (", known[[os]], ").")
+      },
+      fixed = TRUE
+    )
     if (!is.null(routes[[os]])) {
       expect_match(msg, routes[[os]], fixed = TRUE)
       # And only its own route: the two package managers are named one at a

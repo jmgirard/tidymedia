@@ -6,7 +6,7 @@
 <!-- badges: start -->
 
 [![Lifecycle:
-experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![R-CMD-check](https://github.com/jmgirard/tidymedia/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/jmgirard/tidymedia/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
 coverage](https://codecov.io/gh/jmgirard/tidymedia/graph/badge.svg)](https://app.codecov.io/gh/jmgirard/tidymedia)
@@ -94,7 +94,7 @@ several popular platforms.
 
 1.  Open the macOS Terminal or Linux shell prompt.
 2.  Install [Homebrew](https://brew.sh/) by entering this code into your
-    terminal:<br />`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"`
+    terminal:<br />`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 3.  Enter this code into your terminal:<br />`brew install ffmpeg`
 
 **macOS Manual Install**
@@ -131,7 +131,7 @@ ffm(video, "output.mp4") |>
   ffm_codec(video = "libx264") |>
   ffm_drop(streams = "audio") |>
   ffm_compile()
-#> [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmprcJIaC/temp_libpath4da96721ddb1/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""
+#> [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmpOLq5Tw/temp_libpath1850a235a2fbd/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""
 ```
 
 Common tasks have their own verbs (Layer 2). Pass `run = FALSE` to see
@@ -139,7 +139,7 @@ the command without executing it:
 
 ``` r
 extract_audio(video, "audio.aac", run = FALSE)
-#> [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmprcJIaC/temp_libpath4da96721ddb1/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:0\" \"audio.aac\""
+#> [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmpOLq5Tw/temp_libpath1850a235a2fbd/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:0\" \"audio.aac\""
 ```
 
 ### Read metadata as tibbles

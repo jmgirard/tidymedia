@@ -120,14 +120,13 @@ reference:
   - ffmpeg_codecs
   - ffmpeg_encoders
   - hardware_encoder
-  - has_hardware_encoder
   - refresh_ffmpeg_capabilities
 - title: "Program management"
   desc: >
     Locate, configure, and install the FFmpeg and MediaInfo binaries.
   contents:
-  - find_ffmpeg
-  - set_ffmpeg
+  - find_program
+  - set_program
   - install_on_win
 
 articles:

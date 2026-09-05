@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 # tidymedia
 
 <!-- badges: start -->
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![R-CMD-check](https://github.com/jmgirard/tidymedia/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/jmgirard/tidymedia/actions/workflows/R-CMD-check.yaml)
 [![Codecov test coverage](https://codecov.io/gh/jmgirard/tidymedia/graph/badge.svg)](https://app.codecov.io/gh/jmgirard/tidymedia)
 <!-- badges: end -->
@@ -71,7 +71,7 @@ one to ask, add `confirm = FALSE`.
 **macOS Homebrew Install**
 
 1. Open the macOS Terminal or Linux shell prompt.
-2. Install [Homebrew](https://brew.sh/) by entering this code into your terminal:<br />`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"`
+2. Install [Homebrew](https://brew.sh/) by entering this code into your terminal:<br />`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 3. Enter this code into your terminal:<br />`brew install ffmpeg`
 
 **macOS Manual Install**

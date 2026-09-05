@@ -55,7 +55,7 @@ any kind: a change there would move this milestone's surface tier.
 - [x] AC5: The milestone file carries a ledger with one row per gap in the four the
       plan commit's absorbed candidate row named, each classed `close` or `prune`
       under D072 with its own recorded reason.
-- [ ] AC6: `devtools::check()` reports 0 errors and 0 warnings and `devtools::test()`
+- [x] AC6: `devtools::check()` reports 0 errors and 0 warnings and `devtools::test()`
       passes.
 
 ## Coverage
@@ -117,6 +117,7 @@ any kind: a change there would move this milestone's surface tier.
 
 - 2026-09-05: T6: the four-gap D072 ledger written into `## Decisions` as one table — (a) and (d) closed, (b) and (c) pruned with reasons. `devtools::document()` produced no diff; `devtools::check()` 0 errors, 0 warnings, 0 notes; `devtools::test()` 0 failed, 0 errors, 12,440 passed, 18 skipped.
 - 2026-09-05: status to review; all six tasks checked.
+- 2026-09-05: review: AC6 verified — `devtools::check()` 0/0/0 and `devtools::test()` 12,468 tests, 0 failed, 0 errors, 18 skipped; consistency gate passes. Three review lenses ran; 13 findings logged, awaiting triage at the gate. PR #113's reviews, comments and unresolved threads are all empty.
 - 2026-09-05: review: draft PR #113 opened; AC1-AC5 verified with fresh evidence and their boxes ticked; `cairn_validate` 16/16 with no advisories, `pkgdown::check_pkgdown()` clean, `devtools::document()` no diff, `devtools::check()` 0 errors / 0 warnings / 0 notes. AC6's `devtools::test()` count re-run and the diff-bug review lens still outstanding.
 
 ## Decisions
@@ -182,10 +183,52 @@ command: `tm_hw_encoder_ledger()`'s computed domain is 3 sites — one literal
 at or above the resolver is that resolver call itself, so the positional and
 dataflow readings agree on every member of the domain, as the row states.
 
-**AC6 — pending.** `devtools::check()` and `devtools::test()` are running.
+**AC6 — check and suite.** `devtools::check()`: `Status: OK`, 0 errors, 0 warnings,
+0 notes (5m 27s), its own `testthat.R` run included. `devtools::test()`: 12,468
+tests, 0 failed, 0 errors, 18 skipped, 10 warnings. The 10 warnings are conditions
+raised inside tests this branch does not touch — running
+`test-hardware-out-of-table-blame.R` on its own reports none — and R CMD check's own
+warning count is 0.
 
-**Consistency gate (partial).** `cairn_validate.py` 16/16 PASS, no advisories fired.
+**Consistency gate.** Universal: `cairn_validate.py` 16/16 PASS, no advisories fired.
 No DESIGN principle changed (`Principles touched: —`), so `cairn_impact.py` does not
-apply. Toolchain slot: `pkgdown::check_pkgdown()` clean; no new top-level files, so
-no `.Rbuildignore` entry is owed; no user-visible change, so no `NEWS.md` entry is
-owed. `devtools::document()` no-diff and `devtools::check()` still to run.
+apply. Toolchain slot (`r-package`): `devtools::document()` produces no diff; no
+generated file was hand-edited; `README.Rmd` is untouched; `pkgdown::check_pkgdown()`
+clean; no user-visible change, so no `NEWS.md` entry is owed; no new top-level files,
+so no `.Rbuildignore` entry is owed; `devtools::check()` clean as above. Gate passes.
+
+### Independent review
+
+Three fresh-context lenses, none having seen the implementation (the diff touches
+executable surface, so the full fan-out ran rather than the internal-tier single
+lens). The blame-history lens found nothing that undoes M106's cross, resurrects a
+fixed bug, or contradicts a D-entry, and confirmed the `has_vc` -> `cross_vc` rename
+is complete and collision-free; its one note is a residual asymmetry it classes as
+not a regression (F12 below). The prior-PR-comments lens found no prior-review
+regression: the archived `## Review` sections of M106 and M107 are the source of
+gaps (a) and (d), which this milestone closes, and the M106 `args["x"] <- list()`
+lesson is followed in the generator; its GitHub probe
+(`repos/jmgirard/tidymedia/pulls/comments`) returned `[]`, so no repo-wide thread
+walk was owed. The diff-bug lens re-derived every measured claim in the work log
+against its own scratch copies and reproduced all of them exactly, and reported the
+findings below.
+
+| # | Lens | Finding | Disposition |
+|---|---|---|---|
+| F1 | [O] | Gap (a)'s stated purpose is not what the new cells measure: all 360 rows are aborts, because every one of the five wrong forms is refused, so what the class adds beside the blamed frame is the refusal MESSAGE and never compiled bytes. The Scope line and ledger row (a) both say "compiled bytes"; the generator's own header hedges correctly with "or its refusal", and AC1 is worded with the same "or" and is met. | |
+| F2 | [O] | `oot_jobs()`'s rename guard (`:83`, `file.exists(v[[2]])`) and the control that fences it (`:190`, `file.exists(v[[1]])`) test the same value, since row 2 is a copy of row 1 before renaming — so the control can never see a column the rename skipped. | |
+| F3 | [O] | `oot_jobs()` rewrites any character column that is not a path (`:81-85` keys only on `is.character()` and `file.exists()`), so a jobs table growing a non-path character column would have that value silently rewritten. Not live: the seven reachable tables hold only paths plus list/numeric columns. | |
+| F4 | [O] | `oot_jobs(NULL, ...)` degrades silently: a member with a `jobs` formal but no `jobs` in its `tm_timeout_call_specs()` cell yields `NULL[c(1,1), ]` without error, where `oot_args()` has an explicit `stop()` for the analogous case (`:102-104`). | |
+| F5 | [O] | `args$video_codec <- NULL` (`:113`) deletes the argument rather than setting the sentinel — the `$<-` spelling T1 forbids and `nvenc_order_set_codec()` carries a comment against. Harmless because `batch_video_codecs()` ignores the scalar when the column exists. | |
+| F6 | [O] | AC2's 18 rows come from `nvenc_order_diff()`, which the generator (`:386`) calls "reported for the reader rather than for AC2"; `nvenc_order_contract_diff()` returns 0 under the same mutant. AC2's own wording names no comparison and is met. | |
+| F7 | [O] | The form-partition control (`:159-165`) derives its expected value with the same expression `oot_forms()` uses, so only the non-emptiness check at `:166` fences anything. The pre-existing check at `:128` has the same shape. | |
+| F8 | [O] | The comment at `data-raw/nvenc-probe-order-baseline.R:213` asserts "measured 2026-09-05, `[[<-` and `[<-` both STORE a `list(1)`", but T1's work-log entry records only grid counts, so no execution behind the claim is recorded. The lens re-derived it and it holds. | |
+| F9 | [O] | `sub("([^/]+)$", "2-\\1", ...)` (`:84`) assumes `/` separators. Latent: `file.path()`/`tempdir()` give `/` on Windows too. | |
+| F10 | [O] | The distinctness control checks within a column, never across them (`:188-192`), so two output columns given the same path would be renamed identically and still collide. | |
+| F11 | [O] | `ns2` (`:157`) duplicates `ns`, already bound at `:126` in the same test body. | |
+| F12 | [S] | The jobs-column form is added to the out-of-table test and the domain-sanity test, but not to the fallback-message test at `:306-344`, which still runs the scalar form only. | |
+| F13 | [O] | Pre-existing: the `# Usage (from the package root):` header (`data-raw/nvenc-probe-order-baseline.R:76`) is orphaned from the usage block 27 lines below, and this milestone inserted a fourth provenance paragraph between them. | |
+
+**PR-conversation read (PR #113).** Reviews, issue comments, and unresolved review
+threads were all read immediately before the gate: all three surfaces are empty —
+no review in any state, no conversation comment, no unresolved thread.

@@ -71,6 +71,7 @@
 
 - 2026-09-05: review fix-now — six findings fixed on the branch (argument-check blame, condition fields, the `.Rprofile` NEWS case, AC1's collapsed occupied cell, AC5's inert regex, a ROADMAP row claiming a defect this branch fixed); one routed to the unclassed-aborts candidate row, four rejected with reasons.
 - 2026-09-05: step-7 approval: PR #114 approved for merge.
+- 2026-09-05: CI wait hit the harness ceiling with R-CMD-check still running on 7219c25 (macos green, five legs in progress); watcher stopped, not merged. Resume at /milestone-review M110, which re-derives the state.
 
 ## Decisions
 

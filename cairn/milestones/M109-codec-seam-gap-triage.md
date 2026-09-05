@@ -83,7 +83,7 @@ any kind: a change there would move this milestone's surface tier.
       (`R/ffmpeg.R:3416`) in a scratch tree — run the grid against it, and record in
       the work log how many rows differ from the baseline and which cells they are;
       then confirm the unmutated tree differs in none. Revert the scratch tree.
-- [ ] T4: Give `oot_args()` (`tests/testthat/test-hardware-out-of-table-blame.R:59-70`)
+- [x] T4: Give `oot_args()` (`tests/testthat/test-hardware-out-of-table-blame.R:59-70`)
       a jobs-column form for members whose `formals()` include `jobs`, building the
       column from `hardware_backend_families()[[pair$hardware]][[1]]`'s codec followed
       by the pair's omitted codec, and wrap the sweep's loops (`:124-147`) in a form
@@ -110,6 +110,8 @@ any kind: a change there would move this milestone's surface tier.
 - 2026-09-05: T2: `nvenc-probe-order-merge-base.rds` re-recorded at the ref it already carried (`96e973b`): 7,200 rows, 0 vacuous. All 6,840 rows the previous object held reproduced with the same kind, outcome and blamed frame, and the 360 rows of difference are exactly the new `video_codec/<form>` class. Header provenance, the usage block's stale M095 figure, and the note on why M095's grid is no longer re-derivable all updated.
 
 - 2026-09-05: T3: the defect was planted in a COPY of `R/`, `NAMESPACE` and the sample under the scratch dir and run through `nvenc_order_baseline(root =)`, rather than by editing and reverting the working tree, so the repo was never dirty. Mutant (`check_video_codec()`'s `check_token()` call removed): 18 rows differ from the baseline, all of them `standardize_video`'s `video_codec/token` cell at all 18 of its (hardware, fallback, pool) combinations — 6 reblamed from `standardize_video` to `ffm_codec`, 12 still blamed on the verb but now carrying the codec-family message instead of the token one. Every differing row is in the cell class M109 added, so the pre-M109 grid would have reported none. Control: the unmutated working tree differs from the baseline in 0 rows on both the contract and the wide comparison, 0 vacuous.
+
+- 2026-09-05: T4: `oot_forms()` reads the form set off `formals()` and the out-of-table sweep loops over it, so the seven reachable members that take `jobs` now run each (omitted pair, fallback) cell in a two-row column form as well as the scalar one — 42 new cells. Discovered sub-task, not in the plan: the duplicated row needed distinct OUTPUT paths, told from inputs by what `tm_timeout_call_specs()` created on disk; without it four of the seven refused for colliding outputs before reading the codec (measured 2026-09-05). The non-emptiness control gained the form partition and a check that `batch_video_codecs()` really reads each built column as two families with the in-table one first. Suite: 0 failed, 0 errors, 12,440 passed.
 
 ## Decisions
 

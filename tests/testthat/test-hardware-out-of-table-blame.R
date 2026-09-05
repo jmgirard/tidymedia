@@ -54,9 +54,49 @@ oot_members <- function() {
   list(reachable = names(has_vc)[has_vc], unreachable = names(has_vc)[!has_vc])
 }
 
+# The forms a member can name a codec in: the scalar argument always, and the
+# `jobs` column as well where the member fans out over one (M109). Read off
+# `formals()`, never listed -- a verb that grows a `jobs` argument joins the
+# second form on its own, the way it already joins the sweep.
+oot_forms <- function(nm) {
+  fmls <- names(formals(get(nm, envir = asNamespace("tidymedia"))))
+  c("scalar", if ("jobs" %in% fmls) "jobs")
+}
+
+# A two-row `jobs` table naming two codecs, for the column form.
+#
+# TWO rows, and the omitted family second: `check_hardware_available()` reduces
+# a column to `unique()` families in column order, so a one-row column and a
+# column whose first family is already the omitted one are both swept by a
+# family loop that reads `families[1]` alone. This shape is not.
+#
+# Row 2's OUTPUT paths are renamed and its inputs are not. The two are told
+# apart by what is on disk -- `tm_timeout_call_specs()` creates the inputs and
+# creates no output -- rather than by naming a column per member. Without it,
+# four of the seven fan-out verbs refuse the duplicated row for colliding
+# outputs before the codec is ever read, which would blame the verb for the
+# wrong reason (measured 2026-09-05).
+oot_jobs <- function(jobs, codecs) {
+  two <- jobs[c(1, 1), , drop = FALSE]
+  for (col in names(two)) {
+    v <- two[[col]]
+    if (!is.character(v) || file.exists(v[[2]])) next
+    two[[col]][[2]] <- sub("([^/]+)$", "2-\\1", v[[2]])
+  }
+  two$video_codec <- codecs
+  two
+}
+
+# The in-table codec a column form puts AHEAD of the omitted one: the first
+# family of the pair's own backend row, through the same token table the rest
+# of the sweep names families with.
+oot_in_table_codec <- function(hardware) {
+  oot_family_codecs()[[hardware_backend_families()[[hardware]][[1]]]]
+}
+
 # One member's valid cell, with the codec, backend and fallback arm crossed in.
 # `run`/`parallel` are forced off so a cell that is NOT refused spawns nothing.
-oot_args <- function(nm, specs, codec, hardware, fallback) {
+oot_args <- function(nm, specs, codec, hardware, fallback, form = "scalar") {
   fmls <- names(formals(get(nm, envir = asNamespace("tidymedia"))))
   args <- specs[[nm]]
   if (is.null(args)) {
@@ -67,6 +107,12 @@ oot_args <- function(nm, specs, codec, hardware, fallback) {
   args$fallback <- fallback
   if ("parallel" %in% fmls) args$parallel <- FALSE
   if ("run" %in% fmls) args$run <- FALSE
+  if (identical(form, "jobs")) {
+    # The column REPLACES the scalar, so the cell measures the column arm and
+    # not both at once.
+    args$video_codec <- NULL
+    args$jobs <- oot_jobs(args$jobs, c(oot_in_table_codec(hardware), codec))
+  }
   args
 }
 
@@ -102,6 +148,50 @@ test_that("the sweep's domain and its argument cells are computed, not listed", 
   dir <- withr::local_tempdir()
   specs <- tm_timeout_call_specs(dir)
   for (nm in m$reachable) expect_false(is.null(specs[[nm]]), info = nm)
+
+  # The form partition, on the same terms (M109): every reachable member has the
+  # scalar form, has the column form exactly when it takes a `jobs` argument,
+  # and the column half is not empty -- a `oot_forms()` that quietly stopped
+  # returning "jobs" would leave the sweep passing over half the cells it
+  # claims, with nothing red.
+  ns2 <- asNamespace("tidymedia")
+  with_jobs <- character()
+  for (nm in m$reachable) {
+    forms <- oot_forms(nm)
+    expect_true("scalar" %in% forms, info = nm)
+    takes_jobs <- "jobs" %in% names(formals(get(nm, envir = ns2)))
+    expect_identical("jobs" %in% forms, takes_jobs, info = nm)
+    if (takes_jobs) with_jobs <- c(with_jobs, nm)
+  }
+  expect_gt(length(with_jobs), 0)
+
+  # And a column form really is a column the front door reads as several
+  # families, in the order the cell built them: `check_hardware_available()`
+  # sweeps `batch_video_codecs()`'s output, so a cell whose column collapsed to
+  # one family, or put the omitted family first, would be swept identically by
+  # a family loop reading `families[1]` alone.
+  for (nm in with_jobs) {
+    for (pair in oot_pairs(held = FALSE)) {
+      jobs <- oot_args(nm, specs, fc[[pair$family]], pair$hardware,
+                       FALSE, "jobs")$jobs
+      codecs <- ns2$batch_video_codecs(jobs, NULL)
+      info <- paste(nm, pair$hardware, pair$family, sep = "/")
+      expect_true(is.list(codecs), info = info)
+      expect_length(codecs, 2L)
+      expect_identical(codecs[[1]], oot_in_table_codec(pair$hardware), info = info)
+      expect_identical(codecs[[2]], fc[[pair$family]], info = info)
+      expect_identical(nrow(jobs), 2L)
+      # Row 2's output paths really were made distinct. No character column
+      # carries the same non-existent path twice, which is exactly what the
+      # duplicate-output refusal keys on -- and that refusal firing first would
+      # make every cell below pass for the wrong reason.
+      for (col in names(jobs)) {
+        v <- jobs[[col]]
+        if (!is.character(v) || file.exists(v[[1]])) next
+        expect_false(identical(v[[1]], v[[2]]), info = paste(info, col))
+      }
+    }
+  }
 })
 
 test_that("an out-of-table pair is refused by the verb on both fallback arms", {
@@ -122,26 +212,34 @@ test_that("an out-of-table pair is refused by the verb on both fallback arms", {
 
   bad <- character()
   for (nm in members) {
-    for (pair in oot_pairs(held = FALSE)) {
-      for (fb in c(FALSE, TRUE)) {
-        label <- paste(nm, pair$hardware, pair$family, fb, sep = "/")
-        cnd <- tryCatch(
-          do.call(nm, oot_args(nm, specs, fc[[pair$family]], pair$hardware, fb),
-                  envir = asNamespace("tidymedia")),
-          error = function(e) e
-        )
-        if (!inherits(cnd, "error")) {
-          bad <- c(bad, paste0(label, " -> <not refused>"))
-          next
-        }
-        # Identity, not merely failure: the frame blamed AND the sentence it
-        # carried. A cell that keeps naming the verb but starts saying
-        # something else has still changed what the caller reads.
-        frame <- blamed_verb(cnd)
-        msg <- cli::ansi_strip(conditionMessage(cnd))
-        wanted <- paste0(pair$hardware, " has no \"", pair$family, "\" encoder.")
-        if (!identical(frame, nm) || !startsWith(msg, wanted)) {
-          bad <- c(bad, paste0(label, " -> ", frame, ": ", sub("\n.*$", "", msg)))
+    # Both forms a member can name the codec in (M109). The scalar form reaches
+    # `check_hardware_available()`'s scalar arm; the column form reaches the
+    # `is.list()` arm and the family loop above it, which the scalar form
+    # cannot distinguish from a loop that reads its first element only.
+    for (form in oot_forms(nm)) {
+      for (pair in oot_pairs(held = FALSE)) {
+        for (fb in c(FALSE, TRUE)) {
+          label <- paste(nm, form, pair$hardware, pair$family, fb, sep = "/")
+          cnd <- tryCatch(
+            do.call(nm, oot_args(nm, specs, fc[[pair$family]], pair$hardware,
+                                 fb, form),
+                    envir = asNamespace("tidymedia")),
+            error = function(e) e
+          )
+          if (!inherits(cnd, "error")) {
+            bad <- c(bad, paste0(label, " -> <not refused>"))
+            next
+          }
+          # Identity, not merely failure: the frame blamed AND the sentence it
+          # carried. A cell that keeps naming the verb but starts saying
+          # something else has still changed what the caller reads.
+          frame <- blamed_verb(cnd)
+          msg <- cli::ansi_strip(conditionMessage(cnd))
+          wanted <- paste0(pair$hardware, " has no \"", pair$family, "\" encoder.")
+          if (!identical(frame, nm) || !startsWith(msg, wanted)) {
+            bad <- c(bad, paste0(label, " -> ", frame, ": ",
+                                 sub("\n.*$", "", msg)))
+          }
         }
       }
     }

@@ -70,7 +70,7 @@ row.
 
 - [x] T1: Write the AC1 sweep first and see it red — two hits — before any
       source change.
-- [ ] T2: Extract `tm_set_program(program, location, confirm, call)` from
+- [x] T2: Extract `tm_set_program(program, location, confirm, call)` from
       `R/program_management.R:220-280`; `set_program()` and the four `set_*()`
       exports become wrappers passing their own frames. The M100 lesson holds:
       pass the threaded `call` into `rlang::arg_match()`, `check_string()` and
@@ -96,6 +96,7 @@ row.
 - 2026-09-05: implementation gate chose dropping both duplicate exports — `ffm()` and `mediainfo_summary()` — over keeping either, on the measurement that `ffm_files(` has 234 call sites to a bare `ffm(`'s 9, which reverses T5's premise that removing `ffm()` is the larger change. T5's claim holds only inside `@examples` (26 `ffm(` to 21 `ffm_files(`).
 - 2026-09-05: implementation gate waived the deprecation cycle for both alias removals and the `call` removal, under D014's pre-0.2.0 clean-break policy; no `lifecycle` shim.
 - 2026-09-05: T1 sweep written and seen red at `tests/testthat/test-exported-call-formal.R:32` naming exactly `hardware_encoder` and `set_program` over a domain of 88 exported functions. Its positive control (a real formal named `call`, from `hardware_encoder_available()`) and its independent domain assertion both pass, so a later green is the two exports losing the formal rather than the detector going blind.
+- 2026-09-05: T2 extracted `tm_set_program(program, location, confirm, call)`; `set_program()` and the four `set_*()` exports pass their own frames, and the Rd usage line lost `call = rlang::current_env()`. `install_on_win()`'s internal registration still goes through the exported `set_program()`, so its refusals keep naming that frame. `arg_match()` takes `error_arg = "program"` explicitly, since the internal is reached with a string literal from four of the five callers. The blame suites (`builder-blame-front-door`, `hardware-out-of-table-blame`, `nvenc-probe-blame`, `timeout-refusal-blame`, `program-management`, `nvenc-memo`) all pass; the sweep is down to one hit, `hardware_encoder`.
 - 2026-09-05: plan gate chose a sweep over `getNamespaceExports()` over a grep of `man/*.Rd` usage blocks, because `.Rd` files carry no export status — only 1 of 82 is marked internal — so the grep cannot partition its hits. Falsified by an export whose formals a static sweep cannot read.
 
 ## Decisions

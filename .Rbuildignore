@@ -17,4 +17,5 @@
 ^\.git-blame-ignore-revs$
 ^.*\.tar\.gz$
 ^tests/testthat/_problems$
+^tests/testthat/testthat-problems\.rds$
 ^tools$

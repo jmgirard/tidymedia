@@ -36,11 +36,13 @@
   back as tibbles — along with the two programs it drives. This is what an
   installer and a package index show before anyone opens the help pages.
 
-* The built package no longer carries three paths that were never part of it:
-  two stale `inst/extdata/*_location.rds` files, which nothing in the package
-  read, and a `tests/testthat/_problems/` directory that a failing test run
-  leaves behind. The last of those is now ignored at build time, so a later
-  failing run cannot put it back.
+* The built package no longer carries three paths it has no use for: two
+  `inst/extdata/*_location.rds` files, which held a remembered binary location
+  until that moved to the user's own configuration directory and which nothing
+  has read since, and a `tests/testthat/_problems/` scratch directory left over
+  from a local test run. Both kinds of leftover a failing test run can produce —
+  that directory and testthat's own `testthat-problems.rds` — are now ignored at
+  build time, so a later failing run cannot put either back.
 
 ## Configuration
 

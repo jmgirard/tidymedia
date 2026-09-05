@@ -7,6 +7,8 @@
 # (`set_program`), so entries are resolved to their .Rd file before counting:
 # two aliases of one topic are a repeat even though the two strings differ.
 # Run from the package root: Rscript tools/pkgdown_duplicate_topics.R
+# Requires the `yaml` package, which the package itself does not depend on:
+# this is a developer tool, kept out of the build by `.Rbuildignore`'s `^tools$`.
 
 yml <- yaml::read_yaml("_pkgdown.yml")
 entries <- unlist(lapply(yml$reference, function(sec) sec$contents), use.names = FALSE)

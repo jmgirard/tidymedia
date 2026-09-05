@@ -104,6 +104,7 @@ URL-bearing form, which is legal and stays.
 - 2026-09-05: added two NEWS.md entries under Requirements, for the rewritten `Title`/`Description` and for the three paths the tarball no longer carries.
 - 2026-09-05: all six tasks checked, status set to review.
 - 2026-09-05: review opened PR #115 (draft). AC2, AC3, AC4 and AC5 verified with fresh evidence and ticked; AC1 and AC6 still running (`--as-cran`, `devtools::test()`, `devtools::check()`), three fresh-context reviewers still running. `cairn_validate` passes; `devtools::document()` no diff.
+- 2026-09-05: gate directed fix-now on review findings 1, 4 and 7. Added `^tests/testthat/testthat-problems\.rds$` to `.Rbuildignore`; rewrote the NEWS tarball bullet so it no longer says the two `.rds` files were never part of the package or that testthat writes `_problems/`; added a header line to `tools/pkgdown_duplicate_topics.R` naming its `yaml` requirement. Finding 6's section move stays rejected: the dev-version block has no `## Documentation` section, and creating one for a single bullet is churn. AC1, AC3 and AC6 re-run against the fixed tree.
 
 ## Decisions
 

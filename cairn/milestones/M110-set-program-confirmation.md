@@ -75,6 +75,7 @@
 - 2026-09-05: resume: PR #114 OPEN, all criteria ticked against recorded evidence, prior approval on record; master unmoved (branch 12 ahead, 0 behind) and fully pushed, so step 3's evidence stands. PR conversation re-read: no reviews, no comments, no unresolved threads.
 - 2026-09-05: step-7 approval: PR #114 approved for merge.
 - 2026-09-05: CI wait hit the harness ceiling a second time, on the run the approval commit 1cf4c94 started (33981447495): macos-latest and pkgdown green, windows-latest, the four ubuntu R-CMD-check legs and test-coverage still in progress at the 600s ceiling. Watcher stopped, merge not attempted; `cairn/.merge-approved` written and unconsumed. Resume at /milestone-review M110.
+- 2026-09-05: resumed with all ten checks green on `f143de9`; PR conversation re-read (one codecov[bot] coverage comment, noted). Merging under the in-session step-7 approval, whose only outstanding condition was CI green.
 
 ## Decisions
 
@@ -119,3 +120,7 @@ Rejected, with reasons:
 Post-fix verification: `devtools::test()` 12614 pass / 0 fail / 18 skip; `devtools::document()` no diff; per-criterion counts unchanged except the two new tests (AC-adjacent, not criterion evidence).
 
 **PR conversation (#114), read once before the merge gate:** no reviews, no conversation comments, no unresolved review threads. Nothing to triage; the blocking rule does not fire.
+
+Re-read at the resumed merge (CI green on `f143de9`, all ten checks): still no reviews and no unresolved threads; one conversation comment had arrived.
+
+- conversation: codecov[bot] PR #114 — noted. Coverage report only: all modified and coverable lines covered, project coverage 98.41% against master's 98.28% (+0.13%), 4043 lines against 4017. Author `type` is `Bot`, so the blocking rule does not fire; the comment requests nothing.

@@ -31,7 +31,7 @@ URL-bearing form, which is legal and stays.
 
 ## Acceptance criteria
 
-- [ ] AC1: `R CMD check --as-cran` over the built tarball, run with
+- [x] AC1: `R CMD check --as-cran` over the built tarball, run with
       `_R_CHECK_CRAN_INCOMING_=TRUE` and `_R_CHECK_CRAN_INCOMING_REMOTE_=FALSE`,
       reports no NOTE naming the `Title` field or the `Description` field.
       Evidence: the check's complete NOTE list, quoted.
@@ -50,7 +50,7 @@ URL-bearing form, which is legal and stays.
       `contents:` entries, verified by a script that parses the file and
       reports every repeated entry, and `pkgdown::check_pkgdown()` passes.
       Evidence: both outputs.
-- [ ] AC6: `devtools::document()` produces no diff and `devtools::test()` and
+- [x] AC6: `devtools::document()` produces no diff and `devtools::test()` and
       `devtools::check()` are clean — 0 errors, 0 warnings — with each NOTE
       the check reports quoted and justified. Evidence: the three tails.
 
@@ -138,3 +138,103 @@ against `master` at `b6f195c`. PR #115.
   `repeated topics: none`. `pkgdown::check_pkgdown()`: `No problems found.`
   (The one `man/` topic outside the index is `tidyeval.Rd`, a boilerplate
   doc-only topic with no export; `check_pkgdown()` is silent on it.)
+- AC1 — PASS. `R CMD check --as-cran` over `tidymedia_0.1.0.9000.tar.gz` with
+  `_R_CHECK_CRAN_INCOMING_=TRUE` and `_R_CHECK_CRAN_INCOMING_REMOTE_=FALSE`:
+  `Status: 1 NOTE`. The complete NOTE list is one NOTE, `checking CRAN incoming
+  feasibility`, whose whole body is `Maintainer: 'Jeffrey Girard
+  <me@jmgirard.com>'` plus `Version contains large components (0.1.0.9000)` —
+  the dev-version suffix, whose bump this milestone puts Out. No NOTE names the
+  `Title` field or the `Description` field. Tests ran inside the check (546s,
+  OK); vignettes, PDF and HTML manual all OK.
+- AC6 — PASS. `devtools::document()` produces no diff (`git status` clean but
+  for this milestone file). `devtools::test()`: `FAIL 0 | WARN 10 | SKIP 18 |
+  PASS 12614`. `devtools::check()`: `Status: OK`, `0 errors | 0 warnings | 0
+  notes`, 17m 30.9s. No NOTE to quote or justify.
+
+### Independent fresh-context review
+
+Surface tier is user-facing, so the full three-lens fan-out ran, each lens on
+its own evidence base, none having seen the implementation.
+
+- **[S] blame-history lens — 0 findings.** Traced every deleted and modified
+  line. The two `*_location.rds` files were added by `d97fdab9` and made dead by
+  M097, which moved the remembered location to `tools::R_user_dir()`; the
+  `_pkgdown.yml` alias rows went stale at the same `d97fdab9` rename and this
+  branch is the first to catch them up. Nothing undone that a past milestone
+  added deliberately.
+- **[S] prior-PR-comments lens — 0 findings.** The existence probe
+  (`pulls/comments?per_page=1`) returned `[]`, so the per-PR walk was skipped;
+  the archived `## Review` sections touching these files (M055, M074, M098,
+  M099, M110) record nothing this diff regresses. It checked the M055 NEWS-splice
+  failure mode (the new bullets do not eat a neighbour) and the M089 README
+  `temp_libpath`-noise lesson (the noise rides alongside real content changes,
+  so the lesson's revert case does not apply).
+- **[O] diff-bug lens — 10 findings**, ranked, verified individually below.
+
+Findings and dispositions (rank order as reported):
+
+1. `.Rbuildignore` guards `tests/testthat/_problems`, but the file testthat
+   actually writes on a failing run, `tests/testthat/testthat-problems.rds`
+   (`.gitignore:24`), matches no `.Rbuildignore` pattern, so the leak class this
+   milestone closed is still open for it. **CONFIRMED** by hand:
+   `.Rbuildignore` has 20 patterns and none matches that path. Disposition:
+   put to the maintainer at the gate.
+2. `tools/pkgdown_duplicate_topics.R` drops any `contents:` entry containing a
+   parenthesis without reporting it, so a duplicate between a pkgdown selector's
+   expansion and a literal entry would be invisible. **CONFIRMED as latent, not
+   live** — `grep '(' _pkgdown.yml` matches one `desc:` prose line and no
+   `contents:` entry, so AC5's instrument does parse every entry the file
+   actually has today. Disposition: follow-up candidate row.
+3. `_pkgdown.yml` now lists `find_program`, which `NAMESPACE` does not export
+   (`set_program` is exported; `find_ffmpeg`/`find_ffprobe`/`find_ffplay`/
+   `find_mediainfo` are). **REFUTED as a user-visible defect**: `man/
+   find_program.Rd` carries all four exported names as aliases, and the work
+   log's `build_reference_index()` run shows `find_mediainfo()` rendering in
+   `docs/reference/index.html`. The entry string is a source-file detail with no
+   rendered consequence, and the page-name choice was an implement-gate
+   decision. Rejected.
+4. Two factual slips in the new NEWS bullet: "three paths that were never part
+   of it" (the two `*_location.rds` were the location cache until `d97fdab9`),
+   and "a `tests/testthat/_problems/` directory that a failing test run leaves
+   behind" (testthat writes `testthat-problems.rds` and `_snaps/`, not that
+   directory). **CONFIRMED.** User-facing changelog prose, so the derived-claims
+   rule applies. Disposition: put to the maintainer at the gate.
+5. The `_problems/` deletion is not in the diff — the directory was gitignored
+   and never tracked — so AC3's `tar -tzf` check for it would pass on a fresh
+   clone regardless. **CONFIRMED as an observation about the criterion's
+   strength**, not a defect in the work: the branch's durable guard for that
+   path is the `.Rbuildignore` line, which is in the diff. Rejected, recorded.
+6. The tarball-contents NEWS bullet sits under `## Requirements`, where "what
+   the built package carries" is not a requirement. Style; rejected unless taken
+   with finding 4's rewrite.
+7. `tools/pkgdown_duplicate_topics.R` calls `yaml::read_yaml()` and nothing
+   declares `yaml` — not `Suggests`, not the script header. **CONFIRMED**
+   (`grep yaml DESCRIPTION` is empty). The script is `.Rbuildignore`d and
+   developer-only, so a `Suggests` entry would be a gated dependency change;
+   a header line naming the requirement is the proportionate fix. Disposition:
+   put to the maintainer at the gate.
+8. `^tools$` would silently drop genuine build-time helpers if `tools/` is ever
+   used for them. Speculative future risk, not a defect in the diff. Rejected.
+9. Scope names `probe_video` and T5 says to name `probe_container`'s aliases,
+   but the Media metadata section is untouched. **REFUTED as a defect**:
+   `man/probe_container.Rd` aliases `probe_video`, and pkgdown renders it — the
+   scope's aim is met by the rendered index. The task text and the diff are out
+   of step; the outcome is not. Rejected.
+10. `README.md` embeds a machine-specific temp path in two chunk outputs.
+    Pre-existing; the plan routes README's unguarded chunks to M114. Rejected.
+
+### Consistency gate
+
+`cairn_validate.py` exit 0, all 16 checks PASS and all 7 advisories OK — the
+`release window` advisory did not fire. No `DESIGN.md` principle changed
+(`Principles touched: —`), so `cairn_impact.py` does not apply.
+
+Toolchain half, from the `r-package` profile's `consistency-gate` slot:
+`devtools::document()` no diff; `NAMESPACE`/`man/` regenerate clean (the [O]
+reviewer independently regenerated `man/` in an isolated copy — `diff -rq`
+zero differences); `README.md` re-knitted from `README.Rmd` in the same commit
+(`ae58d25`); `pkgdown::check_pkgdown()` `No problems found`; `NEWS.md` carries
+two entries for this milestone's user-visible changes, neither naming a
+milestone number; the two new top-level paths (`tools/`, and the
+`tests/testthat/_problems` guard) have `.Rbuildignore` entries and the check
+reports no NOTE about them; `devtools::check()` clean.

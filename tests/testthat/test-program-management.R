@@ -178,7 +178,22 @@ tm_redirect_data <- function(env = parent.frame()) {
   root
 }
 
+# Run install_on_win() as if this were a Windows machine.
+#
+# M108 refuses a non-Windows host above every cost, so every test about what
+# the installer does BELOW that gate needs the seam held at `windows` -- on a
+# macOS or Linux developer machine, and on two of the three CI legs, it would
+# otherwise reach none of the behaviour it is about. Held at the seam and
+# nowhere else, so what the mock defeats is one function returning one word:
+# the seam is asserted against the real host in `tm_os()`'s own tests, and the
+# gate's real verdict per runner in `test-install-platform.R`, neither of which
+# mocks anything.
+tm_local_windows <- function(env = parent.frame()) {
+  testthat::local_mocked_bindings(tm_os = function(...) "windows", .env = env)
+}
+
 test_that("install_on_win()'s own default install dir is R_user_dir()'s ffmpeg subdir", {
+  tm_local_windows()
   # AC2. The function is called with no `install_dir`, so it is the function's
   # own default resolution that runs, not a helper called in its place. The
   # download is aimed at a `file://` URL that does not exist: no network is
@@ -346,6 +361,9 @@ tm_mock_install <- function(confirm = NULL,
                             real_set = FALSE,
                             spoil = NULL,
                             env = parent.frame()) {
+  # Every install this mocks runs below M108's platform gate.
+  tm_local_windows(env = env)
+
   rec <- new.env(parent = emptyenv())
   rec$download <- list()
   rec$sidecar <- list()
@@ -495,6 +513,7 @@ tm_mock_install <- function(confirm = NULL,
 }
 
 test_that("install_on_win() refuses rather than assume consent when no one can be asked", {
+  tm_local_windows()
   # AC1. Nothing is mocked below tm_confirm(): the refusal has to happen
   # before the first write, so the real download and extraction are simply
   # never reached, and the two snapshots are what says so.
@@ -1574,6 +1593,16 @@ tm_ac3_cases <- function(env = parent.frame()) {
       expect_error(
         install_on_win(install_dir = dir, archive_checksum = rec$digest),
         class = "tidymedia_download_unavailable"
+      )
+    },
+    "tidymedia_wrong_platform #1" = function(dir) {
+      # The only case here that refuses without any install machinery at all:
+      # the gate is above every mock the others need, so a seam reporting a
+      # platform this function does not install for is the whole setup.
+      testthat::local_mocked_bindings(tm_os = function(...) "darwin", .env = env)
+      expect_error(
+        install_on_win(install_dir = dir),
+        class = "tidymedia_wrong_platform"
       )
     },
     "tidymedia_checksum_mismatch #1" = function(dir) {
@@ -2665,4 +2694,253 @@ test_that("tm_usable_binary() answers once per element, whatever the length", {
   expect_identical(tm_usable_binary(c(f$empty, f$empty)), c(FALSE, FALSE))
   expect_identical(tm_usable_binary(f$good), TRUE)
   expect_identical(tm_usable_binary(character(0)), logical(0))
+})
+
+
+# tm_os() ------------------------------------------------------------------
+
+test_that("tm_os() reports the running host, lowercased", {
+  # The seam is bound to the machine, not to a constant: the value it returns
+  # is `Sys.info()`'s own `sysname` with nothing but the case changed. This is
+  # the assertion a seam wired to nothing would fail, and it is the one every
+  # mocked test below borrows its meaning from.
+  expect_identical(tm_os(), tolower(Sys.info()[["sysname"]]))
+})
+
+test_that("tm_os() speaks one lowercase word", {
+  os <- tm_os()
+  expect_type(os, "character")
+  expect_length(os, 1L)
+  expect_false(is.na(os))
+  expect_identical(os, tolower(os))
+  expect_gt(nchar(os), 0L)
+  # And it is unnamed: `Sys.info()[["sysname"]]` drops the name, where
+  # `["sysname"]` would keep it and put it into every message built from it.
+  expect_null(names(os))
+})
+
+test_that("tm_os() agrees with .Platform about which family this host is in", {
+  # Two independent readings of the same fact. `.Platform$OS.type` is compiled
+  # into R and says only `windows` or `unix`; the gate refuses on the `sysname`
+  # word, so a disagreement here would mean the gate is deciding on a name the
+  # rest of R does not recognize for this machine.
+  if (.Platform$OS.type == "windows") {
+    expect_identical(tm_os(), "windows")
+  } else {
+    expect_false(tm_os() == "windows")
+  }
+})
+
+test_that("tm_os() lowercases whatever sysname the host reports", {
+  # The vocabulary, pinned over the five names uname produces on the platforms
+  # this package reaches or could reach. `Sys.info()` is an argument for this
+  # reason: on every machine the suite runs on it reports one of these, so the
+  # other four are only reachable by handing them in.
+  expect_identical(tm_os(info = c(sysname = "Windows")), "windows")
+  expect_identical(tm_os(info = c(sysname = "Darwin")), "darwin")
+  expect_identical(tm_os(info = c(sysname = "Linux")), "linux")
+  expect_identical(tm_os(info = c(sysname = "FreeBSD")), "freebsd")
+  expect_identical(tm_os(info = c(sysname = "SunOS")), "sunos")
+})
+
+test_that("tm_os() falls back to .Platform where Sys.info() is unimplemented", {
+  # R documents `Sys.info()` as returning NULL where the platform does not
+  # implement it. The fallback is coarser -- `unix` is not a `sysname` and
+  # names no package manager -- but it still answers the gate's one question,
+  # and a Windows host that cannot run `Sys.info()` is still not refused.
+  expect_identical(tm_os(info = NULL, os_type = "windows"), "windows")
+  expect_identical(tm_os(info = NULL, os_type = "unix"), "unix")
+})
+
+
+# install_on_win()'s platform gate -----------------------------------------
+
+# The four calls in `install_on_win()` that spend something, each replaced by a
+# stub that aborts. Between them they cover every cost the call can incur: the
+# unverified-source notice is the first thing said to the caller, `tm_confirm()`
+# the first thing asked of them, `dir.create()` the first write, and `tm_fetch()`
+# the first byte off the network. A gate that fires above all four has spent
+# nothing, and the abort a stub raises is a plain error carrying its own text,
+# so a stub that IS reached fails the test by name rather than by class.
+tm_forbid_spending <- function(writes = TRUE, env = parent.frame()) {
+  boom <- function(what) function(...) stop(paste0("reached ", what))
+  testthat::local_mocked_bindings(
+    tm_confirm = boom("tm_confirm()"),
+    tm_fetch = boom("tm_fetch()"),
+    .env = env
+  )
+  testthat::local_mocked_bindings(
+    cli_inform = boom("cli::cli_inform()"),
+    .package = "cli",
+    .env = env
+  )
+  # `dir.create()` is base's, so stubbing it replaces the binding the whole
+  # session sees, testthat's own included: waldo builds its diff through a
+  # temporary directory, so any `expect_identical()` under this stub dies in
+  # the reporter rather than in the code under test. `writes = FALSE` leaves it
+  # alone for a block that compares values; the four-stub claim is asserted by
+  # the test below that makes no such comparison.
+  if (writes) {
+    testthat::local_mocked_bindings(
+      dir.create = boom("dir.create()"),
+      .package = "base",
+      .env = env
+    )
+  }
+}
+
+test_that("a platform that is not Windows is refused before anything is spent", {
+  # Two named platforms and one the routing table does not know, so the gate is
+  # shown to refuse on "not windows" rather than on a list of what to deny.
+  #
+  # Two sources, because the four stubs are not all on one call's path: the
+  # default source has a published digest, so its call never reaches the
+  # unverified-source notice at all and that stub would sit there proving
+  # nothing. A caller-named source with no digest is the shape that does reach
+  # it, and running both is what makes the four-stub claim true of the pair.
+  sources <- list(
+    default = list(),
+    unverified = list(download_url = "https://example.invalid/ffmpeg.7z")
+  )
+  for (os in c("darwin", "linux", "freebsd")) {
+    for (source in names(sources)) {
+      testthat::local_mocked_bindings(tm_os = function(...) os)
+      tm_forbid_spending()
+      expect_error(
+        do.call(install_on_win, sources[[source]]),
+        class = "tidymedia_wrong_platform"
+      )
+    }
+  }
+})
+
+test_that("an argument mistake still reports on a platform that cannot install", {
+  # D086 sites the gate BELOW the four argument checks so a caller hears about
+  # a malformed argument on any machine, and nothing else in the suite pins
+  # that: the existing cases that would break if the gate were hoisted mock no
+  # seam, so on the windows-latest leg they pass whatever the ordering is, and
+  # a hoisted gate would ship green.
+  testthat::local_mocked_bindings(tm_os = function(...) "darwin")
+  tm_forbid_spending(writes = FALSE)
+
+  bad <- list(
+    confirm = list(confirm = "yes"),
+    install_dir = list(install_dir = 42L),
+    download_url = list(download_url = 42L),
+    archive_checksum = list(archive_checksum = "nope")
+  )
+  for (arg in names(bad)) {
+    cnd <- expect_error(do.call(install_on_win, bad[[arg]]))
+    # The argument error, not the platform refusal: the class discriminates,
+    # and the message names the argument the caller got wrong.
+    expect_false(inherits(cnd, "tidymedia_wrong_platform"))
+    expect_match(cli::ansi_strip(conditionMessage(cnd)), arg, fixed = TRUE)
+  }
+})
+
+test_that("the wrong-platform refusal names the platform and its route", {
+  routes <- list(
+    darwin = "brew install ffmpeg",
+    linux = "sudo apt-get install ffmpeg"
+  )
+  other <- unname(unlist(routes))
+  # The name a caller would recognize, where the uname word is not one. Held
+  # here rather than read from `tm_os_names` so the expectation is stated
+  # independently of the table under test.
+  known <- list(darwin = "macOS", sunos = "Solaris")
+
+  for (os in c("darwin", "linux", "freebsd", "sunos")) {
+    testthat::local_mocked_bindings(tm_os = function(...) os)
+    tm_forbid_spending(writes = FALSE)
+    cnd <- expect_error(
+      install_on_win(),
+      class = "tidymedia_wrong_platform"
+    )
+    # The message asserted is the condition's own, not anything emitted beside
+    # it: a route printed by a separate `cli_inform()` would leave this blind.
+    msg <- cli::ansi_strip(conditionMessage(cnd))
+    expect_match(msg, os, fixed = TRUE)
+    expect_match(msg, "set_program()", fixed = TRUE)
+    # And where the uname word is not the name a caller knows the platform by,
+    # that name is beside it -- and where it IS, nothing is added. cli wraps
+    # the bullet, so the whitespace is flattened before the sentence is read.
+    flat <- gsub("[[:space:]]+", " ", msg)
+    expect_match(
+      flat,
+      if (is.null(known[[os]])) {
+        paste0("running on ", os, ".")
+      } else {
+        paste0("running on ", os, " (", known[[os]], ").")
+      },
+      fixed = TRUE
+    )
+    if (!is.null(routes[[os]])) {
+      expect_match(msg, routes[[os]], fixed = TRUE)
+      # And only its own route: the two package managers are named one at a
+      # time, so a message listing both would pass a one-sided check.
+      for (wrong in setdiff(other, routes[[os]])) {
+        expect_no_match(msg, wrong, fixed = TRUE)
+      }
+    } else {
+      # A platform the table does not know gets no package-manager advice the
+      # package cannot stand behind (M108's gate).
+      for (wrong in other) {
+        expect_no_match(msg, wrong, fixed = TRUE)
+      }
+    }
+    # The seam's value travels on the condition, in the `tm_`-prefixed field
+    # data fields take (D062), so a caller can branch on it without parsing.
+    expect_identical(cnd$tm_platform, os)
+  }
+})
+
+test_that("the gate refuses nothing on Windows", {
+  # The control: the same stubs, the same call, a seam reporting `windows`, and
+  # execution reaches the confirmation instead of stopping above it. Three
+  # argument shapes, because the gate sits above the two argument defaults and
+  # below the argument checks, and a shape that skipped it would be a gate
+  # reading something other than the platform.
+  shapes <- list(
+    default = list(),
+    named_dir = list(install_dir = file.path(tempdir(), "m108-install")),
+    other_source = list(
+      download_url = "https://example.invalid/ffmpeg.7z",
+      archive_checksum = strrep("a", 64L)
+    )
+  )
+  for (shape in names(shapes)) {
+    testthat::local_mocked_bindings(tm_os = function(...) "windows")
+    reached <- FALSE
+    testthat::local_mocked_bindings(
+      tm_confirm = function(...) {
+        reached <<- TRUE
+        FALSE
+      }
+    )
+    expect_false(do.call(install_on_win, shapes[[shape]]))
+    expect_true(reached)
+  }
+})
+
+
+test_that("install_on_win() aborts tidymedia_confirmation_unavailable from its own frame", {
+  # AC5 documents this outcome in `@return`, so something has to hold it true.
+  # `tm_confirm()` has its own test of the refusal, but nothing asserted that
+  # the class is reachable THROUGH this function -- the documented promise is
+  # about what a caller of `install_on_win()` can catch, and a refactor that
+  # answered the prompt some other way would make the help page lie with the
+  # suite green.
+  tm_local_windows()
+  # Not mocked: the real `tm_confirm()` runs, and `rlang::is_interactive()` is
+  # FALSE under testthat, so it takes the refusal branch on its own.
+  cnd <- expect_error(
+    install_on_win(install_dir = withr::local_tempdir()),
+    class = "tidymedia_confirmation_unavailable"
+  )
+  # And it is raised against this function's frame, not the helper's, so the
+  # error a caller reads names the call they made (D074).
+  expect_match(
+    rlang::expr_deparse(conditionCall(cnd))[[1]],
+    "install_on_win", fixed = TRUE
+  )
 })

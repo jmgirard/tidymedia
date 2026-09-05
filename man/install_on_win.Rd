@@ -37,8 +37,11 @@ nothing is verified and the call says so.}
 \value{
 A logical indicating whether the installation was successful.
 \code{FALSE} is returned by a declined confirmation and by a failure to create
-the install directory. Six other outcomes abort with a condition of their
-own rather than returning: a download that did not deliver
+the install directory. Eight other outcomes abort with a condition of
+their own rather than returning: a call made on a platform this function
+does not install for (\code{tidymedia_wrong_platform}), a confirmation that
+could not be asked for because the session has no one to ask
+(\code{tidymedia_confirmation_unavailable}), a download that did not deliver
 (\code{tidymedia_download_unavailable}), a published digest that could not be
 fetched or read (\code{tidymedia_checksum_unavailable}), a digest that did not
 match the downloaded archive (\code{tidymedia_checksum_mismatch}), an archive
@@ -60,6 +63,13 @@ downloads a third-party build and overwrites remembered program locations,
 it asks for confirmation first and does nothing at all until it has it.
 }
 \details{
+This call installs on Windows only. On any other platform it refuses before
+it says, asks, writes, or downloads anything, and the error names the
+platform it found. Elsewhere FFmpeg comes from the system's own package
+manager -- \verb{brew install ffmpeg} on macOS, \verb{sudo apt-get install ffmpeg} on
+Linux -- and \code{\link[=set_program]{set_program()}} points tidymedia at a build that is already
+installed, on every platform.
+
 The archive is checked against a SHA-256 digest before anything is unpacked,
 and no program location is remembered unless the extraction actually
 produced that program. For the package's own default source the digest is

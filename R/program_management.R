@@ -298,12 +298,61 @@ tm_cli_escape <- function(x) {
 }
 
 
+# Platform ------------------------------------------------------------------
+
+# Which operating system this session is running on, as a lowercase name.
+#
+# The seam `install_on_win()`'s platform gate reads, and the only place the
+# package asks. `Sys.info()` is the source: its `sysname` is the kernel name
+# uname reports -- `Windows`, `Darwin`, `Linux`, `FreeBSD`, `SunOS` -- which
+# is what a message naming the caller's platform wants, and lowercasing it is
+# the whole normalization. R documents `Sys.info()` as possibly unimplemented,
+# in which case it returns `NULL`, so `.Platform$OS.type` is the fallback: it
+# is always one of `windows` or `unix`, which is coarser than the gate would
+# like but still answers the one question the gate asks. A host that cannot
+# say more than `unix` is refused like any other non-Windows host and gets no
+# package-manager route, only `set_program()` (M108's gate).
+#
+# Both sources are arguments so the fallback branch can be fired by a test: on
+# every machine the suite runs on, `Sys.info()` is implemented, so a branch
+# reading it directly would be unreachable code. No caller passes either one.
+tm_os <- function(info = Sys.info(), os_type = .Platform$OS.type) {
+  if (is.null(info)) {
+    return(tolower(os_type))
+  }
+  tolower(info[["sysname"]])
+}
+
+
 # install_on_win() --------------------------------------------------------
 
 # The programs an install registers, and where the extracted build puts each
 # one. Named once so the prompt cannot promise a different set of writes from
 # the one the call makes.
 tm_install_registers <- c("ffmpeg", "ffprobe", "ffplay")
+
+# Where a caller who is not on Windows gets FFmpeg instead. One line each,
+# because that is the whole of the answer on those two platforms, and the
+# package keeps no installer for either (GP1: each would need its own source,
+# digest format and architecture matrix). A platform not named here -- FreeBSD,
+# Solaris, or the coarse `unix` the seam falls back to -- is still refused, and
+# is told only to point tidymedia at a build it already has: the package has no
+# idea what that machine's package manager is, and advice it cannot stand
+# behind is worse than none.
+tm_install_routes <- c(
+  darwin = "brew install ffmpeg",
+  linux = "sudo apt-get install ffmpeg"
+)
+
+# The name a caller would recognize, for the uname words that are not one.
+# `tm_os()` speaks uname's vocabulary, which is what the condition carries and
+# what a bug report wants; a macOS caller told only "darwin" has to know that
+# is their machine. Platforms whose uname word is already the familiar name --
+# `linux`, `windows`, `freebsd` -- are absent and get no parenthetical.
+tm_os_names <- c(
+  darwin = "macOS",
+  sunos = "Solaris"
+)
 
 # Of those three, the two the package itself calls. `ffplay` is reachable only
 # through find_ffplay()/set_ffplay() and nothing in tidymedia invokes it, so a
@@ -783,6 +832,13 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #' downloads a third-party build and overwrites remembered program locations,
 #' it asks for confirmation first and does nothing at all until it has it.
 #'
+#' This call installs on Windows only. On any other platform it refuses before
+#' it says, asks, writes, or downloads anything, and the error names the
+#' platform it found. Elsewhere FFmpeg comes from the system's own package
+#' manager -- `brew install ffmpeg` on macOS, `sudo apt-get install ffmpeg` on
+#' Linux -- and [set_program()] points tidymedia at a build that is already
+#' installed, on every platform.
+#'
 #' The archive is checked against a SHA-256 digest before anything is unpacked,
 #' and no program location is remembered unless the extraction actually
 #' produced that program. For the package's own default source the digest is
@@ -851,8 +907,11 @@ tm_install_prompt <- function(download_url, install_dir, programs,
 #'   nothing is verified and the call says so.
 #' @return A logical indicating whether the installation was successful.
 #'   `FALSE` is returned by a declined confirmation and by a failure to create
-#'   the install directory. Six other outcomes abort with a condition of their
-#'   own rather than returning: a download that did not deliver
+#'   the install directory. Eight other outcomes abort with a condition of
+#'   their own rather than returning: a call made on a platform this function
+#'   does not install for (`tidymedia_wrong_platform`), a confirmation that
+#'   could not be asked for because the session has no one to ask
+#'   (`tidymedia_confirmation_unavailable`), a download that did not deliver
 #'   (`tidymedia_download_unavailable`), a published digest that could not be
 #'   fetched or read (`tidymedia_checksum_unavailable`), a digest that did not
 #'   match the downloaded archive (`tidymedia_checksum_mismatch`), an archive
@@ -889,6 +948,49 @@ install_on_win <- function(download_url = NULL,
   rlang::check_string(download_url, allow_null = TRUE)
   rlang::check_string(install_dir, allow_null = TRUE)
   check_sha256(archive_checksum, allow_null = TRUE)
+
+  # The one platform this function installs for. The gate is an allow-list --
+  # anything that is not `windows` is refused -- so a host the routing table
+  # has never heard of is refused rather than sent to download a Windows build
+  # it cannot run. It sits BELOW the four argument checks, because an argument
+  # mistake is worth reporting on any machine and a cheap value refusal comes
+  # first (D036, D043), and ABOVE every cost: nothing has been said to the
+  # caller, asked of them, written, or fetched by the time it fires.
+  platform <- tm_os()
+  if (!identical(platform, "windows")) {
+    # Single-bracket, so a platform the table does not name gives NA rather
+    # than a subscript error.
+    route <- unname(tm_install_routes[platform])
+    known <- unname(tm_os_names[platform])
+    # The two bullets below are written as a pair per platform rather than as
+    # one line plus an optional one: with no route to name, "Then point
+    # tidymedia at it" would promise a step that is not there and refer to
+    # nothing, which is what the platforms this allow-list exists to serve --
+    # FreeBSD, Solaris, the coarse `unix` fallback -- would read.
+    advice <- if (is.na(route)) {
+      c("i" = "Point tidymedia at an FFmpeg build you already have with
+               {.fun set_program}.")
+    } else {
+      c(
+        "i" = "Install FFmpeg with {.code {route}}.",
+        "i" = "Then point tidymedia at it with {.fun set_program}, or at a
+               build you already have."
+      )
+    }
+    cli::cli_abort(
+      c(
+        "{.fun install_on_win} installs FFmpeg on Windows only.",
+        "x" = if (is.na(known)) {
+          "This session is running on {platform}."
+        } else {
+          "This session is running on {platform} ({known})."
+        },
+        advice
+      ),
+      class = "tidymedia_wrong_platform",
+      tm_platform = platform
+    )
+  }
 
   if (is.null(download_url)) {
     download_url <- tm_default_download_url

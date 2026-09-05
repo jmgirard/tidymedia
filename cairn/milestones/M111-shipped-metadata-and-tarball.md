@@ -108,6 +108,7 @@ URL-bearing form, which is legal and stays.
 - 2026-09-05: step-7 approval: PR #115 approved for merge. Finding 2 (the script's silent skip of parenthesised entries) accepted as a follow-up candidate row; findings 3, 5, 6, 8, 9 and 10 rejected with reasons recorded above.
 - 2026-09-05: CI wait hit the harness ceiling with checks still pending (pkgdown pass, seven legs pending); watcher stopped, no merge made. Approval marker `cairn/.merge-approved` stands for PR #115; re-enter at `/milestone-review M111`, which re-derives the check and merge state.
 - 2026-09-05: resume: PR #115 OPEN, all six criteria ticked against recorded evidence and step-7 approval on record; re-entering at step 1 (resume route c). `master` unmoved at `b6f195c`, branch pushed and in sync; all ten CI checks report pass on `05bb0d2`.
+- 2026-09-05: step-7 approval: PR #115 approved for merge (re-posed at resume; all ten CI checks green on `05bb0d2`, no unresolved PR conversation).
 
 ## Decisions
 

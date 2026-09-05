@@ -79,7 +79,7 @@ URL-bearing form, which is legal and stays.
 - [x] T4: Point `README.Rmd:74`'s Homebrew URL at the branch Homebrew
       documents today, re-knit with `devtools::build_readme()`, and run
       `urlchecker::url_check()`.
-- [ ] T5: Collapse `_pkgdown.yml:120-123`'s duplicate rows to one topic and
+- [x] T5: Collapse `_pkgdown.yml:120-123`'s duplicate rows to one topic and
       name `set_program`/`find_program`/`probe_container`'s aliases in their
       sections so `set_mediainfo` and `probe_video` are findable by scanning.
 - [ ] T6: Build the tarball, run the `--as-cran` check with the two
@@ -97,6 +97,8 @@ URL-bearing form, which is legal and stays.
 - 2026-09-05: checkpoint, work half-done. T1-T5 edits are in the tree; no task checked off, `devtools::test()` still running past 10 minutes and README not yet re-knitted.
 - 2026-09-05: T1 done. `devtools::test()` clean over the rewritten DESCRIPTION (FAIL 0 | WARN 10 | SKIP 18 | PASS 12614, 22m34s), `devtools::document()` produces no diff, `spelling::spell_check_package()` finds nothing.
 - 2026-09-05: T4 done. Homebrew's installer URL moved from `install/master/` to `install/HEAD/`; README re-knitted. `urlchecker::url_check()` then found a second URL needing a change, the lifecycle badge's `https://www.tidyverse.org/lifecycle/#experimental` (301). Its redirect target `https://tidyverse.org/lifecycle/` returns 404 — measured 2026-09-05 with `curl -sI` — so urlchecker's own suggestion was not taken; the badge now points at `https://lifecycle.r-lib.org/articles/stages.html#experimental` (200). Re-run over 24 URLs: "All URLs are correct!".
+- 2026-09-05: T5 done. Dropped the `has_hardware_encoder` row (an alias of `hardware_encoder`) and swapped `find_ffmpeg`/`set_ffmpeg` for the page names `find_program`/`set_program`. Added `tools/pkgdown_duplicate_topics.R`, which resolves each `contents:` entry to its `.Rd` file before counting, plus an `^tools$` `.Rbuildignore` entry; the script reports 80 entries, no repeated topic and no unmatched entry, and `pkgdown::check_pkgdown()` finds no problems (it stayed silent on the duplicate, so the script is the instrument). Shown able to fail: re-adding `has_hardware_encoder` makes it name `hardware_encoder.Rd <- hardware_encoder, has_hardware_encoder` and exit 1, and a planted `not_a_real_topic` entry is reported unmatched.
+- 2026-09-05: `pkgdown::build_reference_index()` re-run over the edited file — `set_mediainfo()`, `find_mediainfo()`, `probe_video()` and `has_hardware_encoder()` each appear once in the rendered `docs/reference/index.html`, so listing page names rather than aliases loses no name from the scan.
 
 ## Decisions
 

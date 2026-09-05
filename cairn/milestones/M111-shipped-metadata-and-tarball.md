@@ -69,12 +69,12 @@ URL-bearing form, which is legal and stays.
       Description says what the package does with 'FFmpeg' and 'MediaInfo' —
       batch transformation and metadata extraction as tibbles — rather than
       restating the Title.
-- [ ] T2: Delete `inst/extdata/ffmpeg_location.rds` and
+- [x] T2: Delete `inst/extdata/ffmpeg_location.rds` and
       `inst/extdata/mediainfo_location.rds`. Confirm first that nothing
       resolves either name at runtime: grep `R/` and `tests/` for
       `system.file`, `extdata` and `location` together, not for the basenames
       alone, which a `paste0()` would defeat.
-- [ ] T3: Delete `tests/testthat/_problems/`; record its one file's fate in
+- [x] T3: Delete `tests/testthat/_problems/`; record its one file's fate in
       the work log so the deletion is not silent.
 - [x] T4: Point `README.Rmd:74`'s Homebrew URL at the branch Homebrew
       documents today, re-knit with `devtools::build_readme()`, and run
@@ -99,6 +99,7 @@ URL-bearing form, which is legal and stays.
 - 2026-09-05: T4 done. Homebrew's installer URL moved from `install/master/` to `install/HEAD/`; README re-knitted. `urlchecker::url_check()` then found a second URL needing a change, the lifecycle badge's `https://www.tidyverse.org/lifecycle/#experimental` (301). Its redirect target `https://tidyverse.org/lifecycle/` returns 404 — measured 2026-09-05 with `curl -sI` — so urlchecker's own suggestion was not taken; the badge now points at `https://lifecycle.r-lib.org/articles/stages.html#experimental` (200). Re-run over 24 URLs: "All URLs are correct!".
 - 2026-09-05: T5 done. Dropped the `has_hardware_encoder` row (an alias of `hardware_encoder`) and swapped `find_ffmpeg`/`set_ffmpeg` for the page names `find_program`/`set_program`. Added `tools/pkgdown_duplicate_topics.R`, which resolves each `contents:` entry to its `.Rd` file before counting, plus an `^tools$` `.Rbuildignore` entry; the script reports 80 entries, no repeated topic and no unmatched entry, and `pkgdown::check_pkgdown()` finds no problems (it stayed silent on the duplicate, so the script is the instrument). Shown able to fail: re-adding `has_hardware_encoder` makes it name `hardware_encoder.Rd <- hardware_encoder, has_hardware_encoder` and exit 1, and a planted `not_a_real_topic` entry is reported unmatched.
 - 2026-09-05: `pkgdown::build_reference_index()` re-run over the edited file — `set_mediainfo()`, `find_mediainfo()`, `probe_video()` and `has_hardware_encoder()` each appear once in the rendered `docs/reference/index.html`, so listing page names rather than aliases loses no name from the scan.
+- 2026-09-05: T2 and T3 verified against the built tarball. `R CMD build` produced 254 paths; `extdata/ffmpeg_location.rds`, `extdata/mediainfo_location.rds` and `testthat/_problems/` each match 0 of them, and the surviving `inst/extdata/` is the three files that should ship (`mediainfo_template_brief.txt`, `mediainfo_template_extended.txt`, `sample.mp4`). Nothing in `R/` or `tests/` resolves either deleted `.rds`: the only `extdata` reads are `sample.mp4` and `mediainfo_template_{brief,extended}.txt`, and no source names `location` beside `system.file` or `extdata`.
 
 ## Decisions
 

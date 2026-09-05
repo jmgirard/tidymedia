@@ -2,22 +2,22 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-09-05 (M111-M115 plan: five rows added under the pre-CRAN scoping pass; M106, M107 and M108 pruned to hold the 60-line cap, their archive summaries intact. Five candidate rows added (the two pre-CRAN audit gaps merged into one), the forget-a-location row absorbed into M113, and the DESIGN.md row widened to carry the stale `## Function families` list. `cairn_validate` clean.)_
+_Last hygiene check: 2026-09-05 (M111 done and archived; PR #115 squash-merged. One candidate row added for the pkgdown duplicate script's silent skip of parenthesised entries. LESSONS gained the .Rbuildignore/.gitignore line and lost the M092 milestone-authoring line to hold the 20,000-byte budget. M109's row pruned to hold the 60-line cap, its archive summary intact. `cairn_validate` clean.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M111 | The shipped metadata and the tarball say what CRAN's incoming checks expect | review | — | normal | milestones/M111-shipped-metadata-and-tarball.md |
 | M112 | No export publishes the internal `call` argument, and the duplicate exports are settled | planned | — | normal | milestones/M112-unpublish-the-call-argument.md |
 | M113 | One call says which programs tidymedia found, and a remembered location can be forgotten | planned | — | normal | milestones/M113-program-status-and-unset.md |
 | M114 | Verification, provenance and timeouts are taught in prose, not only on a reference page | planned | — | normal | milestones/M114-verification-and-timeout-vignette.md |
 | M115 | A new user can tell whether the setup worked, and fix it when it did not | planned | M113 | normal | milestones/M115-setup-and-troubleshooting.md |
+| M111 | The shipped metadata and the tarball say what CRAN's incoming checks expect | done | — | normal | milestones/archive/M111-shipped-metadata-and-tarball.md |
 | M110 | `set_program()` asks before it remembers a location | done | — | normal | milestones/archive/M110-set-program-confirmation.md |
-| M109 | The codec seam's four instrument gaps are triaged under D072, and the two with a path to a user are closed | done | — | normal | milestones/archive/M109-codec-seam-gap-triage.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->
+- **`tools/pkgdown_duplicate_topics.R` drops any `contents:` entry containing a parenthesis without reporting it**, so a duplicate between a pkgdown selector's expansion and a literal entry would be invisible to AC5's instrument. Latent, not live: `_pkgdown.yml` has no parenthesised `contents:` entry today, so the script does parse every entry the file actually has. Promote on the first selector-form entry added to `_pkgdown.yml`. — added 2026-09-05 — M111 review [O]2
 - **Four bundled tasks with no single-knob verb, and one task with no verb at all.** Trimming to a range runs through `segment_video()`'s plural-output shape; transcoding, resizing and changing frame rate run only through `standardize_video()`, which also forces libx264 and yuv420p; muting or replacing an audio track has no Layer 2 route at all, only `ffm_drop()` and `ffm_map()`. Declined at M111-M115's plan gate: GP1 prefers refusing a feature to growing toward coverage, additions are never breaking so nothing is lost by waiting, and each unbundled verb needs a `_batch` sibling under D014 — six exports for the trio alone. The replace-audio half reopens the mux question the normalize-keeping-video row parks. Promote each on the first request naming it. — added 2026-09-05 — M113/M114 gate; GP1; D001; M25 survey
 - **Four `unset_*()` wrappers mirroring the `set_*()` exports.** M113 ships one generic `unset_program()`; the wrappers are additive later and four exports is the larger trade against GP1. Promote on a report that the asymmetry with `set_ffmpeg()` and its siblings is what a caller trips on. — added 2026-09-05 — M113 Out
 - **Two documentation families with no narrative coverage after M114.** Four builder verbs are missing from `tidymedia.Rmd:111-176`'s Layer 1 tour (`ffm_fps`, `ffm_drawbox`, `ffm_loudnorm`, `ffm_output_options`), and the capability family (`ffmpeg_codecs`, `ffmpeg_encoders`, `hardware_encoder`, `refresh_ffmpeg_capabilities`) appears nowhere but `README.Rmd:132` — only `has_hardware_encoder()` is taught, at `workflow.Rmd:83`. Promote at the 0.2.0 docs pass or on a reader asking for either. — added 2026-09-05 — M114 Out

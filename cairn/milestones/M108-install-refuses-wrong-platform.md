@@ -445,3 +445,5 @@ its own track.
 
 After the fixes: `testthat::test_local(filter = "program-management|
 install-platform")` FAIL 0, WARN 0, SKIP 0, PASS 698.
+- 2026-09-04: resume: PR #112 read as `OPEN` with every criterion ticked against a recorded evidence line and a step-7 approval on record — Session-start route (c). `master` had not moved (`origin/master` 9f757c8, branch 14 ahead / 0 behind) and the branch was fully pushed, so steps 1-3 were not re-run; the PR-conversation read re-ran and returned the same state as before (no reviews, no unresolved threads, one codecov bot comment, disposition unchanged).
+- 2026-09-04: step-7 approval: PR #112 approved for merge.

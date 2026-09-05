@@ -395,6 +395,27 @@
 
 ## Breaking changes
 
+* `set_program()` and its wrappers `set_ffmpeg()`, `set_ffprobe()`,
+  `set_ffplay()` and `set_mediainfo()` now ask before they write. Each takes a
+  new `confirm` argument, `TRUE` by default. The prompt names the location as
+  you typed it -- which is the string that gets written -- and the full path of
+  the `<program>_location.txt` file that would record it; declining leaves the
+  config directory exactly as it was, creating nothing. In a session with no
+  one to ask, the call now aborts with `tidymedia_confirmation_unavailable`
+  rather than assume consent, which is the same contract `install_on_win()`
+  already has. This breaks unattended scripts that call these functions:
+  pass `confirm = FALSE` to write without being asked. `install_on_win()`
+  passes it internally, so an approved install still asks exactly once. A call
+  in `.Rprofile` is a third case: the session counts as interactive there, so
+  the call now prompts while R starts up rather than refusing -- pass
+  `confirm = FALSE` there too.
+
+* These five functions now return `TRUE` or `FALSE`, invisibly, saying whether
+  the location was written. They previously documented a logical and returned
+  whatever clearing the capability memo returned, which was `NULL`. A location
+  with no executable at it now aborts with `tidymedia_program_not_found`, and
+  the error names the function you called rather than being unclassed.
+
 * `compare_videos()`, `picture_in_picture()` and their `_batch` siblings now
   call the argument that picks whose sound to keep `audio_input`, not `audio`.
   It is the same argument: the 0-based index of the *input* whose audio is

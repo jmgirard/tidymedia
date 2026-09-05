@@ -100,7 +100,7 @@ test_that("set_program() sends the next call back to FFmpeg", {
   expect_true(has_hardware_encoder("h264", "nvenc"))
   expect_identical(probes(), 1L)
 
-  set_program("ffmpeg", unname(ffmpeg_path))
+  set_program("ffmpeg", unname(ffmpeg_path), confirm = FALSE)
   expect_true(has_hardware_encoder("h264", "nvenc"))
   expect_identical(probes(), 2L)
 })

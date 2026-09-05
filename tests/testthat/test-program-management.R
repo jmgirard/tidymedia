@@ -53,7 +53,7 @@ test_that("set_program() writes exactly at tools::R_user_dir(\"tidymedia\", \"co
   withr::local_envvar(R_USER_CONFIG_DIR = config)
   stub <- tm_stub_executable()
 
-  for (program in tm_program_vocabulary) set_program(program, stub)
+  for (program in tm_program_vocabulary) set_program(program, stub, confirm = FALSE)
 
   expected <- file.path(
     tools::R_user_dir("tidymedia", "config"),
@@ -493,8 +493,9 @@ tm_mock_install <- function(confirm = NULL,
   # install writes can be read back off disk rather than off the record.
   if (!real_set) {
     testthat::local_mocked_bindings(
-      set_program = function(program, location) {
-        add("set", list(program = program, location = location))
+      set_program = function(program, location, confirm = TRUE) {
+        add("set", list(program = program, location = location,
+                        confirm = confirm))
         invisible(NULL)
       },
       .env = env
@@ -2943,4 +2944,321 @@ test_that("install_on_win() aborts tidymedia_confirmation_unavailable from its o
     rlang::expr_deparse(conditionCall(cnd))[[1]],
     "install_on_win", fixed = TRUE
   )
+})
+
+
+# set_program() asks before it remembers a location (M110) -------------------
+
+# Every `set_*` function NAMESPACE exports, read from the file rather than a
+# hand list, so an export added later is covered by these guards or reddens
+# them. Two shapes for the same reason `rd_sources()` has two: under
+# devtools::test() the source tree's NAMESPACE is right there, and under
+# R CMD check the tests run against an INSTALLED package, whose root carries
+# its own copy. `getNamespaceExports()` is NOT that read: under
+# `load_all(export_all = TRUE)` it answers with the internals too.
+tm_namespace_set_exports <- function() {
+  path <- if (file.exists("../../NAMESPACE")) {
+    "../../NAMESPACE"
+  } else {
+    system.file("NAMESPACE", package = "tidymedia")
+  }
+  txt <- readLines(path, warn = FALSE)
+  hits <- regmatches(txt, regexpr("^export\\(set_[^)]+\\)$", txt))
+  sub("\\)$", "", sub("^export\\(", "", hits))
+}
+
+# How each export is called, and which program it ends up remembering. Stated
+# here rather than derived from the export's own name, so a wrapper wired to
+# the wrong program is a failure rather than an invisible agreement.
+tm_set_export_args <- function(fn, location) {
+  if (fn == "set_program") list("ffmpeg", location) else list(location)
+}
+tm_set_export_program <- function(fn) {
+  if (fn == "set_program") "ffmpeg" else sub("^set_", "", fn)
+}
+
+# A directory's whole content, byte for byte, plus whether it is there at all.
+# The existence flag is load-bearing: a listing of a directory that does not
+# exist is `character(0)`, which compares equal to the listing of one this call
+# created and left empty.
+tm_dir_state <- function(dir) {
+  files <- sort(list.files(dir, recursive = TRUE, all.files = TRUE, no.. = TRUE))
+  list(
+    exists = dir.exists(dir),
+    files = files,
+    dirs = sort(list.dirs(dir, full.names = FALSE)),
+    bytes = lapply(file.path(dir, files), function(p) {
+      readBin(p, "raw", n = file.size(p))
+    })
+  )
+}
+
+# One AC1 cell. A function rather than a loop body so every withr redirect and
+# every mock unwinds at the end of the cell instead of stacking across 24 of
+# them.
+tm_set_refusal_cell <- function(state, program, mode, stub) {
+  root <- withr::local_tempdir()
+  withr::local_envvar(R_USER_CONFIG_DIR = root)
+  dir <- tm_config_dir()
+  if (state != "absent") {
+    dir.create(dir, recursive = TRUE)
+    if (state == "occupied") {
+      tm_write_location(dir, program, "/a/prior/location")
+      # A second, DIFFERENT program, so the cell compares a two-file directory
+      # for every member of the vocabulary. Naming one literally would collapse
+      # this cell to one file on the iteration that names it.
+      other <- setdiff(tm_program_vocabulary, program)[[1]]
+      tm_write_location(dir, other, "/another/prior/location")
+    }
+  }
+  before <- tm_dir_state(dir)
+
+  # A capability memo present before the call must still be there after it:
+  # the forget sits on the write path only.
+  memo <- "tm_m110_memo"
+  assign(memo, TRUE, envir = .tm_capabilities)
+
+  if (mode == "decline") {
+    rlang::local_interactive()
+    testthat::local_mocked_bindings(
+      menu = function(...) 2L,
+      .package = "utils"
+    )
+    expect_false(set_program(program, stub))
+  } else {
+    withr::local_options(rlang_interactive = FALSE)
+    expect_error(
+      set_program(program, stub),
+      class = "tidymedia_confirmation_unavailable"
+    )
+  }
+
+  label <- paste(state, program, mode)
+  expect_true(exists(memo, envir = .tm_capabilities), label = label)
+  rm(list = memo, envir = .tm_capabilities)
+
+  if (state == "absent") expect_false(dir.exists(dir), label = label)
+  expect_identical(tm_dir_state(dir), before, label = label)
+}
+
+test_that("a declined or refused set_program() leaves the config directory as it found it", {
+  # AC1. Four programs by three prior directory states by the two ways consent
+  # is not given. Nothing below tm_confirm() is mocked -- least of all
+  # dir.create(), whose base-namespace stub takes waldo down with it and so
+  # every expect_identical() in the same test (M108) -- so the before/after
+  # comparison observes the disk rather than a record of intentions.
+  stub <- tm_stub_executable()
+  for (state in c("absent", "empty", "occupied")) {
+    for (program in tm_program_vocabulary) {
+      for (mode in c("decline", "refuse")) {
+        tm_set_refusal_cell(state, program, mode, stub)
+      }
+    }
+  }
+})
+
+# One AC2 cell, a function for the same unwinding reason as above.
+tm_set_export_cell <- function(fn, stub) {
+  root <- withr::local_tempdir()
+  withr::local_envvar(R_USER_CONFIG_DIR = root)
+  # Pinned so the escape hatch the message names cannot be split across a
+  # wrap: the criterion asks for `confirm = FALSE` in the message text.
+  withr::local_options(cli.width = 1000)
+  args <- tm_set_export_args(fn, stub)
+  program <- tm_set_export_program(fn)
+
+  withr::local_options(rlang_interactive = FALSE)
+  cnd <- tryCatch(do.call(fn, args), error = function(cnd) cnd)
+  expect_s3_class(cnd, "tidymedia_confirmation_unavailable")
+  expect_match(cli::ansi_strip(conditionMessage(cnd)), "confirm = FALSE",
+               fixed = TRUE, label = fn)
+  expect_false(dir.exists(tm_config_dir()), label = fn)
+
+  expect_true(do.call(fn, c(args, list(confirm = FALSE))), label = fn)
+  expect_identical(readLines(tm_config_file(program)), stub, label = fn)
+  expect_identical(list.files(tm_config_dir()),
+                   paste0(program, "_location.txt"), label = fn)
+}
+
+test_that("every exported set_* function takes confirm, refuses, and writes under FALSE", {
+  # AC2. The domain is read from NAMESPACE; the count is asserted so a read
+  # that silently returned nothing fails here instead of passing vacuously.
+  fns <- tm_namespace_set_exports()
+  expect_setequal(
+    fns,
+    c("set_ffmpeg", "set_ffplay", "set_ffprobe", "set_mediainfo", "set_program")
+  )
+
+  defaults <- vapply(fns, function(fn) {
+    identical(formals(get(fn, envir = asNamespace("tidymedia")))$confirm, TRUE)
+  }, logical(1))
+  expect_identical(defaults, stats::setNames(rep(TRUE, length(fns)), fns))
+
+  stub <- tm_stub_executable()
+  for (fn in fns) tm_set_export_cell(fn, stub)
+})
+
+test_that("the consent prompt names the file it would write and the location as typed", {
+  # AC4. The prompt is read at menu(), where the caller would see it. Two of
+  # the three locations carry braces, which cli would otherwise interpolate in
+  # the calling frame: `{program}` names a local of the prompt-building frame,
+  # and an unmatched `{` aborts the call outright (M44).
+  root <- withr::local_tempdir()
+  withr::local_envvar(R_USER_CONFIG_DIR = root)
+  withr::local_options(cli.width = 1000)
+  rlang::local_interactive()
+  titles <- character(0)
+  testthat::local_mocked_bindings(
+    menu = function(choices, graphics = FALSE, title = NULL) {
+      titles <<- c(titles, title)
+      2L
+    },
+    .package = "utils"
+  )
+
+  for (name in c("plain", "a{program}b", "c{d")) {
+    stub <- tm_stub_executable(name = name)
+    expect_false(set_program("ffmpeg", stub))
+    prompt <- cli::ansi_strip(titles[[length(titles)]])
+    expect_match(prompt, stub, fixed = TRUE, label = name)
+    expect_match(prompt, tm_config_file("ffmpeg"), fixed = TRUE, label = name)
+    # The braces are shown, never resolved: `ffmpeg` is what `{program}` would
+    # have become had the value been interpolated.
+    expect_false(grepl("affmpegb", prompt, fixed = TRUE), label = name)
+  }
+
+  # And what is named is the string as typed, never what Sys.which() resolves
+  # it to -- the typed string is what gets written, so a prompt naming the
+  # resolution asks consent for a write that does not happen.
+  stub <- tm_stub_executable(name = "onpath")
+  withr::local_path(dirname(stub))
+  expect_false(set_program("ffmpeg", basename(stub)))
+  prompt <- cli::ansi_strip(titles[[length(titles)]])
+  expect_match(prompt, paste0("'", basename(stub), "'"), fixed = TRUE)
+  expect_false(grepl(dirname(stub), prompt, fixed = TRUE))
+})
+
+test_that("a set_* call returns TRUE or FALSE invisibly, and the Rd page says both", {
+  # AC5. Both halves of the value the corrected @return promises, and the page
+  # that promises it.
+  root <- withr::local_tempdir()
+  withr::local_envvar(R_USER_CONFIG_DIR = root)
+  stub <- tm_stub_executable()
+
+  written <- withVisible(set_ffmpeg(stub, confirm = FALSE))
+  expect_true(written$value)
+  expect_false(written$visible)
+
+  rlang::local_interactive()
+  testthat::local_mocked_bindings(menu = function(...) 2L, .package = "utils")
+  declined <- withVisible(set_ffprobe(stub))
+  expect_false(declined$value)
+  expect_false(declined$visible)
+
+  rd <- rd_sources()
+  skip_if(is.null(rd), "no Rd source in this run")
+  hit <- rd[grepl("^set_program\\.Rd$", names(rd))]
+  expect_length(hit, 1L)
+  value <- sub("(?s).*\\\\value\\{", "", hit[[1]], perl = TRUE)
+  value <- sub("(?s)\n\\}.*", "", value, perl = TRUE)
+  expect_match(value, "TRUE", fixed = TRUE)
+  expect_match(value, "FALSE", fixed = TRUE)
+  expect_match(value, "nvisibl")
+})
+
+test_that("a location with no executable aborts by name, blaming the export that was typed", {
+  # AC6. The `call` field, per export -- set_program() included, which is the
+  # one call reaching the argument's own default (M100: under caller_env() a
+  # direct call is blamed on its caller, NULL at the console).
+  fns <- tm_namespace_set_exports()
+  missing <- file.path(withr::local_tempdir(), "no-such-executable")
+  expect_false(file.exists(missing))
+  for (fn in fns) {
+    cnd <- tryCatch(do.call(fn, tm_set_export_args(fn, missing)),
+                    error = function(cnd) cnd)
+    expect_s3_class(cnd, "tidymedia_program_not_found")
+    expect_identical(rlang::call_name(conditionCall(cnd)), fn)
+  }
+})
+
+test_that("a set_* argument refusal blames the export the caller typed", {
+  # Review finding: the argument checkers ran with their own `caller_env()`
+  # default, so `set_ffmpeg(x, confirm = "yes")` was blamed on
+  # `set_program("ffmpeg", location, confirm = confirm, call = ...)` -- a
+  # function the caller never typed, with the threading shown. The same
+  # concern AC6 pins for the not-found abort, on the argument-check path.
+  fns <- tm_namespace_set_exports()
+  for (fn in fns) {
+    bad_bool <- tryCatch(
+      do.call(fn, c(tm_set_export_args(fn, "/bin/ls"), list(confirm = "yes"))),
+      error = function(cnd) cnd
+    )
+    expect_identical(rlang::call_name(conditionCall(bad_bool)), fn, label = fn)
+
+    bad_loc <- tryCatch(do.call(fn, tm_set_export_args(fn, 1L)),
+                        error = function(cnd) cnd)
+    expect_identical(rlang::call_name(conditionCall(bad_loc)), fn, label = fn)
+  }
+
+  # And the program vocabulary, which only set_program() exposes.
+  bad_program <- tryCatch(set_program("bogus", "/bin/ls"),
+                          error = function(cnd) cnd)
+  expect_identical(rlang::call_name(conditionCall(bad_program)), "set_program")
+})
+
+test_that("the not-found abort carries the program and the location it refused", {
+  # Review finding: the class was added without the data fields D062's family
+  # names, so a handler had to regex the cli-formatted message to learn which
+  # program and which location failed.
+  missing <- file.path(withr::local_tempdir(), "no-such-executable")
+  cnd <- tryCatch(set_ffprobe(missing), error = function(cnd) cnd)
+  expect_s3_class(cnd, "tidymedia_program_not_found")
+  expect_identical(cnd$tm_program, "ffprobe")
+  expect_identical(cnd$tm_location, missing)
+})
+
+test_that("an approved install asks exactly once and still registers what it produced", {
+  # AC3. Counted at menu(), below tm_confirm(), so the real confirmation seam
+  # and the real set_program() both run: a registration that asked again would
+  # be a second call here. `real_set = TRUE` also means the registrations are
+  # read back off disk rather than off the mock's record.
+  asks <- 0L
+  rlang::local_interactive()
+  testthat::local_mocked_bindings(
+    menu = function(choices, graphics = FALSE, title = NULL) {
+      asks <<- asks + 1L
+      1L
+    },
+    .package = "utils"
+  )
+
+  # All three programs.
+  tm_redirect_config()
+  tm_redirect_data()
+  d <- file.path(withr::local_tempdir(), "ffmpeg")
+  all_three <- tm_mock_install(real_set = TRUE)
+  expect_true(install_on_win(install_dir = d, archive_checksum = all_three$digest))
+  expect_identical(asks, 1L)
+  for (program in tm_install_registers) {
+    expect_true(file.exists(tm_config_file(program)), label = program)
+    expect_identical(readLines(tm_config_file(program)),
+                     tm_install_binary(d, program), label = program)
+  }
+
+  # And an archive producing fewer than three: the count does not follow the
+  # number of registrations, so a per-program ask would show up here as two.
+  asks <- 0L
+  tm_redirect_config()
+  d2 <- file.path(withr::local_tempdir(), "ffmpeg")
+  partial <- tm_mock_install(unpack = c("ffmpeg", "ffprobe"), real_set = TRUE)
+  expect_message(
+    expect_true(install_on_win(install_dir = d2, archive_checksum = partial$digest)),
+    "ffplay"
+  )
+  expect_identical(asks, 1L)
+  expect_identical(readLines(tm_config_file("ffmpeg")),
+                   tm_install_binary(d2, "ffmpeg"))
+  expect_identical(readLines(tm_config_file("ffprobe")),
+                   tm_install_binary(d2, "ffprobe"))
+  expect_false(file.exists(tm_config_file("ffplay")))
 })

@@ -182,32 +182,82 @@ run_program <- function(location, args, program = "the program",
 #' Once this file exists, a location remembered by a version of tidymedia
 #' before 0.2.0 is no longer read.
 #'
+#' Because the call writes a file that outlives the session, it asks for
+#' confirmation first and writes nothing until it has it. The prompt names the
+#' location as you typed it -- which is what gets written -- and the full path
+#' of the file that would record it. Declining leaves the config directory
+#' exactly as it was. In a session with no one to ask, the call refuses rather
+#' than assume consent; pass \code{confirm = FALSE} to write without being
+#' asked, which is what an unattended script wants.
+#'
 #' @param program A string indicating which program to set the location for.
 #' @param location A string containing the location of the program.
-#' @return A logical indicating whether the program location was set properly.
+#' @param confirm Whether to ask before writing the remembered location.
+#'   \code{TRUE} (the default) asks and, in a non-interactive session, refuses.
+#'   \code{FALSE} writes without asking.
+#' @param call The environment a refusal is reported from, so each wrapper is
+#'   blamed rather than \code{set_program()} itself. Rarely set directly.
+#' @return Invisibly, \code{TRUE} where the location was written and
+#'   \code{FALSE} where the caller declined to write it.
 #'
 #' @seealso [find_program()] to locate a configured binary, and
 #'   [install_on_win()] to download FFmpeg on Windows.
 #' @family program management functions
 #' @examples
 #' \dontrun{
-#' # Point tidymedia at a binary in a non-standard location
+#' # Point tidymedia at a binary in a non-standard location; asks first
 #' set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")
+#'
+#' # In an unattended script, where there is no one to ask
+#' set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe", confirm = FALSE)
 #' }
 #' @export
+# `call` defaults to this frame rather than `rlang::caller_env()`: only a
+# direct set_program() call reaches the default, and under caller_env() that
+# call is blamed on whatever frame invoked it -- NULL at the console, so the
+# refusal names no function at all (M100). The four wrappers pass their own
+# frames, so each refusal names the export the caller actually typed.
 set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
-                         location) {
+                         location, confirm = TRUE,
+                         call = rlang::current_env()) {
   
-  # Validate arguments
-  program <- rlang::arg_match(program)
-  rlang::check_string(location)
+  # Validate arguments. Every refusal here carries `call` for the same reason
+  # the not-found abort below does: a wrapper's caller typed set_ffmpeg(), and
+  # under the checkers' own `caller_env()` default they are shown
+  # set_program()'s frame instead -- the deparsed internal call, threaded
+  # arguments and all. D074's siting has each export refuse its own arguments;
+  # the wrappers reach the same outcome by naming the frame, since the
+  # not-found and consent refusals below sit too deep in this shared body to
+  # be re-called at four front doors.
+  program <- rlang::arg_match(program, error_call = call)
+  rlang::check_string(location, call = call)
+  rlang::check_bool(confirm, call = call)
   if (Sys.which(location) == "") {
-    cli::cli_abort("Can't find an executable at {.file {location}}.")
+    cli::cli_abort("Can't find an executable at {.file {location}}.",
+                   class = "tidymedia_program_not_found", call = call,
+                   tm_program = program, tm_location = location)
   }
   
   # Find where to save user configuration data (tools::R_user_dir(), M097)
   config_dir <- tm_config_dir()
   config_file <- tm_config_file(program, config_dir)
+  
+  # Consent comes before anything is created or written, so a decline -- and a
+  # refusal for want of anyone to ask -- leaves the config directory exactly as
+  # it was found. The refusal names the same two items the prompt would have,
+  # and the escape hatch by the argument's own name (M38/M40: the seam carries
+  # no argument name of its own).
+  if (confirm) {
+    details <- tm_set_details(program, location, config_dir)
+    approved <- tm_confirm(
+      tm_set_prompt(program, location, config_dir),
+      call = call,
+      "i" = "Pass {.code confirm = FALSE} to set the location without being asked.",
+      "i" = tm_cli_escape(details[[1]]),
+      "i" = tm_cli_escape(details[[2]])
+    )
+    if (!approved) return(invisible(FALSE))
+  }
   
   # Create configuration directory if needed
   if (!dir.exists(config_dir)) dir.create(config_dir, recursive = TRUE)
@@ -220,34 +270,36 @@ set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
   # all four programs: cheap, and it cannot be forgotten when a second
   # capability memo is added later.
   forget_ffmpeg_capabilities()
+
+  invisible(TRUE)
 }
 
 # set_mediainfo() ---------------------------------------------------------
 
 #' @rdname set_program
 #' @export
-set_mediainfo <- function(location) {
-  set_program("mediainfo", location)
+set_mediainfo <- function(location, confirm = TRUE) {
+  set_program("mediainfo", location, confirm = confirm, call = rlang::current_env())
 }
 
 # set_ffmpeg() ------------------------------------------------------------
 
 #' @rdname set_program
 #' @export
-set_ffmpeg <- function(location) {
-  set_program("ffmpeg", location)
+set_ffmpeg <- function(location, confirm = TRUE) {
+  set_program("ffmpeg", location, confirm = confirm, call = rlang::current_env())
 }
 
 #' @rdname set_program
 #' @export
-set_ffprobe <- function(location) {
-  set_program("ffprobe", location)
+set_ffprobe <- function(location, confirm = TRUE) {
+  set_program("ffprobe", location, confirm = confirm, call = rlang::current_env())
 }
 
 #' @rdname set_program
 #' @export
-set_ffplay <- function(location) {
-  set_program("ffplay", location)
+set_ffplay <- function(location, confirm = TRUE) {
+  set_program("ffplay", location, confirm = confirm, call = rlang::current_env())
 }
 
 
@@ -812,6 +864,39 @@ tm_install_details <- function(download_url, install_dir, programs,
   )
 }
 
+# What a set_program() call would do, one item per line: the location as the
+# caller typed it, and the file that would record it. The typed string is what
+# gets written, so it is what the prompt names -- never a path `Sys.which()`
+# resolved it to, which is not what lands in the file.
+#
+# Every value goes through a cli field, which does not recurse into the value,
+# so a location containing braces is shown rather than evaluated (M44); the
+# result is stripped of styling and hyperlinks so what reaches `menu()` is the
+# plain text a test can read back. Same shape as tm_install_details() above,
+# for the same reasons.
+#
+# Both the prompt and the non-interactive refusal are built from this, so a
+# caller who is told to pass `confirm = FALSE` has been shown the same items
+# the prompt would have named.
+tm_set_details <- function(program, location, dir = tm_config_dir()) {
+  line <- function(...) cli::ansi_strip(cli::format_inline(..., .envir = parent.frame()))
+  c(
+    line("Remember this location: {.file {location}}"),
+    line("By writing: {.file {tm_config_file(program, dir)}}")
+  )
+}
+
+# The consent prompt: the question, then the items, one per line.
+tm_set_prompt <- function(program, location, dir = tm_config_dir()) {
+  paste(
+    c(
+      paste0("tidymedia is about to remember where ", program, " is. Proceed?"),
+      paste0("* ", tm_set_details(program, location, dir))
+    ),
+    collapse = "\n"
+  )
+}
+
 # The consent prompt: the question, then the items, one per line.
 tm_install_prompt <- function(download_url, install_dir, programs,
                               sidecar_url = NULL) {
@@ -1350,8 +1435,11 @@ install_on_win <- function(download_url = NULL,
       }
     ))
   }
+  # `confirm = FALSE`: the install's own prompt above already named every one
+  # of these overwrites by full path, so asking again here would ask a second
+  # time for consent already given -- once per program, at that.
   for (program in setdiff(unpacked, unusable)) {
-    set_program(program, tm_install_binary(install_dir, program))
+    set_program(program, tm_install_binary(install_dir, program), confirm = FALSE)
   }
 
   TRUE

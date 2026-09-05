@@ -7,7 +7,7 @@
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** internal — the deliverable is two test instruments, a data-generation script, and a tracking ledger
-- **Branch/PR:** `m109-codec-seam-gap-triage`
+- **Branch/PR:** `m109-codec-seam-gap-triage` / https://github.com/jmgirard/tidymedia/pull/113
 
 ## Goal
 
@@ -36,23 +36,23 @@ any kind: a change there would move this milestone's surface tier.
 
 ## Acceptance criteria
 
-- [ ] AC1: For every member `nvenc_order_members()` returns that carries a
+- [x] AC1: For every member `nvenc_order_members()` returns that carries a
       `video_codec` formal, `data-raw/nvenc-probe-order-baseline.R`'s cell set
       contains one cell per form `tm_nvenc_wrong_forms()` returns, and the runner
       records each such cell's compiled command bytes or refusal at every
       `(hardware, fallback, pool)` combination it crosses.
-- [ ] AC2: Running the grid against a working tree with `check_video_codec()`'s
+- [x] AC2: Running the grid against a working tree with `check_video_codec()`'s
       token refusal removed changes at least one row against the recorded baseline;
       running it against the unmutated tree changes none.
-- [ ] AC3: For every member `oot_members()$reachable` whose `formals()` include
+- [x] AC3: For every member `oot_members()$reachable` whose `formals()` include
       `jobs`, `tests/testthat/test-hardware-out-of-table-blame.R`'s out-of-table
       sweep runs each `(member, omitted pair, fallback)` cell it enumerates in both
       a scalar `video_codec` form and a jobs-column form whose `video_codec` column
       spells an in-table family of the pair's backend before the pair's omitted family.
-- [ ] AC4: Running the suite against a working tree where `check_hardware_available()`'s
+- [x] AC4: Running the suite against a working tree where `check_hardware_available()`'s
       family loop (`R/ffmpeg.R:3360`) is narrowed to `families[1]` reddens
       `test-hardware-out-of-table-blame.R`; the unmutated tree leaves it green.
-- [ ] AC5: The milestone file carries a ledger with one row per gap in the four the
+- [x] AC5: The milestone file carries a ledger with one row per gap in the four the
       plan commit's absorbed candidate row named, each classed `close` or `prune`
       under D072 with its own recorded reason.
 - [ ] AC6: `devtools::check()` reports 0 errors and 0 warnings and `devtools::test()`
@@ -117,6 +117,7 @@ any kind: a change there would move this milestone's surface tier.
 
 - 2026-09-05: T6: the four-gap D072 ledger written into `## Decisions` as one table — (a) and (d) closed, (b) and (c) pruned with reasons. `devtools::document()` produced no diff; `devtools::check()` 0 errors, 0 warnings, 0 notes; `devtools::test()` 0 failed, 0 errors, 12,440 passed, 18 skipped.
 - 2026-09-05: status to review; all six tasks checked.
+- 2026-09-05: review: draft PR #113 opened; AC1-AC5 verified with fresh evidence and their boxes ticked; `cairn_validate` 16/16 with no advisories, `pkgdown::check_pkgdown()` clean, `devtools::document()` no diff, `devtools::check()` 0 errors / 0 warnings / 0 notes. AC6's `devtools::test()` count re-run and the diff-bug review lens still outstanding.
 
 ## Decisions
 
@@ -132,3 +133,59 @@ D072's test is whether the gap lets a defect in shipped behaviour reach a user. 
 | (d) M107's AC1 sweep reached `check_hardware_available()` only through the scalar `video_codec`, leaving the `is.list()` arm on one hand-written cell | close | A path to a user: narrowing the family loop above that arm to its first family leaves a `_batch` caller's out-of-table row blamed on `purrr::pmap` instead of the verb the caller typed — D035's own defect, and what M107 exists to prevent. 21 of the sweep's 126 cells redden under that mutation and all 84 scalar cells stay green (T5), so the scalar-only sweep could not see it. |
 
 ## Review
+
+Evidence gathered 2026-09-05 by command on the branch head (`806595a`), against
+the working tree; every mutant was built as a COPY under the session scratch
+directory and run from there, so the repo was never dirty.
+
+**AC1 — the wrong-form `video_codec` cells and their coverage.** `nvenc_order_members()`
+returns 6 members, 4 of them carrying a `video_codec` formal (`anonymize_video`,
+`anonymize_video_batch`, `standardize_video`, `standardize_video_batch`);
+`tm_nvenc_wrong_forms()` returns 5 forms. `nvenc_order_cells()` holds exactly the
+20 `video_codec/<form>` cells that cross names — 0 missing, 0 extra — and each
+carries the form as its own value with `cross_vc = FALSE`. Running the grid on the
+working tree: 7,200 rows over 18 `(hardware, fallback, pool)` combinations; the 360
+wrong-form rows are 20 cells x 18 combinations, no cell short of a combination, every
+row a recorded refusal with a non-empty outcome and the `absent` codec level.
+
+**AC2 — the grid is shown able to fail.** Mutant (`check_video_codec()`'s
+`check_token()` call removed, `R/ffmpeg.R:3416`): the wide diff against
+`nvenc-probe-order-merge-base.rds` returns 18 rows, all of them
+`standardize_video`'s `video_codec/token` cell at all 18 of its combinations — 6
+reblamed from `standardize_video` onto `ffm_codec`, 12 keeping the verb's name and
+changing the sentence from the token message to the codec-family one. Control: the
+unmutated tree differs in 0 rows on both the contract and the wide comparison, 0
+vacuous on both sides.
+
+**AC3 — both forms in the out-of-table sweep.** `oot_members()$reachable` is 14
+members, 7 of which take `jobs`; `oot_pairs(held = FALSE)` is 3 omitted pairs
+(`nvenc/prores`, `videotoolbox/av1`, `videotoolbox/prores`). `oot_forms()` returns
+`scalar` for every reachable member and adds `jobs` for exactly the 7, so the sweep
+enumerates 126 cells: 84 scalar + 42 jobs. For all 42 jobs cells,
+`batch_video_codecs()` reads the built column as two families with an in-table family
+of the pair's backend first and the pair's omitted family second — 0 exceptions.
+
+**AC4 — the sweep is shown able to fail.** Mutant (`R/ffmpeg.R:3360`'s family loop
+narrowed to `families[1]`): `test-hardware-out-of-table-blame.R` reddens. Cell-level:
+21 of the 126 cells fail, every one a jobs-form cell on the `fallback = TRUE` arm,
+each reblamed from the verb onto `purrr::pmap` — D035's own defect. All 84 scalar
+cells pass, so the scalar form cannot see this mutation. Unmutated tree: the file is
+green (0 failures).
+
+**AC5 — the ledger.** The absorbed candidate row (ROADMAP at `e5731f6`, from M106
+review F1/F2/F3 and M107 review F5) named four gaps (a)-(d); the milestone's
+`## Decisions` section carries one table with one row per gap, each classed `close`
+(a, d) or `prune` (b, c) with its own reason. Spot-checked the (c) row's own claim by
+command: `tm_hw_encoder_ledger()`'s computed domain is 3 sites — one literal
+(`format_for_web_pipeline`, `"libx264"`) and two symbol sites
+(`anonymize_pipeline`, `emit_video_codec`) whose only assignment to `video_codec`
+at or above the resolver is that resolver call itself, so the positional and
+dataflow readings agree on every member of the domain, as the row states.
+
+**AC6 — pending.** `devtools::check()` and `devtools::test()` are running.
+
+**Consistency gate (partial).** `cairn_validate.py` 16/16 PASS, no advisories fired.
+No DESIGN principle changed (`Principles touched: —`), so `cairn_impact.py` does not
+apply. Toolchain slot: `pkgdown::check_pkgdown()` clean; no new top-level files, so
+no `.Rbuildignore` entry is owed; no user-visible change, so no `NEWS.md` entry is
+owed. `devtools::document()` no-diff and `devtools::check()` still to run.

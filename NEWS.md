@@ -29,6 +29,19 @@
   require — they use the native pipe `|>`, a form R gained in 4.1.0 — and it
   sits above the highest R version any declared dependency floor asks for.
 
+* The package's `Title` and `Description` now say what tidymedia does rather
+  than restating its own name. The title reads "Media File Preprocessing and
+  Metadata for the 'tidyverse'", and the description names the two batch jobs
+  the package is built around — transforming files and reading their metadata
+  back as tibbles — along with the two programs it drives. This is what an
+  installer and a package index show before anyone opens the help pages.
+
+* The built package no longer carries three paths that were never part of it:
+  two stale `inst/extdata/*_location.rds` files, which nothing in the package
+  read, and a `tests/testthat/_problems/` directory that a failing test run
+  leaves behind. The last of those is now ignored at build time, so a later
+  failing run cannot put it back.
+
 ## Configuration
 
 * `install_on_win()` now refuses on a platform it cannot install for, before

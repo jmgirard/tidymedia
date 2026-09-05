@@ -1,6 +1,6 @@
 # M111: The shipped metadata and the tarball say what CRAN's incoming checks expect
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -82,7 +82,7 @@ URL-bearing form, which is legal and stays.
 - [x] T5: Collapse `_pkgdown.yml:120-123`'s duplicate rows to one topic and
       name `set_program`/`find_program`/`probe_container`'s aliases in their
       sections so `set_mediainfo` and `probe_video` are findable by scanning.
-- [ ] T6: Build the tarball, run the `--as-cran` check with the two
+- [x] T6: Build the tarball, run the `--as-cran` check with the two
       environment variables set, then `devtools::check()` clean.
 
 ## Work log
@@ -100,6 +100,9 @@ URL-bearing form, which is legal and stays.
 - 2026-09-05: T5 done. Dropped the `has_hardware_encoder` row (an alias of `hardware_encoder`) and swapped `find_ffmpeg`/`set_ffmpeg` for the page names `find_program`/`set_program`. Added `tools/pkgdown_duplicate_topics.R`, which resolves each `contents:` entry to its `.Rd` file before counting, plus an `^tools$` `.Rbuildignore` entry; the script reports 80 entries, no repeated topic and no unmatched entry, and `pkgdown::check_pkgdown()` finds no problems (it stayed silent on the duplicate, so the script is the instrument). Shown able to fail: re-adding `has_hardware_encoder` makes it name `hardware_encoder.Rd <- hardware_encoder, has_hardware_encoder` and exit 1, and a planted `not_a_real_topic` entry is reported unmatched.
 - 2026-09-05: `pkgdown::build_reference_index()` re-run over the edited file — `set_mediainfo()`, `find_mediainfo()`, `probe_video()` and `has_hardware_encoder()` each appear once in the rendered `docs/reference/index.html`, so listing page names rather than aliases loses no name from the scan.
 - 2026-09-05: T2 and T3 verified against the built tarball. `R CMD build` produced 254 paths; `extdata/ffmpeg_location.rds`, `extdata/mediainfo_location.rds` and `testthat/_problems/` each match 0 of them, and the surviving `inst/extdata/` is the three files that should ship (`mediainfo_template_brief.txt`, `mediainfo_template_extended.txt`, `sample.mp4`). Nothing in `R/` or `tests/` resolves either deleted `.rds`: the only `extdata` reads are `sample.mp4` and `mediainfo_template_{brief,extended}.txt`, and no source names `location` beside `system.file` or `extdata`.
+- 2026-09-05: T6 done. `R CMD check --as-cran` over the built tarball with `_R_CHECK_CRAN_INCOMING_=TRUE` and `_R_CHECK_CRAN_INCOMING_REMOTE_=FALSE`: Status 1 NOTE, and the NOTE's whole body is the maintainer line plus "Version contains large components (0.1.0.9000)" — the dev-version suffix, whose bump this milestone puts Out. No NOTE names `Title` or `Description`. `devtools::test()` FAIL 0 | WARN 10 | SKIP 18 | PASS 12614; `devtools::check()` 0 errors, 0 warnings, 0 notes (17m5s); `devtools::document()` produces no diff.
+- 2026-09-05: added two NEWS.md entries under Requirements, for the rewritten `Title`/`Description` and for the three paths the tarball no longer carries.
+- 2026-09-05: all six tasks checked, status set to review.
 
 ## Decisions
 

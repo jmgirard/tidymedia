@@ -89,7 +89,7 @@ any kind: a change there would move this milestone's surface tier.
       by the pair's omitted codec, and wrap the sweep's loops (`:124-147`) in a form
       loop. Extend the non-emptiness control at `:73-80` to cover the new partition,
       so a form set that silently emptied cannot pass vacuously.
-- [ ] T5: Plant AC4's defect — narrow `R/ffmpeg.R:3360` to `families[1]` in a scratch
+- [x] T5: Plant AC4's defect — narrow `R/ffmpeg.R:3360` to `families[1]` in a scratch
       tree — run `test-hardware-out-of-table-blame.R` against it, record which cells
       redden and confirm the scalar-only cells stay green, then confirm the unmutated
       tree is green. Revert the scratch tree.
@@ -112,6 +112,8 @@ any kind: a change there would move this milestone's surface tier.
 - 2026-09-05: T3: the defect was planted in a COPY of `R/`, `NAMESPACE` and the sample under the scratch dir and run through `nvenc_order_baseline(root =)`, rather than by editing and reverting the working tree, so the repo was never dirty. Mutant (`check_video_codec()`'s `check_token()` call removed): 18 rows differ from the baseline, all of them `standardize_video`'s `video_codec/token` cell at all 18 of its (hardware, fallback, pool) combinations — 6 reblamed from `standardize_video` to `ffm_codec`, 12 still blamed on the verb but now carrying the codec-family message instead of the token one. Every differing row is in the cell class M109 added, so the pre-M109 grid would have reported none. Control: the unmutated working tree differs from the baseline in 0 rows on both the contract and the wide comparison, 0 vacuous.
 
 - 2026-09-05: T4: `oot_forms()` reads the form set off `formals()` and the out-of-table sweep loops over it, so the seven reachable members that take `jobs` now run each (omitted pair, fallback) cell in a two-row column form as well as the scalar one — 42 new cells. Discovered sub-task, not in the plan: the duplicated row needed distinct OUTPUT paths, told from inputs by what `tm_timeout_call_specs()` created on disk; without it four of the seven refused for colliding outputs before reading the codec (measured 2026-09-05). The non-emptiness control gained the form partition and a check that `batch_video_codecs()` really reads each built column as two families with the in-table one first. Suite: 0 failed, 0 errors, 12,440 passed.
+
+- 2026-09-05: T5: the defect was planted in a full package copy under the scratch dir (`R/ffmpeg.R:3360` narrowed to `families[1]`) and the file run there, so the repo was never dirty. `test-hardware-out-of-table-blame.R` reddens: 21 of its 126 out-of-table cells fail, every one of them a jobs-form cell on the `fallback = TRUE` arm, each reblamed from the verb onto `purrr::pmap` — D035's own defect. All 84 scalar cells stay green, so the scalar form cannot see this mutation at all. Unmutated tree: 0 failed, 0 errors, 209 passed.
 
 ## Decisions
 

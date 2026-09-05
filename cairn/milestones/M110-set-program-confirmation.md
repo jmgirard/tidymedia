@@ -1,13 +1,13 @@
 # M110: `set_program()` asks before it remembers a location
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — it changes what five exported functions do and adds an argument to each
-- **Branch/PR:** —
+- **Branch/PR:** `m110-set-program-confirmation`
 
 ## Goal
 

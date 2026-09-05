@@ -8,7 +8,7 @@ _Last hygiene check: 2026-09-05 (M109 close: row to done, summary archived, live
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M110 | `set_program()` asks before it remembers a location | planned | — | normal | milestones/M110-set-program-confirmation.md |
+| M110 | `set_program()` asks before it remembers a location | in-progress | — | normal | milestones/M110-set-program-confirmation.md |
 | M109 | The codec seam's four instrument gaps are triaged under D072, and the two with a path to a user are closed | done | — | normal | milestones/archive/M109-codec-seam-gap-triage.md |
 | M108 | `install_on_win()` refuses on a platform it cannot install for, before it spends anything | done | — | normal | milestones/archive/M108-install-refuses-wrong-platform.md |
 | M107 | A backend with no encoder for the codec's family is refused by the verb the caller typed, `fallback` or not | done | — | normal | milestones/archive/M107-out-of-table-refusal-at-the-verb.md |

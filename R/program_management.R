@@ -812,6 +812,39 @@ tm_install_details <- function(download_url, install_dir, programs,
   )
 }
 
+# What a set_program() call would do, one item per line: the location as the
+# caller typed it, and the file that would record it. The typed string is what
+# gets written, so it is what the prompt names -- never a path `Sys.which()`
+# resolved it to, which is not what lands in the file.
+#
+# Every value goes through a cli field, which does not recurse into the value,
+# so a location containing braces is shown rather than evaluated (M44); the
+# result is stripped of styling and hyperlinks so what reaches `menu()` is the
+# plain text a test can read back. Same shape as tm_install_details() above,
+# for the same reasons.
+#
+# Both the prompt and the non-interactive refusal are built from this, so a
+# caller who is told to pass `confirm = FALSE` has been shown the same items
+# the prompt would have named.
+tm_set_details <- function(program, location, dir = tm_config_dir()) {
+  line <- function(...) cli::ansi_strip(cli::format_inline(..., .envir = parent.frame()))
+  c(
+    line("Remember this location: {.file {location}}"),
+    line("By writing: {.file {tm_config_file(program, dir)}}")
+  )
+}
+
+# The consent prompt: the question, then the items, one per line.
+tm_set_prompt <- function(program, location, dir = tm_config_dir()) {
+  paste(
+    c(
+      paste0("tidymedia is about to remember where ", program, " is. Proceed?"),
+      paste0("* ", tm_set_details(program, location, dir))
+    ),
+    collapse = "\n"
+  )
+}
+
 # The consent prompt: the question, then the items, one per line.
 tm_install_prompt <- function(download_url, install_dir, programs,
                               sidecar_url = NULL) {

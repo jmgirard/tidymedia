@@ -107,6 +107,7 @@ URL-bearing form, which is legal and stays.
 - 2026-09-05: gate directed fix-now on review findings 1, 4 and 7. Added `^tests/testthat/testthat-problems\.rds$` to `.Rbuildignore`; rewrote the NEWS tarball bullet so it no longer says the two `.rds` files were never part of the package or that testthat writes `_problems/`; added a header line to `tools/pkgdown_duplicate_topics.R` naming its `yaml` requirement. Finding 6's section move stays rejected: the dev-version block has no `## Documentation` section, and creating one for a single bullet is churn. AC1, AC3 and AC6 re-run against the fixed tree.
 - 2026-09-05: step-7 approval: PR #115 approved for merge. Finding 2 (the script's silent skip of parenthesised entries) accepted as a follow-up candidate row; findings 3, 5, 6, 8, 9 and 10 rejected with reasons recorded above.
 - 2026-09-05: CI wait hit the harness ceiling with checks still pending (pkgdown pass, seven legs pending); watcher stopped, no merge made. Approval marker `cairn/.merge-approved` stands for PR #115; re-enter at `/milestone-review M111`, which re-derives the check and merge state.
+- 2026-09-05: resume: PR #115 OPEN, all six criteria ticked against recorded evidence and step-7 approval on record; re-entering at step 1 (resume route c). `master` unmoved at `b6f195c`, branch pushed and in sync; all ten CI checks report pass on `05bb0d2`.
 
 ## Decisions
 
@@ -255,3 +256,12 @@ two entries for this milestone's user-visible changes, neither naming a
 milestone number; the two new top-level paths (`tools/`, and the
 `tests/testthat/_problems` guard) have `.Rbuildignore` entries and the check
 reports no NOTE about them; `devtools::check()` clean.
+
+### PR conversation read
+
+Read immediately before the merge chip: `pulls/115/reviews` empty; `issues/115/comments`
+one entry; GraphQL `reviewThreads` returns no unresolved thread and `hasNextPage` false.
+No review in state `COMMENTED` or `CHANGES_REQUESTED`, so the blocking rule does not fire.
+
+- conversation: codecov[bot] PR — noted (coverage report, 98.41% unchanged against `master`;
+  requests nothing).

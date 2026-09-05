@@ -79,7 +79,7 @@ any kind: a change there would move this milestone's surface tier.
       `nvenc_order_baseline(attr(x, "ref"))` at the ref the object already carries,
       and update the header's row count and provenance (`:68-96`, `:81-85`) and the
       note at `:349-352` that says the grid the 27 was measured over no longer exists.
-- [ ] T3: Plant AC2's defect — remove `check_video_codec()`'s `check_token()` call
+- [x] T3: Plant AC2's defect — remove `check_video_codec()`'s `check_token()` call
       (`R/ffmpeg.R:3416`) in a scratch tree — run the grid against it, and record in
       the work log how many rows differ from the baseline and which cells they are;
       then confirm the unmutated tree differs in none. Revert the scratch tree.
@@ -108,6 +108,8 @@ any kind: a change there would move this milestone's surface tier.
 - 2026-09-05: T1: `nvenc_order_cells()` gained a `video_codec/<form>` class beside the caller/sentinel cross, and the spec flag the runner reads was renamed `has_vc` -> `cross_vc` because it now means "the runner sets this cell's `video_codec`", which the new class makes false for a member that does have the formal. Grid on the working tree: 7,200 rows (was 6,840), 360 of them the new class, 0 vacuous, all 360 aborts.
 
 - 2026-09-05: T2: `nvenc-probe-order-merge-base.rds` re-recorded at the ref it already carried (`96e973b`): 7,200 rows, 0 vacuous. All 6,840 rows the previous object held reproduced with the same kind, outcome and blamed frame, and the 360 rows of difference are exactly the new `video_codec/<form>` class. Header provenance, the usage block's stale M095 figure, and the note on why M095's grid is no longer re-derivable all updated.
+
+- 2026-09-05: T3: the defect was planted in a COPY of `R/`, `NAMESPACE` and the sample under the scratch dir and run through `nvenc_order_baseline(root =)`, rather than by editing and reverting the working tree, so the repo was never dirty. Mutant (`check_video_codec()`'s `check_token()` call removed): 18 rows differ from the baseline, all of them `standardize_video`'s `video_codec/token` cell at all 18 of its (hardware, fallback, pool) combinations — 6 reblamed from `standardize_video` to `ffm_codec`, 12 still blamed on the verb but now carrying the codec-family message instead of the token one. Every differing row is in the cell class M109 added, so the pre-M109 grid would have reported none. Control: the unmutated working tree differs from the baseline in 0 rows on both the contract and the wide comparison, 0 vacuous.
 
 ## Decisions
 

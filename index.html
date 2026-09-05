@@ -86,8 +86,7 @@
 </li>
 <li>Extract (or copy) the contents of this .zip file to a folder on your computer such as:<br><code>C:/Program Files/MediaInfo</code>
 </li>
-<li>Run the following code in R (changing the path to match Step 2):<br><code>tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")</code>
-</li>
+<li>Run the following code in R (changing the path to match Step 2):<br><code>tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")</code><br> This asks you to confirm the path before it remembers it. In a script with no one to ask, add <code>confirm = FALSE</code>.</li>
 </ol>
 <p><strong>Mac</strong></p>
 <ol style="list-style-type: decimal">

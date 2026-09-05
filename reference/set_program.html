@@ -58,15 +58,20 @@ before 0.2.0 is no longer read.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">set_program</span><span class="op">(</span>program <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ffmpeg"</span>, <span class="st">"ffprobe"</span>, <span class="st">"ffplay"</span>, <span class="st">"mediainfo"</span><span class="op">)</span>, <span class="va">location</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">set_program</span><span class="op">(</span></span>
+<span>  program <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ffmpeg"</span>, <span class="st">"ffprobe"</span>, <span class="st">"ffplay"</span>, <span class="st">"mediainfo"</span><span class="op">)</span>,</span>
+<span>  <span class="va">location</span>,</span>
+<span>  confirm <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  call <span class="op">=</span> <span class="fu">rlang</span><span class="fu">::</span><span class="fu"><a href="https://rlang.r-lib.org/reference/stack.html" class="external-link">current_env</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">set_mediainfo</span><span class="op">(</span><span class="va">location</span><span class="op">)</span></span>
+<span><span class="fu">set_mediainfo</span><span class="op">(</span><span class="va">location</span>, confirm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">set_ffmpeg</span><span class="op">(</span><span class="va">location</span><span class="op">)</span></span>
+<span><span class="fu">set_ffmpeg</span><span class="op">(</span><span class="va">location</span>, confirm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">set_ffprobe</span><span class="op">(</span><span class="va">location</span><span class="op">)</span></span>
+<span><span class="fu">set_ffprobe</span><span class="op">(</span><span class="va">location</span>, confirm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">set_ffplay</span><span class="op">(</span><span class="va">location</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">set_ffplay</span><span class="op">(</span><span class="va">location</span>, confirm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -80,10 +85,32 @@ before 0.2.0 is no longer read.</p>
 <dt id="arg-location">location<a class="anchor" aria-label="anchor" href="#arg-location"></a></dt>
 <dd><p>A string containing the location of the program.</p></dd>
 
+
+<dt id="arg-confirm">confirm<a class="anchor" aria-label="anchor" href="#arg-confirm"></a></dt>
+<dd><p>Whether to ask before writing the remembered location.
+<code>TRUE</code> (the default) asks and, in a non-interactive session, refuses.
+<code>FALSE</code> writes without asking.</p></dd>
+
+
+<dt id="arg-call">call<a class="anchor" aria-label="anchor" href="#arg-call"></a></dt>
+<dd><p>The environment a refusal is reported from, so each wrapper is
+blamed rather than <code>set_program()</code> itself. Rarely set directly.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A logical indicating whether the program location was set properly.</p>
+    <p>Invisibly, <code>TRUE</code> where the location was written and
+<code>FALSE</code> where the caller declined to write it.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Because the call writes a file that outlives the session, it asks for
+confirmation first and writes nothing until it has it. The prompt names the
+location as you typed it – which is what gets written – and the full path
+of the file that would record it. Declining leaves the config directory
+exactly as it was. In a session with no one to ask, the call refuses rather
+than assume consent; pass <code>confirm = FALSE</code> to write without being
+asked, which is what an unattended script wants.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -97,8 +124,11 @@ before 0.2.0 is no longer read.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Point tidymedia at a binary in a non-standard location</span></span></span>
+<span class="r-in"><span><span class="co"># Point tidymedia at a binary in a non-standard location; asks first</span></span></span>
 <span class="r-in"><span><span class="fu">set_mediainfo</span><span class="op">(</span><span class="st">"C:/Program Files/MediaInfo/mediainfo.exe"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># In an unattended script, where there is no one to ask</span></span></span>
+<span class="r-in"><span><span class="fu">set_mediainfo</span><span class="op">(</span><span class="st">"C:/Program Files/MediaInfo/mediainfo.exe"</span>, confirm <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

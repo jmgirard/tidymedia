@@ -11,15 +11,20 @@ longer read.
 ## Usage
 
 ``` r
-set_program(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"), location)
+set_program(
+  program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
+  location,
+  confirm = TRUE,
+  call = rlang::current_env()
+)
 
-set_mediainfo(location)
+set_mediainfo(location, confirm = TRUE)
 
-set_ffmpeg(location)
+set_ffmpeg(location, confirm = TRUE)
 
-set_ffprobe(location)
+set_ffprobe(location, confirm = TRUE)
 
-set_ffplay(location)
+set_ffplay(location, confirm = TRUE)
 ```
 
 ## Arguments
@@ -32,9 +37,31 @@ set_ffplay(location)
 
   A string containing the location of the program.
 
+- confirm:
+
+  Whether to ask before writing the remembered location. `TRUE` (the
+  default) asks and, in a non-interactive session, refuses. `FALSE`
+  writes without asking.
+
+- call:
+
+  The environment a refusal is reported from, so each wrapper is blamed
+  rather than `set_program()` itself. Rarely set directly.
+
 ## Value
 
-A logical indicating whether the program location was set properly.
+Invisibly, `TRUE` where the location was written and `FALSE` where the
+caller declined to write it.
+
+## Details
+
+Because the call writes a file that outlives the session, it asks for
+confirmation first and writes nothing until it has it. The prompt names
+the location as you typed it – which is what gets written – and the full
+path of the file that would record it. Declining leaves the config
+directory exactly as it was. In a session with no one to ask, the call
+refuses rather than assume consent; pass `confirm = FALSE` to write
+without being asked, which is what an unattended script wants.
 
 ## See also
 
@@ -51,7 +78,10 @@ Other program management functions:
 
 ``` r
 if (FALSE) { # \dontrun{
-# Point tidymedia at a binary in a non-standard location
+# Point tidymedia at a binary in a non-standard location; asks first
 set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")
+
+# In an unattended script, where there is no one to ask
+set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe", confirm = FALSE)
 } # }
 ```

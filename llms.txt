@@ -42,7 +42,9 @@ instructions for several popular platforms.
     computer such as:  
     `C:/Program Files/MediaInfo`
 3.  Run the following code in R (changing the path to match Step 2):  
-    `tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")`
+    `tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")`  
+    This asks you to confirm the path before it remembers it. In a
+    script with no one to ask, add `confirm = FALSE`.
 
 **Mac**
 

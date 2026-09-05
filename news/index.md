@@ -503,6 +503,37 @@
 
 ### Breaking changes
 
+- [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+  and its wrappers
+  [`set_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/set_program.md),
+  [`set_ffprobe()`](https://jmgirard.github.io/tidymedia/reference/set_program.md),
+  [`set_ffplay()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+  and
+  [`set_mediainfo()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+  now ask before they write. Each takes a new `confirm` argument, `TRUE`
+  by default. The prompt names the location as you typed it – which is
+  the string that gets written – and the full path of the
+  `<program>_location.txt` file that would record it; declining leaves
+  the config directory exactly as it was, creating nothing. In a session
+  with no one to ask, the call now aborts with
+  `tidymedia_confirmation_unavailable` rather than assume consent, which
+  is the same contract
+  [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+  already has. This breaks unattended scripts that call these functions:
+  pass `confirm = FALSE` to write without being asked.
+  [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+  passes it internally, so an approved install still asks exactly once.
+  A call in `.Rprofile` is a third case: the session counts as
+  interactive there, so the call now prompts while R starts up rather
+  than refusing – pass `confirm = FALSE` there too.
+
+- These five functions now return `TRUE` or `FALSE`, invisibly, saying
+  whether the location was written. They previously documented a logical
+  and returned whatever clearing the capability memo returned, which was
+  `NULL`. A location with no executable at it now aborts with
+  `tidymedia_program_not_found`, and the error names the function you
+  called rather than being unclassed.
+
 - [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
   [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
   and their `_batch` siblings now call the argument that picks whose

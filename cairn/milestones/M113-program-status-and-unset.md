@@ -1,6 +1,6 @@
 # M113: One call says which programs tidymedia found, and a remembered location can be forgotten
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -116,6 +116,7 @@ Teaching either function in a vignette → M114.
 - 2026-09-05: re-audit: AC3 (full) — returned three findings against the mini gate's wording: the promise held over a `unset_program()` run that aborts with the file still on disk (F6's state, pinned at `test-program-status-and-unset.R:307`); the `program` axis was free while the evidence enumerated only states x locations; and the antecedent named `set_program()` as the writer, which cannot instantiate the legacy arm of its own walk, there being no exported writer for that directory. All three fixed before writing.
 - 2026-09-05: re-audit: AC3 (full) — the once re-entry, on the fixed wording. Returned two findings: the `PATH`-has-the-program arm has no reachable cell in the named walk, which empties `PATH` so the other states can assert the `Failed to find` warning; and the antecedent ranges over three remembered configurations while the evidence named two, the both-present one being where the defect was found. Both confirmed against `test-program-status-and-unset.R:203-244` and `helper-program-config.R:41-43`, taken to the user as further churn, and applied on selection.
 - 2026-09-05: T7 — the two timeout sweeps went red on the macOS and Windows CI legs because `program_status()` probes a version only for a program it resolved, so on a runner with no binaries it spawns nothing and a forced limit is never reached. `tm_force_timeout()` now intercepts resolution at `find_program()` as well as the two spawn wrappers, and a new grid case runs the whole domain under an emptied `PATH` with both config dirs empty. Discrimination measured: with the resolver mock removed the new case fails on `program_status` while the grid above it stays green on this machine.
+- 2026-09-05: amendment work complete; status to `review`. `devtools::test()` 0 failures / 12,897 pass / 18 skip (54 more assertions than the pre-amendment run, which is the new grid case plus its text assertion); `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes, 15m31s; `devtools::document()` no diff. AC3 stays unticked for re-review to re-evidence against the amended wording; the nine review findings other than F4 stay open for the maintainer at the re-review gate.
 
 ## Decisions
 

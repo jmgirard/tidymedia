@@ -22,3 +22,11 @@ cairn/.merge-approved.pending
 # built package tarballs
 *.tar.gz
 tests/testthat/testthat-problems.rds
+# Artifacts left in vignettes/ by a vignette build
+vignettes/*.html
+vignettes/*.R
+vignettes/*.m4a
+vignettes/*.wav
+vignettes/*.mp3
+vignettes/*.mp4
+vignettes/*.png

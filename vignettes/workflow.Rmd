@@ -194,8 +194,18 @@ Every verb returns the exact FFmpeg command it compiled. Capturing those strings
 file was produced. That record is the point: the pipeline above is not a
 one-off, but a specification you can re-apply to the next cohort of recordings.
 
+The command says what you asked for. To record what actually happened — the
+FFmpeg version that ran, when, and checksums of what went in and came out — run
+the batch with `manifest = TRUE` and read it back with `ffm_manifest()`. To
+confirm each output really has the duration, dimensions and codecs you asked
+for, check it with `verify_media()`. Both, and the wall-clock limit that keeps a
+hung file from taking the session with it, are covered in
+`vignette("verification")`.
+
 ## Where to next
 
 - `vignette("batch")` — the jobs-tibble batch runner in depth.
 - `vignette("metadata")` — reading each file's metadata as a tibble.
+- `vignette("verification")` — checking outputs, recording provenance, bounding
+  a run that hangs.
 - `vignette("tidymedia")` — the task verbs and the builder beneath them.

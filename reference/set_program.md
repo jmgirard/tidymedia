@@ -66,7 +66,9 @@ to download FFmpeg on Windows.
 
 Other program management functions:
 [`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md),
-[`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+[`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md),
+[`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md),
+[`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
 
 ## Examples
 

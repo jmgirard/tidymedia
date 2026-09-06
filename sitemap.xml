@@ -77,6 +77,7 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/print.tidymedia_ffm.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/probe_all.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/probe_container.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/program_status.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/sample_frames.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/sample_frames_batch.html</loc></url>
@@ -91,6 +92,7 @@
 <url><loc>https://jmgirard.github.io/tidymedia/reference/strip_metadata_batch.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/tidyeval.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/tidymedia-package.html</loc></url>
+<url><loc>https://jmgirard.github.io/tidymedia/reference/unset_program.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/verify_media.html</loc></url>
 <url><loc>https://jmgirard.github.io/tidymedia/reference/with_timeout.html</loc></url>
 </urlset>

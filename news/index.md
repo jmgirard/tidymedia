@@ -2,6 +2,28 @@
 
 ## tidymedia (development version)
 
+### New features
+
+- [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)
+  reports all four programs tidymedia knows about – `ffmpeg`, `ffprobe`,
+  `ffplay` and `mediainfo` – in one table: where each one resolved to
+  and what version it reported, with `NA` in both columns for a program
+  that could not be found. A program it cannot find is reported rather
+  than warned about, so checking a fresh setup is one call and one table
+  rather than four calls and a pile of messages.
+
+- [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
+  forgets a location
+  [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+  remembered, so
+  [`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+  goes back to answering from the `PATH`. It clears both places a
+  location can live: the current configuration file and one written by a
+  version of tidymedia before 0.2.0, so a location remembered before the
+  upgrade is forgotten too. The program must be named – the call deletes
+  a file, so there is no default. Called for a program with nothing
+  remembered, it warns and returns `FALSE` rather than failing.
+
 ### Breaking changes
 
 - [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)

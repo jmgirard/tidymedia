@@ -211,6 +211,8 @@ including opt-in hardware (GPU) encoding.
 
 Locate, configure, and install the FFmpeg and MediaInfo binaries.
 
+- [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)
+  : Report which dependency programs tidymedia can find
 - [`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
   [`find_mediainfo()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
   [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
@@ -223,5 +225,7 @@ Locate, configure, and install the FFmpeg and MediaInfo binaries.
   [`set_ffprobe()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
   [`set_ffplay()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
   : Set the location of a dependency program
+- [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
+  : Forget the location of a dependency program
 - [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
   : Install FFmpeg on Windows

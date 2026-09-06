@@ -7,7 +7,7 @@
 - **Principles touched:** GP1
 - **Resolves:** —
 - **Surface tier:** user-facing — two new exports
-- **Branch/PR:** `m113-program-status-and-unset`
+- **Branch/PR:** `m113-program-status-and-unset` — https://github.com/jmgirard/tidymedia/pull/117
 
 ## Goal
 
@@ -34,16 +34,16 @@ Teaching either function in a vignette → M114.
 
 ## Acceptance criteria
 
-- [ ] AC1: `program_status()` returns a tibble with one row for each of
+- [x] AC1: `program_status()` returns a tibble with one row for each of
       `ffmpeg`, `ffprobe`, `ffplay` and `mediainfo`, carrying the resolved path
       or `NA` and the version string the binary reported or `NA`. Evidence: the
       printed tibble in two states — every program present, and none resolvable
       (an emptied `PATH` AND a redirected empty config dir, since `PATH` alone
       leaves `find_program()`'s config and legacy lookups intact).
-- [ ] AC2: `program_status()` returns that tibble rather than aborting or
+- [x] AC2: `program_status()` returns that tibble rather than aborting or
       warning when a program is unresolvable, for each of the four taken alone.
       Evidence: four runs, one program hidden per run.
-- [ ] AC3: After `set_program()` writes a location and `unset_program()` runs
+- [x] AC3: After `set_program()` writes a location and `unset_program()` runs
       for that program, no file named `<program>_location.txt` exists under
       either the current config dir or the legacy `rappdirs` dir, and
       `find_program()` returns what it returned before the `set_program()` call
@@ -51,12 +51,12 @@ Teaching either function in a vignette → M114.
       Evidence: a test over the three states (never remembered, remembered,
       forgotten) x two config locations, showing the file paths and the
       `find_program()` answer at each.
-- [ ] AC4: `unset_program()` called for a program with no remembered location
+- [x] AC4: `unset_program()` called for a program with no remembered location
       raises a classed condition carrying a `tm_program` field, per D062's
       naming rule and D086's field rule, rather than failing silently or
       unclassed. Evidence: the class vector and the message.
       (RB tripwire: irreversible-api)
-- [ ] AC5: Both exports appear in `_pkgdown.yml`, carry `@examplesIf`-guarded
+- [x] AC5: Both exports appear in `_pkgdown.yml`, carry `@examplesIf`-guarded
       examples where they touch a binary, join `@family program management
       functions`, and have a `NEWS.md` entry.
 - [ ] AC6: `devtools::document()` produces no diff; `devtools::test()` and
@@ -103,6 +103,7 @@ Teaching either function in a vignette → M114.
 - 2026-09-05: T6 second sweep finding — the M096 wrong-argument sweep asserts its table covers the whole timeout domain, and `program_status()` takes no arguments, so it can contribute no cell. `tm_timeout_argumentless()` computes that set and the test pins it, so a second argumentless export reddens there rather than vanishing from the sweep.
 - 2026-09-05: T6 — roxygen, `_pkgdown.yml` rows, `NEWS.md`; `devtools::document()` no diff, `pkgdown::check_pkgdown()` clean, `devtools::test()` 12,843 pass / 0 fail / 18 skip, `devtools::check()` 0 errors / 0 warnings / 0 notes.
 - 2026-09-05: implement question gate settled four choices — both names as planned, the three-column shape, a warning rather than an abort for nothing-to-forget, and no `confirm` argument. Recorded below; T1 closed by the naming half.
+- 2026-09-05: review (wip) — PR #117 opened as a draft; AC1-AC5 verified with fresh evidence and ticked. AC6 pending `devtools::check()`; three review lenses spawned, the blame-history and prior-review lenses reported zero findings, the diff-bug lens still running.
 
 ## Decisions
 
@@ -139,3 +140,11 @@ ask the caller to confirm the thing they typed.
   case to stop a script.
 
 ## Review
+
+### Acceptance criteria
+
+- AC1 — **pass.** Two states run against the branch head (`Rscript` over `pkgload::load_all()`, 2026-09-05). All present: a 4x3 `tbl_df` with `ffmpeg`/`ffprobe`/`ffplay` at `/opt/homebrew/bin/*` version `9.0.1` and `mediainfo` at `/opt/homebrew/bin/mediainfo` version `26.05`. None resolvable — `PATH=""` plus `R_USER_CONFIG_DIR` pointed at an empty dir plus `tm_legacy_config_dir()` mocked to an empty dir, all three as the criterion requires: the same four rows with `NA` in both `location` and `version`. `devtools::test(filter = "program-status-and-unset")` covers both states, 204 assertions, 0 failures.
+- AC2 — **pass.** Four runs, one program hidden per run: a temp `PATH` dir holding symlinks to the other three, an empty config dir and an empty mocked legacy dir. Each run returned the 4x3 tibble with the hidden program `NA`/`NA` and the other three resolved and versioned; a `withCallingHandlers` collar on `warning`, `message` and `error` caught nothing in any of the four.
+- AC3 — **pass.** The three-state walk run twice, once per config location, on `mediainfo` under an emptied `PATH`. Current dir: never remembered — both `mediainfo_location.txt` paths absent, `find_program()` `NULL` with "Failed to find mediainfo."; remembered — current file present, legacy absent, `find_program()` returns the stub path; forgotten — `unset_program()` returned `TRUE`, both files absent, `find_program()` `NULL` with the same warning. Legacy dir: identical, with the presence flag on the legacy file instead. The suite's own walk (`test-program-status-and-unset.R`) additionally covers both-files-present and the leave-the-other-programs-alone case.
+- AC4 — **pass.** For each of the four programs with neither config file present, `unset_program()` signalled a warning whose class vector is `tidymedia_no_remembered_location` / `rlang_warning` / `warning` / `condition`, carrying `tm_program` equal to the program name, message `No remembered location to forget for <program>.` with the hint `Use \`set_<program>()\` to remember one.` The suite also pins that the warning's `call` blames `unset_program()`.
+- AC5 — **pass.** `_pkgdown.yml:126` and `:129` carry `program_status` and `unset_program`; `pkgdown::check_pkgdown()` reports "No problems found." Both carry `@family program management functions`. `program_status()` touches binaries and its example is `@examplesIf nzchar(Sys.which("ffmpeg"))`; `unset_program()` touches no binary and its example is `\dontrun{}`, deleting a real user's remembered location being the thing an unguarded example would do. `NEWS.md` has one entry each under "New features".

@@ -26,11 +26,17 @@ decision that `call` stays a threaded formal; the disposition of
 `ffm`/`ffm_files` (`R/ffm.R:64`) and `mediainfo_summary`/`mediainfo_template`
 (`R/mediainfo.R:243`).
 
-**Out:** any change to which frame a refusal names — this milestone is
-signature-only and every existing blame assertion must still hold. The wider
-`call`-threading question at other seams stays where M110 left it. The
-`tidymedia_program_not_found` naming question → the unclassed-aborts candidate
-row.
+**Out:** any change to which frame a refusal names, with one measured
+exception: `has_hardware_encoder()`'s wrong-`codec` and wrong-`hardware`
+refusals were raised in `hardware_encoder()`'s name, a function the caller
+never typed, because the shared body's checkers ran under
+`rlang::caller_env()`. Threading `call` into them moves both onto
+`has_hardware_encoder()` itself, which is what AC2 asks for; ten cells of
+M096's corrupt-limit census change side, and that census is a merge-base
+measurement that is read, never rewritten. Every other blame assertion still
+holds unchanged. The wider `call`-threading question at other seams stays
+where M110 left it. The `tidymedia_program_not_found` naming question → the
+unclassed-aborts candidate row.
 
 ## Acceptance criteria
 
@@ -75,7 +81,7 @@ row.
       exports become wrappers passing their own frames. The M100 lesson holds:
       pass the threaded `call` into `rlang::arg_match()`, `check_string()` and
       `check_bool()`, not only into the abort sites.
-- [ ] T3: The same extraction for `hardware_encoder()` (`R/ffmpeg.R:3115`),
+- [x] T3: The same extraction for `hardware_encoder()` (`R/ffmpeg.R:3115`),
       keeping its literal `codec` defaults spelled out in the Rd usage line for
       the RR07 Q2 reason recorded there.
 - [ ] T4: Build the AC2 table as a test, both refusal forms at all seven
@@ -97,6 +103,8 @@ row.
 - 2026-09-05: implementation gate waived the deprecation cycle for both alias removals and the `call` removal, under D014's pre-0.2.0 clean-break policy; no `lifecycle` shim.
 - 2026-09-05: T1 sweep written and seen red at `tests/testthat/test-exported-call-formal.R:32` naming exactly `hardware_encoder` and `set_program` over a domain of 88 exported functions. Its positive control (a real formal named `call`, from `hardware_encoder_available()`) and its independent domain assertion both pass, so a later green is the two exports losing the formal rather than the detector going blind.
 - 2026-09-05: T2 extracted `tm_set_program(program, location, confirm, call)`; `set_program()` and the four `set_*()` exports pass their own frames, and the Rd usage line lost `call = rlang::current_env()`. `install_on_win()`'s internal registration still goes through the exported `set_program()`, so its refusals keep naming that frame. `arg_match()` takes `error_arg = "program"` explicitly, since the internal is reached with a string literal from four of the five callers. The blame suites (`builder-blame-front-door`, `hardware-out-of-table-blame`, `nvenc-probe-blame`, `timeout-refusal-blame`, `program-management`, `nvenc-memo`) all pass; the sweep is down to one hit, `hardware_encoder`.
+- 2026-09-05: amendment (substantive, Scope Out) accepted at a mini gate: one refusal changes frame. Threading `call` into `tm_hardware_encoder()`'s checkers, which T2/T3 mandate, moves `has_hardware_encoder()`'s wrong-`codec` and wrong-`hardware` refusals off `hardware_encoder()` — a function the caller never typed — and onto `has_hardware_encoder()`. Ten cells of M096's corrupt-limit census change side (kept 1093→1103, dropped 442→432); the merge-base census is read, not rewritten. No acceptance criterion changed, so no criteria re-audit is owed.
+- 2026-09-05: T3 extracted `tm_hardware_encoder(codec, hardware, call)`; `hardware_encoder()` is now a wrapper passing its own frame, and `resolve_hw_encoder()`, `check_hardware_available()` and `hardware_encoder_available()` all reach the table through the internal. The exported wrapper keeps its literal `codec` defaults, so the Rd usage line still spells the four families out (RR07 Q2); `arg_match()` inside the internal takes the tables as explicit `values`, and the existing `test-hardware-backends.R` sweep is what pins the literals to them. The AC1 sweep is now green: 0 hits over 88 exported functions.
 - 2026-09-05: plan gate chose a sweep over `getNamespaceExports()` over a grep of `man/*.Rd` usage blocks, because `.Rd` files carry no export status — only 1 of 82 is marked internal — so the grep cannot partition its hits. Falsified by an export whose formals a static sweep cannot read.
 
 ## Decisions

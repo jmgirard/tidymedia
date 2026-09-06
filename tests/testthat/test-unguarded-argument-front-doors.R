@@ -96,16 +96,21 @@ test_that("an invalid limit displaces no argument error, at every formal", {
   # into a re-recorded list.
   expect_equal(
     setdiff(tm_corrupt_dropped_master(), dropped),
-    c("ffmpeg_codecs/sort_by_type -> :", "segment_video/outfiles -> purrr::pmap")
+    c("ffmpeg_codecs/sort_by_type -> :",
+      "has_hardware_encoder/codec -> hardware_encoder",
+      "segment_video/outfiles -> purrr::pmap")
   )
-  # One entry has joined the census since it was measured, and it is this
-  # milestone's: `has_hardware_encoder()` gained a required `hardware`
-  # argument, and a wrong value for it is refused inside `hardware_encoder()` --
-  # the same frame that already refuses a wrong `codec` on the line above it in
-  # the master list, not a new blame path. The census itself is the merge-base
+  # M112: `has_hardware_encoder()`'s two arguments have LEFT the dropped side.
+  # The census recorded them as refused inside `hardware_encoder()` -- a
+  # function the caller never typed -- because the shared body checked its
+  # arguments under `rlang::caller_env()`. That body is now
+  # `tm_hardware_encoder()` with `call` threaded in, so both refusals name
+  # `has_hardware_encoder()` itself and both cells are kept. `codec` shows up
+  # in the first difference above; `hardware` was not in the master census at
+  # all (the argument postdates it), so it appears in neither direction, and
+  # nothing has joined the census. The census itself is the merge-base
   # measurement and is not rewritten.
-  expect_equal(setdiff(dropped, tm_corrupt_dropped_master()),
-               "has_hardware_encoder/hardware -> hardware_encoder")
+  expect_equal(setdiff(dropped, tm_corrupt_dropped_master()), character())
 
   # The counts, pinned as M095's sibling sweep pins its own. The two `setdiff()`
   # calls above compare UNIQUE member/argument/frame strings, which discards
@@ -115,11 +120,14 @@ test_that("an invalid limit displaces no argument error, at every formal", {
   # differences empty and slip through. The totals cannot absorb that
   # (M96 review F3).
   # 1530/1093/437 at `tm_corrupt_master_ref`; five cells joined when
-  # `has_hardware_encoder()` gained a fifth formal to corrupt, and all five are
-  # dropped (the entry named above), so `kept` is unchanged.
+  # `has_hardware_encoder()` gained a fifth formal to corrupt, taking the row
+  # count to 1535. M112 then moved ten cells from dropped to kept -- that
+  # member's two arguments crossed with the five wrong forms -- so `kept` is
+  # 1093 + 10 and `!kept` is 442 - 10. The row count is untouched: no cell was
+  # added or removed, only re-sided.
   expect_identical(nrow(res), 1535L)
-  expect_identical(sum(res$kept), 1093L)
-  expect_identical(sum(!res$kept), 442L)
+  expect_identical(sum(res$kept), 1103L)
+  expect_identical(sum(!res$kept), 432L)
 
   # `segment_video/outfiles -> <none>` survives in both, and correctly: it is
   # the token form, the legal filename `"bad fmt!"`, which the verb compiled

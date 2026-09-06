@@ -11,6 +11,26 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
+# Some of the chunks below run real commands, which means starting FFmpeg,
+# FFprobe or MediaInfo. Each of those is evaluated only when the program it
+# needs is installed, so this README knits on a machine that has none of them --
+# the machine every reader of the install section above is on. The two chunks
+# that only COMPILE a command carry no guard: they start nothing, and a reader
+# without the binaries should still see what the builder produces.
+# `tools/vignette_chunk_guards.R` is what says which chunk is which.
+has_ffmpeg <- nzchar(Sys.which("ffmpeg"))
+has_ffprobe <- nzchar(Sys.which("ffprobe"))
+has_mediainfo <- nzchar(Sys.which("mediainfo"))
+# Recorded on stderr rather than into the page: this line is what a build log
+# shows for the three programs, so a build that was meant to run without them
+# can be checked rather than assumed. `message()` would be captured by knitr and
+# then dropped with the rest of this chunk's output.
+writeLines(
+  paste0("tidymedia README build, Sys.which(): ", paste0(
+    c("ffmpeg", "ffprobe", "mediainfo"), "=[",
+    Sys.which(c("ffmpeg", "ffprobe", "mediainfo")), "]", collapse = " ")),
+  con = stderr()
+)
 ```
 
 # tidymedia
@@ -170,20 +190,20 @@ extract_audio(video, "audio.aac", run = FALSE)
 
 `probe_all()` returns container- and stream-level metadata from FFprobe as tibbles, keyed by a leading `file` column so a whole batch stacks cleanly:
 
-```{r}
+```{r, eval = has_ffprobe}
 probe_all(video)$streams
 ```
 
 MediaInfo is available too, via `mediainfo_query()`, `mediainfo_template()`, and the `get_*()` shortcuts (see `vignette("metadata")`):
 
-```{r}
+```{r, eval = has_mediainfo}
 get_duration(video, unit = "sec")
 get_width(video)
 ```
 
 ### Query FFmpeg's capabilities
 
-```{r}
+```{r, eval = has_ffmpeg}
 head(ffmpeg_codecs())
 ```
 

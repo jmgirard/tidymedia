@@ -1,11 +1,25 @@
 #!/usr/bin/env Rscript
-# Builds every vignette on a PATH that reaches pandoc but reaches none of
-# ffmpeg, ffprobe or mediainfo, which is the state a machine without the
-# command-line tools is in. A vignette that needs a binary it cannot find fails
-# the build, so a clean run here is the evidence that every chunk is guarded.
+# Builds the vignettes, or the README, on a PATH that reaches pandoc but reaches
+# none of ffmpeg, ffprobe or mediainfo, which is the state a machine without the
+# command-line tools is in. A chunk that needs a binary it cannot find fails the
+# build, so a clean run here is the evidence that every chunk is guarded.
 #
-# Run from the package root: Rscript tools/build_vignettes_without_binaries.R
+# Run from the package root:
+#   Rscript tools/build_vignettes_without_binaries.R            # vignettes
+#   Rscript tools/build_vignettes_without_binaries.R readme     # README.Rmd
+#   Rscript tools/build_vignettes_without_binaries.R both
 # A developer tool, kept out of the build by `.Rbuildignore`'s `^tools$`.
+#
+# The README target joined in M115: it knits the same way, its chunks start the
+# same three programs, and its reader is the one most likely to have none of
+# them. The `PATH` and config-seam setup below is the whole reason the two
+# targets share one script -- separated, the two copies drift.
+#
+# `devtools::build_readme()` writes `README.md` in place, so the target is run
+# on a scratch copy of the tree: the answer wanted here is whether the build
+# SUCCEEDS with no binaries, not the file it would produce, and a knit with no
+# binaries produces a README with every example chunk blank. The working tree's
+# own `README.md` is left alone.
 #
 # The reduced PATH is built rather than edited down, because on this machine
 # pandoc and ffmpeg live in the same directory (/opt/homebrew/bin), so dropping
@@ -34,6 +48,13 @@
 # that is not about the guards -- read the log, not just the exit status.
 
 PROGRAMS <- c("ffmpeg", "ffprobe", "mediainfo")
+
+target <- commandArgs(TRUE)[1]
+if (is.na(target)) target <- "vignettes"
+if (!target %in% c("vignettes", "readme", "both")) {
+  stop("target must be one of: vignettes, readme, both (got ", target, ")")
+}
+cat("target:", target, "\n")
 
 pandoc <- Sys.which("pandoc")
 if (!nzchar(pandoc)) stop("pandoc is not on PATH; the build needs it")
@@ -113,6 +134,39 @@ if (length(still)) {
 }
 
 cat("\n")
-devtools::build_vignettes()
-cat("\nvignettes built with none of ", paste(PROGRAMS, collapse = ", "),
+
+# The README build runs in a scratch copy so the working tree's `README.md` is
+# not overwritten with a binary-less knit. `pkgload::load_all()` above already
+# holds the real source tree, and `build_readme()` loads the copy itself.
+build_readme_in_scratch <- function() {
+  scratch <- file.path(tempfile("readme-build-"), basename(getwd()))
+  dir.create(scratch, recursive = TRUE)
+  copied <- file.copy(
+    list.files(".", all.files = TRUE, no.. = TRUE, full.names = TRUE),
+    scratch, recursive = TRUE
+  )
+  if (!all(copied)) stop("could not copy the package tree to ", scratch)
+  cat("README built in a scratch copy at:", scratch, "\n")
+  devtools::build_readme(path = scratch)
+  scratch
+}
+
+if (target %in% c("vignettes", "both")) devtools::build_vignettes()
+if (target %in% c("readme", "both")) {
+  scratch <- build_readme_in_scratch()
+  md <- file.path(scratch, "README.md")
+  if (!file.exists(md)) stop("build_readme() produced no README.md")
+  # knitr's default `error = FALSE` aborts a knit on an error, so reaching here
+  # already says no chunk errored. The scan is the independent statement of the
+  # same fact, over the artifact rather than over the exit status.
+  bad <- grep("^#> (Error|Warning)", readLines(md, warn = FALSE), value = TRUE)
+  cat("\nerror or warning lines in the knitted README.md: ",
+      if (length(bad)) "" else "none", "\n", sep = "")
+  if (length(bad)) {
+    writeLines(bad)
+    stop("the knitted README.md carries error output")
+  }
+}
+
+cat("\n", target, " built with none of ", paste(PROGRAMS, collapse = ", "),
     " reachable -- not on PATH and not through a remembered location\n", sep = "")

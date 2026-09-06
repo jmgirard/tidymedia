@@ -1,8 +1,11 @@
 #!/usr/bin/env Rscript
-# Reports, for every chunk of every vignette under `vignettes/` that starts one
-# of the three media programs, WHICH programs it started and whether the chunk's
-# `eval` guard names each of them. Exits 1 if any chunk starts a program its
-# guard does not cover.
+# Reports, for every chunk of every vignette under `vignettes/` and of
+# `README.Rmd` that starts one of the three media programs, WHICH programs it
+# started and whether the chunk's `eval` guard names each of them. Exits 1 if
+# any chunk starts a program its guard does not cover.
+#
+# The README joined the domain in M115, for the reason its sibling script's
+# header gives.
 #
 # Run from the package root, on a machine that HAS ffmpeg, ffprobe and
 # mediainfo: Rscript tools/vignette_chunk_program_identity.R
@@ -99,12 +102,15 @@ covered_programs <- function(guard) {
   PROGRAMS[vapply(PROGRAMS, function(p) grepl(p, expanded, fixed = TRUE), logical(1))]
 }
 
-vignette_files <- function() {
+swept_files <- function() {
   f <- sort(list.files("vignettes", pattern = "[.]Rmd$", full.names = TRUE))
   if (length(f) == 0) {
     stop("no .Rmd files found under vignettes/ -- this sweep has nothing to read")
   }
-  normalizePath(f)
+  if (!file.exists("README.Rmd")) {
+    stop("README.Rmd is not here -- run the sweep from the package root")
+  }
+  normalizePath(c(f, "README.Rmd"))
 }
 
 pkgload::load_all(".", quiet = TRUE, export_all = FALSE)
@@ -114,7 +120,7 @@ suppressMessages({
   trace(base::system2, tracer = quote(record_spawn(command)), print = FALSE)
 })
 
-files <- vignette_files()
+files <- swept_files()
 owd <- getwd()
 
 for (f in files) {
@@ -156,7 +162,7 @@ rows <- lapply(names(STATE$hits), function(key) {
 report <- do.call(rbind, rows)
 report <- report[order(report$chunk), , drop = FALSE]
 
-cat("vignettes:", length(files), "\n")
+cat("files swept:", length(files), "\n")
 cat("chunks that started a program:", nrow(report), "\n\n")
 print(report, row.names = FALSE)
 

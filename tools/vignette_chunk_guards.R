@@ -1,8 +1,13 @@
 #!/usr/bin/env Rscript
-# Reports, for every chunk of every vignette under `vignettes/`, whether that
-# chunk starts an external program and whether it is guarded on that program's
-# presence. Exits 1 if any chunk starts a program and would still be evaluated
-# on a machine that does not have it.
+# Reports, for every chunk of every vignette under `vignettes/` and of
+# `README.Rmd`, whether that chunk starts an external program and whether it is
+# guarded on that program's presence. Exits 1 if any chunk starts a program and
+# would still be evaluated on a machine that does not have it.
+#
+# The README is swept alongside the vignettes (M115) because it knits the same
+# way and its reader is the one most likely to have no binaries yet; the file
+# name kept its `vignette_` prefix so the records that name it still point at
+# it.
 #
 # Run from the package root, on a machine that HAS ffmpeg, ffprobe and
 # mediainfo: Rscript tools/vignette_chunk_guards.R
@@ -91,12 +96,18 @@ spawn_record <- function(command) {
   invisible(NULL)
 }
 
-vignette_files <- function() {
+# Every knitted .Rmd the package ships a rendered copy of: the vignettes, and
+# the README. A missing README is an error rather than a silent skip -- an
+# emptied domain is the failure a sweep cannot report.
+swept_files <- function() {
   f <- sort(list.files("vignettes", pattern = "[.]Rmd$", full.names = TRUE))
   if (length(f) == 0) {
     stop("no .Rmd files found under vignettes/ -- the sweep has nothing to read")
   }
-  normalizePath(f)
+  if (!file.exists("README.Rmd")) {
+    stop("README.Rmd is not here -- run the sweep from the package root")
+  }
+  normalizePath(c(f, "README.Rmd"))
 }
 
 # Raw `eval` option text, per chunk, in file order. knitr's hooks hand back the
@@ -204,7 +215,7 @@ bare_path <- function() {
   paste(keep[!bad], collapse = .Platform$path.sep)
 }
 
-files <- vignette_files()
+files <- swept_files()
 all_rows <- list()
 
 for (f in files) {
@@ -235,7 +246,7 @@ for (f in files) {
   }
 
   all_rows[[length(all_rows) + 1L]] <- data.frame(
-    vignette = basename(f),
+    file = basename(f),
     label = p1$label,
     guard = ifelse(nzchar(raw), raw, "-"),
     eval_here = p1$eval,
@@ -251,7 +262,7 @@ rows$verdict <- ifelse(
   ifelse(rows$eval_bare, "UNGUARDED", "guarded")
 )
 
-cat("vignettes swept:", length(files), "\n")
+cat("files swept:", length(files), "\n")
 cat("chunks:", nrow(rows), "\n")
 cat("chunks that started a program:", sum(rows$spawns > 0L), "\n\n")
 print(rows, row.names = FALSE, right = FALSE)

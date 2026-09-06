@@ -43,7 +43,7 @@ Teaching either function in a vignette → M114.
 - [x] AC2: `program_status()` returns that tibble rather than aborting or
       warning when a program is unresolvable, for each of the four taken alone.
       Evidence: four runs, one program hidden per run.
-- [ ] AC3: When a location is remembered for a program and `unset_program()`
+- [x] AC3: When a location is remembered for a program and `unset_program()`
       then returns `TRUE` for it, no file named `<program>_location.txt` exists
       under either the current config dir or the legacy `rappdirs` dir, and
       `find_program()` answers as it did when nothing was remembered: `NULL`
@@ -117,6 +117,7 @@ Teaching either function in a vignette → M114.
 - 2026-09-05: re-audit: AC3 (full) — the once re-entry, on the fixed wording. Returned two findings: the `PATH`-has-the-program arm has no reachable cell in the named walk, which empties `PATH` so the other states can assert the `Failed to find` warning; and the antecedent ranges over three remembered configurations while the evidence named two, the both-present one being where the defect was found. Both confirmed against `test-program-status-and-unset.R:203-244` and `helper-program-config.R:41-43`, taken to the user as further churn, and applied on selection.
 - 2026-09-05: T7 — the two timeout sweeps went red on the macOS and Windows CI legs because `program_status()` probes a version only for a program it resolved, so on a runner with no binaries it spawns nothing and a forced limit is never reached. `tm_force_timeout()` now intercepts resolution at `find_program()` as well as the two spawn wrappers, and a new grid case runs the whole domain under an emptied `PATH` with both config dirs empty. Discrimination measured: with the resolver mock removed the new case fails on `program_status` while the grid above it stays green on this machine.
 - 2026-09-05: amendment work complete; status to `review`. `devtools::test()` 0 failures / 12,897 pass / 18 skip (54 more assertions than the pre-amendment run, which is the new grid case plus its text assertion); `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes, 15m31s; `devtools::document()` no diff. AC3 stays unticked for re-review to re-evidence against the amended wording; the nine review findings other than F4 stay open for the maintainer at the re-review gate.
+- 2026-09-06: re-review (wip) — AC3 re-evidenced against the amended wording and ticked; AC1, AC2, AC4 and AC5 re-run fresh against branch head `8baf7ac` and recorded. `cairn_validate` exit 0, every check PASS, no advisory. AC6's `devtools::check()`, the three review lenses and CI on PR #117 still running.
 
 ## Decisions
 
@@ -162,6 +163,51 @@ ask the caller to confirm the thing they typed.
 - AC4 — **pass.** For each of the four programs with neither config file present, `unset_program()` signalled a warning whose class vector is `tidymedia_no_remembered_location` / `rlang_warning` / `warning` / `condition`, carrying `tm_program` equal to the program name, message `No remembered location to forget for <program>.` with the hint `Use \`set_<program>()\` to remember one.` The suite also pins that the warning's `call` blames `unset_program()`.
 - AC5 — **pass.** `_pkgdown.yml:126` and `:129` carry `program_status` and `unset_program`; `pkgdown::check_pkgdown()` reports "No problems found." Both carry `@family program management functions`. `program_status()` touches binaries and its example is `@examplesIf nzchar(Sys.which("ffmpeg"))`; `unset_program()` touches no binary and its example is `\dontrun{}`, deleting a real user's remembered location being the thing an unguarded example would do. `NEWS.md` has one entry each under "New features".
 - AC6 — **pass.** `devtools::document()` re-run on the branch head left `NAMESPACE`, `man/` and `_pkgdown.yml` untouched (`git status` showed only the milestone file). `devtools::check()`: `Status: OK`, 0 errors / 0 warnings / 0 notes, 5m39s, its own `checking tests ... OK`. A separate `devtools::test()` run over the whole suite finished with no `F` or `E` marker on any progress line and one Skipped block.
+
+### Re-review evidence (2026-09-06, branch head `8baf7ac`)
+
+The amendment return set status back to `in-progress` for AC3's amendment
+alone; the amendment landed at `cdfd779`/`8baf7ac` and every criterion is
+re-evidenced here against that head.
+
+- AC3 — **pass** (re-evidenced against the amended wording). The three
+  remembered configurations x four programs = twelve walks, each through
+  never remembered -> remembered -> forgotten, run against the branch head
+  (`Rscript` over `pkgload::load_all()`, 2026-09-06) under `PATH=""` with
+  `R_USER_CONFIG_DIR` redirected and `rappdirs::user_config_dir()` mocked to a
+  separate legacy root. Current-dir configuration (written through
+  `set_program(confirm = FALSE)`): never — both files absent, `find_program()`
+  `NULL` with "Failed to find <program>"; remembered — current file present,
+  legacy absent, `find_program()` returns the stub, no warning; forgotten —
+  `unset_program()` returned `TRUE`, both files absent, `find_program()` `NULL`
+  with the same "Failed to find" warning. Legacy-dir configuration: identical,
+  with the presence flag on the legacy file. Both-present configuration:
+  remembered state has both files present and `find_program()` answering with
+  the current file's stub; after `unset_program()` returned `TRUE` both files
+  are absent and `find_program()` is `NULL` with the "Failed to find" warning —
+  the state F4 falsified the old wording in, and the state the amended clause
+  now covers. All twelve walks identical in shape; no walk left a file behind
+  and no walk returned a non-`NULL` answer in the forgotten state.
+- AC1 — **pass**, re-run. All present: 4x3 `tbl_df`, `ffmpeg`/`ffprobe`/`ffplay`
+  at `/opt/homebrew/bin/*` version `9.0.1`, `mediainfo` version `26.05`. None
+  resolvable (`PATH=""` + empty redirected config dir + mocked empty legacy
+  dir): the same four rows, `NA` in both `location` and `version`.
+- AC2 — **pass**, re-run. Four runs, one program hidden per run behind a temp
+  `PATH` dir holding symlinks to the other three, with both config dirs empty.
+  Each returned the 4x3 tibble with the hidden program `NA`/`NA` and the other
+  three resolved and versioned; a `withCallingHandlers` collar on `warning`,
+  `message` and `error` caught nothing in any of the four.
+- AC4 — **pass**, re-run. Each of the four programs, neither config file
+  present: class vector `tidymedia_no_remembered_location` / `rlang_warning` /
+  `warning` / `condition`, `tm_program` equal to the program name, message
+  `No remembered location to forget for <program>.` with the
+  `Use \`set_<program>()\` to remember one.` hint.
+- AC5 — **pass**, re-run. `_pkgdown.yml:126` and `:129`;
+  `pkgdown::check_pkgdown()` "No problems found."; both carry
+  `@family program management functions`; `program_status()`'s example is
+  `@examplesIf nzchar(Sys.which("ffmpeg"))` and `unset_program()`'s is
+  `\dontrun{}`; `NEWS.md` carries one entry each under "New features".
+- AC6 — see below.
 
 ### Consistency gate
 

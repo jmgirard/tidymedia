@@ -119,6 +119,7 @@ Teaching either function in a vignette → M114.
 - 2026-09-05: amendment work complete; status to `review`. `devtools::test()` 0 failures / 12,897 pass / 18 skip (54 more assertions than the pre-amendment run, which is the new grid case plus its text assertion); `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes, 15m31s; `devtools::document()` no diff. AC3 stays unticked for re-review to re-evidence against the amended wording; the nine review findings other than F4 stay open for the maintainer at the re-review gate.
 - 2026-09-06: re-review (wip) — AC3 re-evidenced against the amended wording and ticked; AC1, AC2, AC4 and AC5 re-run fresh against branch head `8baf7ac` and recorded. `cairn_validate` exit 0, every check PASS, no advisory. AC6's `devtools::check()`, the three review lenses and CI on PR #117 still running.
 - 2026-09-06: re-review triage — finding 1 (the `unset_program()` default, against D079) and findings 7, 11, 12, 14 fixed now on the branch at the maintainer's direction; findings 2, 3, 4, 5, 6, 8, 9, 10 and 13 go to candidate rows at hygiene; F8 stays rejected. All six criteria pass with fresh evidence, `cairn_validate` exit 0, toolchain gate clean, and CI at `8baf7ac` green on all eight check legs including the two that were red at `fa58566`.
+- 2026-09-06: step-7 approval: PR #117 approved for merge.
 
 ## Decisions
 

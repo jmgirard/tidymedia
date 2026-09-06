@@ -1,6 +1,6 @@
 # M114: Verification, provenance and timeouts are taught in prose, not only on a reference page
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -103,6 +103,10 @@ candidate row. No behaviour change to any function this vignette teaches.
 - 2026-09-06: T6 added the `verification` `articles:` row, the `workflow.Rmd` cross-link (a paragraph in its Reproducibility section plus a Where-to-next entry) and the NEWS Documentation entry. `pkgdown::check_pkgdown()`: "No problems found". `tools/pkgdown_duplicate_topics.R`: 80 contents entries, 81 man topics, none unmatched, none repeated.
 - 2026-09-06: `vignettes/audio.m4a` — a build artifact `tidymedia.Rmd`'s evaluated chunk writes into `vignettes/` — was swept into the T1-T3 commit by `git add -A`. Untracked again here and `.gitignore` given entries for vignette build outputs. The new vignette knits into `tempdir()` and writes nothing beside the sources; the older three still do.
 - 2026-09-06: prose corrected against the source before the final check: the manifest bullet list had called `input`/`output` things the command cannot carry, which the command does carry; the tolerance and structural-check claims were re-derived; the 42.0 s figure now carries its measurement date; and a sentence was added recording that `manifest =`, `checksums =` and `verify =` reach the `*_batch()` verbs through `...`, verified by calling `extract_audio_batch()` with each.
+
+- 2026-09-06: completion checks on the final tree. `devtools::check(document = TRUE, vignettes = TRUE)` 0 errors / 0 warnings / 0 notes in 17m 5s, with "checking tests", "checking package vignettes" and "checking re-building of vignette outputs" all OK and `document()` leaving no diff. `devtools::test()` separately clean earlier on identical R code: FAIL 0, WARN 10, SKIP 18, PASS 12900. `tools/vignette_chunk_guards.R` exit 0 over the final text: 64 chunks, 15 spawning, all guarded. `tools/build_vignettes_without_binaries.R` exit 0, `ffmpeg=[] ffprobe=[] mediainfo=[]` from inside the build. `cairn_validate` all checks passed.
+- 2026-09-06: the new candidate row was merged into the existing vignette-documentation row rather than added, because a separate line put `ROADMAP.md` at 60 of its <60-line cap. The file is 59 lines / 27,485 bytes — under the line cap, still over the 24,000-byte budget it was already over before this milestone, with `/cairn-triage` still the named remedy.
+- 2026-09-06: status to review.
 
 ## Decisions
 

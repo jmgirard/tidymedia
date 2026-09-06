@@ -115,9 +115,25 @@ terminal and give tidymedia the `bin/ffmpeg` under what it prints, with
 
 **macOS Manual Install**
 
-1. Download the latest snapshot version from:<br /><https://evermeet.cx/ffmpeg/get>
-2. Extract the contents of the downloaded [.7z](https://www.7-zip.org/) file
+1. Download the latest snapshot version from:<br /><https://evermeet.cx/ffmpeg/get><br />
+That address gives you `ffmpeg` on its own. The metadata functions also need
+`ffprobe`, which is a separate download:<br />
+<https://evermeet.cx/ffmpeg/getrelease/ffprobe/7z>
+2. Extract the contents of each downloaded [.7z](https://www.7-zip.org/) file
 3. Drag the extracted contents to the Applications folder
+4. The Applications folder is not on the `PATH`, so nothing looking a program up
+   by name will find it there. Tell tidymedia where each program landed
+   (changing the paths to match Step 3):<br />
+`tidymedia::set_ffmpeg("/Applications/ffmpeg")`<br />
+`tidymedia::set_ffprobe("/Applications/ffprobe")`<br />
+Each asks you to confirm the path before it remembers it, and it is remembered
+across R sessions. Set both: the two programs are found separately, so setting
+`ffmpeg` does not make `ffprobe` findable.
+5. Check that R can find them:<br />
+`tidymedia::program_status()`<br />
+The `ffmpeg` and `ffprobe` rows should show locations and versions. If either is
+`NA`, the path you gave in Step 4 is not where that program actually landed:
+find it in the Applications folder and run the call again with that path.
 
 ## Examples
 

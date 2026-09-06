@@ -71,7 +71,7 @@ it. Everything M114 covers.
 
 - [x] T1: Add the verification step to each platform section, calling
       `program_status()` from M113.
-- [ ] T2: Rewrite the macOS manual route so it ends at a working lookup, and
+- [x] T2: Rewrite the macOS manual route so it ends at a working lookup, and
       follow it once end to end rather than deriving the prose from the code.
 - [ ] T3: Guard `README.Rmd:110-133`'s chunks in the idiom the vignettes use,
       run M114's chunk sweep over the file, and re-knit. The M089 lesson holds:
@@ -93,6 +93,7 @@ it. Everything M114 covers.
 - 2026-09-05: plan gate chose splitting the setup and troubleshooting half out of the documentation scope the user selected, over one large docs milestone, because this half depends on M113's `program_status()` and the other half depends on nothing. Falsified by the two halves needing to cross-reference each other so tightly that they cannot be reviewed apart.
 - 2026-09-05: plan gate chose fixing the README over adding a setup vignette, because a reader hitting a missing binary is already in the README and installing the package is the only step before it. Falsified by the section outgrowing the README, which is the candidate row's trigger.
 - 2026-09-06: gate chose a shown-not-run check block (a live chunk would ship the maintainer's own paths and version as the reader's example answer, and would need a guard that blanks it on the machine the section is written for), one check per platform per program, and extending `tools/build_vignettes_without_binaries.R` rather than adding a second script.
+- 2026-09-06: T2 done. The macOS manual route now names the separate `ffprobe` download, adds the `set_ffmpeg()`/`set_ffprobe()` step the Applications folder makes necessary, and ends at `program_status()`. Route followed once end to end on macOS 26.6.2 with a `PATH` reaching neither program and the config seam redirected: `find_ffmpeg()` warned "Failed to find ffmpeg", the two `set_*()` calls returned `TRUE`, and `find_ffmpeg()` then returned the staged path with `program_status()` showing both versions. The staged binaries were copies of this machine's own FFmpeg 9.0.1 rather than a fresh evermeet.cx download -- the step under test is the lookup, not the download. The two evermeet.cx addresses were checked by their `content-disposition` filenames (`ffmpeg-126386-gc27482a18d7.7z`, `ffprobe-9.0.1.7z`, observed 2026-09-06), which is what says the snapshot address gives `ffmpeg` alone.
 - 2026-09-06: T1 done. Seven `program_status()` check steps added to `README.Rmd`, one per platform route under each program, each with the recovery call for that route. Recovery paths are placeholders rather than asserted install locations, except the two the README already named. `README.md` is re-knitted once in T3.
 
 ## Decisions

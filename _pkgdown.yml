@@ -123,8 +123,10 @@ reference:
   desc: >
     Locate, configure, and install the FFmpeg and MediaInfo binaries.
   contents:
+  - program_status
   - find_program
   - set_program
+  - unset_program
   - install_on_win
 
 articles:

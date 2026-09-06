@@ -107,22 +107,47 @@ build_manifest <- function(pipelines, commands, versions, checksums) {
 
 # tool_versions() ---------------------------------------------------------
 
-# Capture the FFmpeg and FFprobe version strings for the manifest. Returns a
-# named list with NA for a binary that cannot be located or queried. The binary
-# call lives here; parsing is factored into parse_version_line() so it can be
-# tested without a binary.
+# Capture version strings for a set of programs. Returns a named list with NA
+# for a binary that cannot be located or queried. The binary call lives here;
+# parsing is factored into parse_version_line() so it can be tested without a
+# binary.
 #
-# This is where the timed-out probe becomes audible, because this is where both
+# `programs` defaults to the two the manifest records, which is the only shape
+# ffm_batch() ever asks for; program_status() asks for all four (M113). The
+# manifest's own columns are unchanged by the widening -- it reads `$ffmpeg`
+# and `$ffprobe` out of the result and nothing else.
+#
+# `locations` lets a caller that has already resolved the binaries hand them
+# over rather than have them looked up a second time. program_status() does
+# that, because it resolves each program itself with find_program()'s warnings
+# suppressed and must not fire them again here.
+#
+# This is where the timed-out probe becomes audible, because this is where the
 # probes are assembled -- one warning naming the tools the limit gave up on, not one
 # per tool. M69 left an NA version in the manifest reading exactly like a
 # missing binary, so a bounded hang under ffm_batch(manifest = TRUE) was
 # invisible (D048). The RECORDED value is unchanged: NA is what a version that
 # could not be read has always been.
-tool_versions <- function(call = rlang::caller_env()) {
-  probes <- list(
-    ffmpeg = capture_version(find_ffmpeg(), "FFmpeg"),
-    ffprobe = capture_version(find_ffprobe(), "FFprobe")
+tool_versions <- function(programs = c("ffmpeg", "ffprobe"),
+                          locations = NULL,
+                          call = rlang::caller_env()) {
+  if (is.null(locations)) locations <- lapply(programs, tm_find_program_for_version)
+  # The limit is resolved once, here, above every probe. capture_version()
+  # turns any error below it into a silent NA, which is the right answer for a
+  # binary that will not answer its version flag and the wrong one for a
+  # `tidymedia.timeout` the caller set to something unusable: that is a
+  # machine-independent argument refusal and belongs above the availability
+  # question (D036), reported from the frame `call` names. run_program()
+  # resolves it again per probe; the value is the same and the call is cheap.
+  resolve_timeout(call = call)
+  probes <- Map(
+    function(loc, program) {
+      capture_version(loc, tm_program_labels[[program]],
+                      flag = tm_version_flags[[program]], call = call)
+    },
+    locations, programs
   )
+  names(probes) <- programs
   timed_out <- vapply(probes, is_absorbed_timeout, logical(1))
   if (any(timed_out)) {
     hit <- probes[[which(timed_out)[[1]]]]
@@ -143,19 +168,54 @@ tool_versions <- function(call = rlang::caller_env()) {
   lapply(probes, function(x) if (is_absorbed_timeout(x)) NA_character_ else x)
 }
 
+# The four programs the package knows, in the order every report lists them.
+# One declaration: program_status() and the manifest's version probes both read
+# it, and the vocabulary find_program()/set_program() default to is pinned to it
+# by a test. unset_program() takes no default (D079), so it is pinned instead as
+# the set arg_match() accepts.
+tm_programs <- function() c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
+
+# The display name a version probe reports the program under, and the flag that
+# asks it for its version. MediaInfo answers `--version`; the three FFmpeg
+# binaries answer `-version`.
+tm_program_labels <- c(ffmpeg = "FFmpeg", ffprobe = "FFprobe",
+                       ffplay = "FFplay", mediainfo = "MediaInfo")
+tm_version_flags <- c(ffmpeg = "-version", ffprobe = "-version",
+                      ffplay = "-version", mediainfo = "--version")
+
+# Resolve one program for a version probe. Written as a switch over the four
+# find_*() exports rather than as find_program(program), because the suite's
+# timeout tests mock find_ffmpeg() and find_ffprobe() by name and a single
+# generic call would walk past those mocks.
+tm_find_program_for_version <- function(program) {
+  switch(
+    program,
+    ffmpeg = find_ffmpeg(),
+    ffprobe = find_ffprobe(),
+    ffplay = find_ffplay(),
+    mediainfo = find_mediainfo()
+  )
+}
+
 # capture_version() -------------------------------------------------------
 
-# Run `<tool> -version` and parse the version token; NA if the binary is absent
+# Run `<tool> <flag>` and parse the version token; NA if the binary is absent
 # or the call fails.
+# `call` is the frame a refusal is reported from, threaded down to
+# run_program() so that a bad `options(tidymedia.timeout = )` blames the
+# exported call the user typed -- program_status() -- rather than this helper,
+# which is the first spawn on that path (M113; the blame sweep in
+# test-timeout-refusal-blame.R is what asks).
 # Returns the absorbed-timeout sentinel when the limit ended the wait, so
 # tool_versions() can tell that apart from every other reason a version is
 # missing. absorb_timeout() sits INSIDE the tryCatch() for the same reason it
 # does in count_audio_streams(): the outer handler catches every error, so a
 # timeout reaching it first would be flattened back into a silent NA.
-capture_version <- function(loc, name) {
+capture_version <- function(loc, name, flag = "-version",
+                            call = rlang::caller_env()) {
   if (is.null(loc) || is.na(loc) || !nzchar(loc)) return(NA_character_)
   out <- tryCatch(
-    absorb_timeout(run_program(loc, "-version", program = name)),
+    absorb_timeout(run_program(loc, flag, program = name, call = call)),
     error = function(e) NULL
   )
   if (is_absorbed_timeout(out)) return(out)
@@ -166,8 +226,17 @@ capture_version <- function(loc, name) {
 
 # Pull the version token out of a `<tool> -version` first line, e.g.
 # "ffmpeg version 8.1.2 ..." -> "8.1.2". NA when there is nothing to parse.
+#
+# MediaInfo answers `--version` in a shape with no "version" token in it: the
+# command line's own banner on the first line and the library's version on the
+# next, as `MediaInfoLib - v26.05` (read off `mediainfo --version` on
+# 2026-09-05, MediaInfo v26.05). That second shape is tried only when the first
+# finds nothing, so what the FFmpeg binaries return is parsed exactly as before.
 parse_version_line <- function(lines) {
   if (is.null(lines) || !length(lines)) return(NA_character_)
   m <- regmatches(lines[[1]], regexpr("version \\S+", lines[[1]]))
-  if (length(m)) sub("^version ", "", m) else NA_character_
+  if (length(m)) return(sub("^version ", "", m))
+  lib <- unlist(regmatches(lines, regexpr("MediaInfoLib - v\\S+", lines)))
+  if (length(lib)) return(sub("^MediaInfoLib - v", "", lib[[1]]))
+  NA_character_
 }

@@ -130,6 +130,175 @@ find_ffplay <- function() {
   find_program("ffplay")
 }
 
+# program_status() --------------------------------------------------------
+
+#' Report which dependency programs tidymedia can find
+#'
+#' Looks up all four programs tidymedia knows about and returns one row for
+#' each: where it resolved to, and what version it reported. Nothing is
+#' installed, written, or changed by the call.
+#'
+#' A program that cannot be found gets `NA` in both columns rather than a
+#' warning, so the answer for four programs arrives as one table instead of a
+#' pile of messages. The lookup is [find_program()]'s: the `PATH` first, then a
+#' location remembered by [set_program()], and finally a location a version of
+#' tidymedia before 0.2.0 remembered under
+#' `rappdirs::user_config_dir("tidymedia", "R")`.
+#'
+#' The version is whatever the binary reports for its own version flag, so it
+#' is the FFmpeg build number for `ffmpeg`, `ffprobe` and `ffplay`, and the
+#' MediaInfo library version for `mediainfo`. A program that resolves but
+#' cannot be asked -- because the call fails, or because
+#' `options(tidymedia.timeout = )` ended it -- has a location and an `NA`
+#' version.
+#'
+#' @return A tibble with one row per program and three columns: `program`, the
+#'   program's name; `location`, the resolved path or `NA`; and `version`, the
+#'   version the binary reported or `NA`.
+#' @seealso [find_program()] for one program at a time, [set_program()] to
+#'   point tidymedia at a binary in a non-standard location, and
+#'   [unset_program()] to forget one it remembered.
+#' @family program management functions
+#' @examplesIf nzchar(Sys.which("ffmpeg"))
+#' # One row per program; NA where the program was not found
+#' program_status()
+#' @export
+program_status <- function() {
+  programs <- tm_programs()
+  # find_program() warns once per program it cannot resolve, and once more for
+  # a remembered location whose binary is gone. A report over four programs
+  # answers with NA in a column instead; the caller asked which programs are
+  # missing, so being told is not news (M113).
+  locations <- lapply(programs, function(program) {
+    suppressWarnings(find_program(program))
+  })
+  # The version probe's own timeout warning is NOT suppressed: it says the
+  # limit ended the probe, which is a different fact from the program being
+  # absent and is the one D048 made audible.
+  versions <- tool_versions(programs, locations, call = rlang::current_env())
+  tibble::tibble(
+    program = programs,
+    location = vapply(locations, tm_na_string, character(1)),
+    # unname(): tool_versions() answers a list named by program, and a named
+    # column prints its names back at the reader in every row label.
+    version = unname(vapply(versions, tm_na_string, character(1)))
+  )
+}
+
+# A resolved location or a captured version, as one string or NA. NULL is what
+# find_program() returns when it finds nothing; "" is what Sys.which() returns.
+tm_na_string <- function(x) {
+  if (is.null(x) || length(x) != 1L || is.na(x) || !nzchar(x)) {
+    return(NA_character_)
+  }
+  as.character(x)
+}
+
+# unset_program() ---------------------------------------------------------
+
+#' Forget the location of a dependency program
+#'
+#' Removes the location [set_program()] remembered for a program, so that
+#' [find_program()] goes back to answering from the `PATH`. Both places a
+#' location can live are cleared: the file under
+#' `tools::R_user_dir("tidymedia", "config")` and, where one is still there, the
+#' file a version of tidymedia before 0.2.0 wrote under
+#' `rappdirs::user_config_dir("tidymedia", "R")`.
+#'
+#' Forgetting a location does not remove the program itself, and it does not
+#' change what is on the `PATH`. A program tidymedia found on the `PATH` is
+#' still found afterwards. A location remembered by a version before 0.2.0 is
+#' cleared as well, so it is not left behind for [find_program()] to answer
+#' with once the current file is gone.
+#'
+#' There is nothing to confirm: deleting the remembered location is the whole of
+#' what the call does. Calling it for a program with nothing remembered warns
+#' and returns `FALSE` rather than failing -- the state you asked for is already
+#' the state you have.
+#'
+#' @param program A string naming which program to forget the location for:
+#'   one of `"ffmpeg"`, `"ffprobe"`, `"ffplay"` or `"mediainfo"`. There is
+#'   no default: the call deletes a file, and D079's rule for this package
+#'   keeps a member of the set out of the default position, so a call that
+#'   names no program refuses rather than picking one.
+#' @return Invisibly, `TRUE` where a remembered location was removed and `FALSE`
+#'   where there was none to remove.
+#' @seealso [set_program()] to remember a location, and [program_status()] to
+#'   see what tidymedia currently finds.
+#' @family program management functions
+#' @examples
+#' \dontrun{
+#' # Forget a location set_program() remembered, so that find_program() goes
+#' # back to answering from the PATH
+#' unset_program("mediainfo")
+#' }
+#' @export
+unset_program <- function(program) {
+  tm_unset_program(program, call = rlang::current_env())
+}
+
+# tm_unset_program(): unset_program()'s body, with `call` threaded, for the
+# reason M112 records at tm_set_program() -- `call` names the environment a
+# refusal is reported from and has no business in an exported signature or in
+# the Rd usage line a reader copies from. It carries no default here either.
+tm_unset_program <- function(program, call) {
+  program <- rlang::arg_match(
+    program,
+    values = tm_programs(),
+    error_arg = "program",
+    error_call = call
+  )
+
+  # Both files, in the order find_program() reads them. Deleting only the
+  # current one would leave a pre-0.2.0 location that find_program() then
+  # starts answering with, which is the opposite of forgetting.
+  files <- c(
+    tm_config_file(program),
+    tm_config_file(program, tm_legacy_config_dir())
+  )
+  present <- files[file.exists(files)]
+
+  if (!length(present)) {
+    cli::cli_warn(
+      c(
+        "No remembered location to forget for {program}.",
+        "i" = "Use {.fn set_{program}} to remember one."
+      ),
+      class = "tidymedia_no_remembered_location",
+      tm_program = program,
+      call = call
+    )
+    return(invisible(FALSE))
+  }
+
+  # Through the tm_unlink() seam, and answered by a third look at the
+  # filesystem rather than by the removal's own return value: `unlink()`
+  # reports one status for the whole call and no names, so which files are
+  # still there is a question only the filesystem can answer (M103's shape).
+  tm_unlink(present)
+  left <- present[file.exists(present)]
+  if (length(left)) {
+    cli::cli_abort(
+      c(
+        "Can't remove the remembered location for {program}.",
+        "x" = "{.file {left}}",
+        "i" = "Check that you can write to the directory holding it."
+      ),
+      class = "tidymedia_location_not_removed",
+      tm_program = program,
+      tm_files = left,
+      call = call
+    )
+  }
+
+  # What tidymedia remembers about an FFmpeg build was memoized against the
+  # binary the forgotten location named, so it goes with it -- the same reason
+  # set_program() drops it when it points at a different binary (M67/D044).
+  forget_ffmpeg_capabilities()
+
+  invisible(TRUE)
+}
+
 # run_program() -----------------------------------------------------------
 
 # Run a resolved program with an argument vector and return its stdout as a

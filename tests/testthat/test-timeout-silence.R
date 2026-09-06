@@ -58,7 +58,8 @@ test_that("the absorber partition is the reaching functions that can swallow", {
   expect_identical(
     tm_timeout_absorbers(),
     c("capture_version", "count_audio_streams", "ffm_batch", "ffm_run",
-      "run_separation_audio", "separate_audio_video", "verify_media")
+      "program_status", "run_separation_audio", "separate_audio_video",
+      "verify_media")
   )
 })
 
@@ -377,8 +378,48 @@ test_that("the grid spawns nothing, so it measures the package not the PATH", {
   forcing <- paste(deparse(body(tm_force_timeout)), collapse = " ")
   expect_match(forcing, "run_program = ", fixed = TRUE)
   expect_match(forcing, "guard_timeout = ", fixed = TRUE)
+  # And resolution is intercepted too (M113). Interception at the spawn
+  # wrappers alone still lets a member read the PATH to decide WHETHER to
+  # spawn, which is how `program_status()` came to answer differently on a
+  # runner with no binaries than on a developer's machine.
+  expect_match(forcing, "find_program = ", fixed = TRUE)
   for (f in c("ffmpeg", "ffprobe", "mediainfo")) {
     expect_true("guard_timeout" %in% tm_symbol_graph()[[f]], info = f)
+  }
+})
+
+test_that("the grid answers the same on a machine with no media binaries", {
+  # The behavioral half of the claim the test above makes by reading text.
+  # M113: CI's macOS and Windows runners install none of the four programs, and
+  # both went red on this grid and on the blame sweep with
+  # `program_status absorbed the timeout silently: no condition at all`.
+  # `program_status()` asks a program for its version only for a program it
+  # resolved, so with nothing to resolve it spawned nothing, reached no limit,
+  # and read as silent -- the one cell whose answer came from the runner rather
+  # than from the package.
+  #
+  # This is that runner, made local: an empty `PATH`, an empty config dir and an
+  # empty legacy dir are the three places `find_program()` looks, and here they
+  # hold nothing. `tm_force_timeout()` mocks `find_program()` itself, so no cell
+  # below consults them; that is the property being pinned, and dropping the
+  # mock turns this red on a machine that does have the binaries installed while
+  # leaving the grid above green.
+  dir <- withr::local_tempdir()
+  specs <- tm_timeout_call_specs(dir)
+  cfg <- withr::local_tempdir()
+  withr::local_envvar(PATH = "", R_USER_CONFIG_DIR = cfg)
+  withr::local_options(list(tidymedia.hardware_encoders = NULL))
+  local_mocked_bindings(tm_legacy_config_dir = function() cfg)
+  for (name in tm_timeout_domain()) {
+    res <- tm_force_timeout(name, specs[[name]])
+    expect_true(
+      res$aborted || res$warned,
+      info = paste0(
+        name, " went silent with no binaries on the machine: ",
+        if (is.null(res$error)) "no condition at all"
+        else paste(class(res$error), collapse = "/")
+      )
+    )
   }
 })
 

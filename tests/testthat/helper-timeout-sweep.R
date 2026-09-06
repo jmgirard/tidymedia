@@ -135,12 +135,47 @@ tm_timeout_recorded_domain <- function() {
     "mediainfo_query", "mediainfo_template",
     "normalize_audio", "normalize_audio_batch", "picture_in_picture",
     "picture_in_picture_batch", "probe_all", "probe_audio", "probe_container",
-    "probe_streams", "probe_video", "sample_frames", "sample_frames_batch",
+    "probe_streams", "probe_video", "program_status", "sample_frames",
+    "sample_frames_batch",
     "segment_video", "segment_video_batch", "separate_audio_video",
     "separate_audio_video_batch", "standardize_video",
     "standardize_video_batch", "strip_metadata", "strip_metadata_batch",
     "verify_media"
   ))
+}
+
+# tm_timeout_post_baseline(): domain members that did not exist at the ref the
+# three recorded censuses were measured at (`tm_timeout_valid_baseline_ref`).
+#
+# Two censuses -- `tm_timeout_blame_master()` and the committed
+# `timeout-valid-baseline.rds` -- say what a member did BEFORE M094 changed who
+# is blamed, and their membership is a written list. An export added afterwards
+# has no such
+# reading and cannot be given one: measuring it today and filing it under
+# "measured at ae5ff1c" would be composing a history rather than recording one.
+# So it is excluded from those two membership comparisons, by name, here.
+# `tm_timeout_reached_master()` needs no exclusion: it is computed from the live
+# domain rather than from a written list.
+#
+# Exclusion is not exemption. Every name below is still swept by the live rules
+# -- it blames itself for an invalid limit, and a reached limit still reaches
+# the caller -- and `tm_timeout_baseline_domain()` refuses an exclusion that is
+# hiding a member the record does have a cell for.
+#
+# `program_status()` entered the domain at M113: it probes each program's
+# version, which spawns.
+tm_timeout_post_baseline <- function() "program_status"
+
+# tm_timeout_baseline_domain(): the domain the recorded censuses can be compared
+# against, with the exclusion guarded rather than trusted.
+tm_timeout_baseline_domain <- function() {
+  post <- tm_timeout_post_baseline()
+  domain <- tm_timeout_domain()
+  # An excluded name that is not in the live domain excludes nothing and has
+  # been left behind; one the record DOES hold a cell for is being hidden.
+  stopifnot(all(post %in% domain))
+  stopifnot(!any(post %in% names(tm_timeout_blame_master())))
+  setdiff(domain, post)
 }
 
 # tm_timeout_call_specs(): one valid argument set per domain member, so a forced
@@ -192,6 +227,8 @@ tm_timeout_call_specs <- function(dir) {
     ffmpeg_codecs = list(),
     ffmpeg_encoders = list(),
     ffprobe = list(command = "-version"),
+    # program_status() takes no arguments: it probes all four programs by name.
+    program_status = list(),
     format_for_web = list(infile = vid, outfile = outv),
     format_for_web_batch = list(jobs = jobs_v),
     get_duration = list(file = vid),
@@ -255,6 +292,19 @@ tm_timeout_call_specs <- function(dir) {
 # verdict is ever consulted -- so those cells would measure the runner's PATH.
 # CI's macOS and Windows runners install no media binaries at all.
 #
+# Resolution is intercepted for the same reason, at `find_program()`, which is
+# the one place the package turns a program name into a path. Injecting at the
+# spawn wrappers alone leaves a member that decides WHETHER to spawn by asking
+# the machine what it has: `program_status()` probes a program's version only
+# for a program it resolved, so on a runner with no binaries it spawns nothing,
+# reaches no limit, and reads as silent. That is what CI's macOS and Windows
+# legs reported at M113 -- both red on this grid and on the blame sweep with
+# `program_status absorbed the timeout silently: no condition at all`,
+# reproduced locally under `PATH=""` with both config dirs redirected empty.
+# The mocked resolver hands back a path under a directory that does not exist;
+# nothing on this path reads the file, because every spawn is already
+# intercepted, so the only thing the path has to be is non-empty.
+#
 # What each cell therefore asks is exactly AC1's question: given a timeout
 # signalled beneath it, does this function let the caller see it? Whether the
 # wrappers themselves detect a real kill is M69's question, answered by
@@ -264,6 +314,9 @@ tm_force_timeout <- function(name, args, limit = 2) {
   err <- NULL
   withr::with_options(list(tidymedia.timeout = limit), {
     testthat::local_mocked_bindings(
+      find_program = function(program = "ffmpeg", ...) {
+        file.path("/nonexistent", program[[1]])
+      },
       run_program = function(location, args, program = "the program", ...) {
         abort_timeout(program, limit)
       },
@@ -898,6 +951,23 @@ tm_refusal_head <- function(name, args, limit) {
 # though their cell is empty (or, for `has_hardware_encoder`, holds only the
 # backend its required `hardware` argument has no default for), and
 # `ffmpeg_codecs`'s is the argument M096 exists to guard.
+# tm_timeout_argumentless(): domain members with no formal a caller can name.
+#
+# A wrong-argument sweep has nothing to cross these with -- there is no argument
+# to pass a wrong value to -- so they contribute no cells and are not part of
+# the corrupt table's membership. Computed, not listed: the test that uses it
+# pins the answer, so a second argumentless export joining the domain reddens
+# there rather than disappearing from the sweep.
+tm_timeout_argumentless <- function() {
+  ns <- asNamespace("tidymedia")
+  Filter(
+    function(nm) {
+      !length(setdiff(names(formals(get(nm, envir = ns))), "..."))
+    },
+    tm_timeout_domain()
+  )
+}
+
 tm_timeout_corrupt_specs <- function(dir) {
   specs <- tm_timeout_call_specs(dir)
   forms <- tm_nvenc_wrong_forms()

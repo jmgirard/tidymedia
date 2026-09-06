@@ -340,9 +340,12 @@ load-bearing defect.
   `tool_versions()` hygiene with one caller.
 - **Finding 8 of the prior pass (F8) — reject**, unchanged.
 
-Post-fix verification: `devtools::test()` 0 failures / 12,900 pass / 18 skip;
-`devtools::document()` re-run, `man/program_status.Rd` and
-`man/unset_program.Rd` regenerated in the same commit.
+Post-fix verification at `7a7d655`: `devtools::test()` 0 failures / 12,900
+pass / 18 skip; `devtools::document()` re-run, `man/program_status.Rd` and
+`man/unset_program.Rd` regenerated in the same commit, working tree clean
+afterwards; `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes,
+14m41s; `cairn_validate.py` exit 0 with every check PASS and no advisory;
+`pkgdown::check_pkgdown()` "No problems found."
 
 ### Consistency gate (re-review)
 

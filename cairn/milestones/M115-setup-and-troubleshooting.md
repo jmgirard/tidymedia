@@ -102,6 +102,7 @@ it. Everything M114 covers.
 - 2026-09-06: T2 done. The macOS manual route now names the separate `ffprobe` download, adds the `set_ffmpeg()`/`set_ffprobe()` step the Applications folder makes necessary, and ends at `program_status()`. Route followed once end to end on macOS 26.6.2 with a `PATH` reaching neither program and the config seam redirected: `find_ffmpeg()` warned "Failed to find ffmpeg", the two `set_*()` calls returned `TRUE`, and `find_ffmpeg()` then returned the staged path with `program_status()` showing both versions. The staged binaries were copies of this machine's own FFmpeg 9.0.1 rather than a fresh evermeet.cx download -- the step under test is the lookup, not the download. The two evermeet.cx addresses were checked by their `content-disposition` filenames (`ffmpeg-126386-gc27482a18d7.7z`, `ffprobe-9.0.1.7z`, observed 2026-09-06), which is what says the snapshot address gives `ffmpeg` alone.
 - 2026-09-06: T1 done. Seven `program_status()` check steps added to `README.Rmd`, one per platform route under each program, each with the recovery call for that route. Recovery paths are placeholders rather than asserted install locations, except the two the README already named. `README.md` is re-knitted once in T3.
 - 2026-09-06: review ran. All seven criteria met with fresh evidence; consistency gate pass; three fresh-context reviewers returned eleven findings, none reaching the return floor. PR #119.
+- 2026-09-06: step-7 approval: PR #119 approved for merge, with the fix-now list O1/O2/O10 applied on the branch first and the five deferred findings folded into existing candidate rows.
 
 ## Decisions
 
@@ -264,3 +265,32 @@ criterion failing. AC3's evidence was gathered on this machine with all three
 binaries present, so O2's empty-domain path did not affect it (the sweep
 reported 13 spawning rows). Status stays `review`; the ranked list goes to the
 maintainer at the merge gate.
+
+### Triage and disposition (maintainer, 2026-09-06)
+
+Fix now: O1, O2, O10. Follow-up (folded into existing candidate rows, no new
+rows -- `ROADMAP.md` is over its byte budget): O3, O4, O5, O6, O7. Rejected: O8
+(a developer-tool copying cost with no user surface), O9 (pre-existing, the M089
+lesson, and T3 reverts it deliberately), B1 (read mid-check; AC7 is recorded).
+
+Fix-now work, committed on the branch before the approval marker:
+
+- O1. The Debian/Ubuntu, Windows and macOS Homebrew FFmpeg checks now offer
+  `set_ffprobe()` beside `set_ffmpeg()` and say the two are looked up
+  separately, so a row that is still `NA` needs its own call -- the fact the
+  macOS manual route already stated. `README.md` re-knitted; the only other
+  difference was the M089 `temp_libpath` pair, reverted.
+- O2. `tools/vignette_chunk_program_identity.R` now asserts all three programs
+  are on `PATH` before it sweeps, and aborts when no chunk in any swept file
+  started any of them rather than dying inside `do.call(rbind, list())`. Shown
+  able to fail before being trusted: run with `mediainfo` off `PATH`, it stops
+  with "this sweep needs all of ffmpeg, ffprobe, mediainfo on PATH; missing:
+  mediainfo". On the full `PATH` it is green again.
+- O10. The two `NEWS.md` bullets rewrapped; no line in the added block exceeds
+  79 columns.
+
+Re-verification after the fixes: both sweeps green (`unguarded spawning chunks:
+none`; `chunks starting a program their guard does not name: none`), the
+no-binaries README build green with `ffmpeg=[] ffprobe=[] mediainfo=[]` and
+`error or warning lines in the knitted README.md: none`, `devtools::check()`
+`Status: OK` 0/0/0 (7m 36.7s).

@@ -113,6 +113,19 @@ swept_files <- function() {
   normalizePath(c(f, "README.Rmd"))
 }
 
+# The domain this sweep measures is the set of spawns it observes, and a guard
+# that evaluates FALSE spawns nothing: on a machine missing one of the three
+# programs, every chunk guarded on it drops out of `STATE$hits` and an UNGUARDED
+# chunk starting that program would be reported clean. So the precondition is
+# asserted rather than left to the header, the way `vignette_chunk_guards.R`
+# asserts its own (M115 review O2).
+found <- Sys.which(PROGRAMS)
+if (!all(nzchar(found))) {
+  stop("this sweep needs all of ", paste(PROGRAMS, collapse = ", "),
+       " on PATH; missing: ",
+       paste(PROGRAMS[!nzchar(found)], collapse = ", "))
+}
+
 pkgload::load_all(".", quiet = TRUE, export_all = FALSE)
 
 suppressMessages({
@@ -159,6 +172,11 @@ rows <- lapply(names(STATE$hits), function(key) {
     stringsAsFactors = FALSE
   )
 })
+if (length(rows) == 0) {
+  stop("no chunk in any swept file started any of ",
+       paste(PROGRAMS, collapse = ", "),
+       " -- the sweep measured an empty domain and proves nothing")
+}
 report <- do.call(rbind, rows)
 report <- report[order(report$chunk), , drop = FALSE]
 

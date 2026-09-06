@@ -106,9 +106,11 @@ path.
 1. Enter this code into your terminal:<br />`sudo apt-get install ffmpeg`
 2. Check that R can find it:<br />
 `tidymedia::program_status()`<br />
-The `ffmpeg` and `ffprobe` rows should show locations and versions. If they are
-`NA`, tidymedia cannot see the program: give it the path
-yourself with `tidymedia::set_ffmpeg("/path/to/ffmpeg")`.
+The `ffmpeg` and `ffprobe` rows should show locations and versions. If either
+is `NA`, tidymedia cannot see that program: give it the path yourself with
+`tidymedia::set_ffmpeg("/path/to/ffmpeg")` or
+`tidymedia::set_ffprobe("/path/to/ffprobe")`. The two are looked up separately,
+so a row that is still `NA` needs its own call.
 
 **Windows**
 
@@ -116,10 +118,12 @@ yourself with `tidymedia::set_ffmpeg("/path/to/ffmpeg")`.
 2. Run `tidymedia::install_on_win()` in R and confirm the prompt, which names the digest and the archive it will download, the directory it will unpack into, and the program locations it may overwrite. The archive is checked against the SHA-256 digest gyan.dev publishes beside it before anything is unpacked, and no program location is remembered unless the extraction produced that program. To install from a different build, pass its address and its digest: `install_on_win(download_url = ..., archive_checksum = ...)`.
 3. Check that R can find it:<br />
 `tidymedia::program_status()`<br />
-The `ffmpeg` and `ffprobe` rows should show locations and versions. If they are
-`NA`, tidymedia cannot see the program: read the message
+The `ffmpeg` and `ffprobe` rows should show locations and versions. If either
+is `NA`, tidymedia cannot see that program: read the message
 `install_on_win()` printed, or point tidymedia at a build you already have with
-`tidymedia::set_ffmpeg("C:/path/to/ffmpeg.exe")`.
+`tidymedia::set_ffmpeg("C:/path/to/ffmpeg.exe")` or
+`tidymedia::set_ffprobe("C:/path/to/ffprobe.exe")`. The two are looked up
+separately, so a row that is still `NA` needs its own call.
 
 **macOS Homebrew Install**
 
@@ -128,10 +132,12 @@ The `ffmpeg` and `ffprobe` rows should show locations and versions. If they are
 3. Enter this code into your terminal:<br />`brew install ffmpeg`
 4. Check that R can find it:<br />
 `tidymedia::program_status()`<br />
-The `ffmpeg` and `ffprobe` rows should show locations and versions. If they are
-`NA`, tidymedia cannot see the program: run `brew --prefix ffmpeg` in the
-terminal and give tidymedia the `bin/ffmpeg` under what it prints, with
-`tidymedia::set_ffmpeg("/path/to/ffmpeg")`.
+The `ffmpeg` and `ffprobe` rows should show locations and versions. If either
+is `NA`, tidymedia cannot see that program: run `brew --prefix ffmpeg` in the
+terminal and give tidymedia the `bin/ffmpeg` and `bin/ffprobe` under what it
+prints, with `tidymedia::set_ffmpeg("/path/to/ffmpeg")` and
+`tidymedia::set_ffprobe("/path/to/ffprobe")`. The two are looked up separately,
+so a row that is still `NA` needs its own call.
 
 **macOS Manual Install**
 

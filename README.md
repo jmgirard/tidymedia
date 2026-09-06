@@ -98,8 +98,10 @@ several popular platforms.
     terminal:<br />`sudo apt-get install ffmpeg`
 2.  Check that R can find it:<br /> `tidymedia::program_status()`<br />
     The `ffmpeg` and `ffprobe` rows should show locations and versions.
-    If they are `NA`, tidymedia cannot see the program: give it the path
-    yourself with `tidymedia::set_ffmpeg("/path/to/ffmpeg")`.
+    If either is `NA`, tidymedia cannot see that program: give it the
+    path yourself with `tidymedia::set_ffmpeg("/path/to/ffmpeg")` or
+    `tidymedia::set_ffprobe("/path/to/ffprobe")`. The two are looked up
+    separately, so a row that is still `NA` needs its own call.
 
 **Windows**
 
@@ -114,9 +116,13 @@ several popular platforms.
     `install_on_win(download_url = ..., archive_checksum = ...)`.
 3.  Check that R can find it:<br /> `tidymedia::program_status()`<br />
     The `ffmpeg` and `ffprobe` rows should show locations and versions.
-    If they are `NA`, tidymedia cannot see the program: read the message
-    `install_on_win()` printed, or point tidymedia at a build you
-    already have with `tidymedia::set_ffmpeg("C:/path/to/ffmpeg.exe")`.
+    If either is `NA`, tidymedia cannot see that program: read the
+    message `install_on_win()` printed, or point tidymedia at a build
+    you already have with
+    `tidymedia::set_ffmpeg("C:/path/to/ffmpeg.exe")` or
+    `tidymedia::set_ffprobe("C:/path/to/ffprobe.exe")`. The two are
+    looked up separately, so a row that is still `NA` needs its own
+    call.
 
 **macOS Homebrew Install**
 
@@ -126,10 +132,12 @@ several popular platforms.
 3.  Enter this code into your terminal:<br />`brew install ffmpeg`
 4.  Check that R can find it:<br /> `tidymedia::program_status()`<br />
     The `ffmpeg` and `ffprobe` rows should show locations and versions.
-    If they are `NA`, tidymedia cannot see the program: run
+    If either is `NA`, tidymedia cannot see that program: run
     `brew --prefix ffmpeg` in the terminal and give tidymedia the
-    `bin/ffmpeg` under what it prints, with
-    `tidymedia::set_ffmpeg("/path/to/ffmpeg")`.
+    `bin/ffmpeg` and `bin/ffprobe` under what it prints, with
+    `tidymedia::set_ffmpeg("/path/to/ffmpeg")` and
+    `tidymedia::set_ffprobe("/path/to/ffprobe")`. The two are looked up
+    separately, so a row that is still `NA` needs its own call.
 
 **macOS Manual Install**
 

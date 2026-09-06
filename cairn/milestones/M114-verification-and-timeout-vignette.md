@@ -76,7 +76,7 @@ candidate row. No behaviour change to any function this vignette teaches.
 - [x] T4: Write the AC3 chunk sweep as a committed script; run it over the
       existing four vignettes first, so the added chunks are measured by an
       instrument that already reports the current state.
-- [ ] T5: Build under a reduced `PATH` that keeps pandoc; record the three
+- [x] T5: Build under a reduced `PATH` that keeps pandoc; record the three
       `Sys.which()` answers from inside a setup chunk.
 - [ ] T6: `_pkgdown.yml` row, `workflow.Rmd` cross-link, `check_pkgdown()`,
       `devtools::check()`.
@@ -97,6 +97,8 @@ candidate row. No behaviour change to any function this vignette teaches.
 - 2026-09-06: T4 sweep (`tools/vignette_chunk_guards.R`) knits each vignette twice — pass 1 on this machine's full `PATH`, counting each chunk's calls to `system()`/`system2()` where the program started is one of ffmpeg/ffprobe/mediainfo; pass 2 in a child process whose `PATH` reaches none of the three, recording per chunk whether knitr still evaluated it. A chunk that spawned in pass 1 and still evaluates in pass 2 is UNGUARDED and exits 1. Counting only the three media programs is load-bearing: `Sys.which()` itself shells out, so an unfiltered count reports every guarded setup chunk as a spawning chunk.
 - 2026-09-06: sweep run over all five vignettes: 64 chunks, 15 started a program, every one guarded, none unguarded. The eleven `run = FALSE` chunks in the existing vignettes measure 0 spawns, matching the pre-gate measurement.
 - 2026-09-06: sweep proven able to fail — an unguarded `probe_all()` chunk planted in `verification.Rmd` was reported as the single UNGUARDED row, exit 1; reverted.
+
+- 2026-09-06: T5 build ran through `tools/build_vignettes_without_binaries.R`, which puts a scratch directory holding a symlink to pandoc alone ahead of R's own bin and `/usr/bin:/bin` — necessary because pandoc and ffmpeg share `/opt/homebrew/bin` on this machine, so dropping the directory would drop pandoc and fail the build for an unrelated reason. All five vignettes rebuilt; `verification.Rmd`'s setup chunk reported from inside the build `ffmpeg=[] ffprobe=[] mediainfo=[]`. `devtools::build_vignettes()` added `^doc$` and `^Meta$` to `.Rbuildignore`, kept.
 
 ## Decisions
 

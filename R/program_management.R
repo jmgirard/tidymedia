@@ -52,7 +52,7 @@ tm_install_dir <- function() {
 #' @seealso [set_program()] to point tidymedia at a binary in a non-standard
 #'   location, and [install_on_win()] to download FFmpeg on Windows.
 #' @family program management functions
-#' @examples
+#' @examplesIf nzchar(Sys.which("ffmpeg")) && nzchar(Sys.which("mediainfo"))
 #' # Returns the path to the binary, or NULL with a warning if it is not found
 #' find_ffmpeg()
 #' find_mediainfo()

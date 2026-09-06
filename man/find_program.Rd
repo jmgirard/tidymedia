@@ -37,9 +37,11 @@ version of tidymedia before 0.2.0 was written to
 when no file exists in the current directory.
 }
 \examples{
+\dontshow{if (nzchar(Sys.which("ffmpeg")) && nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
 # Returns the path to the binary, or NULL with a warning if it is not found
 find_ffmpeg()
 find_mediainfo()
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=set_program]{set_program()}} to point tidymedia at a binary in a non-standard

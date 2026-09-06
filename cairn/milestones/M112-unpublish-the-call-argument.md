@@ -113,6 +113,7 @@ unclassed-aborts candidate row.
 
 - 2026-09-05: step-7 approval: PR #116 approved for merge.
 - 2026-09-05: resume: PR #116 OPEN with every criterion evidenced and the approval recorded; re-entered at step 1. `master` unmoved at `819a5299`, so the recorded evidence stands; the step-7 PR-conversation read re-ran and the chip was re-posed and approved.
+- 2026-09-05: resume (second): PR #116 still OPEN, `master` still `819a5299`, branch pushed at `3b847ba`; PR-conversation read re-run and the chip re-posed. step-7 approval: PR #116 approved for merge.
 
 ## Decisions
 
@@ -363,6 +364,12 @@ disposition was fix 1-6 and 8 on the branch, reject 9.
 **PR-conversation read (PR #116).** Empty: no reviews, no conversation
 comments, and no review threads (resolved or unresolved), so no disposition is
 owed and the blocking rule does not fire.
+
+Re-read at the re-posed gate: still no reviews and no review threads, resolved
+or unresolved. One conversation comment has appeared since — `codecov[bot]`,
+reporting the patch fully covered and project coverage 98.41% → 98.42%.
+conversation: codecov[bot] PR #116 — noted (requests nothing; author `type` is
+`Bot`, so the blocking rule does not fire). All ten CI checks pass.
 
 Re-verified after the fixes: `devtools::document()` no diff,
 `devtools::check()` `Status: OK` 0/0/0 with the suite running inside it

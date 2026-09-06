@@ -140,8 +140,9 @@ command is what you *asked* for, though, and it is silent about the run itself.
 Two FFmpeg versions accept the same command and need not produce the same file,
 which is why the manifest below records the version that ran.
 
-`ffm_batch(manifest = TRUE)` records the rest. The manifest rides along on the
-result; `ffm_manifest()` reads it out.
+`ffm_batch(manifest = TRUE)` records the rest. The result itself looks like any
+other batch result — the manifest rides along on it as an attribute, and
+`ffm_manifest()` reads it out:
 
 ```{r, eval = has_both}
 res <- ffm_batch(
@@ -154,15 +155,19 @@ res <- ffm_batch(
   }
 )
 
+res
+
 ffm_manifest(res)
 ```
 
 One row per job. `command`, `input` and `output` restate the job; the other
 columns are what the command cannot carry:
 
-- `ffmpeg_version` and `ffprobe_version` — the versions that actually ran, read
-  from the binaries at run time rather than assumed. A version that could not be
-  read is `NA`.
+- `ffmpeg_version` and `ffprobe_version` — the versions tidymedia resolved when
+  the batch ran, read out of the binaries themselves rather than assumed.
+  `ffmpeg_version` is the version that did the work; `ffprobe_version` is the
+  one that was on hand to probe, which a job like this one never needed. A
+  version that could not be read is `NA`.
 - `timestamp` — when the run happened, with its UTC offset.
 - `output_size` — the size in bytes of the file that came out, so a truncated or
   empty result is visible in the record itself.
@@ -187,7 +192,13 @@ res <- ffm_batch(
 )
 
 ffm_manifest(res)
+
+ffm_manifest(res)[, c("input_md5", "output_md5")]
 ```
+
+The manifest is nine columns wide now, so the two new ones print as a footer
+line rather than in the table; the second call above pulls them out to show what
+they hold.
 
 Checksums are off by default because they read every input and output in full,
 which is real time on a large study.
@@ -210,7 +221,7 @@ A `run = FALSE` batch attaches none even when you ask for one, and reading it
 back is an error rather than an empty tibble — a silent empty record being the
 failure a provenance record exists to prevent:
 
-```{r, eval = has_ffmpeg, error = TRUE}
+```{r, eval = has_both, error = TRUE}
 compiled <- ffm_batch(jobs, run = FALSE, manifest = TRUE, .f = function(input, output, ...) {
   ffm_files(input, output) |> ffm_drop("video")
 })
@@ -232,7 +243,7 @@ options(tidymedia.timeout = 600)
 ```
 
 Unset, it is `0`, which means no limit — so nothing you already run changes
-behaviour until you ask for a bound.
+behavior until you ask for a bound.
 
 To bound one call rather than the session, wrap it in `with_timeout()`. The
 session's setting, or the absence of one, is back when the call returns, by any
@@ -275,8 +286,9 @@ around here", not "return at exactly this second", and leave that headroom in
 anything downstream that depends on the call returning.
 
 A fractional limit is refused rather than rounded, because R truncates it toward
-zero and `0` is the no-limit sentinel — `options(tidymedia.timeout = 0.5)` would
-otherwise leave the call unbounded:
+zero and `0` is the no-limit sentinel, so a rounded `0.5` would leave the call
+unbounded. Every seam refuses it — `with_timeout()` and `local_timeout()`, as
+below, and `options(tidymedia.timeout = 0.5)` when a call reads the option:
 
 ```{r, error = TRUE}
 with_timeout(extract_audio("session01.mp4", "x.m4a"), seconds = 0.5)

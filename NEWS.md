@@ -9,10 +9,10 @@
   run was actually made with `ffm_batch(manifest = TRUE)`, `checksums = TRUE`
   and `ffm_manifest()`; and bounding a run that hangs with
   `options(tidymedia.timeout = )`, `with_timeout()` and `local_timeout()`. It
-  states what the wall-clock limit really bounds — how long R waits, which a
-  program ignoring the first two signals outlives by up to 40 seconds — rather
-  than promising the limit. The workflow vignette's reproducibility section now
-  points at it.
+  states what the wall-clock limit really bounds — how long R waits, which runs
+  up to 40 seconds past the limit you set when a program ignores the first two
+  signals — rather than promising the limit. The workflow vignette's
+  reproducibility section now points at it.
 
 ## New features
 

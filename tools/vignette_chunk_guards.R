@@ -52,13 +52,32 @@ SPAWNS$n <- 0L
 # and a vignette's guard expression calls it -- counting that would report every
 # guarded setup chunk as a spawning chunk, which is the opposite of the truth.
 # `system2()` names the program in `command`; `system()` takes a whole command
-# line, whose FIRST token is the program, so "which ffprobe" is not a match.
+# line, whose program is its leading token or tokens.
+#
+# The program is read as EVERY leading run of tokens, not just the first one,
+# because `R/ffmpeg.R` passes the resolved path unquoted: a binary under a
+# directory whose name holds a space ("/Volumes/My Tools/bin/ffmpeg -i ...")
+# arrives split across tokens, and reading only the first would report the chunk
+# as starting nothing -- so a wholly unguarded vignette would pass. Matching on
+# the BASENAME of each whole prefix is what keeps `Sys.which()` out: the
+# candidates for "which ffprobe" are "which" and "which ffprobe", and the second
+# one's basename is that whole two-word string, not its last token.
 spawn_record <- function(command) {
   prog <- if (length(command) == 1L) command[[1L]] else return(invisible(NULL))
-  first <- strsplit(trimws(as.character(prog)), "\\s+")[[1L]][1L]
-  first <- gsub('"', "", first, fixed = TRUE)
-  name <- tolower(sub("[.]exe$", "", basename(first)))
-  if (name %in% PROGRAMS) SPAWNS$n <- SPAWNS$n + 1L
+  line <- trimws(as.character(prog))
+  tokens <- strsplit(line, "\\s+")[[1L]]
+  cands <- vapply(
+    seq_along(tokens),
+    function(i) paste(tokens[seq_len(i)], collapse = " "),
+    character(1)
+  )
+  # A path the caller DID quote is one candidate whatever spaces it holds.
+  if (startsWith(line, '"')) cands <- c(cands, sub('^"([^"]*)".*$', "\\1", line))
+  # Strip only a wrapping pair of quotes, so an argument that merely contains
+  # one cannot turn a non-match into a match.
+  cands <- sub('^"(.*)"$', "\\1", cands)
+  names <- tolower(sub("[.]exe$", "", basename(cands)))
+  if (any(names %in% PROGRAMS)) SPAWNS$n <- SPAWNS$n + 1L
   invisible(NULL)
 }
 

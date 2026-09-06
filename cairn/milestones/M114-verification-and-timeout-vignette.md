@@ -57,12 +57,12 @@ candidate row. No behaviour change to any function this vignette teaches.
 
 ## Coverage
 
-- AC1 → T1, T2
+- AC1 → T1, T2, T7
 - AC2 → T3
-- AC3 → T4
-- AC4 → T5
+- AC3 → T4, T7
+- AC4 → T5, T7
 - AC5 → T6
-- AC6 → T6
+- AC6 → T6, T7
 
 ## Tasks
 
@@ -80,6 +80,12 @@ candidate row. No behaviour change to any function this vignette teaches.
       `Sys.which()` answers from inside a setup chunk.
 - [x] T6: `_pkgdown.yml` row, `workflow.Rmd` cross-link, `check_pkgdown()`,
       `devtools::check()`.
+- [ ] T7: review return — show `ffm_batch(manifest = TRUE)`'s own output (AC1),
+      close the remembered-location seam the no-binary build left open (AC4),
+      and land the fix-now findings: the sweep's space-in-path blind spot, the
+      cross-chunk guard mismatch, the elided md5 columns, the `ffprobe_version`
+      and fractional-limit clauses, the NEWS 40-second wording, and the check
+      NOTE's `behaviour`.
 
 ## Work log
 
@@ -108,6 +114,15 @@ candidate row. No behaviour change to any function this vignette teaches.
 - 2026-09-06: the new candidate row was merged into the existing vignette-documentation row rather than added, because a separate line put `ROADMAP.md` at 60 of its <60-line cap. The file is 59 lines / 27,485 bytes — under the line cap, still over the 24,000-byte budget it was already over before this milestone, with `/cairn-triage` still the named remedy.
 - 2026-09-06: status to review.
 - 2026-09-06: review gathered fresh evidence against branch head `1843446`; draft PR #118 opened. AC2, AC3, AC5 and AC6 verified and ticked; AC1 and AC4 failed, so status returns to in-progress. AC1: `ffm_batch(manifest = TRUE)` is called in three evaluated chunks but every one assigns its result, so its output is shown nowhere in the rendered vignette. AC4: the no-binary build ran with FFmpeg still reachable, because `find_program()` falls back to a config file the script does not clear, so the build does not evidence that the guards carried it. Also to fix on the return: R CMD check's 1 NOTE (`behaviour` at `verification.Rmd:234` against the package's `behavior`), and review findings 2, 3, 6, 8, 9 and 11 recorded in the Review section.
+
+- 2026-09-06: T7, AC1. The two `ffm_batch(manifest = TRUE)` chunks assigned their result and printed only `ffm_manifest(res)`, so the batch call's own output appeared nowhere. The first one now prints `res` as well, and the prose says what it shows — an ordinary four-column batch result, the manifest riding along on it as an attribute. Measured by knitting `vignettes/verification.Rmd` on this machine with all three programs on `PATH`: the rendered page carries the 1 × 4 result and, below it, the 7-column manifest.
+- 2026-09-06: T7, AC4. `tools/build_vignettes_without_binaries.R` now points `R_USER_CONFIG_DIR` and `XDG_CONFIG_HOME` at one empty scratch directory before building, and asserts `find_ffmpeg()`, `find_ffprobe()` and `find_mediainfo()` all return `NULL` — the resolver the package itself calls, rather than `Sys.which()` alone. `HOME` is deliberately left alone: moving it moves the user library and would break the build for an unrelated reason, so instead the two resolved seam paths are checked to have landed under the scratch directory. They are compared as written with runs of `/` collapsed, because the directories do not exist yet for `normalizePath()` to resolve and on macOS it rewrites the scratch path's `/var` to `/private/var`.
+- 2026-09-06: the AC4 strengthening measured, not assumed. An unguarded FFmpeg-only chunk (`ffm_files(...) |> ffm_drop("video") |> ffm_run()`) planted in `verification.Rmd`: the pre-fix script at `98df1de` built it and exited **0**, because this machine's `ffmpeg_location.txt` resolved FFmpeg on the reduced `PATH`; the fixed script exits **1**, "failed re-building 'verification.Rmd'". That is finding [O]1's failure reproduced and then closed. Plant reverted, tree confirmed clean.
+- 2026-09-06: T7, finding 2. `spawn_record()` read the command line's first whitespace-delimited token, so an FFmpeg under a directory holding a space reported no spawn at all and a wholly unguarded vignette would have exited 0. It now tests every leading run of tokens, plus a leading double-quoted path, and matches on each candidate's basename. Nine cases run against the function directly: `/opt/homebrew/bin/ffmpeg -y -i x.mp4`, `/Volumes/My Tools/bin/ffmpeg -y -i x.mp4` and its double-quoted form all count; `which ffprobe`, `which 'ffprobe'`, `command -v ffmpeg`, `/usr/bin/ls -l` and `/usr/bin/env echo "ffmpeg"` all do not; `/opt/bin/mediainfo --Output=JSON file.mp4` counts. Matching on the whole prefix's basename is what keeps `Sys.which()` out — "which ffprobe" has no `/`, so its basename is the whole two-word string.
+- 2026-09-06: T7, findings 3, 6, 8, 9 and 11, each derived from an executed call or the source, not composed. **3**: the `run = FALSE` abort chunk was guarded `has_ffmpeg` but uses `jobs`, built in a `has_both` chunk; guard changed to `has_both`. **6**: the 9-column manifest prints `input_md5`/`output_md5` as a footer line, so a second call selecting those two columns now shows the values, with a sentence saying why. **8**: `ffprobe_version` is no longer called "the version that actually ran" — FFprobe processes nothing in a job like this one; it is the version tidymedia resolved and had on hand. **9**: the fractional-limit prose named `options(tidymedia.timeout = 0.5)` while the chunk shows the `with_timeout()` seam; it now names both, and the option path was confirmed to refuse — "`tidymedia.timeout` must be a whole number, not the number 0.5". **11**: NEWS said a program "outlives" R's wait by 40 seconds, which is backwards; it now says R waits up to 40 seconds past the limit.
+- 2026-09-06: T7, the check NOTE. `vignettes/verification.Rmd`'s one `behaviour` is now `behavior`, matching the 25 sites in `R/` and `workflow.Rmd`. `Comparing 'spelling.Rout' to 'spelling.Rout.save' ... OK` in the check below.
+- 2026-09-06: T7 instruments re-run over the final text. `tools/vignette_chunk_guards.R` exit 0: 64 chunks in five vignettes, 15 started a program, every one guarded, "unguarded spawning chunks: none" — unchanged from the pre-return run, the hardened matcher having nothing to catch on a machine whose paths hold no spaces. Discrimination re-proved after the hardening: a planted unguarded `probe_all()` chunk was the single UNGUARDED row, exit 1; reverted. `tools/build_vignettes_without_binaries.R` exit 0, `find_ffmpeg(): NULL`, `find_ffprobe(): NULL`, `find_mediainfo(): NULL`, and from inside the build `ffmpeg=[] ffprobe=[] mediainfo=[]`.
+- 2026-09-06: checkpoint committed with `devtools::check(document = TRUE, vignettes = TRUE)` still running on the final tree — `devtools::test()` was already clean on it (FAIL 0, WARN 10, SKIP 18, PASS 12900) and the check had reached "checking tests" with `Comparing 'spelling.Rout' to 'spelling.Rout.save' ... OK`, which is the NOTE this return had to clear, but the run had not yet reported its own result line. T7 stays unchecked until it does.
 
 ## Decisions
 

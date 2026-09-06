@@ -70,7 +70,6 @@ Other metadata functions:
 [`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md),
 [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md),
 [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md),
-[`mediainfo_summary()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_summary.md),
 [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md),
 [`probe_container()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
 

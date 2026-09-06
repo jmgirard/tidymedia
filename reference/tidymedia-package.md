@@ -18,9 +18,9 @@ and
 [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md).
 Layer 1 is the pipeline builder, which assembles an FFmpeg command step
 by step and then compiles or runs it:
-[`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md) and the
-`ffm_*()` functions. Layer 2 is the task verbs, thin wrappers over the
-builder for common preprocessing jobs such as
+[`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md)
+and the `ffm_*()` functions. Layer 2 is the task verbs, thin wrappers
+over the builder for common preprocessing jobs such as
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
 and
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md).

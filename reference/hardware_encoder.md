@@ -11,11 +11,7 @@ videotoolbox (H.264 and HEVC), so `hardware_encoder("h264", "nvenc")` is
 ## Usage
 
 ``` r
-hardware_encoder(
-  codec = c("h264", "hevc", "av1", "prores"),
-  hardware,
-  call = rlang::current_env()
-)
+hardware_encoder(codec = c("h264", "hevc", "av1", "prores"), hardware)
 
 has_hardware_encoder(codec = c("h264", "hevc", "av1", "prores"), hardware)
 ```
@@ -37,12 +33,6 @@ has_hardware_encoder(codec = c("h264", "hevc", "av1", "prores"), hardware)
   Narrower than the verbs' `hardware` argument: `"none"` is the verbs'
   off position, meaning "use no backend", which has no meaning here, so
   it is refused.
-
-- call:
-
-  The environment a refusal is reported from, so a verb that consults
-  these internally is blamed rather than the helper. Rarely set
-  directly.
 
 ## Value
 

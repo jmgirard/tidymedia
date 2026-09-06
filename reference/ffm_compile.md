@@ -29,7 +29,6 @@ to compile and execute in one step, and
 to compile over many files.
 
 Other builder functions:
-[`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_concat()`](https://jmgirard.github.io/tidymedia/reference/ffm_concat.md),
@@ -57,7 +56,7 @@ Other builder functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # ffm_compile() returns the reproducible FFmpeg command as a string
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_trim(start = 1, end = 5) |>
   ffm_crop(width = 160, height = 120) |>
   ffm_codec(video = "libx264") |>

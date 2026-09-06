@@ -84,7 +84,6 @@ for the many-file runner, and
 for the `verify =` spec.
 
 Other builder functions:
-[`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),
@@ -112,7 +111,7 @@ Other builder functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 out <- tempfile(fileext = ".mp4")
-ffm(video, out) |>
+ffm_files(video, out) |>
   ffm_scale(width = 160, height = 120) |>
   ffm_codec(video = "libx264") |>
   ffm_run(verify = list(width = 160, height = 120))

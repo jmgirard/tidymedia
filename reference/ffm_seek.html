@@ -105,7 +105,6 @@ from the request by up to one group-of-pictures. Pair it with
     <div class="dont-index"><p><code><a href="ffm_trim.html">ffm_trim()</a></code> for the filter-based alternative, <code><a href="ffm_copy.html">ffm_copy()</a></code> for the
 fast copy path, and <code><a href="segment_video.html">segment_video()</a></code>, the task verb built on it.</p>
 <p>Other builder functions:
-<code><a href="ffm.html">ffm()</a></code>,
 <code><a href="ffm_batch.html">ffm_batch()</a></code>,
 <code><a href="ffm_codec.html">ffm_codec()</a></code>,
 <code><a href="ffm_compile.html">ffm_compile()</a></code>,
@@ -133,7 +132,7 @@ fast copy path, and <code><a href="segment_video.html">segment_video()</a></code
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">video</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># Fast, lossless copy cut (snaps to keyframes)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="ffm.html">ffm</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="ffm_files.html">ffm_files</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">ffm_seek</span><span class="op">(</span>start <span class="op">=</span> <span class="fl">1</span>, end <span class="op">=</span> <span class="fl">5</span>, reencode <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="ffm_copy.html">ffm_copy</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span></span>

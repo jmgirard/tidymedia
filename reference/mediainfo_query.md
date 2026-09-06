@@ -2,8 +2,6 @@
 
 Create a tibble containing multiple parameters from a single MediaInfo
 section. To query parameters from multiple sections at once, use
-[`mediainfo_summary()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_summary.md)
-or
 [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md).
 `file` may be a vector of several files; results are stacked with a
 leading `file` column.
@@ -69,7 +67,6 @@ Other metadata functions:
 [`get_sample_rate()`](https://jmgirard.github.io/tidymedia/reference/get_sample_rate.md),
 [`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md),
 [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md),
-[`mediainfo_summary()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_summary.md),
 [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md),
 [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md),
 [`probe_container()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)

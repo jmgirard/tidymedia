@@ -165,14 +165,13 @@ every task verb is made of.</p>
 <div class="section level2">
 <h2 id="building-a-pipeline">Building a pipeline<a class="anchor" aria-label="anchor" href="#building-a-pipeline"></a>
 </h2>
-<p>Every pipeline starts with <code><a href="../reference/ffm.html">ffm()</a></code> (an alias of
-<code><a href="../reference/ffm_files.html">ffm_files()</a></code>), which names the input and output files. You
-then add steps with <code>|&gt;</code>. Each <code>ffm_*</code> verb
-records an instruction; nothing runs until you ask it to. Calling
-<code><a href="../reference/ffm_compile.html">ffm_compile()</a></code> turns the pipeline into the exact FFmpeg
-command it represents:</p>
+<p>Every pipeline starts with <code><a href="../reference/ffm_files.html">ffm_files()</a></code>, which names the
+input and output files. You then add steps with <code>|&gt;</code>. Each
+<code>ffm_*</code> verb records an instruction; nothing runs until you
+ask it to. Calling <code><a href="../reference/ffm_compile.html">ffm_compile()</a></code> turns the pipeline into
+the exact FFmpeg command it represents:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/ffm.html">ffm</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ffm_files.html">ffm_files</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_trim.html">ffm_trim</a></span><span class="op">(</span>start <span class="op">=</span> <span class="fl">1</span>, end <span class="op">=</span> <span class="fl">5</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_crop.html">ffm_crop</a></span><span class="op">(</span>width <span class="op">=</span> <span class="fl">160</span>, height <span class="op">=</span> <span class="fl">120</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_codec.html">ffm_codec</a></span><span class="op">(</span>video <span class="op">=</span> <span class="st">"libx264"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -181,7 +180,7 @@ command it represents:</p>
 <p>Printing a pipeline shows the same compiled command, so you can
 eyeball a pipeline at any point:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/ffm.html">ffm</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ffm_files.html">ffm_files</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_scale.html">ffm_scale</a></span><span class="op">(</span>width <span class="op">=</span> <span class="fl">320</span>, height <span class="op">=</span> <span class="fl">240</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_pixel_format.html">ffm_pixel_format</a></span><span class="op">(</span><span class="st">"yuv420p"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; tidymedia ffmpeg pipeline:</span></span>
@@ -201,7 +200,7 @@ to keyframes). <code><a href="../reference/ffm_seek.html">ffm_seek()</a></code> 
 <code><a href="../reference/ffm_copy.html">ffm_copy()</a></code> for the fast path:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fast, lossless cut</span></span>
-<span><span class="fu"><a href="../reference/ffm.html">ffm</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="fu"><a href="../reference/ffm_files.html">ffm_files</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_seek.html">ffm_seek</a></span><span class="op">(</span>start <span class="op">=</span> <span class="fl">1</span>, end <span class="op">=</span> <span class="fl">5</span>, reencode <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_copy.html">ffm_copy</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -215,13 +214,13 @@ seeking can stream-copy.</p>
 <h2 id="combining-multiple-inputs">Combining multiple inputs<a class="anchor" aria-label="anchor" href="#combining-multiple-inputs"></a>
 </h2>
 <p>A few “blessed” verbs take more than one input. Pass a vector of
-files to <code><a href="../reference/ffm.html">ffm()</a></code>, then combine them: stack side by side with
-<code><a href="../reference/ffm_hstack.html">ffm_hstack()</a></code> or top to bottom with
+files to <code><a href="../reference/ffm_files.html">ffm_files()</a></code>, then combine them: stack side by side
+with <code><a href="../reference/ffm_hstack.html">ffm_hstack()</a></code> or top to bottom with
 <code><a href="../reference/ffm_vstack.html">ffm_vstack()</a></code>, composite one over another with
 <code><a href="../reference/ffm_overlay.html">ffm_overlay()</a></code>, or join them end-to-end with
 <code><a href="../reference/ffm_concat.html">ffm_concat()</a></code>:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/ffm.html">ffm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>, <span class="st">"side_by_side.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ffm_files.html">ffm_files</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>, <span class="st">"side_by_side.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_hstack.html">ffm_hstack</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -filter_complex \"[0:v][1:v]hstack=inputs=2:shortest=0[vout]\" -map \"[vout]\" \"side_by_side.mp4\""</span></span></code></pre></div>

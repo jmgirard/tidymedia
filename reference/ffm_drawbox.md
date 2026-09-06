@@ -73,7 +73,6 @@ https://ffmpeg.org/ffmpeg-utils.html#color-syntax
 the task verb that fills regions via this builder.
 
 Other builder functions:
-[`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),
@@ -101,7 +100,7 @@ Other builder functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # Draw a filled red box covering the top-left quarter of the frame
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_drawbox(width = "in_w/2", height = "in_h/2", color = "red") |>
   ffm_compile()
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"drawbox=x=0:y=0:w=in_w/2:h=in_h/2:c=red:t=fill\" \"output.mp4\""

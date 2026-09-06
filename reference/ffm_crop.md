@@ -55,7 +55,6 @@ and
 are the task verbs built on it.
 
 Other builder functions:
-[`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),
@@ -83,7 +82,7 @@ Other builder functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # Crop to a centered 160x120 region
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_crop(width = 160, height = 120) |>
   ffm_compile()
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" \"output.mp4\""

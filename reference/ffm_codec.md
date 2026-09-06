@@ -49,7 +49,6 @@ to list available codecs, and
 a task verb built on it.
 
 Other builder functions:
-[`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),
 [`ffm_concat()`](https://jmgirard.github.io/tidymedia/reference/ffm_concat.md),
@@ -76,7 +75,7 @@ Other builder functions:
 
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_codec(video = "libx264", audio = "aac") |>
   ffm_compile()
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v libx264 -codec:a aac \"output.mp4\""

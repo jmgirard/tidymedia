@@ -32,7 +32,6 @@ print(x, ...)
 which produces the printed command.
 
 Other builder functions:
-[`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),
@@ -59,7 +58,7 @@ Other builder functions:
 
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_trim(start = 1, end = 5)
 #> tidymedia ffmpeg pipeline:
 #> 

@@ -42,7 +42,6 @@ would).
 the task verb built on this verb.
 
 Other builder functions:
-[`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),
@@ -70,8 +69,8 @@ Other builder functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # Join two inputs end-to-end (they must share codec/resolution/frame rate)
-ffm(c(video, video), "output.mp4") |>
+ffm_files(c(video, video), "output.mp4") |>
   ffm_concat() |>
   ffm_compile()
-#> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmpjv7Vv0/ffm-concat1e2c208fdb43.txt\" -codec:v copy -codec:a copy -map \"0\" \"output.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmpd2bogd/ffm-concat1ee91b61f801.txt\" -codec:v copy -codec:a copy -map \"0\" \"output.mp4\""
 ```

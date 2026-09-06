@@ -14,8 +14,7 @@ longer read.
 set_program(
   program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
   location,
-  confirm = TRUE,
-  call = rlang::current_env()
+  confirm = TRUE
 )
 
 set_mediainfo(location, confirm = TRUE)
@@ -42,11 +41,6 @@ set_ffplay(location, confirm = TRUE)
   Whether to ask before writing the remembered location. `TRUE` (the
   default) asks and, in a non-interactive session, refuses. `FALSE`
   writes without asking.
-
-- call:
-
-  The environment a refusal is reported from, so each wrapper is blamed
-  rather than `set_program()` itself. Rarely set directly.
 
 ## Value
 

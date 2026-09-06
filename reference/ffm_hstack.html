@@ -83,7 +83,6 @@ stacking.</p>
     <div class="dont-index"><p><code><a href="ffm_vstack.html">ffm_vstack()</a></code> for vertical stacking and <code><a href="compare_videos.html">compare_videos()</a></code>, the
 task verb built on both.</p>
 <p>Other builder functions:
-<code><a href="ffm.html">ffm()</a></code>,
 <code><a href="ffm_batch.html">ffm_batch()</a></code>,
 <code><a href="ffm_codec.html">ffm_codec()</a></code>,
 <code><a href="ffm_compile.html">ffm_compile()</a></code>,
@@ -110,8 +109,8 @@ task verb built on both.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">video</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="co"># Stack two inputs side-by-side (pass more than one input to ffm())</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="ffm.html">ffm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span><span class="co"># Stack two inputs side-by-side (pass more than one input to ffm_files())</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="ffm_files.html">ffm_files</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">ffm_hstack</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -filter_complex \"[0:v][1:v]hstack=inputs=2:shortest=0[vout]\" -map \"[vout]\" \"output.mp4\""</span>

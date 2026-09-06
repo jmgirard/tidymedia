@@ -2,6 +2,41 @@
 
 ## tidymedia (development version)
 
+### Breaking changes
+
+- [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+  and
+  [`hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
+  no longer take a `call` argument, and no exported function in
+  tidymedia does. It named the environment an error is reported from, so
+  that a refusal could blame the function you typed rather than the
+  shared code underneath it — a value only tidymedia’s own code has any
+  use for, sitting in two help-page usage lines that a reader copies
+  from. Code that passed `call =` to either function must drop it.
+
+- Errors keep naming the function you called, and one of them names it
+  for the first time. `set_ffmpeg("nope")` says
+  [`set_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/set_program.md),
+  whether you call it at the console or from inside your own function,
+  and the same holds for
+  [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md),
+  the other three `set_*()` functions and
+  [`hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
+  — for a wrong argument and for a location or codec the package cannot
+  use. A wrong `codec` or `hardware` passed to
+  [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
+  used to be reported as coming from
+  [`hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md),
+  which you never called; it now names
+  [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md).
+
+- `ffm()` and `mediainfo_summary()` have been removed. Each was a second
+  exported name for a function that already had one: use
+  [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md)
+  and
+  [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md),
+  which are unchanged. Renaming the calls is the whole migration.
+
 ### Requirements
 
 - tidymedia now imports `digest`, which is what computes the SHA-256 of

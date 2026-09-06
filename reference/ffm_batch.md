@@ -116,7 +116,6 @@ for the verification spec and
 for the provenance manifest.
 
 Other builder functions:
-[`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),
 [`ffm_concat()`](https://jmgirard.github.io/tidymedia/reference/ffm_concat.md),

@@ -44,8 +44,6 @@ when you need something tidymedia does not wrap.
 Assemble a reproducible FFmpeg command step by step, then compile or run
 it.
 
-- [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md) :
-  Specify Files in an FFmpeg Pipeline
 - [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md)
   : Specify Files in an FFmpeg Pipeline
 - [`ffm_trim()`](https://jmgirard.github.io/tidymedia/reference/ffm_trim.md)
@@ -182,8 +180,6 @@ Read container and stream metadata as tibbles, ready for the tidyverse.
 - [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
   : Query multiple parameters from a single MediaInfo section
 - [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
-  : Describe media files by applying a MediaInfo template
-- [`mediainfo_summary()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_summary.md)
   : Describe media files by applying a MediaInfo template
 - [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md)
   : Get the duration of a media file

@@ -125,13 +125,13 @@ for the full tour.
 
 ``` r
 
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_trim(start = 1, end = 5) |>
   ffm_crop(width = 160, height = 120) |>
   ffm_codec(video = "libx264") |>
   ffm_drop(streams = "audio") |>
   ffm_compile()
-#> [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmpOLq5Tw/temp_libpath1850a235a2fbd/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""
+#> [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/Rtmpn5c3d7/temp_libpath147006c35cc6d/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""
 ```
 
 Common tasks have their own verbs (Layer 2). Pass `run = FALSE` to see
@@ -140,7 +140,7 @@ the command without executing it:
 ``` r
 
 extract_audio(video, "audio.aac", run = FALSE)
-#> [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmpOLq5Tw/temp_libpath1850a235a2fbd/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:0\" \"audio.aac\""
+#> [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/Rtmpn5c3d7/temp_libpath147006c35cc6d/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:0\" \"audio.aac\""
 ```
 
 ### Read metadata as tibbles
@@ -249,8 +249,6 @@ when you need something tidymedia does not wrap.
 Assemble a reproducible FFmpeg command step by step, then compile or run
 it.
 
-- [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md) :
-  Specify Files in an FFmpeg Pipeline
 - [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md)
   : Specify Files in an FFmpeg Pipeline
 - [`ffm_trim()`](https://jmgirard.github.io/tidymedia/reference/ffm_trim.md)
@@ -387,8 +385,6 @@ Read container and stream metadata as tibbles, ready for the tidyverse.
 - [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
   : Query multiple parameters from a single MediaInfo section
 - [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
-  : Describe media files by applying a MediaInfo template
-- [`mediainfo_summary()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_summary.md)
   : Describe media files by applying a MediaInfo template
 - [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md)
   : Get the duration of a media file

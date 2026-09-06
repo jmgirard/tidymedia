@@ -50,7 +50,7 @@
     <p>tidymedia is organized in three layers. Layer 0 passes raw arguments to the
 command-line tools: <code><a href="ffmpeg.html">ffmpeg()</a></code>, <code><a href="ffprobe.html">ffprobe()</a></code>, and <code><a href="mediainfo.html">mediainfo()</a></code>. Layer 1 is the
 pipeline builder, which assembles an FFmpeg command step by step and then
-compiles or runs it: <code><a href="ffm.html">ffm()</a></code> and the <code>ffm_*()</code> functions. Layer 2 is the task
+compiles or runs it: <code><a href="ffm_files.html">ffm_files()</a></code> and the <code>ffm_*()</code> functions. Layer 2 is the task
 verbs, thin wrappers over the builder for common preprocessing jobs such as
 <code><a href="extract_audio.html">extract_audio()</a></code> and <code><a href="segment_video.html">segment_video()</a></code>. Metadata is read by two independent
 back ends: FFprobe, through <code><a href="probe_all.html">probe_all()</a></code> and the other <code>probe_*()</code> readers,

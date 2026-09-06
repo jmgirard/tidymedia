@@ -39,7 +39,6 @@ for the full Layer 0 escape hatch, and
 which places these options.
 
 Other builder functions:
-[`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),
@@ -67,7 +66,7 @@ Other builder functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # Extract a single frame by adding a raw output option
-ffm(video, "frame.png") |>
+ffm_files(video, "frame.png") |>
   ffm_output_options("-frames:v 1") |>
   ffm_compile()
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -frames:v 1 \"frame.png\""

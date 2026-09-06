@@ -125,9 +125,7 @@ task verb is made of.
 ## Building a pipeline
 
 Every pipeline starts with
-[`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md) (an
-alias of
-[`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md)),
+[`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md),
 which names the input and output files. You then add steps with `|>`.
 Each `ffm_*` verb records an instruction; nothing runs until you ask it
 to. Calling
@@ -136,7 +134,7 @@ turns the pipeline into the exact FFmpeg command it represents:
 
 ``` r
 
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_trim(start = 1, end = 5) |>
   ffm_crop(width = 160, height = 120) |>
   ffm_codec(video = "libx264") |>
@@ -149,7 +147,7 @@ a pipeline at any point:
 
 ``` r
 
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_scale(width = 320, height = 240) |>
   ffm_pixel_format("yuv420p")
 #> tidymedia ffmpeg pipeline:
@@ -175,7 +173,7 @@ for the fast path:
 ``` r
 
 # Fast, lossless cut
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_seek(start = 1, end = 5, reencode = FALSE) |>
   ffm_copy() |>
   ffm_compile()
@@ -191,7 +189,8 @@ Note that
 ## Combining multiple inputs
 
 A few “blessed” verbs take more than one input. Pass a vector of files
-to [`ffm()`](https://jmgirard.github.io/tidymedia/reference/ffm.md),
+to
+[`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md),
 then combine them: stack side by side with
 [`ffm_hstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)
 or top to bottom with
@@ -203,7 +202,7 @@ or join them end-to-end with
 
 ``` r
 
-ffm(c(video, video), "side_by_side.mp4") |>
+ffm_files(c(video, video), "side_by_side.mp4") |>
   ffm_hstack() |>
   ffm_compile()
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -filter_complex \"[0:v][1:v]hstack=inputs=2:shortest=0[vout]\" -map \"[vout]\" \"side_by_side.mp4\""

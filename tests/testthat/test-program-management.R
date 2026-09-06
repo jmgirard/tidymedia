@@ -122,6 +122,66 @@ test_that("with no file at either path, find_program() still warns and returns N
 })
 
 
+# The not-found warning's recovery advice (M115 AC5) -------------------------
+
+# The warning, captured whole, for one program on one held platform. `tm_os()`
+# is the only seam held: the branch under test reads it and nothing else about
+# the host, and holding anything wider would stop the test saying which fact
+# decided the message.
+tm_not_found_warning <- function(program, os, env = parent.frame()) {
+  tm_redirect_config(env = env)
+  testthat::local_mocked_bindings(tm_os = function(...) os, .env = env)
+  rlang::catch_cnd(find_program(program), classes = "warning")
+}
+
+test_that("the not-found warning names set_<program>() on every platform", {
+  # AC5. Both branches, so the call the caller always has is never the one the
+  # widening dropped.
+  for (os in c("windows", "darwin", "linux")) {
+    for (program in tm_program_vocabulary) {
+      w <- tm_not_found_warning(program, os)
+      expect_match(conditionMessage(w), paste0("Failed to find ", program),
+                   fixed = TRUE, info = paste(os, program))
+      expect_match(conditionMessage(w), paste0("set_", program, "()"),
+                   fixed = TRUE, info = paste(os, program))
+    }
+  }
+})
+
+test_that("the not-found warning offers install_on_win() only where it runs", {
+  # AC5. The offer is made for the three programs the installer registers, on
+  # Windows, and for nothing else -- naming it to a macOS caller, or for
+  # mediainfo, points at a call that refuses them. Asserted over the whole
+  # vocabulary crossed with three platforms, so a widening in either dimension
+  # shows up as a failure rather than as an untested cell.
+  for (os in c("windows", "darwin", "linux")) {
+    for (program in tm_program_vocabulary) {
+      offered <- identical(os, "windows") && program %in% tm_install_registers
+      msg <- conditionMessage(tm_not_found_warning(program, os))
+      expect_equal(grepl("install_on_win()", msg, fixed = TRUE), offered,
+                   info = paste(os, program))
+    }
+  }
+})
+
+test_that("the not-found warning's class vector is unchanged by the widening", {
+  # AC5. The M110 condition contract: this site carries no class of its own and
+  # no data fields, and the widened message must not have quietly added either.
+  # Both branches, because the offer is built by appending a bullet and an
+  # appended bullet is exactly where a stray class or field could arrive. The
+  # two figures below are what this site produced BEFORE the widening, read off
+  # the pre-M115 code at 78263f7 rather than off the new code, so the
+  # expectation is not derived from the artifact it is checking.
+  for (os in c("windows", "darwin")) {
+    w <- tm_not_found_warning("ffmpeg", os)
+    expect_identical(class(w), c("rlang_warning", "warning", "condition"),
+                     info = os)
+    expect_identical(sort(names(w)),
+                     c("call", "footer", "message", "parent"), info = os)
+  }
+})
+
+
 # install_on_win()'s default install dir (M098) ------------------------------
 
 # `R_USER_DATA_DIR` is what tools::R_user_dir() reads, so pointing it at a

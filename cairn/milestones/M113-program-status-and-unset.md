@@ -1,13 +1,13 @@
 # M113: One call says which programs tidymedia found, and a remembered location can be forgotten
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP1
 - **Resolves:** —
 - **Surface tier:** user-facing — two new exports
-- **Branch/PR:** —
+- **Branch/PR:** `m113-program-status-and-unset`
 
 ## Goal
 
@@ -73,7 +73,7 @@ Teaching either function in a vignette → M114.
 
 ## Tasks
 
-- [ ] T1: Settle the two names against D014/D078 before writing either body:
+- [x] T1: Settle the two names against D014/D078 before writing either body:
       `program_status()` and `unset_program()` pair with the family's existing
       `find_program()`/`set_program()`, and `get_*` is reserved for per-file
       metadata scalars. (RB tripwire: irreversible-api)
@@ -97,7 +97,40 @@ Teaching either function in a vignette → M114.
 - 2026-09-05: criteria audit ran in FULL mode (user-facing tier), fresh-context [O] reader. Returned three findings against this milestone's draft: the absent-program evidence used an emptied `PATH`, which `find_program()`'s config and legacy fallbacks defeat; the forget criterion compared against a pre-`set_program()` state that need not exist and named one config file where two can hold a location; and the criteria said "a new exported function" without naming it, so nothing bound them to one pair. All three fixed before writing; none needed a gate question.
 - 2026-09-05: plan gate chose one generic `unset_program()` over four `unset_*()` wrappers mirroring the `set_*()` exports, because the wrappers are additive later and four exports is the larger trade against GP1. Falsified by a report that the asymmetry with `set_ffmpeg()` and its siblings is what a caller trips on.
 - 2026-09-05: plan gate chose widening the internal `tool_versions()` (`R/ffm_manifest.R:121`) over a fresh probe, because it already spawns `-version` for two of the four programs and is the shape the manifest records. Falsified by a program whose version flag that helper's parsing cannot read.
+- 2026-09-05: implement question gate settled four choices — both names as planned, the three-column shape, a warning rather than an abort for nothing-to-forget, and no `confirm` argument. Recorded below; T1 closed by the naming half.
 
 ## Decisions
+
+### The two names, and what `unset_program()` does at its two edges (2026-09-05, implement question gate)
+
+`program_status()` and `unset_program()` ship as planned. Both name a category
+rather than one member of an open set, and neither takes the `get_*` prefix the
+package reserves for per-file metadata scalars; the pair reads against the
+family's existing `find_program()` / `set_program()`, which is what a reader
+guesses from. `program_versions()` was declined because the tibble also carries
+the resolved location, and `forget_program()` because it breaks the set/unset
+pairing.
+
+The tibble is three columns: `program`, `location`, `version`, one row per
+program, `NA` in either value column where there is no answer. The path column
+is `location` because that is what `set_program(location =)` and
+`find_program()` already call it. A fourth `found` logical was declined: it
+restates `is.na(location)`.
+
+`unset_program()` on a program with nothing remembered warns and returns
+`FALSE` invisibly rather than aborting. The end state the caller asked for
+already holds, so a repeated call is a no-op and not a failure; this is how
+`find_program()` reports a program it cannot find. The warning is classed
+`tidymedia_no_remembered_location` — the event, not the severity — and carries
+`tm_program`.
+
+`unset_program()` takes no `confirm` argument. `set_program()` asks because
+writing a file that outlives the session is a side effect of a call named
+"set"; deleting that file is the whole of what `unset` names, so a prompt would
+ask the caller to confirm the thing they typed.
+
+- **Falsified by** a caller who calls `unset_program()` by mistake and cannot
+  recover the path it forgot, or by a handler that needs the nothing-remembered
+  case to stop a script.
 
 ## Review

@@ -39,7 +39,7 @@ remux or cut on keyframes.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_copy() |>
   ffm_compile()
 }
@@ -48,7 +48,6 @@ ffm(video, "output.mp4") |>
 uses it for fast copy cuts.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

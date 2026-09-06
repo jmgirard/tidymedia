@@ -31,8 +31,8 @@ labels internally.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-# Stack two inputs one above the other (pass more than one input to ffm())
-ffm(c(video, video), "output.mp4") |>
+# Stack two inputs one above the other (pass more than one input to ffm_files())
+ffm_files(c(video, video), "output.mp4") |>
   ffm_vstack() |>
   ffm_compile()
 }
@@ -41,7 +41,6 @@ ffm(c(video, video), "output.mp4") |>
 task verb built on both.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

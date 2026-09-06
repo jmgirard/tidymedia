@@ -295,7 +295,7 @@ test_that("ffm_batch()'s up-front limit check reads the per-call value", {
   input <- file.path(dir, "in.mp4")
   file.create(input)
   jobs <- tibble::tibble(input = input, output = file.path(dir, "out.mp4"))
-  build <- function(input, output, ...) ffm(input, output)
+  build <- function(input, output, ...) ffm_files(input, output)
 
   with_timeout(ffm_batch(jobs, build, run = FALSE), 7)
   expect_equal(seen, 7)

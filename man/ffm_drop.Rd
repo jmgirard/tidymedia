@@ -24,7 +24,7 @@ the video, audio, subtitles, or data stream from a media file.
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # Drop the audio stream (keep video only)
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_drop(streams = "audio") |>
   ffm_compile()
 }
@@ -33,7 +33,6 @@ ffm(video, "output.mp4") |>
 this builder.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

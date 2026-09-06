@@ -25,10 +25,6 @@ test_that("new_ffm() no longer carries the dead trim_start/trim_end fields", {
   expect_false("drop_streams" %in% names(p))
 })
 
-test_that("ffm is an alias for ffm_files", {
-  expect_identical(ffm, ffm_files)
-})
-
 test_that("ffm_files() rejects unreadable input", {
   expect_error(ffm_files(tempfile(fileext = ".mp4"), "out.mp4"))
 })

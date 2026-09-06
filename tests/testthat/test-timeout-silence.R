@@ -30,7 +30,7 @@ test_that("the closure excludes the pure compilation surface", {
   # Non-vacuity from the other side: D024's pure surface runs no binary from any
   # path, so a sweep that returned everything would show up here.
   reaches <- tm_reaches_spawn()
-  for (f in c("ffm_compile", "ffm_crop", "ffm_scale", "ffm_trim", "ffm")) {
+  for (f in c("ffm_compile", "ffm_crop", "ffm_scale", "ffm_trim", "ffm_files")) {
     expect_false(f %in% reaches, info = f)
   }
 })
@@ -280,7 +280,7 @@ test_that("a timed-out job is no longer silent in a batch", {
 
   warns <- NULL
   out <- withCallingHandlers(
-    ffm_batch(jobs, function(input, output, ...) ffm(input, output)),
+    ffm_batch(jobs, function(input, output, ...) ffm_files(input, output)),
     warning = function(w) {
       warns <<- c(warns, list(w))
       invokeRestart("muffleWarning")
@@ -309,7 +309,7 @@ test_that("a batch that fails for any other reason stays as quiet as before", {
     .package = "tidymedia"
   )
   out <- expect_no_warning(
-    ffm_batch(jobs, function(input, output, ...) ffm(input, output))
+    ffm_batch(jobs, function(input, output, ...) ffm_files(input, output))
   )
   expect_identical(out$success, c(FALSE, FALSE))
 })
@@ -330,7 +330,7 @@ test_that("a verification the limit kills is counted too", {
     .package = "tidymedia"
   )
   msg <- tryCatch({
-    ffm_batch(jobs, function(input, output, ...) ffm(input, output),
+    ffm_batch(jobs, function(input, output, ...) ffm_files(input, output),
               verify = list(width = 320))
     NULL
   }, tidymedia_batch_timeout = function(w) cli::ansi_strip(conditionMessage(w)))
@@ -459,7 +459,7 @@ test_that("a real hung batch job warns rather than reporting a bare failure", {
   withr::local_options(tidymedia.timeout = 2)
   jobs <- tibble::tibble(input = blocked, output = out)
   expect_warning(
-    res <- ffm_batch(jobs, function(input, output, ...) ffm(input, output)),
+    res <- ffm_batch(jobs, function(input, output, ...) ffm_files(input, output)),
     class = "tidymedia_batch_timeout"
   )
   expect_identical(res$success, FALSE)

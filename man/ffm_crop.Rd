@@ -33,7 +33,7 @@ Decrease the size of the video's frames by cropping it.
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # Crop to a centered 160x120 region
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_crop(width = 160, height = 120) |>
   ffm_compile()
 }
@@ -45,7 +45,6 @@ https://ffmpeg.org/ffmpeg-filters.html#toc-crop
 \code{\link[=format_for_web]{format_for_web()}} are the task verbs built on it.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

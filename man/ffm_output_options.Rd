@@ -28,7 +28,7 @@ so this is not the same as gluing a command string yourself.
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # Extract a single frame by adding a raw output option
-ffm(video, "frame.png") |>
+ffm_files(video, "frame.png") |>
   ffm_output_options("-frames:v 1") |>
   ffm_compile()
 }
@@ -37,7 +37,6 @@ ffm(video, "frame.png") |>
 which places these options.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

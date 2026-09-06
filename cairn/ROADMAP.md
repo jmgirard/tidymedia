@@ -8,7 +8,7 @@ _Last hygiene check: 2026-09-05 (M111 done and archived; PR #115 squash-merged. 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M112 | No export publishes the internal `call` argument, and the duplicate exports are settled | planned | — | normal | milestones/M112-unpublish-the-call-argument.md |
+| M112 | No export publishes the internal `call` argument, and the duplicate exports are settled | review | — | normal | milestones/M112-unpublish-the-call-argument.md |
 | M113 | One call says which programs tidymedia found, and a remembered location can be forgotten | planned | — | normal | milestones/M113-program-status-and-unset.md |
 | M114 | Verification, provenance and timeouts are taught in prose, not only on a reference page | planned | — | normal | milestones/M114-verification-and-timeout-vignette.md |
 | M115 | A new user can tell whether the setup worked, and fix it when it did not | planned | M113 | normal | milestones/M115-setup-and-troubleshooting.md |

@@ -195,8 +195,6 @@ run_program <- function(location, args, program = "the program",
 #' @param confirm Whether to ask before writing the remembered location.
 #'   \code{TRUE} (the default) asks and, in a non-interactive session, refuses.
 #'   \code{FALSE} writes without asking.
-#' @param call The environment a refusal is reported from, so each wrapper is
-#'   blamed rather than \code{set_program()} itself. Rarely set directly.
 #' @return Invisibly, \code{TRUE} where the location was written and
 #'   \code{FALSE} where the caller declined to write it.
 #'
@@ -212,24 +210,33 @@ run_program <- function(location, args, program = "the program",
 #' set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe", confirm = FALSE)
 #' }
 #' @export
-# `call` defaults to this frame rather than `rlang::caller_env()`: only a
-# direct set_program() call reaches the default, and under caller_env() that
-# call is blamed on whatever frame invoked it -- NULL at the console, so the
-# refusal names no function at all (M100). The four wrappers pass their own
-# frames, so each refusal names the export the caller actually typed.
 set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
-                         location, confirm = TRUE,
-                         call = rlang::current_env()) {
-  
-  # Validate arguments. Every refusal here carries `call` for the same reason
-  # the not-found abort below does: a wrapper's caller typed set_ffmpeg(), and
-  # under the checkers' own `caller_env()` default they are shown
-  # set_program()'s frame instead -- the deparsed internal call, threaded
-  # arguments and all. D074's siting has each export refuse its own arguments;
-  # the wrappers reach the same outcome by naming the frame, since the
-  # not-found and consent refusals below sit too deep in this shared body to
-  # be re-called at four front doors.
-  program <- rlang::arg_match(program, error_call = call)
+                        location, confirm = TRUE) {
+  tm_set_program(program, location, confirm = confirm,
+                 call = rlang::current_env())
+}
+
+# tm_set_program(): set_program()'s body, with `call` threaded.
+#
+# The split exists so `call` stops appearing in an exported signature and in
+# the Rd usage line a reader copies from: it is the environment a refusal is
+# reported from, which only tidymedia's own front doors have a value for
+# (M112, superseding M110's decision to leave it a published formal).
+#
+# Every refusal below carries `call` -- the argument checkers included, not
+# only the abort sites (M100). D074's siting has each export refuse its own
+# arguments; this seam reaches the same outcome by naming the frame, because
+# the not-found and consent refusals sit below the config-path resolution and
+# the prompt build and so cannot be re-called at five front doors without
+# duplicating both bodies (M110).
+#
+# `call` carries no default. Every caller is one of the five exports below and
+# has its own frame to pass; a default would hand a site that forgot it this
+# helper's frame, which is the blame the split exists to remove.
+tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
+                           location, confirm, call) {
+
+  program <- rlang::arg_match(program, error_arg = "program", error_call = call)
   rlang::check_string(location, call = call)
   rlang::check_bool(confirm, call = call)
   if (Sys.which(location) == "") {
@@ -279,7 +286,8 @@ set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
 #' @rdname set_program
 #' @export
 set_mediainfo <- function(location, confirm = TRUE) {
-  set_program("mediainfo", location, confirm = confirm, call = rlang::current_env())
+  tm_set_program("mediainfo", location, confirm = confirm,
+                 call = rlang::current_env())
 }
 
 # set_ffmpeg() ------------------------------------------------------------
@@ -287,19 +295,22 @@ set_mediainfo <- function(location, confirm = TRUE) {
 #' @rdname set_program
 #' @export
 set_ffmpeg <- function(location, confirm = TRUE) {
-  set_program("ffmpeg", location, confirm = confirm, call = rlang::current_env())
+  tm_set_program("ffmpeg", location, confirm = confirm,
+                 call = rlang::current_env())
 }
 
 #' @rdname set_program
 #' @export
 set_ffprobe <- function(location, confirm = TRUE) {
-  set_program("ffprobe", location, confirm = confirm, call = rlang::current_env())
+  tm_set_program("ffprobe", location, confirm = confirm,
+                 call = rlang::current_env())
 }
 
 #' @rdname set_program
 #' @export
 set_ffplay <- function(location, confirm = TRUE) {
-  set_program("ffplay", location, confirm = confirm, call = rlang::current_env())
+  tm_set_program("ffplay", location, confirm = confirm,
+                 call = rlang::current_env())
 }
 
 

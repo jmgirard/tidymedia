@@ -38,7 +38,7 @@ test_that("the overlay scale range is one binding read by both layers", {
   eps <- 1e-3
 
   builder <- function(scale) {
-    ffm(c(input, input), "o.mp4") |> ffm_overlay(scale = scale)
+    ffm_files(c(input, input), "o.mp4") |> ffm_overlay(scale = scale)
   }
   verb <- function(scale) {
     picture_in_picture(input, input, "o.mp4", scale = scale, run = FALSE)
@@ -60,7 +60,7 @@ test_that("the three loudness ranges are one binding each, read by both layers",
   for (arg in c("target_loudness", "true_peak", "loudness_range")) {
     rng <- get(paste0("loudnorm_range_", arg), envir = ns)
     builder <- function(value) {
-      args <- list(ffm(input, "o.wav"))
+      args <- list(ffm_files(input, "o.wav"))
       args[[arg]] <- value
       do.call(ffm_loudnorm, args)
     }

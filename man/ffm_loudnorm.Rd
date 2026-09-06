@@ -79,7 +79,7 @@ frame they are handed — FLAC and Vorbis among them — refuse to open at all.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_loudnorm() |>
   ffm_compile()
 }
@@ -92,7 +92,6 @@ maximum level of audio signals}; ITU-R BS.1770-4.
 \code{\link[=normalize_audio]{normalize_audio()}}, the task verb built on this filter.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

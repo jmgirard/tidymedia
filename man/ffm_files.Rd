@@ -23,7 +23,7 @@ Start an FFmpeg pipeline by specifying input and output files.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
@@ -32,7 +32,6 @@ it; the Layer-2 task verbs (e.g. \code{\link[=standardize_video]{standardize_vid
 wrap this engine.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

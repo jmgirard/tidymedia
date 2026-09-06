@@ -16,7 +16,7 @@
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_compile()
 #' @export
 ffm_files <- function(input, output, overwrite = TRUE) {
@@ -52,17 +52,6 @@ ffm_files <- function(input, output, overwrite = TRUE) {
   )
 }
 
-# ffm() ------------------------------------------------------------------------
-
-#' @inherit ffm_files
-#' @family builder functions
-#' @examples
-#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' ffm(video, "output.mp4") |>
-#'   ffm_compile()
-#' @export
-ffm <- ffm_files
-
 # ffm_trim() --------------------------------------------------------------
 
 #' Trim the Duration of the FFmpeg Pipeline
@@ -94,7 +83,7 @@ ffm <- ffm_files
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_trim(start = 1, end = 5) |>
 #'   ffm_compile()
 #' @export
@@ -186,7 +175,7 @@ ffm_trim <- function(object,
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Fast, lossless copy cut (snaps to keyframes)
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_seek(start = 1, end = 5, reencode = FALSE) |>
 #'   ffm_copy() |>
 #'   ffm_compile()
@@ -231,7 +220,7 @@ ffm_seek <- function(object, start = NULL, end = NULL, reencode = TRUE) {
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Drop the audio stream (keep video only)
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_drop(streams = "audio") |>
 #'   ffm_compile()
 #' @export
@@ -274,7 +263,7 @@ ffm_drop <- function(object,
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Crop to a centered 160x120 region
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_crop(width = 160, height = 120) |>
 #'   ffm_compile()
 #' @export
@@ -315,7 +304,7 @@ ffm_crop <- function(object,
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_scale(width = 160, height = 120) |>
 #'   ffm_compile()
 #' @export
@@ -351,7 +340,7 @@ ffm_scale <- function(object, width, height) {
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_fps(fps = 30) |>
 #'   ffm_compile()
 #' @export
@@ -425,7 +414,7 @@ ffm_fps <- function(object, fps) {
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_loudnorm() |>
 #'   ffm_compile()
 #' @export
@@ -522,7 +511,7 @@ ffm_loudnorm <- function(object,
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_codec(video = "libx264", audio = "aac") |>
 #'   ffm_compile()
 #' @export
@@ -587,12 +576,12 @@ ffm_codec <- function(object,
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_map(mapping = "0") |>
 #'   ffm_compile()
 #'
 #' # Keep the video and the second audio track only
-#' ffm(video, "output.mkv") |>
+#' ffm_files(video, "output.mkv") |>
 #'   ffm_map(mapping = c("0:v", "0:a:1")) |>
 #'   ffm_compile()
 #' @export
@@ -659,7 +648,7 @@ ffm_map <- function(object, mapping = "0", replace = FALSE) {
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_copy() |>
 #'   ffm_compile()
 #' @export
@@ -746,7 +735,7 @@ check_copy_map_conflict <- function(map, call = rlang::caller_env()) {
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_pixel_format("yuv420p") |>
 #'   ffm_compile()
 #' @export
@@ -783,8 +772,8 @@ ffm_pixel_format <- function(object, format) {
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' # Stack two inputs side-by-side (pass more than one input to ffm())
-#' ffm(c(video, video), "output.mp4") |>
+#' # Stack two inputs side-by-side (pass more than one input to ffm_files())
+#' ffm_files(c(video, video), "output.mp4") |>
 #'   ffm_hstack() |>
 #'   ffm_compile()
 #' @export
@@ -851,8 +840,8 @@ ffm_hstack <- function(object,
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' # Stack two inputs one above the other (pass more than one input to ffm())
-#' ffm(c(video, video), "output.mp4") |>
+#' # Stack two inputs one above the other (pass more than one input to ffm_files())
+#' ffm_files(c(video, video), "output.mp4") |>
 #'   ffm_vstack() |>
 #'   ffm_compile()
 #' @export
@@ -932,7 +921,7 @@ ffm_vstack <- function(object,
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Draw the second input over the first, 16px in from the top-right corner
-#' ffm(c(video, video), "output.mp4") |>
+#' ffm_files(c(video, video), "output.mp4") |>
 #'   ffm_overlay(x = "main_w-overlay_w-16", y = 16) |>
 #'   ffm_compile()
 #' @export
@@ -1002,7 +991,7 @@ ffm_overlay <- function(object,
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Join two inputs end-to-end (they must share codec/resolution/frame rate)
-#' ffm(c(video, video), "output.mp4") |>
+#' ffm_files(c(video, video), "output.mp4") |>
 #'   ffm_concat() |>
 #'   ffm_compile()
 #' @export
@@ -1068,7 +1057,7 @@ ffm_concat <- function(object) {
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Draw a filled red box covering the top-left quarter of the frame
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_drawbox(width = "in_w/2", height = "in_h/2", color = "red") |>
 #'   ffm_compile()
 #' @export
@@ -1117,7 +1106,7 @@ ffm_drawbox <- function(object,
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Extract a single frame by adding a raw output option
-#' ffm(video, "frame.png") |>
+#' ffm_files(video, "frame.png") |>
 #'   ffm_output_options("-frames:v 1") |>
 #'   ffm_compile()
 #' @export
@@ -1162,7 +1151,7 @@ ffm_output_options <- function(object, ...) {
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # ffm_compile() returns the reproducible FFmpeg command as a string
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_trim(start = 1, end = 5) |>
 #'   ffm_crop(width = 160, height = 120) |>
 #'   ffm_codec(video = "libx264") |>
@@ -1580,7 +1569,7 @@ n_files <- function(x) {
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' out <- tempfile(fileext = ".mp4")
-#' ffm(video, out) |>
+#' ffm_files(video, out) |>
 #'   ffm_scale(width = 160, height = 120) |>
 #'   ffm_codec(video = "libx264") |>
 #'   ffm_run(verify = list(width = 160, height = 120))

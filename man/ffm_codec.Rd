@@ -28,7 +28,7 @@ FFmpeg version.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_codec(video = "libx264", audio = "aac") |>
   ffm_compile()
 }
@@ -40,7 +40,6 @@ https://ffmpeg.org/ffmpeg-codecs.html
 available codecs, and \code{\link[=standardize_video]{standardize_video()}}, a task verb built on it.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_compile]{ffm_compile()}},
 \code{\link[=ffm_concat]{ffm_concat()}},

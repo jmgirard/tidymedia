@@ -42,6 +42,20 @@ tm_stub_executable <- function(name = "stub", env = parent.frame()) {
 
 tm_program_vocabulary <- c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
 
+test_that("the published program vocabulary is the one arg_match() enforces", {
+  # M112 split the body into `tm_set_program()`, and `arg_match()` reads ITS
+  # formal default, not the exported one -- so the Rd usage line a reader
+  # copies from and the guard that refuses them are now two separate literals.
+  # Pinned together here, because nothing else would notice them diverging: a
+  # fifth program added to only one of the two leaves the help page advertising
+  # a value the guard refuses (or the reverse), with the whole suite green.
+  expect_identical(
+    eval(formals(set_program)$program),
+    eval(formals(tm_set_program)$program)
+  )
+  expect_identical(eval(formals(tm_set_program)$program), tm_program_vocabulary)
+})
+
 test_that("set_program() writes exactly at tools::R_user_dir(\"tidymedia\", \"config\")", {
   # AC1. Equality over the WHOLE set of files written, never containment:
   # rappdirs honors R_USER_CONFIG_DIR too, so "somewhere under the redirected

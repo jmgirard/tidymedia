@@ -11,8 +11,7 @@
 set_program(
   program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"),
   location,
-  confirm = TRUE,
-  call = rlang::current_env()
+  confirm = TRUE
 )
 
 set_mediainfo(location, confirm = TRUE)
@@ -31,9 +30,6 @@ set_ffplay(location, confirm = TRUE)
 \item{confirm}{Whether to ask before writing the remembered location.
 \code{TRUE} (the default) asks and, in a non-interactive session, refuses.
 \code{FALSE} writes without asking.}
-
-\item{call}{The environment a refusal is reported from, so each wrapper is
-blamed rather than \code{set_program()} itself. Rarely set directly.}
 }
 \value{
 Invisibly, \code{TRUE} where the location was written and

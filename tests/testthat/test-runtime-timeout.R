@@ -249,7 +249,7 @@ test_that("ffm_run() aborts at the limit and states D046's disposition (AC5)", {
   out <- withr::local_tempfile(fileext = ".mp4")
   withr::local_options(tidymedia.timeout = 2)
   start <- Sys.time()
-  err <- expect_error(ffm_run(ffm(blocked, out)), class = "tidymedia_timeout")
+  err <- expect_error(ffm_run(ffm_files(blocked, out)), class = "tidymedia_timeout")
   expect_lt(as.numeric(difftime(Sys.time(), start, units = "secs")), 60)
   msg <- cli::ansi_strip(conditionMessage(err))
   expect_match(msg, "FFmpeg")
@@ -279,7 +279,7 @@ test_that("a timed-out ffm_run() removes what the killed run DID write (AC5)", {
       abort_timeout("FFmpeg", 2)
     }
   )
-  err <- expect_error(ffm_run(ffm(video, out)), class = "tidymedia_timeout")
+  err <- expect_error(ffm_run(ffm_files(video, out)), class = "tidymedia_timeout")
   # Count the invocation rather than trusting the mock ran: a mock that is
   # never reached makes every assertion below vacuous (M44).
   expect_identical(calls, 1L)
@@ -295,7 +295,7 @@ test_that("ffm_run() keeps an output the killed run never wrote, per D046", {
   writeLines("pre-existing", out)
   keep <- readLines(out)
   withr::local_options(tidymedia.timeout = 2)
-  err <- expect_error(ffm_run(ffm(blocked, out)), class = "tidymedia_timeout")
+  err <- expect_error(ffm_run(ffm_files(blocked, out)), class = "tidymedia_timeout")
   expect_match(cli::ansi_strip(conditionMessage(err)), "left as it was")
   # D046's rule is applied unchanged: FFmpeg blocked on the input and never
   # opened the output, so what was already there survives.

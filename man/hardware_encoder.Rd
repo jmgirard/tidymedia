@@ -5,11 +5,7 @@
 \alias{has_hardware_encoder}
 \title{Hardware video encoders}
 \usage{
-hardware_encoder(
-  codec = c("h264", "hevc", "av1", "prores"),
-  hardware,
-  call = rlang::current_env()
-)
+hardware_encoder(codec = c("h264", "hevc", "av1", "prores"), hardware)
 
 has_hardware_encoder(codec = c("h264", "hevc", "av1", "prores"), hardware)
 }
@@ -25,10 +21,6 @@ backend and the family (e.g. \code{"av1"} under \code{"videotoolbox"}).
 Required, with no default. Narrower than the verbs' \code{hardware}
 argument: \code{"none"} is the verbs' off position, meaning "use no
 backend", which has no meaning here, so it is refused.}
-
-\item{call}{The environment a refusal is reported from, so a verb that
-consults these internally is blamed rather than the helper. Rarely set
-directly.}
 }
 \value{
 \code{hardware_encoder()} a single encoder-name string (e.g.

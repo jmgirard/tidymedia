@@ -1,5 +1,19 @@
 # tidymedia (development version)
 
+## New features
+
+* `program_status()` reports all four programs tidymedia knows about --
+  `ffmpeg`, `ffprobe`, `ffplay` and `mediainfo` -- in one table: where each one
+  resolved to and what version it reported, with `NA` in both columns for a
+  program that could not be found. It warns about nothing, so checking a fresh
+  setup is one call rather than four calls and a pile of messages.
+
+* `unset_program()` forgets a location `set_program()` remembered, so
+  `find_program()` answers as it did before that location was set. It clears
+  both places a location can live: the current configuration file and one
+  written by a version of tidymedia before 0.2.0. Called for a program with
+  nothing remembered, it warns and returns `FALSE` rather than failing.
+
 ## Breaking changes
 
 * `set_program()` and `hardware_encoder()` no longer take a `call` argument,

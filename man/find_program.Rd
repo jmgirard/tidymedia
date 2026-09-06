@@ -47,6 +47,8 @@ location, and \code{\link[=install_on_win]{install_on_win()}} to download FFmpeg
 
 Other program management functions:
 \code{\link[=install_on_win]{install_on_win()}},
-\code{\link[=set_program]{set_program()}}
+\code{\link[=program_status]{program_status()}},
+\code{\link[=set_program]{set_program()}},
+\code{\link[=unset_program]{unset_program()}}
 }
 \concept{program management functions}

@@ -66,6 +66,8 @@ set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe", confirm = FALSE)
 
 Other program management functions:
 \code{\link[=find_program]{find_program()}},
-\code{\link[=install_on_win]{install_on_win()}}
+\code{\link[=install_on_win]{install_on_win()}},
+\code{\link[=program_status]{program_status()}},
+\code{\link[=unset_program]{unset_program()}}
 }
 \concept{program management functions}

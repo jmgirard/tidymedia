@@ -77,14 +77,14 @@ Teaching either function in a vignette → M114.
       `program_status()` and `unset_program()` pair with the family's existing
       `find_program()`/`set_program()`, and `get_*` is reserved for per-file
       metadata scalars. (RB tripwire: irreversible-api)
-- [ ] T2: Build `program_status()` over the internal `tool_versions()` shape
+- [x] T2: Build `program_status()` over the internal `tool_versions()` shape
       (`R/ffm_manifest.R:121`), widened from two programs to four; a program
       with no version flag answer contributes `NA`, not an abort.
-- [ ] T3: Tests for AC1 and AC2, including the both-hidden state — emptied
+- [x] T3: Tests for AC1 and AC2, including the both-hidden state — emptied
       `PATH` plus a redirected `R_USER_CONFIG_DIR` — and one run per program.
-- [ ] T4: `unset_program()`: remove the current-dir file and any legacy file,
+- [x] T4: `unset_program()`: remove the current-dir file and any legacy file,
       report a classed refusal when neither exists.
-- [ ] T5: Tests for AC3 and AC4 across the three states and both config
+- [x] T5: Tests for AC3 and AC4 across the three states and both config
       locations. The M097 lesson holds: one `R_USER_CONFIG_DIR` collapses the
       two directories together on Windows, so redirect the legacy library by a
       recording mock rather than by the envvar.
@@ -97,6 +97,8 @@ Teaching either function in a vignette → M114.
 - 2026-09-05: criteria audit ran in FULL mode (user-facing tier), fresh-context [O] reader. Returned three findings against this milestone's draft: the absent-program evidence used an emptied `PATH`, which `find_program()`'s config and legacy fallbacks defeat; the forget criterion compared against a pre-`set_program()` state that need not exist and named one config file where two can hold a location; and the criteria said "a new exported function" without naming it, so nothing bound them to one pair. All three fixed before writing; none needed a gate question.
 - 2026-09-05: plan gate chose one generic `unset_program()` over four `unset_*()` wrappers mirroring the `set_*()` exports, because the wrappers are additive later and four exports is the larger trade against GP1. Falsified by a report that the asymmetry with `set_ffmpeg()` and its siblings is what a caller trips on.
 - 2026-09-05: plan gate chose widening the internal `tool_versions()` (`R/ffm_manifest.R:121`) over a fresh probe, because it already spawns `-version` for two of the four programs and is the shape the manifest records. Falsified by a program whose version flag that helper's parsing cannot read.
+- 2026-09-05: T2/T4 — `program_status()` and `unset_program()` written in `R/program_management.R`; `tool_versions()` widened with a `programs`/`locations` pair so the manifest's own two-program call is unchanged, and `parse_version_line()` gained MediaInfo's `--version` shape, which names no "version" token.
+- 2026-09-05: T3/T5 — tests in `tests/testthat/test-program-status-and-unset.R`; the three fixtures the family shares moved from `test-program-management.R` to `helper-program-config.R` so a second test file can see them.
 - 2026-09-05: implement question gate settled four choices — both names as planned, the three-column shape, a warning rather than an abort for nothing-to-forget, and no `confirm` argument. Recorded below; T1 closed by the naming half.
 
 ## Decisions

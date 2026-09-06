@@ -118,16 +118,17 @@
 * A remembered program location that cannot be read no longer stops the call. A
   configuration file holding nothing, or holding more than one line, made
   `find_ffmpeg()` -- and every call above it -- fail with an R error naming
-  neither the program nor the file. It now warns with the catchable class
-  `tidymedia_location_unreadable`, carrying the program and the file, and
-  returns `NULL`. `unset_program()` clears the file; `set_program()` replaces
-  it.
+  neither the program nor the file. It now warns with a condition you can
+  catch by class -- `tidymedia_location_unreadable`, carrying the program and
+  the file -- and returns `NULL`. `unset_program()` clears the file;
+  `set_program()` replaces it.
 
 * The warning for a remembered location whose binary has gone now offers
   `unset_program()` beside `set_program()`, since forgetting the location is
   the other repair, and on Windows it offers `install_on_win()` on the same
-  terms the not-found warning does. It carries the catchable class
-  `tidymedia_location_gone` with the program and the location.
+  terms the not-found warning does. It carries the class
+  `tidymedia_location_gone`, with the program and the location, so it can be
+  caught.
 
 * `program_status()` no longer swallows those two warnings. A program that was
   never configured and is not installed still gets `NA` in both columns and

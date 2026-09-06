@@ -160,18 +160,20 @@ test_that("tool_versions() refuses a locations list of the wrong length", {
   }
 })
 
-test_that("the length refusal blames the caller it was given", {
+test_that("the length refusal is reported from the frame the caller named", {
   # `call` is already threaded for the timeout refusal above it; the new abort
   # reports from the same frame rather than from tool_versions(), which no
-  # caller types.
-  condition <- tryCatch(
-    program_status_stub <- (function() {
-      tool_versions(c("ffmpeg", "ffprobe"), list("/a"),
-                    call = rlang::current_env())
-    })(),
-    error = function(e) e
-  )
+  # caller types. A named wrapper stands in for the real caller, so the
+  # condition's call is something a reader could have typed.
+  tm_caller_stub <- function() {
+    tool_versions(c("ffmpeg", "ffprobe"), list("/a"),
+                  call = rlang::current_env())
+  }
+
+  condition <- tryCatch(tm_caller_stub(), error = function(e) e)
+
   expect_s3_class(condition, "tidymedia_locations_mismatch")
+  expect_identical(blamed_verb(condition), "tm_caller_stub")
 })
 
 test_that("the default locations path is untouched by the length check", {

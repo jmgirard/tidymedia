@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M116: A broken or stale remembered location is reported, not fatal or silent
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -123,7 +123,7 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
       `tests/testthat/test-timeout-silence.R:660-680` models.
 - [x] T7: `tool_versions()` length check below the `locations = NULL` default at
       `R/ffm_manifest.R:134`, with its three cases.
-- [ ] T8: `NEWS.md` entry, `devtools::document()`, `devtools::check()`.
+- [x] T8: `NEWS.md` entry, `devtools::document()`, `devtools::check()`.
 
 ## Work log
 
@@ -142,6 +142,9 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: T6 — the timeout warning names programs from `names(probes)` under a separate local, and its second bullet says what `NA` means without naming a caller; two M69-era tests that pinned the display-label spelling updated, and a mutant carrying the retired manifest sentence fails the new assertions.
 - 2026-09-06: T7 — `tool_versions()` aborts `tidymedia_locations_mismatch` (`tm_n_programs`, `tm_n_locations`) on a non-`NULL` `locations` of the wrong length, above the resolution of the `NULL` default.
 - 2026-09-06: minor amendment — `?refresh_ffmpeg_capabilities` said there were two ways to discard the memo; with `unset_program()` it is three, so the list was corrected alongside T4's change.
+- 2026-09-06: T8 — `devtools::document()` no diff; `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes (17m52s); `devtools::test()` 0 failures, 13,155 passing, 18 skipped, the 10 warnings all the pre-existing dropped-track diagnostic in the audio-stream suites. NEWS entries added under Configuration; the first draft failed the spelling leg on "catchable", reworded rather than added to the wordlist.
+- 2026-09-06: T7's blame test strengthened after review of the diff — it asserted only the class, so it was rewritten around a named wrapper and now asserts the condition's call names that wrapper.
+- 2026-09-06: status → review; all eight tasks checked.
 
 ## Decisions
 

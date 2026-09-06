@@ -78,7 +78,7 @@ candidate row. No behaviour change to any function this vignette teaches.
       instrument that already reports the current state.
 - [x] T5: Build under a reduced `PATH` that keeps pandoc; record the three
       `Sys.which()` answers from inside a setup chunk.
-- [ ] T6: `_pkgdown.yml` row, `workflow.Rmd` cross-link, `check_pkgdown()`,
+- [x] T6: `_pkgdown.yml` row, `workflow.Rmd` cross-link, `check_pkgdown()`,
       `devtools::check()`.
 
 ## Work log
@@ -99,6 +99,10 @@ candidate row. No behaviour change to any function this vignette teaches.
 - 2026-09-06: sweep proven able to fail — an unguarded `probe_all()` chunk planted in `verification.Rmd` was reported as the single UNGUARDED row, exit 1; reverted.
 
 - 2026-09-06: T5 build ran through `tools/build_vignettes_without_binaries.R`, which puts a scratch directory holding a symlink to pandoc alone ahead of R's own bin and `/usr/bin:/bin` — necessary because pandoc and ffmpeg share `/opt/homebrew/bin` on this machine, so dropping the directory would drop pandoc and fail the build for an unrelated reason. All five vignettes rebuilt; `verification.Rmd`'s setup chunk reported from inside the build `ffmpeg=[] ffprobe=[] mediainfo=[]`. `devtools::build_vignettes()` added `^doc$` and `^Meta$` to `.Rbuildignore`, kept.
+
+- 2026-09-06: T6 added the `verification` `articles:` row, the `workflow.Rmd` cross-link (a paragraph in its Reproducibility section plus a Where-to-next entry) and the NEWS Documentation entry. `pkgdown::check_pkgdown()`: "No problems found". `tools/pkgdown_duplicate_topics.R`: 80 contents entries, 81 man topics, none unmatched, none repeated.
+- 2026-09-06: `vignettes/audio.m4a` — a build artifact `tidymedia.Rmd`'s evaluated chunk writes into `vignettes/` — was swept into the T1-T3 commit by `git add -A`. Untracked again here and `.gitignore` given entries for vignette build outputs. The new vignette knits into `tempdir()` and writes nothing beside the sources; the older three still do.
+- 2026-09-06: prose corrected against the source before the final check: the manifest bullet list had called `input`/`output` things the command cannot carry, which the command does carry; the tolerance and structural-check claims were re-derived; the 42.0 s figure now carries its measurement date; and a sentence was added recording that `manifest =`, `checksums =` and `verify =` reach the `*_batch()` verbs through `...`, verified by calling `extract_audio_batch()` with each.
 
 ## Decisions
 

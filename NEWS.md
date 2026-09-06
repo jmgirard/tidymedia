@@ -1,5 +1,19 @@
 # tidymedia (development version)
 
+## Documentation
+
+* A new vignette, "Checking results and bounding runs"
+  (`vignette("verification")`), covers three things that had reference pages but
+  no narrative: checking a processed file against what you asked for with
+  `verify_media()` and the batch runner's `verify =` argument; recording how a
+  run was actually made with `ffm_batch(manifest = TRUE)`, `checksums = TRUE`
+  and `ffm_manifest()`; and bounding a run that hangs with
+  `options(tidymedia.timeout = )`, `with_timeout()` and `local_timeout()`. It
+  states what the wall-clock limit really bounds — how long R waits, which a
+  program ignoring the first two signals outlives by up to 40 seconds — rather
+  than promising the limit. The workflow vignette's reproducibility section now
+  points at it.
+
 ## New features
 
 * `program_status()` reports all four programs tidymedia knows about --

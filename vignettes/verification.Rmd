@@ -77,8 +77,8 @@ Three things are worth knowing before you rely on it.
 
 **The checks are structural, not perceptual.** They read FFprobe's metadata —
 duration, dimensions, codec names, sample rate — and say nothing about whether
-the picture or the sound looks and sounds right. A re-encode that mangles the
-image passes every check above.
+the picture or the sound looks and sounds right. An encode that came out at the
+right size in the right codec and looks terrible passes every check above.
 
 **Numeric checks carry a tolerance; string checks do not.** A numeric
 expectation passes when `abs(actual - expected) <= tolerance`, and `tolerance`
@@ -137,7 +137,8 @@ A compiled command is a complete recipe, and `vignette("workflow")` builds its
 reproducibility story on exactly that: capture the command each verb returns —
 or the `command` column the batch runner adds — and you can re-run any step. The
 command is what you *asked* for, though, and it is silent about the run itself.
-Two FFmpeg builds accept the same command and can write different bytes.
+Two FFmpeg versions accept the same command and need not produce the same file,
+which is why the manifest below records the version that ran.
 
 `ffm_batch(manifest = TRUE)` records the rest. The manifest rides along on the
 result; `ffm_manifest()` reads it out.
@@ -156,8 +157,8 @@ res <- ffm_batch(
 ffm_manifest(res)
 ```
 
-One row per job, with the command alongside four things the command cannot
-carry:
+One row per job. `command`, `input` and `output` restate the job; the other
+columns are what the command cannot carry:
 
 - `ffmpeg_version` and `ffprobe_version` — the versions that actually ran, read
   from the binaries at run time rather than assumed. A version that could not be
@@ -165,8 +166,9 @@ carry:
 - `timestamp` — when the run happened, with its UTC offset.
 - `output_size` — the size in bytes of the file that came out, so a truncated or
   empty result is visible in the record itself.
-- `input` and `output` — the paths as the job resolved them, with multiple inputs
-  (a stacked or concatenated job) joined by `;` in one cell.
+
+Multiple inputs — a stacked or concatenated job — are joined by `;` in the one
+`input` cell.
 
 Ask for `checksums = TRUE` and each row also carries `input_md5` and
 `output_md5`, which is what lets you say later that a file on disk is the file
@@ -189,6 +191,10 @@ ffm_manifest(res)
 
 Checksums are off by default because they read every input and output in full,
 which is real time on a large study.
+
+`manifest =` and `checksums =` reach the `*_batch()` verbs too, so a pipeline
+built from `extract_audio_batch()` and its siblings records provenance the same
+way without dropping down to `ffm_batch()`.
 
 Give `ffm_manifest()` a `path` and it writes the manifest as CSV as well as
 returning it, invisibly — one file to commit next to the processed data:
@@ -263,8 +269,8 @@ The limit bounds **how long R waits**, not how long the program runs, and the
 two are not the same number. R escalates: it interrupts the program at the
 limit, asks it to terminate 20 seconds later, and kills it 20 seconds after
 that. A program that ignores the first two signals is therefore waited for up to
-**40 seconds longer than the limit you set** — measured here at 42.0 s under a
-2 s limit, on Linux and macOS alike. Set a limit meaning "give up somewhere
+**40 seconds longer than the limit you set** — measured on 2026-08-28 at 42.0 s
+under a 2 s limit, on Linux and macOS alike. Set a limit meaning "give up somewhere
 around here", not "return at exactly this second", and leave that headroom in
 anything downstream that depends on the call returning.
 

@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M116: A broken or stale remembered location is reported, not fatal or silent
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -11,7 +11,7 @@
 - **Surface tier:** user-facing — changes what the four `find_*()` exports,
   `program_status()`, `unset_program()` and the batch manifest's timeout
   warning do and say.
-- **Branch/PR:** —
+- **Branch/PR:** `m116-program-status-config-repair`
 
 ## Goal
 
@@ -133,6 +133,7 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: plan gate chose surfacing the stale-location warning from `program_status()` over a fourth column reporting the remembered location, because the column changes the shape every reader of that table sees for a state that is rare and repairable; falsified by a caller that must branch on staleness programmatically rather than be told about it.
 - 2026-09-06: plan gate chose dropping the memo on any removal that took over dropping it on every exit, because a total failure removed nothing and the memo still describes the binary lookups keep answering with; falsified by a partial-removal form where "took" is not decidable from the filesystem.
 - 2026-09-06: plan gate chose classing only the two warnings this milestone changes over classing `find_program()`'s plain not-found warning too, because that name is the naming pass's call; falsified by the two new classes proving unusable without the third.
+- 2026-09-06: implement question gate named the three new condition classes, all three recommendations taken: `tidymedia_location_unreadable` (`tm_program`, `tm_file`) for a config file that is not one line, `tidymedia_location_gone` (`tm_program`, `tm_location`) for a remembered location whose binary is absent, and `tidymedia_locations_mismatch` for `tool_versions()`'s length refusal.
 
 ## Decisions
 

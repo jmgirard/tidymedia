@@ -426,9 +426,15 @@ tm_blame_head <- function(name, args, limit) {
 # across all five `tm_timeout_bad_forms()` values at every member.
 #
 # Recorded because AC1's claim is a CHANGE, and the repo held no referent for
-# what the blame was before. Six members already named themselves; the other 47
+# what the blame was before. Six members already named themselves; the other 46
 # named a function the caller never typed, which is the defect. `tm_blame_head()`
 # regenerates any cell of this table.
+#
+# The measured BLAME of each cell is frozen; the table's membership is not, and
+# tracks the recorded domain -- M112 removed `mediainfo_summary` from it, which
+# is why the count above reads 46 rather than the 47 measured at ae5ff1c. The
+# frozen merge-base census that is never rewritten is
+# `tm_corrupt_dropped_master()`, not this.
 tm_timeout_blame_master <- function() {
   ffm_run_class <- c(
     "anonymize_video", "compare_videos", "concatenate_videos", "convert_audio",
@@ -738,7 +744,12 @@ tm_timeout_valid_baseline <- function() {
   # cell is byte-identical to `mediainfo_template`'s, which is still in the
   # table, so dropping it removes a duplicate reading rather than a measurement.
   # Asserted, not assumed: an unequal pair means the blob measured two
-  # different things and this drop would be hiding one of them.
+  # different things and this drop would be hiding one of them. Presence is
+  # asserted first, exactly as the `has_nvenc` remap above does it -- once the
+  # blob is re-recorded without the cell, this drop is dead code and must go,
+  # and the maintainer should be told that rather than shown an opaque
+  # `identical(NULL, <cell>) is not TRUE`.
+  stopifnot("mediainfo_summary" %in% names(table))
   stopifnot(identical(table[["mediainfo_summary"]],
                       table[["mediainfo_template"]]))
   table[["mediainfo_summary"]] <- NULL

@@ -221,3 +221,143 @@ Universal cairn-file checks: `cairn_validate.py` exits 0, all checks passed,
 change on this branch (the file is untouched by the diff), so `cairn_impact.py
 --changed` is not owed.
 
+### Independent fresh-context review
+
+Surface tier is user-facing and the diff touches R sources and tests, so the
+full three-lens fan-out ran, each lens fresh-context and on its own evidence
+base.
+
+**[S] prior-PR-comments.** First run was discarded: it read this milestone
+file's in-progress Review section, treated it as prior-review evidence, and
+skipped the `gh` probe on that reasoning — a circular base, since that section
+is this review's own output. Re-run with the file excluded and the probe
+mandatory: the probe `gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1`
+returned `[]` — the repo has no non-bot inline review comments at all, so the
+PR-thread walk is skipped and the archived `## Review` sections plus
+`cairn/LESSONS.md` are the whole prior-review base. No findings: the diff
+applies the M100/M110 `call`-threading lesson (no default on the internal,
+`current_env()` at the wrapper, checkers threaded) rather than regressing it,
+and the domain edits follow M096's domain-forcing lesson. One claim in its
+report does not survive checking against the implementation — that the new
+sweep test "includes a positive-control probe before asserting the negative";
+[O]3 below shows that control never runs the sweep, and [O]3 is what this
+review acted on.
+
+**[S] blame-history.** No findings. It read `git log`/`git blame` on the
+modified lines, D014/D042/D049/D074-D087 and the M096/M100/M110 archives, and
+reports that D042's carve-out licenses threading `call` through an internal
+signature verbatim; that D087's supersession of M110 is honest, because M110's
+own text flagged the third option as unconsidered and named a second seam as
+the trigger for a D-entry; that neither removed alias has any recorded design
+rationale to undo; and that `tm_corrupt_dropped_master()`, the frozen
+`4063faa` merge-base census, is untouched by the diff — the edited helpers are
+domain-membership lists, and the `.rds` cell is dropped on read behind an
+equality assertion rather than re-recorded.
+
+**[O] diff-bug.** Nine findings, ranked; the reviewer separately confirmed
+clean: no leftover `ffm(`/`mediainfo_summary` call sites outside the preserved
+census strings, no internal caller still routing through the exported
+`hardware_encoder()`, unchanged `error_arg`/partial-matching messages, a
+missing `location` still blamed on `set_program()`, and the AC1 sweep
+unpolluted by `load_all(export_all = TRUE)`.
+
+**[O]'s findings, as reported.** Verified against the implementation before
+triage; the verdict column is this review's, the text the reviewer's.
+
+- **[O]1 `cairn/DESIGN.md:96-105`** — "the Known-issues bullet now states
+  something the branch has made false, and DESIGN is untouched by the diff."
+  It says a wrong-form `codec` or `hardware` at `has_hardware_encoder()` "is
+  refused by the `arg_match()` inside `hardware_encoder()`, the mapper it
+  consults", and opens with "Twelve arguments are refused below the verb the
+  caller typed". CONFIRMED: AC2's own table measures both refusals naming
+  `has_hardware_encoder()` on this branch, so the clause is false and the
+  count is ten, not twelve.
+- **[O]2 `R/program_management.R:213` vs `:236`** — "the exported `program`
+  default and the vocabulary `arg_match()` enforces are now two independent
+  literals, and nothing pins them together." CONFIRMED by reading both:
+  `set_program()` publishes `c("ffmpeg", "ffprobe", "ffplay", "mediainfo")`
+  and `tm_set_program()` carries its own copy, which is the one `arg_match()`
+  reads. Adding a fifth program to one and not the other leaves the help page
+  and the guard disagreeing with a green suite. The hardware seam avoided this
+  by passing the tables as explicit `values` and pinning the exported literal
+  in `test-hardware-backends.R`.
+- **[O]3 `tests/testthat/test-exported-call-formal.R:31-38`** — "the 'positive
+  control' never runs the sweep, so the `has_call` column has no test at all."
+  CONFIRMED: the control asserts `"call" %in% names(formals(...))` twice
+  without ever calling `tm_export_formals()`, so breaking the helper's
+  predicate to `"call" %in% names(x)` (all FALSE) leaves all three tests green.
+  AC1 itself still holds — this review's before/after run gave the predicate a
+  live control by returning 2 hits at `master` and 0 at HEAD — but the
+  committed instrument does not carry one.
+- **[O]4 `tests/testthat/helper-timeout-sweep.R:428-430`** — "stale count in a
+  docstring the diff edited": "Six members already named themselves; the other
+  47" should read 46. CONFIRMED by measurement: the recorded domain is 52, six
+  self-naming, forty-six not.
+- **[O]5 `R/ffmpeg.R:3047, 3216, 3272, 3300, 3324, 3371`** — "six comments
+  still name `hardware_encoder()` as the site of the family-not-in-table
+  refusal", which now lives in `tm_hardware_encoder()`. CONFIRMED; the blamed
+  frame is still the verb, so nothing user-visible is wrong.
+- **[O]6 `R/ffmpeg.R:3113-3118`** — the "Literal defaults, not
+  `hardware_codec_families()`/`hardware_backends()`" comment "is orphaned by
+  the move": it now sits above a bare delegation while the body it moved to
+  passes both tables as explicit `values`. CONFIRMED.
+- **[O]7 `cairn/milestones/M112-unpublish-the-call-argument.md:63`** — "AC5 is
+  unchecked and has no Review paragraph." True when the reviewer read the
+  file; addressed in this same step-3 pass, which is where AC5's evidence and
+  tick belong.
+- **[O]8 `tests/testthat/helper-timeout-sweep.R:745-747`** — "the new baseline
+  remap lacks the presence assertion its sibling carries", so a re-recorded
+  blob fails with an opaque `identical(...) is not TRUE` rather than telling
+  the maintainer the drop is dead code. CONFIRMED against the `has_nvenc`
+  block six lines above, which does assert presence.
+- **[O]9 Minor** — `inst/WORDLIST` gaining `testthat's` is an unrelated
+  carried fix; `R/mediainfo.R:113-115` leaves a raggedly rewrapped paragraph;
+  `test-blame-frame-table.R:11-70` defines its sweep functions in the test
+  file while the AC1 sweep went into a `helper-` file.
+
+**Return floor.** None of the nine demonstrates an acceptance criterion
+failing: AC1-AC5 are each measured true on this branch today. [O]3 weakens
+AC1's committed instrument for the future without falsifying AC1 now, and
+[O]1 is a stale architecture record rather than a defect in what the package
+does. So no finding returns the milestone; each takes ordinary triage.
+
+**Triage and disposition.** Put to the maintainer at the gate; the chosen
+disposition was fix 1-6 and 8 on the branch, reject 9.
+
+- **[O]1 — FIXED.** `cairn/DESIGN.md`'s Known-issues bullet now reads ten
+  arguments, drops the false clause, and records that
+  `has_hardware_encoder()`'s `codec` and `hardware` were there until D087 and
+  what moved them.
+- **[O]2 — FIXED.** `tests/testthat/test-program-management.R` gains a test
+  pinning `formals(set_program)$program` to `formals(tm_set_program)$program`
+  and both to `tm_program_vocabulary`, so the published spelling and the
+  vocabulary `arg_match()` enforces cannot drift apart silently. This is the
+  hardware seam's pattern applied to the program seam.
+- **[O]3 — FIXED.** The control in `test-exported-call-formal.R` now runs
+  `tm_export_formals("rlang")` and asserts `abort` comes back with
+  `has_call` TRUE and `call` in its formals string, plus that the column is
+  not uniformly TRUE. Shown to bite: with the helper's predicate mutated to
+  `"call" %in% names(x)` — the defect [O] named — the file goes FAIL 1 / PASS
+  8, where before the fix it stayed FAIL 0 / PASS 9.
+- **[O]4 — FIXED.** 47 → 46, with a paragraph saying the table's membership
+  tracks the recorded domain while each cell's measured blame is frozen, and
+  naming `tm_corrupt_dropped_master()` as the census that is never rewritten.
+- **[O]5 — FIXED.** All six comments now name `tm_hardware_encoder()`, where
+  the abort lives.
+- **[O]6 — FIXED.** The comment says the `codec` literal is a published
+  spelling pinned to `hardware_codec_families()` by
+  `test-hardware-backends.R`, and that the body it delegates to is handed both
+  tables as explicit `values` — checked against both files.
+- **[O]7 — ADDRESSED** in this same pass; AC5's evidence and tick are above.
+- **[O]8 — FIXED.** `stopifnot("mediainfo_summary" %in% names(table))` added
+  ahead of the equality assertion, matching the `has_nvenc` remap six lines
+  above, with the dead-code note.
+- **[O]9 — REJECTED.** The `inst/WORDLIST` line is an out-of-subject carried
+  fix already disclosed in the work log and has no runtime surface; the
+  rewrapped paragraph and the test-file siting are style points a formatter or
+  a linter's remit, which the triage taxonomy rejects.
+
+Re-verified after the fixes: `devtools::document()` no diff,
+`devtools::check()` `Status: OK` 0/0/0 with the suite running inside it
+(`testthat.R [295s/360s]`).
+

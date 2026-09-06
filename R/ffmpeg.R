@@ -3044,7 +3044,8 @@ hardware_backends <- function() {
 # hardware_codec_families(): every family codec_family() can infer, which is the
 # mapper's `codec` vocabulary. Wider than any one backend's row on purpose: a
 # family this list omits is refused as an unknown family, naming no backend,
-# while a family a BACKEND omits is refused by hardware_encoder() naming both.
+# while a family a BACKEND omits is refused by the mapper's body,
+# tm_hardware_encoder(), naming both.
 hardware_codec_families <- function() {
   c("h264", "hevc", "av1", "prores")
 }
@@ -3111,11 +3112,13 @@ hardware_codec_families <- function() {
 #' @export
 hardware_encoder <- function(codec = c("h264", "hevc", "av1", "prores"),
                              hardware) {
-  # Literal defaults, not hardware_codec_families()/hardware_backends(): the Rd
+  # The `codec` default stays a LITERAL, not hardware_codec_families(): the Rd
   # usage line publishes a formal's default verbatim, and a reader cannot
   # evaluate an unexported call there. The same reason the 16 verbs spell their
   # `hardware` vocabulary out (RR07 Q2); the sweep in test-hardware-backends.R
-  # asserts both literals against the tables they mirror.
+  # pins this literal to the table it mirrors. The body below is where
+  # arg_match() runs, and it is handed both tables as explicit `values`, so the
+  # literal here is a published spelling rather than a second vocabulary (M112).
   tm_hardware_encoder(codec, hardware, call = rlang::current_env())
 }
 
@@ -3213,7 +3216,7 @@ hardware_encoder_available <- function(codec, hardware, call) {
 # can turn `hardware` on while keeping a familiar video_codec (e.g. "libx264"
 # -> "h264"). Backend-free by design (D079): "libx264" is the h264 family under
 # every backend, and WHICH backend has an encoder for a family is the table's
-# question, refused in hardware_encoder(). So this abort fires only when no
+# question, refused in tm_hardware_encoder(). So this abort fires only when no
 # family matches at all, and it names no backend -- a codec this cannot place
 # is not a backend's fault.
 codec_family <- function(video_codec, call = rlang::caller_env()) {
@@ -3269,7 +3272,7 @@ resolve_hw_encoder <- function(video_codec,
   }
   # hardware_encoder_available() goes through the mapper, so a (family, backend)
   # pair the table lacks is refused here rather than falling back: that is a
-  # wrong argument, not an absent encoder (see hardware_encoder()).
+  # wrong argument, not an absent encoder (see tm_hardware_encoder()).
   if (fallback && !hardware_encoder_available(family, hardware, call = call)) {
     cli::cli_inform(c(
       "!" = if (is.null(video_codec)) {
@@ -3297,7 +3300,7 @@ resolve_hw_encoder <- function(video_codec,
   # h264_nvenc returns "h264_nvenc" through this line). A pair the table omits
   # never gets this far on either arm, but by different routes: on
   # `fallback = TRUE` the predicate above goes through the mapper and
-  # hardware_encoder() refuses it there, while on `fallback = FALSE` the `&&`
+  # tm_hardware_encoder() refuses it there, while on `fallback = FALSE` the `&&`
   # short-circuits and the predicate never runs -- there the refusal comes from
   # check_hardware_available()'s own table sweep, one line below (M107). The
   # comment here used to claim `fallback = TRUE` always returned above; it
@@ -3321,7 +3324,7 @@ resolve_hw_encoder <- function(video_codec,
 #
 # The `fallback = TRUE` early return sits BELOW the family sweep, not above it
 # (M107). Above it, the sweep's two refusals -- codec_family()'s "no family maps
-# to that codec" and hardware_encoder()'s "this backend has no encoder for that
+# to that codec" and tm_hardware_encoder()'s "this backend has no encoder for that
 # family" -- were left to resolve_hw_encoder() while the pipeline was built,
 # which in a _batch verb is inside purrr::pmap(): the very frame this front-door
 # call exists to keep out of the caller's error (D035). Neither refusal is about
@@ -3368,7 +3371,7 @@ check_hardware_available <- function(video_codec, hardware = "none",
     }
   }, character(1)))
   # The (family, backend) table lookup, on BOTH fallback arms. The return value
-  # is discarded: what is wanted is the refusal hardware_encoder() raises for a
+  # is discarded: what is wanted is the refusal tm_hardware_encoder() raises for a
   # pair the table omits, sited here so it names the verb. Pure and free of the
   # build, so nothing about the machine is consulted on the fallback arm.
   for (family in families) tm_hardware_encoder(family, hardware, call = call)

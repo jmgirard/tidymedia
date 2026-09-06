@@ -17,12 +17,25 @@ test_that("the sweep reads a non-empty domain it did not derive", {
 })
 
 test_that("the sweep's predicate goes red on a formal named `call`", {
-  # The positive control, from a function the package really has: a formal
-  # named `call` is detected. A green sweep below means the two exports lost
-  # theirs, not that the detector stopped looking.
-  probe <- names(formals(tidymedia:::hardware_encoder_available))
-  expect_true("call" %in% probe)
-  expect_true("call" %in% names(formals(function(x, call) NULL)))
+  # The positive control has to run THE SWEEP, not a hand-rolled restatement of
+  # what it does: a control that only checks `"call" %in% names(formals(f))`
+  # leaves `tm_export_formals()`'s own `has_call` column untested, so breaking
+  # the predicate to something uniformly FALSE would keep every test here
+  # green. So point the sweep at a namespace known to export a function with a
+  # `call` formal. rlang is an Imports dependency, and `rlang::abort()` has
+  # taken `call` since 1.0.0.
+  control <- tm_export_formals("rlang")
+  expect_gt(nrow(control), 50)
+  expect_true("abort" %in% control$export)
+  expect_true(control$has_call[control$export == "abort"])
+  expect_true("call" %in% strsplit(
+    control$formals[control$export == "abort"], ", ", fixed = TRUE
+  )[[1]])
+
+  # And the column is not uniformly TRUE either -- a predicate stuck the other
+  # way would pass everything above.
+  expect_false(all(control$has_call))
+  expect_false(control$has_call[control$export == "is_missing"])
 })
 
 test_that("no exported function has a formal named `call`", {

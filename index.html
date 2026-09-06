@@ -80,6 +80,7 @@
 <ol style="list-style-type: decimal">
 <li>Enter this code into your terminal:<br><code>sudo apt-get install mediainfo</code>
 </li>
+<li>Check that R can find it:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>mediainfo</code> row should show a location and a version. If its location is <code>NA</code>, tidymedia cannot see the program: give it the path yourself with <code>tidymedia::set_mediainfo("/path/to/mediainfo")</code>.</li>
 </ol>
 <p><strong>Windows</strong></p>
 <ol style="list-style-type: decimal">
@@ -88,12 +89,15 @@
 <li>Extract (or copy) the contents of this .zip file to a folder on your computer such as:<br><code>C:/Program Files/MediaInfo</code>
 </li>
 <li>Run the following code in R (changing the path to match Step 2):<br><code>tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")</code><br> This asks you to confirm the path before it remembers it. In a script with no one to ask, add <code>confirm = FALSE</code>.</li>
+<li>Check that R can find it:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>mediainfo</code> row should show a location and a version. If its location is <code>NA</code>, the path in Step 3 is not where <code>mediainfo.exe</code> actually landed: look in the folder from Step 2 and run <code><a href="reference/set_program.html">tidymedia::set_mediainfo()</a></code> again with the path you find there.</li>
 </ol>
 <p><strong>Mac</strong></p>
 <ol style="list-style-type: decimal">
 <li>Download the appropriate CLI .dmg file from:<br><a href="https://mediaarea.net/en/MediaInfo/Download/Mac_OS" class="external-link uri">https://mediaarea.net/en/MediaInfo/Download/Mac_OS</a>
 </li>
 <li>Open the .dmg file and drag the program icon to the Applications folder</li>
+<li>The Applications folder is not on the <code>PATH</code>, so tell tidymedia where the program landed (changing the path to match Step 2):<br><code>tidymedia::set_mediainfo("/Applications/mediainfo")</code><br> This asks you to confirm the path before it remembers it, and it is remembered across R sessions.</li>
+<li>Check that R can find it:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>mediainfo</code> row should show a location and a version. If its location is <code>NA</code>, the path in Step 3 is not where the program actually landed: find it in the Applications folder and run <code><a href="reference/set_program.html">tidymedia::set_mediainfo()</a></code> again with that path.</li>
 </ol>
 </div>
 <div class="section level4">
@@ -104,11 +108,13 @@
 <ol style="list-style-type: decimal">
 <li>Enter this code into your terminal:<br><code>sudo apt-get install ffmpeg</code>
 </li>
+<li>Check that R can find it:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>ffmpeg</code> and <code>ffprobe</code> rows should show locations and versions. If either is <code>NA</code>, tidymedia cannot see that program: give it the path yourself with <code>tidymedia::set_ffmpeg("/path/to/ffmpeg")</code> or <code>tidymedia::set_ffprobe("/path/to/ffprobe")</code>. The two are looked up separately, so a row that is still <code>NA</code> needs its own call.</li>
 </ol>
 <p><strong>Windows</strong></p>
 <ol style="list-style-type: decimal">
 <li>Install the <code>tidymedia</code> package in R.</li>
 <li>Run <code><a href="reference/install_on_win.html">tidymedia::install_on_win()</a></code> in R and confirm the prompt, which names the digest and the archive it will download, the directory it will unpack into, and the program locations it may overwrite. The archive is checked against the SHA-256 digest gyan.dev publishes beside it before anything is unpacked, and no program location is remembered unless the extraction produced that program. To install from a different build, pass its address and its digest: <code>install_on_win(download_url = ..., archive_checksum = ...)</code>.</li>
+<li>Check that R can find it:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>ffmpeg</code> and <code>ffprobe</code> rows should show locations and versions. If either is <code>NA</code>, tidymedia cannot see that program: read the message <code><a href="reference/install_on_win.html">install_on_win()</a></code> printed, or point tidymedia at a build you already have with <code>tidymedia::set_ffmpeg("C:/path/to/ffmpeg.exe")</code> or <code>tidymedia::set_ffprobe("C:/path/to/ffprobe.exe")</code>. The two are looked up separately, so a row that is still <code>NA</code> needs its own call.</li>
 </ol>
 <p><strong>macOS Homebrew Install</strong></p>
 <ol style="list-style-type: decimal">
@@ -117,13 +123,16 @@
 </li>
 <li>Enter this code into your terminal:<br><code>brew install ffmpeg</code>
 </li>
+<li>Check that R can find it:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>ffmpeg</code> and <code>ffprobe</code> rows should show locations and versions. If either is <code>NA</code>, tidymedia cannot see that program: run <code>brew --prefix ffmpeg</code> in the terminal and give tidymedia the <code>bin/ffmpeg</code> and <code>bin/ffprobe</code> under what it prints, with <code>tidymedia::set_ffmpeg("/path/to/ffmpeg")</code> and <code>tidymedia::set_ffprobe("/path/to/ffprobe")</code>. The two are looked up separately, so a row that is still <code>NA</code> needs its own call.</li>
 </ol>
 <p><strong>macOS Manual Install</strong></p>
 <ol style="list-style-type: decimal">
-<li>Download the latest snapshot version from:<br><a href="https://evermeet.cx/ffmpeg/get" class="external-link uri">https://evermeet.cx/ffmpeg/get</a>
+<li>Download the latest snapshot version from:<br><a href="https://evermeet.cx/ffmpeg/get" class="external-link uri">https://evermeet.cx/ffmpeg/get</a><br> That address gives you <code>ffmpeg</code> on its own. The metadata functions also need <code>ffprobe</code>, which is a separate download:<br><a href="https://evermeet.cx/ffmpeg/getrelease/ffprobe/7z" class="external-link uri">https://evermeet.cx/ffmpeg/getrelease/ffprobe/7z</a>
 </li>
-<li>Extract the contents of the downloaded <a href="https://www.7-zip.org/" class="external-link">.7z</a> file</li>
+<li>Extract the contents of each downloaded <a href="https://www.7-zip.org/" class="external-link">.7z</a> file</li>
 <li>Drag the extracted contents to the Applications folder</li>
+<li>The Applications folder is not on the <code>PATH</code>, so nothing looking a program up by name will find it there. Tell tidymedia where each program landed (changing the paths to match Step 3):<br><code>tidymedia::set_ffmpeg("/Applications/ffmpeg")</code><br><code>tidymedia::set_ffprobe("/Applications/ffprobe")</code><br> Each asks you to confirm the path before it remembers it, and it is remembered across R sessions. Set both: the two programs are looked up separately, so setting <code>ffmpeg</code> does not tell tidymedia where <code>ffprobe</code> is.</li>
+<li>Check that R can find them:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>ffmpeg</code> and <code>ffprobe</code> rows should show locations and versions. If either is <code>NA</code>, the path you gave in Step 4 is not where that program actually landed: find it in the Applications folder and run the call again with that path.</li>
 </ol>
 </div>
 </div>

@@ -147,8 +147,9 @@ several popular platforms.
     `tidymedia::set_ffmpeg("/Applications/ffmpeg")`<br />
     `tidymedia::set_ffprobe("/Applications/ffprobe")`<br /> Each asks
     you to confirm the path before it remembers it, and it is remembered
-    across R sessions. Set both: the two programs are found separately,
-    so setting `ffmpeg` does not make `ffprobe` findable.
+    across R sessions. Set both: the two programs are looked up
+    separately, so setting `ffmpeg` does not tell tidymedia where
+    `ffprobe` is.
 5.  Check that R can find them:<br />
     `tidymedia::program_status()`<br /> The `ffmpeg` and `ffprobe` rows
     should show locations and versions. If either is `NA`, the path you

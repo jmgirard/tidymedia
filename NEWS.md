@@ -31,6 +31,20 @@
   signals — rather than promising the limit. The workflow vignette's
   reproducibility section now points at it.
 
+* The install instructions in the README now end at a check. Each platform's route,
+  under MediaInfo and under FFmpeg, finishes with a `program_status()` call,
+  what a found and a not-found answer look like, and the call to make when the
+  program was not found. The macOS manual FFmpeg route used to stop after
+  dragging the program into the Applications folder, which is not on the
+  `PATH`, so nothing found it there; it now names the separate `ffprobe`
+  download and the `set_ffmpeg()` / `set_ffprobe()` step that makes both
+  usable.
+
+* The `find_program()` help page's example no longer warns on a machine with no
+  binaries installed, and the examples in the README no longer run a program
+  that is not there: each chunk that starts FFmpeg, FFprobe or MediaInfo is evaluated
+  only when that program is installed.
+
 ## Breaking changes
 
 * `set_program()` and `hardware_encoder()` no longer take a `call` argument,
@@ -100,6 +114,13 @@
   build time, so a later failing run cannot put either back.
 
 ## Configuration
+
+* The warning `find_ffmpeg()` and its siblings give when they cannot find a
+  program now names the recovery your machine actually has. It advised
+  `set_<program>()` and nothing else; on Windows it now also offers
+  `install_on_win()`, for the three programs that installer registers. It is
+  not offered for `mediainfo`, or off Windows, where that call would refuse
+  you.
 
 * `install_on_win()` now refuses on a platform it cannot install for, before
   it downloads, writes, or asks anything. It always installed a Windows build

@@ -114,6 +114,7 @@ unclassed-aborts candidate row.
 - 2026-09-05: step-7 approval: PR #116 approved for merge.
 - 2026-09-05: resume: PR #116 OPEN with every criterion evidenced and the approval recorded; re-entered at step 1. `master` unmoved at `819a5299`, so the recorded evidence stands; the step-7 PR-conversation read re-ran and the chip was re-posed and approved.
 - 2026-09-05: resume (second): PR #116 still OPEN, `master` still `819a5299`, branch pushed at `3b847ba`; PR-conversation read re-run and the chip re-posed. step-7 approval: PR #116 approved for merge.
+- 2026-09-05: resume (third): PR #116 still OPEN, `master` still `819a5299`, branch in sync at `2bdc2a4`; PR-conversation read re-run (no reviews, no review threads, one `codecov[bot]` comment — noted) and the chip re-posed. step-7 approval: PR #116 approved for merge.
 
 ## Decisions
 

@@ -170,7 +170,9 @@ tool_versions <- function(programs = c("ffmpeg", "ffprobe"),
 
 # The four programs the package knows, in the order every report lists them.
 # One declaration: program_status() and the manifest's version probes both read
-# it, and the exported argument defaults are pinned to it by a test.
+# it, and the vocabulary find_program()/set_program() default to is pinned to it
+# by a test. unset_program() takes no default (D079), so it is pinned instead as
+# the set arg_match() accepts.
 tm_programs <- function() c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
 
 # The display name a version probe reports the program under, and the flag that

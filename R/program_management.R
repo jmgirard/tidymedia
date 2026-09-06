@@ -141,7 +141,9 @@ find_ffplay <- function() {
 #' A program that cannot be found gets `NA` in both columns rather than a
 #' warning, so the answer for four programs arrives as one table instead of a
 #' pile of messages. The lookup is [find_program()]'s: the `PATH` first, then a
-#' location remembered by [set_program()].
+#' location remembered by [set_program()], and finally a location a version of
+#' tidymedia before 0.2.0 remembered under
+#' `rappdirs::user_config_dir("tidymedia", "R")`.
 #'
 #' The version is whatever the binary reports for its own version flag, so it
 #' is the FFmpeg build number for `ffmpeg`, `ffprobe` and `ffplay`, and the
@@ -214,7 +216,11 @@ tm_na_string <- function(x) {
 #' and returns `FALSE` rather than failing -- the state you asked for is already
 #' the state you have.
 #'
-#' @param program A string indicating which program to forget the location for.
+#' @param program A string naming which program to forget the location for:
+#'   one of `"ffmpeg"`, `"ffprobe"`, `"ffplay"` or `"mediainfo"`. There is
+#'   no default: the call deletes a file, and D079's rule for this package
+#'   keeps a member of the set out of the default position, so a call that
+#'   names no program refuses rather than picking one.
 #' @return Invisibly, `TRUE` where a remembered location was removed and `FALSE`
 #'   where there was none to remove.
 #' @seealso [set_program()] to remember a location, and [program_status()] to
@@ -227,7 +233,7 @@ tm_na_string <- function(x) {
 #' unset_program("mediainfo")
 #' }
 #' @export
-unset_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")) {
+unset_program <- function(program) {
   tm_unset_program(program, call = rlang::current_env())
 }
 

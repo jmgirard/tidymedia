@@ -118,6 +118,7 @@ Teaching either function in a vignette → M114.
 - 2026-09-05: T7 — the two timeout sweeps went red on the macOS and Windows CI legs because `program_status()` probes a version only for a program it resolved, so on a runner with no binaries it spawns nothing and a forced limit is never reached. `tm_force_timeout()` now intercepts resolution at `find_program()` as well as the two spawn wrappers, and a new grid case runs the whole domain under an emptied `PATH` with both config dirs empty. Discrimination measured: with the resolver mock removed the new case fails on `program_status` while the grid above it stays green on this machine.
 - 2026-09-05: amendment work complete; status to `review`. `devtools::test()` 0 failures / 12,897 pass / 18 skip (54 more assertions than the pre-amendment run, which is the new grid case plus its text assertion); `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes, 15m31s; `devtools::document()` no diff. AC3 stays unticked for re-review to re-evidence against the amended wording; the nine review findings other than F4 stay open for the maintainer at the re-review gate.
 - 2026-09-06: re-review (wip) — AC3 re-evidenced against the amended wording and ticked; AC1, AC2, AC4 and AC5 re-run fresh against branch head `8baf7ac` and recorded. `cairn_validate` exit 0, every check PASS, no advisory. AC6's `devtools::check()`, the three review lenses and CI on PR #117 still running.
+- 2026-09-06: re-review triage — finding 1 (the `unset_program()` default, against D079) and findings 7, 11, 12, 14 fixed now on the branch at the maintainer's direction; findings 2, 3, 4, 5, 6, 8, 9, 10 and 13 go to candidate rows at hygiene; F8 stays rejected. All six criteria pass with fresh evidence, `cairn_validate` exit 0, toolchain gate clean, and CI at `8baf7ac` green on all eight check legs including the two that were red at `fa58566`.
 
 ## Decisions
 
@@ -308,6 +309,40 @@ asks for a NEWS entry and a pkgdown row rather than for their wording, and AC1,
 AC3, AC4 and AC6 are unaffected. So no floor return fires from the findings
 themselves; finding 1 is the one put to the maintainer as a possible
 load-bearing defect.
+
+**Dispositions taken at the re-review gate (2026-09-06, maintainer's call).**
+
+- **Finding 1 — fix now.** `unset_program(program)` loses its default; the
+  argument is required, so `unset_program()` naming nothing refuses
+  (`rlang_error`, "`program` must be a character vector, not absent") and
+  deletes nothing. Verified by execution against the fixed head: two config
+  files on disk before the no-argument call, the same two after it. D079's
+  reasoning applies as written — a default can be added later compatibly, and
+  cannot be removed after 0.2.0 without a deprecation cycle. The test that
+  pinned the default now pins its absence, alongside the vocabulary
+  `arg_match()` still accepts; `?unset_program`'s `@param`, the `NEWS.md`
+  bullet, and `tm_programs()`'s comment say the argument is required and why.
+- **Findings 7, 11, 12, 14 — fix now** (prose and test claims, no behavior
+  change). 7: the NEWS line "It warns about nothing" is replaced by "A program
+  it cannot find is reported rather than warned about". 11: `?program_status`
+  now names the pre-0.2.0 `rappdirs` file as the third step of the lookup.
+  12: the helper comment drops the "records what the helper asked it for"
+  claim for what the mock actually does. 14: the invisibility assertion is
+  wrapped so the `TRUE` the test's own name promises is asserted too. T5's task
+  text repeats 12's claim and is left as written — it is a completed task
+  record, and the correction belongs in the code it describes.
+- **Findings 2, 3, 4, 5, 6, 8, 9, 10, 13 — follow-up**, filed as candidate rows
+  at the post-merge hygiene pass. None fails an acceptance criterion, and each
+  needs a design call rather than a patch: 2/4/5 change what
+  `program_status()` reports about a broken configuration, 3 changes where the
+  memo drop sits relative to the partial-failure abort, 6/8/13 change how the
+  timeout sweeps cover a conditionally-spawning member, and 9/10 are internal
+  `tool_versions()` hygiene with one caller.
+- **Finding 8 of the prior pass (F8) — reject**, unchanged.
+
+Post-fix verification: `devtools::test()` 0 failures / 12,900 pass / 18 skip;
+`devtools::document()` re-run, `man/program_status.Rd` and
+`man/unset_program.Rd` regenerated in the same commit.
 
 ### Consistency gate (re-review)
 

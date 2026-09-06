@@ -31,8 +31,9 @@ tm_program_vocabulary <- c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
 # executable still resolves under PATH = "" (measured at T4).
 #
 # R_USER_CONFIG_DIR redirects tools::R_user_dir(); the legacy library is
-# redirected by a mock of rappdirs::user_config_dir() that records what the
-# helper asked it for. One envvar cannot redirect both: rappdirs honors
+# redirected by a mock of rappdirs::user_config_dir() that answers from a
+# `legacy/` subtree of the same temporary root. One envvar cannot redirect
+# both: rappdirs honors
 # R_USER_CONFIG_DIR too, and on Windows the two libraries then collapse onto
 # the same `<root>/R/tidymedia` (measured on the windows-latest CI leg at
 # M097's review), which made the both-present state assert nothing and the

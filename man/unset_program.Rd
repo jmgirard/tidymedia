@@ -4,10 +4,14 @@
 \alias{unset_program}
 \title{Forget the location of a dependency program}
 \usage{
-unset_program(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"))
+unset_program(program)
 }
 \arguments{
-\item{program}{A string indicating which program to forget the location for.}
+\item{program}{A string naming which program to forget the location for:
+one of \code{"ffmpeg"}, \code{"ffprobe"}, \code{"ffplay"} or \code{"mediainfo"}. There is
+no default: the call deletes a file, and D079's rule for this package
+keeps a member of the set out of the default position, so a call that
+names no program refuses rather than picking one.}
 }
 \value{
 Invisibly, \code{TRUE} where a remembered location was removed and \code{FALSE}

@@ -249,7 +249,7 @@ test_that("unset_program() returns TRUE invisibly and leaves the other programs 
   stub <- tm_stub_executable()
   for (program in tm_program_vocabulary) tm_write_location(dirs$new, program, stub)
 
-  expect_invisible(unset_program("ffmpeg"))
+  expect_true(expect_invisible(unset_program("ffmpeg")))
 
   expect_false(file.exists(tm_config_file("ffmpeg", dirs$new)))
   for (program in setdiff(tm_program_vocabulary, "ffmpeg")) {
@@ -298,10 +298,14 @@ test_that("the nothing-remembered warning blames the function the caller typed",
 test_that("unset_program() refuses a program outside the published vocabulary", {
   tm_redirect_config()
   expect_error(unset_program("vlc"), class = "rlang_error")
-  expect_identical(
-    eval(formals(unset_program)$program),
-    tm_program_vocabulary
-  )
+  # The set arg_match() accepts is still pinned to the vocabulary; what is
+  # pinned separately is that `program` carries NO default. D079 keeps a member
+  # of the set out of the default position for an exported argument added
+  # inside the pre-0.2.0 window, and this call deletes a file, so a call naming
+  # no program must refuse rather than pick ffmpeg.
+  expect_identical(tm_programs(), tm_program_vocabulary)
+  expect_identical(formals(unset_program)$program, quote(expr = ))
+  expect_error(unset_program(), class = "rlang_error")
 })
 
 test_that("unset_program() aborts, naming the file, when a removal does not take", {

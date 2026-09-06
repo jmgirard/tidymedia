@@ -20,7 +20,9 @@ installed, written, or changed by the call.
 A program that cannot be found gets \code{NA} in both columns rather than a
 warning, so the answer for four programs arrives as one table instead of a
 pile of messages. The lookup is \code{\link[=find_program]{find_program()}}'s: the \code{PATH} first, then a
-location remembered by \code{\link[=set_program]{set_program()}}.
+location remembered by \code{\link[=set_program]{set_program()}}, and finally a location a version of
+tidymedia before 0.2.0 remembered under
+\code{rappdirs::user_config_dir("tidymedia", "R")}.
 
 The version is whatever the binary reports for its own version flag, so it
 is the FFmpeg build number for \code{ffmpeg}, \code{ffprobe} and \code{ffplay}, and the

@@ -1,6 +1,6 @@
 # M113: One call says which programs tidymedia found, and a remembered location can be forgotten
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -88,7 +88,7 @@ Teaching either function in a vignette → M114.
       locations. The M097 lesson holds: one `R_USER_CONFIG_DIR` collapses the
       two directories together on Windows, so redirect the legacy library by a
       recording mock rather than by the envvar.
-- [ ] T6: Roxygen, `_pkgdown.yml` rows, `NEWS.md`, `document()`, `test()`,
+- [x] T6: Roxygen, `_pkgdown.yml` rows, `NEWS.md`, `document()`, `test()`,
       `check()`.
 
 ## Work log
@@ -101,6 +101,7 @@ Teaching either function in a vignette → M114.
 - 2026-09-05: T3/T5 — tests in `tests/testthat/test-program-status-and-unset.R`; the three fixtures the family shares moved from `test-program-management.R` to `helper-program-config.R` so a second test file can see them.
 - 2026-09-05: T6 discovery, minor amendment — `program_status()` joins the computed timeout domain (it spawns), and the M094 blame sweep found it raising nothing for an invalid `options(tidymedia.timeout = )`: `capture_version()`'s `tryCatch()` turned that refusal into a silent NA. `tool_versions()` now resolves the limit once above the probes and threads `call`, so the refusal blames `program_status()`. Registered in `tm_timeout_recorded_domain()`, the call-spec table and the absorber partition; the two written-membership censuses measured at `ae5ff1c` get a named `tm_timeout_post_baseline()` exclusion, since a function that did not exist then has no pre-change reading to record.
 - 2026-09-05: T6 second sweep finding — the M096 wrong-argument sweep asserts its table covers the whole timeout domain, and `program_status()` takes no arguments, so it can contribute no cell. `tm_timeout_argumentless()` computes that set and the test pins it, so a second argumentless export reddens there rather than vanishing from the sweep.
+- 2026-09-05: T6 — roxygen, `_pkgdown.yml` rows, `NEWS.md`; `devtools::document()` no diff, `pkgdown::check_pkgdown()` clean, `devtools::test()` 12,843 pass / 0 fail / 18 skip, `devtools::check()` 0 errors / 0 warnings / 0 notes.
 - 2026-09-05: implement question gate settled four choices — both names as planned, the three-column shape, a warning rather than an abort for nothing-to-forget, and no `confirm` argument. Recorded below; T1 closed by the naming half.
 
 ## Decisions

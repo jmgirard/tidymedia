@@ -31,7 +31,7 @@ streams (as \code{\link{ffm_copy}} would).
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # Join two inputs end-to-end (they must share codec/resolution/frame rate)
-ffm(c(video, video), "output.mp4") |>
+ffm_files(c(video, video), "output.mp4") |>
   ffm_concat() |>
   ffm_compile()
 }
@@ -39,7 +39,6 @@ ffm(c(video, video), "output.mp4") |>
 \code{\link[=concatenate_videos]{concatenate_videos()}}, the task verb built on this verb.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

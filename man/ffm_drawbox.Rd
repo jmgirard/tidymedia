@@ -51,7 +51,7 @@ Add a video filter to draw a colored rectangle on the input video.
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # Draw a filled red box covering the top-left quarter of the frame
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_drawbox(width = "in_w/2", height = "in_h/2", color = "red") |>
   ffm_compile()
 }
@@ -65,7 +65,6 @@ https://ffmpeg.org/ffmpeg-utils.html#color-syntax
 builder.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

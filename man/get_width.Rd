@@ -38,7 +38,6 @@ Other metadata functions:
 \code{\link[=get_sample_rate]{get_sample_rate()}},
 \code{\link[=mediainfo_parameter]{mediainfo_parameter()}},
 \code{\link[=mediainfo_query]{mediainfo_query()}},
-\code{\link[=mediainfo_summary]{mediainfo_summary()}},
 \code{\link[=mediainfo_template]{mediainfo_template()}},
 \code{\link[=probe_all]{probe_all()}},
 \code{\link[=probe_container]{probe_container()}}

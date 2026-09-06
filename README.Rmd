@@ -97,7 +97,7 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 The `ffm_*` builder assembles a command step by step. Nothing runs until you ask it to: `ffm_compile()` returns the exact FFmpeg command as a string, and `ffm_run()` executes it. See `vignette("tidymedia")` for the full tour.
 
 ```{r}
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_trim(start = 1, end = 5) |>
   ffm_crop(width = 160, height = 120) |>
   ffm_codec(video = "libx264") |>

@@ -25,7 +25,7 @@ like the other single-input sequential filters.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_fps(fps = 30) |>
   ffm_compile()
 }
@@ -34,7 +34,6 @@ ffm(video, "output.mp4") |>
 builder.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

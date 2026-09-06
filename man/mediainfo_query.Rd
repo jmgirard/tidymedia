@@ -29,7 +29,7 @@ column and one column per requested parameter.
 \description{
 Create a tibble containing multiple parameters from a single MediaInfo
 section. To query parameters from multiple sections at once, use
-\code{mediainfo_summary()} or \code{mediainfo_template()}. \code{file} may be a
+\code{mediainfo_template()}. \code{file} may be a
 vector of several files; results are stacked with a leading \code{file}
 column.
 }
@@ -55,7 +55,6 @@ Other metadata functions:
 \code{\link[=get_sample_rate]{get_sample_rate()}},
 \code{\link[=get_width]{get_width()}},
 \code{\link[=mediainfo_parameter]{mediainfo_parameter()}},
-\code{\link[=mediainfo_summary]{mediainfo_summary()}},
 \code{\link[=mediainfo_template]{mediainfo_template()}},
 \code{\link[=probe_all]{probe_all()}},
 \code{\link[=probe_container]{probe_container()}}

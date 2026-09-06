@@ -45,7 +45,7 @@ the kept section will end at the end of the input.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_trim(start = 1, end = 5) |>
   ffm_compile()
 }
@@ -59,7 +59,6 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 is the frame-exact \emph{filter}).
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

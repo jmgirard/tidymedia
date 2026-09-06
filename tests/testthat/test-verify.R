@@ -123,7 +123,7 @@ test_that("verify_media() marks a checked-but-absent stream as failing", {
   skip_if_no_ffmpeg()
   src <- make_test_video()
   vo <- withr::local_tempfile(fileext = ".mp4")
-  ffm(src, vo) |> ffm_drop("audio") |> ffm_run()
+  ffm_files(src, vo) |> ffm_drop("audio") |> ffm_run()
   res <- verify_media(vo, audio_codec = "aac")
   expect_false(res$pass[res$check == "audio_codec"])
   expect_true(is.na(res$actual[res$check == "audio_codec"]))
@@ -141,7 +141,7 @@ test_that("ffm_run(verify =) returns normally when every check passes", {
   src <- make_test_video()
   out <- withr::local_tempfile(fileext = ".mp4")
   expect_no_error(
-    ffm(src, out) |>
+    ffm_files(src, out) |>
       ffm_scale(width = 32, height = 32) |>
       ffm_codec(video = "libx264") |>
       ffm_run(verify = list(width = 32, height = 32))
@@ -153,7 +153,7 @@ test_that("ffm_run(verify =) aborts listing the failed checks", {
   src <- make_test_video()
   out <- withr::local_tempfile(fileext = ".mp4")
   expect_error(
-    ffm(src, out) |>
+    ffm_files(src, out) |>
       ffm_scale(width = 32, height = 32) |>
       ffm_codec(video = "libx264") |>
       ffm_run(verify = list(width = 999)),

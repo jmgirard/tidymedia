@@ -110,13 +110,13 @@ verb is made of.
 
 ## Building a pipeline
 
-Every pipeline starts with `ffm()` (an alias of `ffm_files()`), which names the
+Every pipeline starts with `ffm_files()`, which names the
 input and output files. You then add steps with `|>`. Each `ffm_*` verb records
 an instruction; nothing runs until you ask it to. Calling `ffm_compile()` turns
 the pipeline into the exact FFmpeg command it represents:
 
 ```{r}
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_trim(start = 1, end = 5) |>
   ffm_crop(width = 160, height = 120) |>
   ffm_codec(video = "libx264") |>
@@ -127,7 +127,7 @@ Printing a pipeline shows the same compiled command, so you can eyeball a
 pipeline at any point:
 
 ```{r}
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_scale(width = 320, height = 240) |>
   ffm_pixel_format("yuv420p")
 ```
@@ -144,7 +144,7 @@ path:
 
 ```{r}
 # Fast, lossless cut
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_seek(start = 1, end = 5, reencode = FALSE) |>
   ffm_copy() |>
   ffm_compile()
@@ -156,12 +156,12 @@ from `ffm_trim()` (the `trim` *filter*): only seeking can stream-copy.
 ## Combining multiple inputs
 
 A few "blessed" verbs take more than one input. Pass a vector of files to
-`ffm()`, then combine them: stack side by side with `ffm_hstack()` or top to
+`ffm_files()`, then combine them: stack side by side with `ffm_hstack()` or top to
 bottom with `ffm_vstack()`, composite one over another with `ffm_overlay()`, or
 join them end-to-end with `ffm_concat()`:
 
 ```{r}
-ffm(c(video, video), "side_by_side.mp4") |>
+ffm_files(c(video, video), "side_by_side.mp4") |>
   ffm_hstack() |>
   ffm_compile()
 ```

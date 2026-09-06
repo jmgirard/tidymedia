@@ -12,7 +12,7 @@ Batch preprocessing and metadata extraction for audio, video and image files, bu
 tidymedia is organized in three layers. Layer 0 passes raw arguments to the
 command-line tools: \code{\link[=ffmpeg]{ffmpeg()}}, \code{\link[=ffprobe]{ffprobe()}}, and \code{\link[=mediainfo]{mediainfo()}}. Layer 1 is the
 pipeline builder, which assembles an FFmpeg command step by step and then
-compiles or runs it: \code{\link[=ffm]{ffm()}} and the \verb{ffm_*()} functions. Layer 2 is the task
+compiles or runs it: \code{\link[=ffm_files]{ffm_files()}} and the \verb{ffm_*()} functions. Layer 2 is the task
 verbs, thin wrappers over the builder for common preprocessing jobs such as
 \code{\link[=extract_audio]{extract_audio()}} and \code{\link[=segment_video]{segment_video()}}. Metadata is read by two independent
 back ends: FFprobe, through \code{\link[=probe_all]{probe_all()}} and the other \verb{probe_*()} readers,

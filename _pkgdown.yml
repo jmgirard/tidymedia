@@ -33,7 +33,6 @@ reference:
   desc: >
     Assemble a reproducible FFmpeg command step by step, then compile or run it.
   contents:
-  - ffm
   - ffm_files
   - ffm_trim
   - ffm_seek
@@ -106,7 +105,6 @@ reference:
   - mediainfo_parameter
   - mediainfo_query
   - mediainfo_template
-  - mediainfo_summary
   - get_duration
   - get_frame_rate
   - get_width

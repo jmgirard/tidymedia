@@ -43,7 +43,7 @@ from the request by up to one group-of-pictures. Pair it with
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # Fast, lossless copy cut (snaps to keyframes)
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_seek(start = 1, end = 5, reencode = FALSE) |>
   ffm_copy() |>
   ffm_compile()
@@ -56,7 +56,6 @@ https://ffmpeg.org/ffmpeg.html#Main-options
 fast copy path, and \code{\link[=segment_video]{segment_video()}}, the task verb built on it.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

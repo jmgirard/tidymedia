@@ -48,7 +48,7 @@ seam_expected <- function() {
 seam_pipeline <- function(dir) {
   vid <- file.path(dir, "in.mp4")
   if (!file.exists(vid)) file.create(vid)
-  ffm(vid, file.path(dir, "out.mp4"))
+  ffm_files(vid, file.path(dir, "out.mp4"))
 }
 
 test_that("a wrong codec token is refused before the build is asked anything", {

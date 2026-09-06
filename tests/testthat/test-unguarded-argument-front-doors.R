@@ -98,6 +98,7 @@ test_that("an invalid limit displaces no argument error, at every formal", {
     setdiff(tm_corrupt_dropped_master(), dropped),
     c("ffmpeg_codecs/sort_by_type -> :",
       "has_hardware_encoder/codec -> hardware_encoder",
+      "mediainfo_summary/file -> <none>",
       "segment_video/outfiles -> purrr::pmap")
   )
   # M112: `has_hardware_encoder()`'s two arguments have LEFT the dropped side.
@@ -108,8 +109,11 @@ test_that("an invalid limit displaces no argument error, at every formal", {
   # `has_hardware_encoder()` itself and both cells are kept. `codec` shows up
   # in the first difference above; `hardware` was not in the master census at
   # all (the argument postdates it), so it appears in neither direction, and
-  # nothing has joined the census. The census itself is the merge-base
-  # measurement and is not rewritten.
+  # nothing has joined the census. `mediainfo_summary` is in that same
+  # difference for an unrelated M112 reason: it was a second exported name for
+  # `mediainfo_template()` and has been removed, so it left the sweep's domain
+  # rather than changing side. The census itself is the merge-base measurement
+  # and is not rewritten.
   expect_equal(setdiff(dropped, tm_corrupt_dropped_master()), character())
 
   # The counts, pinned as M095's sibling sweep pins its own. The two `setdiff()`
@@ -121,13 +125,17 @@ test_that("an invalid limit displaces no argument error, at every formal", {
   # (M96 review F3).
   # 1530/1093/437 at `tm_corrupt_master_ref`; five cells joined when
   # `has_hardware_encoder()` gained a fifth formal to corrupt, taking the row
-  # count to 1535. M112 then moved ten cells from dropped to kept -- that
-  # member's two arguments crossed with the five wrong forms -- so `kept` is
-  # 1093 + 10 and `!kept` is 442 - 10. The row count is untouched: no cell was
-  # added or removed, only re-sided.
-  expect_identical(nrow(res), 1535L)
-  expect_identical(sum(res$kept), 1103L)
-  expect_identical(sum(!res$kept), 432L)
+  # count to 1535. M112 makes two further moves. It re-sides ten cells -- that
+  # member's two arguments crossed with the five wrong forms -- from dropped to
+  # kept, which is the blame shift named above and leaves the row count alone.
+  # And it removes `mediainfo_summary()`, a second exported name for
+  # `mediainfo_template()`, which takes that member's four formals crossed with
+  # the same five forms out of the domain entirely: 20 rows, of which 19 were
+  # kept and 1 dropped. So 1535 - 20 rows, 1093 + 10 - 19 kept, and
+  # 442 - 10 - 1 dropped.
+  expect_identical(nrow(res), 1515L)
+  expect_identical(sum(res$kept), 1084L)
+  expect_identical(sum(!res$kept), 431L)
 
   # `segment_video/outfiles -> <none>` survives in both, and correctly: it is
   # the token form, the legal filename `"bad fmt!"`, which the verb compiled

@@ -98,7 +98,6 @@ ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
 provenance manifest.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},
 \code{\link[=ffm_concat]{ffm_concat()}},

@@ -21,7 +21,7 @@ Set the output pixel format via FFmpeg's \code{-pix_fmt} option (for example
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_pixel_format("yuv420p") |>
   ffm_compile()
 }
@@ -30,7 +30,6 @@ ffm(video, "output.mp4") |>
 set the pixel format via this builder.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

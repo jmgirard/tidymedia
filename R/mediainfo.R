@@ -112,7 +112,7 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
 #'
 #' Create a tibble containing multiple parameters from a single MediaInfo
 #' section. To query parameters from multiple sections at once, use
-#' \code{mediainfo_summary()} or \code{mediainfo_template()}. `file` may be a
+#' \code{mediainfo_template()}. `file` may be a
 #' vector of several files; results are stacked with a leading \code{file}
 #' column.
 #'
@@ -233,14 +233,6 @@ mediainfo_template <- function(file,
   out <- mediainfo_read(file, inform)
   if (typed) type_columns(out) else out
 }
-
-#' @inherit mediainfo_template
-#' @family metadata functions
-#' @examplesIf nzchar(Sys.which("mediainfo"))
-#' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' mediainfo_summary(video, template = "brief")
-#' @export
-mediainfo_summary <- mediainfo_template
 
 # mediainfo_read() --------------------------------------------------------
 

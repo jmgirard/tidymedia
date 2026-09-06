@@ -47,12 +47,12 @@ stacked video.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-ffm(video, "output.mp4") |>
+ffm_files(video, "output.mp4") |>
   ffm_map(mapping = "0") |>
   ffm_compile()
 
 # Keep the video and the second audio track only
-ffm(video, "output.mkv") |>
+ffm_files(video, "output.mkv") |>
   ffm_map(mapping = c("0:v", "0:a:1")) |>
   ffm_compile()
 }
@@ -61,7 +61,6 @@ ffm(video, "output.mkv") |>
 task verb built on it.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

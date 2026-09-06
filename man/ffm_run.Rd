@@ -72,7 +72,7 @@ therefore the one handler that covers the analysis pass in both forms.
 \dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 out <- tempfile(fileext = ".mp4")
-ffm(video, out) |>
+ffm_files(video, out) |>
   ffm_scale(width = 160, height = 120) |>
   ffm_codec(video = "libx264") |>
   ffm_run(verify = list(width = 160, height = 120))
@@ -83,7 +83,6 @@ ffm(video, out) |>
 for the many-file runner, and \code{\link[=verify_media]{verify_media()}} for the \code{verify =} spec.
 
 Other builder functions:
-\code{\link[=ffm]{ffm()}},
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},

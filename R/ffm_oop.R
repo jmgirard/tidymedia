@@ -145,7 +145,7 @@ check_multi_input_ordering <- function(object, verb,
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' ffm(video, "output.mp4") |>
+#' ffm_files(video, "output.mp4") |>
 #'   ffm_trim(start = 1, end = 5)
 #' @method print tidymedia_ffm
 #' @export

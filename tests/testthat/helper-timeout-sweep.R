@@ -132,7 +132,7 @@ tm_timeout_recorded_domain <- function() {
     "ffmpeg_encoders", "ffprobe", "format_for_web", "format_for_web_batch",
     "get_duration", "get_frame_rate", "get_height", "get_sample_rate",
     "get_width", "has_hardware_encoder", "mediainfo", "mediainfo_parameter",
-    "mediainfo_query", "mediainfo_summary", "mediainfo_template",
+    "mediainfo_query", "mediainfo_template",
     "normalize_audio", "normalize_audio_batch", "picture_in_picture",
     "picture_in_picture_batch", "probe_all", "probe_audio", "probe_container",
     "probe_streams", "probe_video", "sample_frames", "sample_frames_batch",
@@ -186,8 +186,8 @@ tm_timeout_call_specs <- function(dir) {
     extract_frame_batch =
       list(jobs = tibble::tibble(input = vid, output = png, timestamp = 1)),
     ffm_batch = list(jobs = jobs_v,
-                     .f = function(input, output, ...) ffm(input, output)),
-    ffm_run = list(object = ffm(vid, outv)),
+                     .f = function(input, output, ...) ffm_files(input, output)),
+    ffm_run = list(object = ffm_files(vid, outv)),
     ffmpeg = list(command = "-version"),
     ffmpeg_codecs = list(),
     ffmpeg_encoders = list(),
@@ -205,7 +205,6 @@ tm_timeout_call_specs <- function(dir) {
       list(file = vid, section = "General", parameter = "Duration"),
     mediainfo_query =
       list(file = vid, section = "General", parameters = "Duration"),
-    mediainfo_summary = list(file = vid),
     mediainfo_template = list(file = vid),
     normalize_audio = list(infile = vid, outfile = outa),
     normalize_audio_batch = list(jobs = jobs_a),
@@ -451,7 +450,7 @@ tm_timeout_blame_master <- function() {
     "get_width"
   )
   mediainfo_read_class <- c(
-    "mediainfo_query", "mediainfo_summary", "mediainfo_template"
+    "mediainfo_query", "mediainfo_template"
   )
   probe_map_class <- c(
     "probe_all", "probe_audio", "probe_container", "probe_streams",
@@ -733,6 +732,16 @@ tm_timeout_valid_baseline <- function() {
   # blob carries the new key, at which point this remap is dead and must go.
   stopifnot("has_nvenc" %in% names(table))
   names(table)[names(table) == "has_nvenc"] <- "has_hardware_encoder"
+  # The same treatment for a cell whose export is GONE rather than renamed.
+  # `mediainfo_summary()` was a second exported name for `mediainfo_template()`
+  # -- one object, two `export()` lines -- and M112 removed it. Its recorded
+  # cell is byte-identical to `mediainfo_template`'s, which is still in the
+  # table, so dropping it removes a duplicate reading rather than a measurement.
+  # Asserted, not assumed: an unequal pair means the blob measured two
+  # different things and this drop would be hiding one of them.
+  stopifnot(identical(table[["mediainfo_summary"]],
+                      table[["mediainfo_template"]]))
+  table[["mediainfo_summary"]] <- NULL
   table
 }
 

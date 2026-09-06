@@ -26,6 +26,12 @@
 # exists to show. So the config seam is redirected at empty scratch directories
 # and the assertion below is made on `find_*()`, the call the package itself
 # makes, rather than on `Sys.which()` alone.
+#
+# Side effect worth knowing: `devtools::build_vignettes()` is deprecated as of
+# devtools 2.5.0 and installs the package into the user library before it
+# builds. That install runs under the reduced `PATH` too, so on a machine whose
+# toolchain lives outside the kept directories this script can fail for a reason
+# that is not about the guards -- read the log, not just the exit status.
 
 PROGRAMS <- c("ffmpeg", "ffprobe", "mediainfo")
 

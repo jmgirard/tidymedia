@@ -36,7 +36,7 @@ Most preprocessing jobs are a single call to a **task verb**. Say you need the
 audio track of a recording — to hand to a transcription tool, for example.
 `extract_audio()` does exactly that:
 
-```{r, eval = nzchar(Sys.which("ffmpeg"))}
+```{r, eval = nzchar(Sys.which("ffmpeg")) && nzchar(Sys.which("ffprobe"))}
 extract_audio(video, "audio.m4a")
 ```
 

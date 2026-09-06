@@ -32,7 +32,7 @@ candidate row. No behaviour change to any function this vignette teaches.
 
 ## Acceptance criteria
 
-- [ ] AC1: The new vignette calls `verify_media()`, `ffm_manifest()` and
+- [x] AC1: The new vignette calls `verify_media()`, `ffm_manifest()` and
       `ffm_batch(manifest = TRUE)` in evaluated chunks and shows each one's
       output, and states what a manifest records that a compiled command does
       not. Evidence: the built vignette's rendered output for each of the three.
@@ -46,7 +46,7 @@ candidate row. No behaviour change to any function this vignette teaches.
       `vignettes/` with `knitr`, lists each chunk's label and evaluated `eval`
       value, and reports the guard each spawning chunk carries. Evidence: that
       listing, over every chunk in every vignette, not only the added ones.
-- [ ] AC4: The vignettes build with no FFmpeg, ffprobe or MediaInfo reachable,
+- [x] AC4: The vignettes build with no FFmpeg, ffprobe or MediaInfo reachable,
       on a `PATH` that still reaches pandoc. Evidence: the build log, plus the
       three `Sys.which()` answers recorded as empty inside the build.
 - [x] AC5: The vignette has an `articles:` row in `_pkgdown.yml`,
@@ -124,10 +124,15 @@ candidate row. No behaviour change to any function this vignette teaches.
 - 2026-09-06: T7 instruments re-run over the final text. `tools/vignette_chunk_guards.R` exit 0: 64 chunks in five vignettes, 15 started a program, every one guarded, "unguarded spawning chunks: none" — unchanged from the pre-return run, the hardened matcher having nothing to catch on a machine whose paths hold no spaces. Discrimination re-proved after the hardening: a planted unguarded `probe_all()` chunk was the single UNGUARDED row, exit 1; reverted. `tools/build_vignettes_without_binaries.R` exit 0, `find_ffmpeg(): NULL`, `find_ffprobe(): NULL`, `find_mediainfo(): NULL`, and from inside the build `ffmpeg=[] ffprobe=[] mediainfo=[]`.
 - 2026-09-06: checkpoint committed with `devtools::check(document = TRUE, vignettes = TRUE)` still running on the final tree — `devtools::test()` was already clean on it (FAIL 0, WARN 10, SKIP 18, PASS 12900) and the check had reached "checking tests" with `Comparing 'spelling.Rout' to 'spelling.Rout.save' ... OK`, which is the NOTE this return had to clear, but the run had not yet reported its own result line. T7 stays unchecked until it does.
 - 2026-09-06: the check the line above was waiting on finished on that same tree: `devtools::check(document = TRUE, vignettes = TRUE)`, 5m 38.7s, **`Status: OK` — 0 errors, 0 warnings, 0 notes**, with "checking tests", "checking package vignettes" and "checking re-building of vignette outputs" all OK and `document()` leaving no diff. The 1 NOTE the return carried is gone from R CMD check's own status line, not only from devtools' summary. `cairn_validate` all sixteen checks PASS, seven advisories OK. T7 checked; status to review.
+- 2026-09-06: second review pass. AC1 and AC4 verified and ticked against fresh evidence; AC2, AC3, AC5 and AC6 re-verified on the final tree. Fix-now work landed at the gate's direction before the approval marker: findings [O]1, 2, 3, 5, 6, 8 and 9. Findings [O]4, 7, 10 and 12 are candidate rows; [O]11 rejected as a bookkeeping correction. Defect-return count stands at 1 — no finding this pass demonstrated a criterion failing inside its named procedure's domain.
+- 2026-09-06: AC3's promise was false and its instrument could not see it. `extract_audio()`'s dropped-track check starts FFprobe, so three chunks guarded on FFmpeg alone started a program their guard did not name — `verification.Rmd`'s two timeout chunks and `tidymedia.Rmd:39`, the last a chunk this branch did not otherwise touch, fixed because AC3 quantifies over every chunk in every vignette. Measured by tracing `system`/`system2` per chunk: each reported `ffprobe, ffmpeg`. All three now guard on both.
+- 2026-09-06: `tools/vignette_chunk_program_identity.R` added, the half of AC3's verification the guard sweep structurally cannot do — its pass 2 removes all three programs together, so a chunk guarded on the wrong program reads as guarded. The new script traces each chunk's spawns, reads each chunk's raw guard expression, and fails when a guard does not name a program that chunk starts. Exit 0 over the final text, 15 spawning chunks, none uncovered; proven able to fail by reverting `tidymedia.Rmd:39`'s guard, which it reported as the single row and exited 1.
 
 ## Decisions
 
 ## Review
+
+### First review pass (2026-09-06) — returned
 
 Fresh evidence gathered 2026-09-06 on branch head `1843446`, against `origin/master` at `6af61cf` (default branch had not moved; no merge needed). Draft PR #118.
 
@@ -174,3 +179,182 @@ Three fresh-context reviewers, none having seen the implementation, each on a di
 ### Gate outcome — returned
 
 Two acceptance criteria are not met, so the milestone returns to `/milestone-implement` rather than reaching the merge gate: **AC1**, measured directly — `ffm_batch(manifest = TRUE)`'s output is shown nowhere in the rendered vignette — and **AC4**, whose build ran with FFmpeg still reachable through the config seam. The check NOTE and findings 2, 3, 6, 8, 9 and 11 are the fix-now work to land with them; findings 4, 5, 10, 12, 14 and 15 are candidate rows, and 7 and 13 need nothing.
+
+### Second review pass (2026-09-06, branch head after the T7 return)
+
+Fresh evidence gathered against `origin/master` at `6af61cf`; the default branch
+had not moved, so no merge was needed. PR #118 (draft) reused. Everything below
+was executed in this pass — nothing carried over from the first pass.
+
+**AC1 — met.** `vignettes/verification.Rmd` knitted on this machine with all
+three programs on `PATH`. `verify_media()` is called in four evaluated chunks
+and every report renders (the pass/fail shape, the `NA`-fails shape, and the
+extra-field resolution). `ffm_manifest()` is called in four and renders a
+7-column manifest, a 9-column one, an explicit two-column `input_md5`/
+`output_md5` selection, and the "No provenance manifest is attached" abort.
+`ffm_batch(manifest = TRUE)`'s **own** output now renders — the first manifest
+chunk prints `res`, a `1 × 4` tibble (`input`, `output`, `command`, `success`) —
+which is the failure the first pass returned on. The manifest-vs-command
+sentence and its bullets are present, and the `ffprobe_version` bullet was
+re-derived against a traced run.
+
+**AC2 — met.** `with_timeout()` and `local_timeout()` are each called in an
+evaluated chunk; both render, and both show `getOption("tidymedia.timeout")`
+back to `NULL` afterwards. The bound is stated as "waited for up to **40 seconds
+longer than the limit you set** — measured on 2026-08-28 at 42.0 s under a 2 s
+limit, on a Linux runner, with the same reading on a macOS host", not as the
+limit. Checked against D056 case A1 (42.00 s container, 42.03 s host); the
+platform clause was narrowed this pass to match D056's own framing of the host
+figures as context (finding [O]1).
+
+**AC3 — met, after a fix this pass.** Measured, not assumed:
+`tools/vignette_chunk_guards.R` exits 0 over the final text — 64 chunks in five
+vignettes, 15 started a program, "unguarded spawning chunks: none" — and its
+discrimination was re-proved fresh, a planted unguarded `probe_all()` chunk
+being reported as the single UNGUARDED row with exit 1.
+
+That instrument answers "guarded at all". The criterion says "guarded on **that
+program's presence**", and finding [O]8 showed it was false: `extract_audio()`'s
+dropped-track check starts FFprobe, so three chunks guarded on FFmpeg alone
+started a program their guard did not name. Verified directly by tracing
+`system`/`system2` per chunk: `verification.Rmd`'s two `extract_audio()` timeout
+chunks and `tidymedia.Rmd:39` each reported `ffprobe, ffmpeg`. All three now
+guard on both programs — `tidymedia.Rmd:39` included, a chunk this branch did
+not otherwise touch, because AC3 quantifies over every chunk in every vignette.
+
+The gap was structural — the sweep's pass 2 removes all three programs together,
+so it cannot tell "guarded" from "guarded on the wrong program" — so this pass
+committed `tools/vignette_chunk_program_identity.R`, which traces each chunk's
+spawns, reads each chunk's raw guard expression, and fails when a guard does not
+name a program that chunk starts. Exit 0 over the final text: 15 spawning
+chunks, "chunks starting a program their guard does not name: none". Proven able
+to fail: reverting `tidymedia.Rmd:39`'s guard reproduced the defect as the
+single row (`started ffmpeg,ffprobe`, `uncovered ffprobe`) with exit 1; reverted.
+
+**AC4 — met.** `tools/build_vignettes_without_binaries.R` exits 0. All five
+vignettes rebuilt on a `PATH` of a pandoc-only shim plus R's bin and
+`/usr/bin:/bin:/usr/sbin:/sbin`; the config seam redirected to an empty scratch
+directory, with both resolved seam paths checked to have landed under it;
+`find_ffmpeg()`, `find_ffprobe()` and `find_mediainfo()` each `NULL`; and from
+inside the build, `verification.Rmd`'s setup chunk reporting
+`ffmpeg=[] ffprobe=[] mediainfo=[]`. The first pass returned on this criterion
+because the build ran with FFmpeg still reachable through the config file.
+Discrimination re-proved fresh this pass, against that exact failure: an
+unguarded FFmpeg-only chunk planted in `verification.Rmd` builds green under the
+pre-return script (`98df1de`, exit 0) and fails under the current one (exit 1,
+"failed re-building 'verification.Rmd'"). Plant reverted, tree confirmed clean.
+
+**AC5 — met.** `_pkgdown.yml` gains one `articles:` row, `verification`.
+`pkgdown::check_pkgdown()`: "No problems found". `tools/pkgdown_duplicate_topics.R`:
+80 contents entries, 81 man topics, none unmatched, none repeated.
+`workflow.Rmd`'s Reproducibility section gains a paragraph pointing at
+`vignette("verification")` and its Where-to-next list a matching entry; both in
+the diff.
+
+**AC6 — met.** `devtools::check(document = TRUE, vignettes = TRUE)` on the final
+tree, 7m 27.1s: **`Status: OK` — 0 errors, 0 warnings, 0 notes**, with "checking
+tests", "checking package vignettes" and "checking re-building of vignette
+outputs" all OK, and `document()` leaving no diff. The first pass's 1 NOTE (the
+`spelling` `.Rout.save` comparison, `behaviour` against the package's `behavior`)
+is gone from R CMD check's own status line, not only from devtools' summary.
+`devtools::test()` separately: FAIL 0, WARN 10, SKIP 18, PASS 12900.
+
+**Consistency gate — passed.** `cairn_validate.py` exit 0, all sixteen checks
+PASS and all seven advisories OK. No `DESIGN.md` principle changed
+(`Principles touched: —`), so `cairn_impact.py` did not apply. Toolchain slot:
+`document()` no diff; no generated file hand-edited; `README.Rmd`/`README.md`
+untouched by this branch and last committed together (M112, `5f171d9`);
+`check_pkgdown()` passes; `NEWS.md` has a Documentation entry with no milestone
+numbers; the two new `tools/` scripts are covered by `.Rbuildignore`'s existing
+`^tools$`, confirmed by the check's 0 notes; `devtools::check()` as above.
+
+### Independent review, second pass
+
+Three fresh-context reviewers, none having seen the implementation, each on a
+distinct evidence base.
+
+**[S] blame-history — no findings.** Traced `workflow.Rmd`'s reproducibility
+section to M30 (`77f77f4`), the `.Rbuildignore`/`.gitignore` entries to M111
+(`fd39838`) and the original scaffold, the `_pkgdown.yml` `articles:` pattern to
+every prior vignette addition, and the timeout prose to D047/D048/D049/D056.
+Cross-checked the AC4 seam fix against `R/program_management.R:1-16` and the
+matcher fix against the "don't count `Sys.which()`'s own shell-out" invariant.
+Nothing reverses a prior decision, resurrects a fixed bug or contradicts a
+D-entry.
+
+**[S] prior-review record — one finding.** Probe
+`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1` returned `[]`, so
+the GitHub thread surface was not walked. Verified from the archive and
+`LESSONS.md` that M111's tarball rule is honoured rather than regressed, that
+M55's NEWS-splice finding does not apply, and that the AC4 seam fix does not
+regress M097's config-location lesson. Its one finding: **the first pass's six
+"follow-up, candidate row" dispositions were never written to `ROADMAP.md`** —
+correct, and expected: that pass returned before reaching the maintainer triage
+gate, so those dispositions were the review's own reading and were never
+approved. They are put to the maintainer at this pass's gate instead.
+
+**[O] diff-bug — twelve findings, ranked as reported.** Verified the return work
+landed and all seven of the first pass's fix-now findings (1, 2, 3, 6, 8, 9, 11)
+are actually fixed, with none introducing a new correctness bug.
+
+1. **"on Linux and macOS alike" overstates D056.** D056 calls the host figures
+   "context, not a second platform under test", and its case B1 records 2.01 s
+   on the host against 42.03 s in the container. → **fixed now**; the clause now
+   reads "on a Linux runner, with the same reading on a macOS host". (This was
+   the first pass's finding 10, dispositioned follow-up and still shipped.)
+2. **"as below" promises a demo the chunk does not contain** — the sentence
+   named `with_timeout()` and `local_timeout()`, the chunk showed only the
+   first. → **fixed now**; the sentence now names what the chunk shows and lists
+   the other two seams separately.
+3. **`spawn_record()` matched every leading token run, so any line whose last
+   token is called ffmpeg counted as a spawn.** Reproduced: `cp a.mp4
+   /tmp/ffmpeg`, `mkdir -p /opt/ffmpeg` and `/usr/bin/touch /tmp/x/ffprobe` each
+   counted. The direction is a false UNGUARDED, so it cannot pass a bad tree,
+   but it can fail a good one. A `shQuote()`-style single-quoted path was also
+   missed. → **fixed now**: a multi-token candidate counts only when it names an
+   existing file, and both quote styles are handled. Thirteen cases re-run,
+   including a real binary under a directory with a space; all as expected.
+4. **The sweep's pass-2 child clears `PATH` but not the config seam** its
+   sibling script now clears. No live effect — every vignette guard is
+   `nzchar(Sys.which(...))` — but a guard written on `find_ffmpeg()` would read
+   TRUE in the child. → **follow-up**, candidate row.
+5. **`devtools::build_vignettes()` is deprecated and installs the package** into
+   the user library as a side effect, under the reduced `PATH`. Verified in
+   devtools' source (`local_install`, `deprecate_warn`). → **fixed now** as
+   disclosure: the script's header now names the install and says to read the
+   log rather than the exit status alone.
+6. **The new `## Documentation` heading sat above `## New features`** in the
+   development block, against the file's own ordering. → **fixed now**; moved
+   below.
+7. **Both scripts' reduced `PATH` drops `/usr/bin` wholesale** if a program
+   lives there, which is the normal Linux/CI layout. → **follow-up**, candidate
+   row. (The first pass's finding 12, unchanged.)
+8. **Two `verification.Rmd` chunks guarded `has_ffmpeg` reach FFprobe**, so
+   AC3's "that program's presence" was not what they satisfied, and the sweep
+   could not tell. → **fixed now**, and it was worse than reported: the same
+   defect sat in `tidymedia.Rmd:39`. See AC3 above for the fix, the third site,
+   the new instrument and its discrimination proof.
+9. **The nine-column footer claim is a property of the console width**, which
+   the vignette does not pin. → **fixed now**; the sentence now says "at a
+   typical console width".
+10. **`.gitignore`'s `vignettes/*.R` and `vignettes/*.mp4` are broader than the
+    artifacts they target.** No tracked file matches today. → **follow-up**,
+    candidate row. (The first pass's finding 15, unchanged.)
+11. **Two `error = TRUE` chunks cannot fail the AC4 build**, so that build is
+    evidence for 14 of 16 chunks. Coverage is complete in aggregate because the
+    sweep measures both (0 spawns each). → **rejected**, a bookkeeping
+    correction to the first pass's disposition, no change needed.
+12. **The vignettes' `Sys.which()` guards are narrower than the package's
+    resolver**, so a reader who used `set_ffmpeg()` sees empty chunks though
+    every call would work. `metadata.Rmd:18-19` set the precedent, so this is
+    not introduced here. → **follow-up**, candidate row.
+
+**Return floor.** No finding demonstrates an acceptance criterion failing inside
+the domain of the procedure that criterion names, so none qualifies for a defect
+return; the defect-return count stands at 1 (the first pass). Finding [O]8
+falsified AC3's promise from outside its named procedure's domain, and the
+repair available to it was neither a criterion amendment nor an enumeration
+widening — the three guards were simply wrong and the instrument was blind — so
+it took the ordinary fix-now triage, with the missing half of the procedure
+committed alongside it. All fix-now work landed on the branch before the
+approval marker.

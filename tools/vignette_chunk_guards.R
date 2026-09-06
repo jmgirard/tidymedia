@@ -54,28 +54,38 @@ SPAWNS$n <- 0L
 # `system2()` names the program in `command`; `system()` takes a whole command
 # line, whose program is its leading token or tokens.
 #
-# The program is read as EVERY leading run of tokens, not just the first one,
-# because `R/ffmpeg.R` passes the resolved path unquoted: a binary under a
-# directory whose name holds a space ("/Volumes/My Tools/bin/ffmpeg -i ...")
-# arrives split across tokens, and reading only the first would report the chunk
-# as starting nothing -- so a wholly unguarded vignette would pass. Matching on
-# the BASENAME of each whole prefix is what keeps `Sys.which()` out: the
-# candidates for "which ffprobe" are "which" and "which ffprobe", and the second
-# one's basename is that whole two-word string, not its last token.
+# The program is read from the line's leading token, and -- because `R/ffmpeg.R`
+# passes the resolved path unquoted, so a binary under a directory whose name
+# holds a space ("/Volumes/My Tools/bin/ffmpeg -i ...") arrives split across
+# tokens -- from each longer leading run of tokens as well. A multi-token
+# candidate counts only when it NAMES AN EXISTING FILE: without that test any
+# line whose last token happens to be called ffmpeg matches, and "cp a.mp4
+# /tmp/ffmpeg" is reported as a spawn. The sweep runs on a machine that has all
+# three programs, so the real spawn's path does exist and the test costs nothing.
+# Matching on the whole candidate's BASENAME is what keeps `Sys.which()` out:
+# "which ffprobe" holds no "/", so its basename is that whole two-word string.
 spawn_record <- function(command) {
   prog <- if (length(command) == 1L) command[[1L]] else return(invisible(NULL))
   line <- trimws(as.character(prog))
   tokens <- strsplit(line, "\\s+")[[1L]]
-  cands <- vapply(
-    seq_along(tokens),
-    function(i) paste(tokens[seq_len(i)], collapse = " "),
-    character(1)
-  )
-  # A path the caller DID quote is one candidate whatever spaces it holds.
-  if (startsWith(line, '"')) cands <- c(cands, sub('^"([^"]*)".*$', "\\1", line))
-  # Strip only a wrapping pair of quotes, so an argument that merely contains
-  # one cannot turn a non-match into a match.
-  cands <- sub('^"(.*)"$', "\\1", cands)
+  cands <- tokens[1L]
+  if (length(tokens) > 1L) {
+    longer <- vapply(
+      2:length(tokens),
+      function(i) paste(tokens[seq_len(i)], collapse = " "),
+      character(1)
+    )
+    cands <- c(cands, longer[file.exists(longer)])
+  }
+  # A path the caller DID quote is delimited, so it is a candidate whatever
+  # spaces it holds and needs no existence test. Both quote styles: `shQuote()`
+  # uses single quotes on unix and double on Windows.
+  if (grepl('^["\']', line)) {
+    cands <- c(cands, sub('^(["\'])([^"\']*)\\1.*$', "\\2", line))
+  }
+  # Strip only a wrapping pair, so an argument that merely contains a quote
+  # cannot turn a non-match into a match.
+  cands <- sub('^(["\'])(.*)\\1$', "\\2", cands)
   names <- tolower(sub("[.]exe$", "", basename(cands)))
   if (any(names %in% PROGRAMS)) SPAWNS$n <- SPAWNS$n + 1L
   invisible(NULL)

@@ -131,6 +131,24 @@ build_manifest <- function(pipelines, commands, versions, checksums) {
 tool_versions <- function(programs = c("ffmpeg", "ffprobe"),
                           locations = NULL,
                           call = rlang::caller_env()) {
+  # A caller-supplied `locations` is paired with `programs` positionally by the
+  # Map() below, which recycles a length-1 list silently and warns -- rather
+  # than refuses -- on any other mismatch. Either way the probes would be
+  # labelled with the wrong program names. Checked only on the non-NULL arm:
+  # the default resolves each program itself, so it cannot be the wrong length.
+  if (!is.null(locations) && length(locations) != length(programs)) {
+    cli::cli_abort(
+      c(
+        "{.arg locations} must name one location for each program.",
+        "x" = "{length(programs)} program{?s}, but \\
+               {length(locations)} location{?s}."
+      ),
+      class = "tidymedia_locations_mismatch",
+      tm_n_programs = length(programs),
+      tm_n_locations = length(locations),
+      call = call
+    )
+  }
   if (is.null(locations)) locations <- lapply(programs, tm_find_program_for_version)
   # The limit is resolved once, here, above every probe. capture_version()
   # turns any error below it into a silent NA, which is the right answer for a
@@ -151,14 +169,24 @@ tool_versions <- function(programs = c("ffmpeg", "ffprobe"),
   timed_out <- vapply(probes, is_absorbed_timeout, logical(1))
   if (any(timed_out)) {
     hit <- probes[[which(timed_out)[[1]]]]
-    programs <- vapply(probes[timed_out], function(x) x$program, character(1))
+    # Named from `probes`, not from each probe's own `program` field: that
+    # field carries the display label the version flag is asked under
+    # ("FFmpeg"), while program_status() prints "ffmpeg" in the column beside
+    # the NA this warning explains, and a reader should not have to match two
+    # spellings of one program. A separate local, because overwriting the
+    # `programs` argument here left the warning's own count reading off a
+    # rebound name (M116).
+    late <- names(probes)[timed_out]
     cli::cli_warn(
       c(
         "The version probe timed out after {hit$limit} second{?s}.",
-        "x" = "{programs}",
-        "i" = "The manifest records {.val {NA}} for \\
-               {cli::qty(length(programs))}{?that version/those versions}; \\
-               raise or remove \\
+        "x" = "{late}",
+        # Says what the NA means without naming a caller: the same warning is
+        # raised from ffm_batch(manifest = TRUE), where the value lands in a
+        # manifest, and from program_status(), where it lands in a returned
+        # tibble that is no manifest at all.
+        "i" = "{cli::qty(length(late))}{?That version is/Those versions are} \\
+               recorded as {.val {NA}}; raise or remove \\
                {.code options(tidymedia.timeout = )}."
       ),
       class = "tidymedia_probe_timeout",

@@ -97,31 +97,31 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 
 ## Tasks
 
-- [ ] T1: Regression tests for the malformed remembered-location state, crossing
+- [x] T1: Regression tests for the malformed remembered-location state, crossing
       the four `find_*()` exports against the empty and two-line forms, under
       `tm_redirect_config()` (`tests/testthat/helper-program-config.R`). Record
       in the work log that each is red first, and which R error it raises.
-- [ ] T2: `find_program()` guards what it read back before
+- [x] T2: `find_program()` guards what it read back before
       `R/program_management.R:79`'s `if (Sys.which(location) == "")` — the
       `length(loc) != 1L` shape `count_audio_streams()` documents at
       `R/ffprobe.R:213-219` — classing the malformed state and returning `NULL`.
-- [ ] T3: Widen and class the stale-location warning at
+- [x] T3: Widen and class the stale-location warning at
       `R/program_management.R:80-88`, deriving the installer bullet from
       `tm_os()`/`tm_install_registers` the way the not-found branch at `:101-104`
       does rather than restating the condition; tests cross OS against program.
-- [ ] T4: `unset_program()` drops the memo on any removal that took, above the
+- [x] T4: `unset_program()` drops the memo on any removal that took, above the
       `tidymedia_location_not_removed` abort at `R/program_management.R:291-303`;
       tests for both partial forms and the total-failure case.
-- [ ] T5: `program_status()` (`R/program_management.R:183-185`) stops suppressing
+- [x] T5: `program_status()` (`R/program_management.R:183-185`) stops suppressing
       the two classed config warnings and keeps suppressing the plain not-found
       one; narrow `?program_status`, document both conditions on
       `?find_program`, add the mixed four-program test.
-- [ ] T6: Reword `tool_versions()`'s timeout warning (`R/ffm_manifest.R:154-166`)
+- [x] T6: Reword `tool_versions()`'s timeout warning (`R/ffm_manifest.R:154-166`)
       to the `program` column spelling and a caller-neutral sentence about what
       `NA` means; rename the local that overwrites the `programs` argument at
       `:154`; pin the message on both callers with the mutation probe
       `tests/testthat/test-timeout-silence.R:660-680` models.
-- [ ] T7: `tool_versions()` length check below the `locations = NULL` default at
+- [x] T7: `tool_versions()` length check below the `locations = NULL` default at
       `R/ffm_manifest.R:134`, with its three cases.
 - [ ] T8: `NEWS.md` entry, `devtools::document()`, `devtools::check()`.
 
@@ -134,6 +134,14 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: plan gate chose dropping the memo on any removal that took over dropping it on every exit, because a total failure removed nothing and the memo still describes the binary lookups keep answering with; falsified by a partial-removal form where "took" is not decidable from the filesystem.
 - 2026-09-06: plan gate chose classing only the two warnings this milestone changes over classing `find_program()`'s plain not-found warning too, because that name is the naming pass's call; falsified by the two new classes proving unusable without the third.
 - 2026-09-06: implement question gate named the three new condition classes, all three recommendations taken: `tidymedia_location_unreadable` (`tm_program`, `tm_file`) for a config file that is not one line, `tidymedia_location_gone` (`tm_program`, `tm_location`) for a remembered location whose binary is absent, and `tidymedia_locations_mismatch` for `tool_versions()`'s length refusal.
+- 2026-09-06: T1 red first — all four `find_*()` exports against both malformed forms aborted rather than warned; measured errors were `argument is of length zero` (empty file) and `the condition has length > 1` (two lines).
+- 2026-09-06: T2 — `find_program()` guards the read-back with the `length() != 1L` shape before the `Sys.which()` test, warning `tidymedia_location_unreadable` (`tm_program`, `tm_file`) and returning `NULL`; T1's 40 assertions green.
+- 2026-09-06: T3 — stale-location warning classed `tidymedia_location_gone` (`tm_program`, `tm_location`) and widened with the `unset_program()` repair; the installer offer moved into `tm_install_bullet()`, which both find_program() branches now splice, and tests cross three operating systems against four programs on each branch.
+- 2026-09-06: T4 — the memo drop moved above the `tidymedia_location_not_removed` abort and keyed on `length(left) < length(present)`, replacing the success-path-only call; mutant check with the guard forced to `FALSE` reddened both partial forms and the total-success case and left the removed-nothing case green.
+- 2026-09-06: T5 — `program_status()` selects by the two classes to be raised rather than by the one to be muffled; `?program_status` narrowed to the never-configured case and `?find_program` documents both conditions with their fields.
+- 2026-09-06: T6 — the timeout warning names programs from `names(probes)` under a separate local, and its second bullet says what `NA` means without naming a caller; two M69-era tests that pinned the display-label spelling updated, and a mutant carrying the retired manifest sentence fails the new assertions.
+- 2026-09-06: T7 — `tool_versions()` aborts `tidymedia_locations_mismatch` (`tm_n_programs`, `tm_n_locations`) on a non-`NULL` `locations` of the wrong length, above the resolution of the `NULL` default.
+- 2026-09-06: minor amendment — `?refresh_ffmpeg_capabilities` said there were two ways to discard the memo; with `unset_program()` it is three, so the list was corrected alongside T4's change.
 
 ## Decisions
 

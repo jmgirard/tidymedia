@@ -46,6 +46,19 @@ tm_install_dir <- function() {
 #' `rappdirs::user_config_dir("tidymedia", "R")`, and that file is read only
 #' when no file exists in the current directory.
 #'
+#' A remembered location that no longer works warns and returns `NULL` rather
+#' than failing, under a condition class you can catch:
+#'
+#' * `tidymedia_location_gone` -- the location was read, but there is no
+#'   binary there any more. The condition carries the program in `tm_program`
+#'   and the location in `tm_location`.
+#' * `tidymedia_location_unreadable` -- the file holding the location is empty
+#'   or holds more than one line, so there is no location to try. The condition
+#'   carries the program in `tm_program` and the file in `tm_file`.
+#'
+#' Either is repaired with [unset_program()], which forgets the location, or
+#' [set_program()], which replaces it.
+#'
 #' @param program A string indicating which program to find
 #' @return Either a string indicating whether the requested program was found or
 #'   `NULL` if the program could not be found.
@@ -75,34 +88,56 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
     # If a user config file exists, read it in
     if (file.exists(config)) {
       location <- readLines(config)
+      # What was read back must be ONE line before anything tests it. A file
+      # holding nothing gives `if (logical(0))` and one holding two or more
+      # gives a length-2 condition, so both aborted the lookup -- and every
+      # verb above it -- with an R error naming no program and no file
+      # (measured 2026-09-06: "argument is of length zero" and "the condition
+      # has length > 1"). set_program() cannot write either shape; a truncated
+      # write or a hand-edit can. The same `length(x) != 1L` shape
+      # count_audio_streams() documents at R/ffprobe.R:213-219, and for the
+      # same reason: is.na() on character(0) answers logical(0), which `if`
+      # rejects in its turn.
+      if (length(location) != 1L || is.na(location) || !nzchar(location)) {
+        cli::cli_warn(
+          c(
+            "{program} is configured in {.file {config}}, but that file does \\
+             not hold one location.",
+            "i" = "Use {.fn unset_{program}} to forget it, or \\
+                   {.fn set_{program}} to point tidymedia at the binary again."
+          ),
+          class = "tidymedia_location_unreadable",
+          tm_program = program,
+          tm_file = config
+        )
+        return(NULL)
+      }
       # Verify that the location in the user config file is valid
       if (Sys.which(location) == "") {
-        cli::cli_warn(c(
-          "{program} was configured at {.file {location}} but that file no \\
-           longer seems to exist.",
-          "i" = "Use {.fn set_{program}} to point tidymedia at it again."
-        ))
+        cli::cli_warn(
+          c(
+            "{program} was configured at {.file {location}} but that file no \\
+             longer seems to exist.",
+            "i" = "Use {.fn set_{program}} to point tidymedia at it again.",
+            "i" = "Or use {.fn unset_{program}} to forget the remembered \\
+                   location.",
+            tm_install_bullet(program)
+          ),
+          class = "tidymedia_location_gone",
+          tm_program = program,
+          tm_location = location
+        )
         location <- NULL
       }
     } else {
       # If config file not found, return NULL value and warning
       location <- NULL
-      # The recovery this machine actually has. `install_on_win()` is named
-      # only where it runs and only for the programs it registers: on a Mac, or
-      # for mediainfo, it would send the caller at a call that refuses them.
-      # Both facts are read from the installer's own seam and its own list
-      # (`tm_os()`, `tm_install_registers`) rather than restated here, so the
-      # advice cannot drift from what the installer does (M115).
-      bullets <- c(
+      cli::cli_warn(c(
         "Failed to find {program}.",
         "i" = "Check that it is installed, then use {.fn set_{program}} to \\
-               point tidymedia at it."
-      )
-      if (identical(tm_os(), "windows") && program %in% tm_install_registers) {
-        bullets <- c(bullets, "i" = "Or run {.fn install_on_win} to download \\
-                                     FFmpeg and remember where it landed.")
-      }
-      cli::cli_warn(bullets)
+               point tidymedia at it.",
+        tm_install_bullet(program)
+      ))
     }
   }
   
@@ -149,12 +184,20 @@ find_ffplay <- function() {
 #' each: where it resolved to, and what version it reported. Nothing is
 #' installed, written, or changed by the call.
 #'
-#' A program that cannot be found gets `NA` in both columns rather than a
-#' warning, so the answer for four programs arrives as one table instead of a
-#' pile of messages. The lookup is [find_program()]'s: the `PATH` first, then a
-#' location remembered by [set_program()], and finally a location a version of
-#' tidymedia before 0.2.0 remembered under
+#' A program that was never configured and is not installed gets `NA` in both
+#' columns rather than a warning, so the answer for four programs arrives as one
+#' table instead of a pile of messages. The lookup is [find_program()]'s: the
+#' `PATH` first, then a location remembered by [set_program()], and finally a
+#' location a version of tidymedia before 0.2.0 remembered under
 #' `rappdirs::user_config_dir("tidymedia", "R")`.
+#'
+#' A remembered location that cannot be used still warns, because there the
+#' `NA` would look exactly like a program you never had. Both cases name a file
+#' you can repair: a remembered location whose binary is gone
+#' (`tidymedia_location_gone`), and a file under
+#' `tools::R_user_dir("tidymedia", "config")` that does not hold one location
+#' (`tidymedia_location_unreadable`). Either is cleared with [unset_program()]
+#' or replaced with [set_program()]; the row is `NA` in both columns either way.
 #'
 #' The version is whatever the binary reports for its own version flag, so it
 #' is the FFmpeg build number for `ffmpeg`, `ffprobe` and `ffplay`, and the
@@ -176,12 +219,24 @@ find_ffplay <- function() {
 #' @export
 program_status <- function() {
   programs <- tm_programs()
-  # find_program() warns once per program it cannot resolve, and once more for
-  # a remembered location whose binary is gone. A report over four programs
-  # answers with NA in a column instead; the caller asked which programs are
-  # missing, so being told is not news (M113).
+  # Of the three states find_program() warns in, exactly one is already carried
+  # by the table: a program that is simply not there, whose NA in both columns
+  # IS "not found", and four such warnings would bury the answer the call
+  # exists to return. The other two name a file on this machine the caller can
+  # repair -- a remembered location whose binary is gone, and a config file
+  # that does not hold one location -- and there NA is indistinguishable from
+  # never-configured, so a silent report sends the caller off to install a
+  # program they have already got (D088). Selected by class rather than by
+  # message, and by the classes to be RAISED rather than the one to be
+  # muffled, so a warning added later is silent until it is decided about.
+  audible <- c("tidymedia_location_gone", "tidymedia_location_unreadable")
   locations <- lapply(programs, function(program) {
-    suppressWarnings(find_program(program))
+    withCallingHandlers(
+      find_program(program),
+      warning = function(w) {
+        if (!inherits(w, audible)) invokeRestart("muffleWarning")
+      }
+    )
   })
   # The version probe's own timeout warning is NOT suppressed: it says the
   # limit ended the probe, which is a different fact from the program being
@@ -288,6 +343,20 @@ tm_unset_program <- function(program, call) {
   # still there is a question only the filesystem can answer (M103's shape).
   tm_unlink(present)
   left <- present[file.exists(present)]
+
+  # What tidymedia remembers about an FFmpeg build was memoized against the
+  # binary the forgotten location named, so it goes with it -- the same reason
+  # set_program() drops it when it points at a different binary (M67/D044).
+  #
+  # Above the abort, not below it, and keyed on any removal that took rather
+  # than on all of them. A partial removal -- one file gone, the other still
+  # there -- changes which location find_program() answers with, so the memo is
+  # already stale by the time the refusal is raised; dropping it only on the
+  # success path left it describing a build the lookups had stopped resolving
+  # to (D089). A run that removed nothing skips it: nothing about the resolved
+  # binary changed, and a discard there costs a re-probe for no reason.
+  if (length(left) < length(present)) forget_ffmpeg_capabilities()
+
   if (length(left)) {
     cli::cli_abort(
       c(
@@ -301,11 +370,6 @@ tm_unset_program <- function(program, call) {
       call = call
     )
   }
-
-  # What tidymedia remembers about an FFmpeg build was memoized against the
-  # binary the forgotten location named, so it goes with it -- the same reason
-  # set_program() drops it when it points at a different binary (M67/D044).
-  forget_ffmpeg_capabilities()
 
   invisible(TRUE)
 }
@@ -573,6 +637,27 @@ tm_os <- function(info = Sys.info(), os_type = .Platform$OS.type) {
 # one. Named once so the prompt cannot promise a different set of writes from
 # the one the call makes.
 tm_install_registers <- c("ffmpeg", "ffprobe", "ffplay")
+
+# The install offer, or nothing. `install_on_win()` is named only where it runs
+# and only for the programs it registers: on a Mac, or for mediainfo, it would
+# send the caller at a call that refuses them. Both facts are read from the
+# installer's own seam and its own list rather than restated at a warning site,
+# so the advice cannot drift from what the installer does (M115). One function
+# rather than a condition repeated at each site, because find_program() offers
+# the same recovery from two branches -- a program it never found, and a
+# remembered location whose binary is gone -- and a second copy of the test is
+# how the two would come to disagree (M116).
+#
+# Returns a cli bullet named "i", or a zero-length vector that `c()` splices
+# away. The string carries cli inline markup and is interpolated in the calling
+# warning's frame, not here.
+tm_install_bullet <- function(program) {
+  if (identical(tm_os(), "windows") && program %in% tm_install_registers) {
+    return(c("i" = "Or run {.fn install_on_win} to download FFmpeg and \\
+                    remember where it landed."))
+  }
+  character(0)
+}
 
 # Where a caller who is not on Windows gets FFmpeg instead. One line each,
 # because that is the whole of the answer on those two platforms, and the

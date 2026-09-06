@@ -115,6 +115,38 @@
 
 ## Configuration
 
+* A remembered program location that cannot be read no longer stops the call. A
+  configuration file holding nothing, or holding more than one line, made
+  `find_ffmpeg()` -- and every call above it -- fail with an R error naming
+  neither the program nor the file. It now warns with the catchable class
+  `tidymedia_location_unreadable`, carrying the program and the file, and
+  returns `NULL`. `unset_program()` clears the file; `set_program()` replaces
+  it.
+
+* The warning for a remembered location whose binary has gone now offers
+  `unset_program()` beside `set_program()`, since forgetting the location is
+  the other repair, and on Windows it offers `install_on_win()` on the same
+  terms the not-found warning does. It carries the catchable class
+  `tidymedia_location_gone` with the program and the location.
+
+* `program_status()` no longer swallows those two warnings. A program that was
+  never configured and is not installed still gets `NA` in both columns and
+  says nothing about it -- there, `NA` is the whole answer. A remembered
+  location that cannot be used is not: `NA` would read exactly like a program
+  you never had, while the real state is a file on your machine you can clear
+  in one call, so the warning naming it comes through.
+
+* `unset_program()` now discards what tidymedia remembers about your FFmpeg
+  build whenever a removal took, including a removal that cleared one of the
+  two configuration files and then failed on the other. That case used to
+  leave the remembered capabilities describing a binary the lookups had
+  already stopped resolving to.
+
+* The warning raised when a version probe runs out of time names each program
+  the way `program_status()`'s `program` column does -- `ffmpeg` rather than
+  `FFmpeg` -- and no longer says the `NA` lands in a manifest. The same warning
+  is raised from `program_status()`, whose `NA` lands in a returned table.
+
 * The warning `find_ffmpeg()` and its siblings give when they cannot find a
   program now names the recovery your machine actually has. It advised
   `set_<program>()` and nothing else; on Windows it now also offers

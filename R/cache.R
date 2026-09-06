@@ -36,14 +36,16 @@ cached_encoder_names <- function() {
 #' FFmpeg process per call, which is what makes a large batch practical. The
 #' answer is remembered for the rest of the session, so a build that changes
 #' underneath you -- a fresh FFmpeg install, a new GPU driver, a different
-#' binary -- is not seen until the record is discarded. There are two ways to
+#' binary -- is not seen until the record is discarded. There are three ways to
 #' discard it:
 #'
 #' \itemize{
 #'   \item call \code{refresh_ffmpeg_capabilities()} yourself, at any time;
 #'   \item call \code{\link{set_program}} (or \code{\link{set_ffmpeg}}), which
 #'     discards it for you, since pointing tidymedia at a different binary
-#'     invalidates everything remembered about the old one.
+#'     invalidates everything remembered about the old one;
+#'   \item call \code{\link{unset_program}}, for the same reason: forgetting a
+#'     remembered location can change which binary tidymedia resolves to.
 #' }
 #'
 #' The record is per R process, and it does not travel to a worker. So unless

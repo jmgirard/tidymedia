@@ -92,7 +92,7 @@ unclassed-aborts candidate row.
       change; `mediainfo_summary()` and `mediainfo_template()` have identical
       signatures. Record the call either way.
 - [x] T6: Append the superseding D-entry.
-- [ ] T7: `document()`, `test()`, `check()`, `NEWS.md`.
+- [x] T7: `document()`, `test()`, `check()`, `NEWS.md`.
 
 ## Work log
 
@@ -108,6 +108,7 @@ unclassed-aborts candidate row.
 - 2026-09-05: T4 added `tests/testthat/test-blame-frame-table.R`: 14 rows (7 exports x argument/body) x 2 call sites, all 28 cells naming the export the caller typed. A second test pins each row to its condition class or message, so a body row that aborted in a checker instead cannot pass on the frame alone. The discriminating control plants the defect class — a refusal left to `rlang::caller_env()` — and shows it comes back naming the calling frame (`thunk`, then `w_leaky`) where the fixed shape names itself, so the agreement between the frame columns and the export column is not vacuous. 16 expectations, all green; the existing pinning suites are untouched and still pass.
 - 2026-09-05: T5 removed `ffm()` and `mediainfo_summary()`. Both `export()` lines and both `.Rd` files are gone, `_pkgdown.yml` lost both rows, and every `ffm(` call site in `R/`, `tests/`, `vignettes/` and `README.Rmd` now reads `ffm_files(`. Three recorded fixtures needed handling rather than rewriting: M096's corrupt-limit census (20 rows left the domain, 19 kept and 1 dropped, so 1515/1084/431), the timeout domain lists in `helper-timeout-sweep.R`, and `timeout-valid-baseline.rds`, whose `mediainfo_summary` cell is dropped on read under a `stopifnot()` proving it byte-identical to `mediainfo_template`'s — the same treatment the blob's `has_nvenc` rename already gets. The `ffm is an alias for ffm_files` test is deleted. Suite: FAIL 0, PASS 12603, WARN 10 (unchanged), SKIP 18.
 - 2026-09-05: T6 appended D087 to `cairn/DECISIONS.md`, superseding M110's milestone-local decision by name and stating the internal-implementation mechanism, what it rules out, and its falsifier.
+- 2026-09-05: T7 added a `NEWS.md` Breaking changes section with two entries — the removed `call` argument, and the two removed duplicate names — and a third saying which function each refusal now names, every claim of which `test-blame-frame-table.R` enforces. `devtools::document()` produces no diff, `pkgdown::check_pkgdown()` reports no problems, and `devtools::check()` is `Status: OK` (0 errors, 0 warnings, 0 notes). Reaching 0 notes needed one carried trivial fix outside this milestone's subject: `inst/WORDLIST` gained `testthat's`, which `tests/spelling.R` had been flagging in a pre-existing NEWS line on master too (measured at `NEWS.md:39` on master, `:63` here). No runtime surface.
 - 2026-09-05: plan gate chose a sweep over `getNamespaceExports()` over a grep of `man/*.Rd` usage blocks, because `.Rd` files carry no export status — only 1 of 82 is marked internal — so the grep cannot partition its hits. Falsified by an export whose formals a static sweep cannot read.
 
 ## Decisions

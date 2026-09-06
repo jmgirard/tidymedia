@@ -112,6 +112,7 @@ unclassed-aborts candidate row.
 - 2026-09-05: plan gate chose a sweep over `getNamespaceExports()` over a grep of `man/*.Rd` usage blocks, because `.Rd` files carry no export status — only 1 of 82 is marked internal — so the grep cannot partition its hits. Falsified by an export whose formals a static sweep cannot read.
 
 - 2026-09-05: step-7 approval: PR #116 approved for merge.
+- 2026-09-05: resume: PR #116 OPEN with every criterion evidenced and the approval recorded; re-entered at step 1. `master` unmoved at `819a5299`, so the recorded evidence stands; the step-7 PR-conversation read re-ran and the chip was re-posed and approved.
 
 ## Decisions
 
@@ -358,6 +359,10 @@ disposition was fix 1-6 and 8 on the branch, reject 9.
   fix already disclosed in the work log and has no runtime surface; the
   rewrapped paragraph and the test-file siting are style points a formatter or
   a linter's remit, which the triage taxonomy rejects.
+
+**PR-conversation read (PR #116).** Empty: no reviews, no conversation
+comments, and no review threads (resolved or unresolved), so no disposition is
+owed and the blocking rule does not fire.
 
 Re-verified after the fixes: `devtools::document()` no diff,
 `devtools::check()` `Status: OK` 0/0/0 with the suite running inside it

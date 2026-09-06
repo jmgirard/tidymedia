@@ -935,6 +935,23 @@ tm_refusal_head <- function(name, args, limit) {
 # though their cell is empty (or, for `has_hardware_encoder`, holds only the
 # backend its required `hardware` argument has no default for), and
 # `ffmpeg_codecs`'s is the argument M096 exists to guard.
+# tm_timeout_argumentless(): domain members with no formal a caller can name.
+#
+# A wrong-argument sweep has nothing to cross these with -- there is no argument
+# to pass a wrong value to -- so they contribute no cells and are not part of
+# the corrupt table's membership. Computed, not listed: the test that uses it
+# pins the answer, so a second argumentless export joining the domain reddens
+# there rather than disappearing from the sweep.
+tm_timeout_argumentless <- function() {
+  ns <- asNamespace("tidymedia")
+  Filter(
+    function(nm) {
+      !length(setdiff(names(formals(get(nm, envir = ns))), "..."))
+    },
+    tm_timeout_domain()
+  )
+}
+
 tm_timeout_corrupt_specs <- function(dir) {
   specs <- tm_timeout_call_specs(dir)
   forms <- tm_nvenc_wrong_forms()

@@ -19,7 +19,15 @@ test_that("the widened sweep quantifies over a domain it computes, not a list", 
   # is the `ffmpeg_codecs()` this milestone exists to guard -- would leave every
   # expectation below vacuously true.
   members <- tm_sort_c(unique(vapply(cells, function(x) x$name, character(1))))
-  expect_equal(members, tm_sort_c(tm_timeout_domain()))
+  # Every domain member EXCEPT the ones with no formal a caller can name: a
+  # wrong-argument sweep has nothing to cross those with. The residue is pinned
+  # rather than merely subtracted, so a member that drops out of the table for
+  # any other reason still reddens here.
+  expect_equal(tm_sort_c(tm_timeout_argumentless()), "program_status")
+  expect_equal(
+    members,
+    tm_sort_c(setdiff(tm_timeout_domain(), tm_timeout_argumentless()))
+  )
   expect_gt(length(members), 0)
 
   # Every member is crossed with all five wrong forms and with every formal it

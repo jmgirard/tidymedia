@@ -207,7 +207,126 @@ re-evidenced here against that head.
   `@family program management functions`; `program_status()`'s example is
   `@examplesIf nzchar(Sys.which("ffmpeg"))` and `unset_program()`'s is
   `\dontrun{}`; `NEWS.md` carries one entry each under "New features".
-- AC6 — see below.
+- AC6 — **pass**, re-run at the branch head. `devtools::document()` produced no
+  diff (`git status` clean afterwards). `devtools::check()`: `Status: OK`, 0
+  errors / 0 warnings / 0 notes, 15m49s, its own `checking tests ... OK`.
+
+### Independent review (re-review, 2026-09-06)
+
+Surface tier user-facing, so the full three-lens fan-out ran again against the
+amended head, each lens fresh-context with a distinct evidence base.
+
+- **[S] prior-PR-comments** — zero findings. Archived `## Review` sections are
+  the primary surface; the probe
+  (`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1`) returned `[]`,
+  so the per-PR walk was skipped. Checked and clear against M097's Windows
+  config-collapse trap, M067/D044's memo discard, M110/M112's `call` threading
+  and M094/M096's computed-domain rule.
+- **[S] blame-history** — no new findings. It independently re-derived F1 as
+  its top item against D079, restated F2/F3/F5/F6/F7/F9, and confirmed as
+  sound: the `call`-threading shape against D087, the `tm_force_timeout()`
+  resolution-seam fix as a real CI-cause fix rather than weakened coverage, the
+  guarded `tm_timeout_argumentless()`/`tm_timeout_post_baseline()` narrowings,
+  the byte-identical fixture move, and `parse_version_line()`'s new arm firing
+  only after the old one finds nothing.
+- **[O] diff-bug** — fourteen findings, ranked. Six reproduce the prior pass's
+  F1, F2, F3, F5, F6 and F9 against the current head; six are new; F4 is
+  resolved by the amendment and F8 stays rejected.
+
+#### Findings and dispositions (re-review)
+
+Numbering is the re-review lens's; the prior pass's label follows where one
+exists.
+
+1. **(F1) `unset_program()` called with no arguments deletes ffmpeg's
+   remembered location** (`R/program_management.R:236`). Reproduced. The
+   exported formal defaults to the four-member vocabulary and `arg_match()`
+   resolves it to `"ffmpeg"`, so a call naming nothing performs the package's
+   only irreversible filesystem deletion. D079's rule reaches it — the
+   pre-0.2.0 window is open (`Version: 0.1.0.9000`) and neither carve-out
+   applies — and `find_program()`/`set_program()` carry the same default while
+   being read-only and consent-gated.
+2. **(F2) `program_status()` dies with an unclassed base error on a malformed
+   config file** (`:174`). Reproduced: an empty `ffplay_location.txt` gives
+   `Error: argument is of length zero`, a two-line one
+   `Error: the condition has length > 1`, both `simpleError`. The fault is
+   `find_program()`'s and predates the branch, but `program_status()` reads all
+   four config files on every call. `count_audio_streams()`
+   (`R/ffprobe.R:213-219`, from M44 review F2) already defends against exactly
+   this with a `tryCatch`.
+3. **(F6) A partial removal aborts with the capability memo left stale**
+   (`:270-291`). Reproduced: the `cli_abort` sits above
+   `forget_ffmpeg_capabilities()`, so a removal that takes one file and not the
+   other leaves `find_program()` answering with a different binary than the
+   memo describes — the drift D044/M067 exists to prevent.
+4. **(F5) `program_status()` reports `NA` for a stale remembered location and
+   swallows the warning that explains it** (`:174`). Reproduced. `NA` covers
+   both "never configured" and "configured at a path that is gone", the second
+   being the state `unset_program()` exists to repair.
+5. **(F3) The probe-timeout warning tells a `program_status()` caller about a
+   manifest** (`R/ffm_manifest.R:154-166`). Reproduced. There is no manifest on
+   this path, and the bullet lists display labels (`FFmpeg`) rather than the
+   `program` column's values (`ffmpeg`).
+6. **NEW — `program_status()` is permanently excluded from the byte-for-byte
+   spawn-trace baseline with no substitute pin**
+   (`tests/testthat/helper-timeout-sweep.R:147-177`). Read, not run. The
+   exclusion is documented and `stopifnot`-guarded, and the live rules still
+   sweep the member; what has no present-day reading is its spawn trace.
+7. **(F9) NEWS overclaims silence** (`NEWS.md:6-11`, "It warns about
+   nothing"). Reproduced through finding 5.
+8. **NEW — `program_status()` resolves through `find_program()` directly,
+   walking past the mock seam its sibling exists to respect** (`:174` against
+   the comment at `R/ffm_manifest.R:183-186`). Read. This is why T7's fix had
+   to add a `find_program` mock.
+9. **(F7) `tool_versions()` reassigns its own `programs` argument inside the
+   warning branch** (`R/ffm_manifest.R:154`). Read. Correct only because
+   nothing below reads it.
+10. **NEW — `tool_versions()` does not check that `locations` matches
+    `programs` in length** (`R/ffm_manifest.R:143-149`). Read; `Map` recycles
+    silently, so a short `locations` would relabel every row.
+11. **NEW — `?program_status` describes a lookup order that omits the legacy
+    directory** (`:167-169`), where `?find_program` and `?unset_program` both
+    name the pre-0.2.0 `rappdirs` file.
+12. **NEW — the config-redirect helper's comment claims a recording mock that
+    records nothing** (`tests/testthat/helper-program-config.R:32-45`); T5's
+    task text repeats the claim.
+13. **(F10) `program_status()` joins the absorber partition with no
+    explanatory paragraph** (`tests/testthat/test-timeout-silence.R:58-63`),
+    where every other member carries one.
+14. **NEW — `expect_invisible(unset_program("ffmpeg"))` asserts invisibility
+    but not the return value** (`test-program-status-and-unset.R:243`), in the
+    test named "returns TRUE invisibly".
+
+**(F8) stays rejected** — dropping the memoized FFmpeg capabilities on
+`unset_program("mediainfo")` is an intentional change the code comment records,
+matching `set_program()`'s documented choice.
+
+**Return floor.** No finding demonstrates an acceptance criterion failing
+inside the domain of the procedure that criterion names: F2 falls outside AC2's
+named four-runs-one-hidden procedure, F9 and finding 11 fall outside AC5, which
+asks for a NEWS entry and a pkgdown row rather than for their wording, and AC1,
+AC3, AC4 and AC6 are unaffected. So no floor return fires from the findings
+themselves; finding 1 is the one put to the maintainer as a possible
+load-bearing defect.
+
+### Consistency gate (re-review)
+
+`cairn_validate.py` exit 0, all 16 PASS and all 7 advisories OK — the
+`release window` advisory did not fire. No `DESIGN.md` principle changed, so
+`cairn_impact.py` is skipped. Toolchain half, per the `r-package` profile's
+`consistency-gate` slot: `document()` no diff; no hand-edited generated file;
+`README.Rmd`/`README.md` untouched by the branch; `pkgdown::check_pkgdown()`
+"No problems found."; `NEWS.md` carries an entry per export with no milestone
+number; no new top-level file, so no `.Rbuildignore` entry is owed;
+`devtools::check()` clean.
+
+### CI (re-review, commit `8baf7ac`)
+
+The two legs that were red at `fa58566` are green: `macos-latest (release)`
+pass 9m55s, `windows-latest (release)` pass 15m43s. Also green:
+`ubuntu-latest (release)` 17m52s and `pkgdown` 2m22s. So the T7 sweep fix holds
+on both platforms the reproduced cause named.
+
 
 ### Consistency gate
 

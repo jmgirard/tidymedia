@@ -106,6 +106,7 @@ Teaching either function in a vignette → M114.
 - 2026-09-05: review (wip) — PR #117 opened as a draft; AC1-AC5 verified with fresh evidence and ticked. AC6 pending `devtools::check()`; three review lenses spawned, the blame-history and prior-review lenses reported zero findings, the diff-bug lens still running.
 - 2026-09-05: review — PR #117; AC1, AC2, AC4, AC5 and AC6 verified with fresh evidence and ticked. `cairn_validate` clean, toolchain consistency gate clean, `check()` 0/0/0. Three review lenses ran; the two Sonnet lenses returned zero findings, the [O] diff-bug lens returned ten, six reproduced against the branch head.
 - 2026-09-05: amendment return: AC3 — "`find_program()` returns what it returned before the `set_program()` call — including `NULL` with its warning where that is what it returned". Falsified only outside the domain of the walk AC3's evidence clause names, by a legacy file predating the `set_program()` call; contradicts this milestone's own Scope, which asks for both files to be removed. Status to `in-progress` for the amendment alone; AC3 unticked.
+- 2026-09-05: review — CI on PR #117 red on macos-latest and windows-latest, green on all four Linux legs and pkgdown. Both red legs fail `test-timeout-silence.R:351` and `test-timeout-refusal-blame.R:425` on `program_status`, which spawns nothing on a runner with no binaries installed, so a forced limit is never reached. Reproduced locally under an emptied `PATH` with both config dirs redirected. Carried into the amendment return's work.
 
 ## Decisions
 
@@ -287,3 +288,32 @@ The nine other findings stay open and untriaged: the amendment is the only work
 this return convenes, and they go to the maintainer at the re-review gate. F1
 is the one worth flagging ahead of that — it authorizes an irreversible
 deletion from a call that names no program.
+
+### CI
+
+PR #117, commit `fa58566`. Four Linux legs and `pkgdown` green; **macOS and
+Windows red**, both with the same two failures:
+
+- `test-timeout-silence.R:351` — "no swept function absorbs a forced timeout
+  silently": `program_status absorbed the timeout silently: no condition at all`
+- `test-timeout-refusal-blame.R:425` — "a REACHED limit still aborts or warns
+  exactly as it did (AC6)": `got$aborted || got$warned` was `FALSE`
+
+macOS `[ FAIL 2 | WARN 2 | SKIP 277 | PASS 11591 ]`, Windows
+`[ FAIL 2 | WARN 0 | SKIP 312 | PASS 11273 ]`; macOS `R CMD check` exits
+`Status: 1 ERROR`.
+
+Cause, reproduced locally rather than inferred: the workflow's
+"Install ffmpeg and mediainfo" step is Linux-only and was skipped on both
+runners, so neither has any of the four binaries. `program_status()` spawns a
+version probe only for a program that resolves, so on a machine where none
+resolves it spawns nothing and a forced limit is never reached — while the two
+sweeps assert that every member of the timeout domain either aborts or warns
+under a forced limit. Under this machine's real `PATH`,
+`tm_force_timeout("program_status", ...)` gives `warned = TRUE`; with `PATH=""`
+and both config dirs redirected empty it gives `aborted = FALSE, warned =
+FALSE`, which is the runners' reading.
+
+So `program_status()` is the first domain member whose spawning is conditional
+on the environment, and the sweeps have no gate for that. The fix belongs with
+the work this return convenes.

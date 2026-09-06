@@ -111,6 +111,8 @@ unclassed-aborts candidate row.
 - 2026-09-05: T7 added a `NEWS.md` Breaking changes section with two entries — the removed `call` argument, and the two removed duplicate names — and a third saying which function each refusal now names, every claim of which `test-blame-frame-table.R` enforces. `devtools::document()` produces no diff, `pkgdown::check_pkgdown()` reports no problems, and `devtools::check()` is `Status: OK` (0 errors, 0 warnings, 0 notes). Reaching 0 notes needed one carried trivial fix outside this milestone's subject: `inst/WORDLIST` gained `testthat's`, which `tests/spelling.R` had been flagging in a pre-existing NEWS line on master too (measured at `NEWS.md:39` on master, `:63` here). No runtime surface.
 - 2026-09-05: plan gate chose a sweep over `getNamespaceExports()` over a grep of `man/*.Rd` usage blocks, because `.Rd` files carry no export status — only 1 of 82 is marked internal — so the grep cannot partition its hits. Falsified by an export whose formals a static sweep cannot read.
 
+- 2026-09-05: step-7 approval: PR #116 approved for merge.
+
 ## Decisions
 
 ## Review

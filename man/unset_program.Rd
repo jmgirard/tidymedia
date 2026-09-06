@@ -15,8 +15,8 @@ where there was none to remove.
 }
 \description{
 Removes the location \code{\link[=set_program]{set_program()}} remembered for a program, so that
-\code{\link[=find_program]{find_program()}} answers as it did before that location was set. Both places
-a location can live are cleared: the file under
+\code{\link[=find_program]{find_program()}} goes back to answering from the \code{PATH}. Both places a
+location can live are cleared: the file under
 \code{tools::R_user_dir("tidymedia", "config")} and, where one is still there, the
 file a version of tidymedia before 0.2.0 wrote under
 \code{rappdirs::user_config_dir("tidymedia", "R")}.
@@ -24,7 +24,9 @@ file a version of tidymedia before 0.2.0 wrote under
 \details{
 Forgetting a location does not remove the program itself, and it does not
 change what is on the \code{PATH}. A program tidymedia found on the \code{PATH} is
-still found afterwards.
+still found afterwards. A location remembered by a version before 0.2.0 is
+cleared as well, so it is not left behind for \code{\link[=find_program]{find_program()}} to answer
+with once the current file is gone.
 
 There is nothing to confirm: deleting the remembered location is the whole of
 what the call does. Calling it for a program with nothing remembered warns
@@ -33,8 +35,8 @@ the state you have.
 }
 \examples{
 \dontrun{
-# Forget a location set_program() remembered, so that find_program() answers
-# as it did before it was set
+# Forget a location set_program() remembered, so that find_program() goes
+# back to answering from the PATH
 unset_program("mediainfo")
 }
 }

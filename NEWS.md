@@ -9,10 +9,11 @@
   setup is one call rather than four calls and a pile of messages.
 
 * `unset_program()` forgets a location `set_program()` remembered, so
-  `find_program()` answers as it did before that location was set. It clears
-  both places a location can live: the current configuration file and one
-  written by a version of tidymedia before 0.2.0. Called for a program with
-  nothing remembered, it warns and returns `FALSE` rather than failing.
+  `find_program()` goes back to answering from the `PATH`. It clears both
+  places a location can live: the current configuration file and one written by
+  a version of tidymedia before 0.2.0, so a location remembered before the
+  upgrade is forgotten too. Called for a program with nothing remembered, it
+  warns and returns `FALSE` rather than failing.
 
 ## Breaking changes
 

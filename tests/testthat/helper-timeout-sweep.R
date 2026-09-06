@@ -292,6 +292,19 @@ tm_timeout_call_specs <- function(dir) {
 # verdict is ever consulted -- so those cells would measure the runner's PATH.
 # CI's macOS and Windows runners install no media binaries at all.
 #
+# Resolution is intercepted for the same reason, at `find_program()`, which is
+# the one place the package turns a program name into a path. Injecting at the
+# spawn wrappers alone leaves a member that decides WHETHER to spawn by asking
+# the machine what it has: `program_status()` probes a program's version only
+# for a program it resolved, so on a runner with no binaries it spawns nothing,
+# reaches no limit, and reads as silent. That is what CI's macOS and Windows
+# legs reported at M113 -- both red on this grid and on the blame sweep with
+# `program_status absorbed the timeout silently: no condition at all`,
+# reproduced locally under `PATH=""` with both config dirs redirected empty.
+# The mocked resolver hands back a path under a directory that does not exist;
+# nothing on this path reads the file, because every spawn is already
+# intercepted, so the only thing the path has to be is non-empty.
+#
 # What each cell therefore asks is exactly AC1's question: given a timeout
 # signalled beneath it, does this function let the caller see it? Whether the
 # wrappers themselves detect a real kill is M69's question, answered by
@@ -301,6 +314,9 @@ tm_force_timeout <- function(name, args, limit = 2) {
   err <- NULL
   withr::with_options(list(tidymedia.timeout = limit), {
     testthat::local_mocked_bindings(
+      find_program = function(program = "ffmpeg", ...) {
+        file.path("/nonexistent", program[[1]])
+      },
       run_program = function(location, args, program = "the program", ...) {
         abort_timeout(program, limit)
       },

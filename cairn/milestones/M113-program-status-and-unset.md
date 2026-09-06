@@ -43,14 +43,16 @@ Teaching either function in a vignette → M114.
 - [x] AC2: `program_status()` returns that tibble rather than aborting or
       warning when a program is unresolvable, for each of the four taken alone.
       Evidence: four runs, one program hidden per run.
-- [ ] AC3: After `set_program()` writes a location and `unset_program()` runs
-      for that program, no file named `<program>_location.txt` exists under
-      either the current config dir or the legacy `rappdirs` dir, and
-      `find_program()` returns what it returned before the `set_program()` call
-      — including `NULL` with its warning where that is what it returned.
-      Evidence: a test over the three states (never remembered, remembered,
-      forgotten) x two config locations, showing the file paths and the
-      `find_program()` answer at each.
+- [ ] AC3: When a location is remembered for a program and `unset_program()`
+      then returns `TRUE` for it, no file named `<program>_location.txt` exists
+      under either the current config dir or the legacy `rappdirs` dir, and
+      `find_program()` answers as it did when nothing was remembered: `NULL`
+      with its `Failed to find` warning, under the emptied `PATH` the walk runs
+      under. Evidence: a test walking each of the three remembered
+      configurations (current dir only, legacy dir only, both) from never
+      remembered through remembered to forgotten, run for each of the four
+      programs, showing both file paths and the `find_program()` answer at each
+      step.
 - [x] AC4: `unset_program()` called for a program with no remembered location
       raises a classed condition carrying a `tm_program` field, per D062's
       naming rule and D086's field rule, rather than failing silently or
@@ -69,7 +71,7 @@ Teaching either function in a vignette → M114.
 - AC3 → T4, T5
 - AC4 → T4, T5
 - AC5 → T6
-- AC6 → T6
+- AC6 → T6, T7
 
 ## Tasks
 
@@ -90,6 +92,9 @@ Teaching either function in a vignette → M114.
       recording mock rather than by the envvar.
 - [x] T6: Roxygen, `_pkgdown.yml` rows, `NEWS.md`, `document()`, `test()`,
       `check()`.
+- [x] T7: Discovered at review — give the timeout sweeps a gate for a domain
+      member whose spawning is conditional on the machine, so the grid stops
+      reading the runner's `PATH` through `program_status()`.
 
 ## Work log
 
@@ -107,6 +112,10 @@ Teaching either function in a vignette → M114.
 - 2026-09-05: review — PR #117; AC1, AC2, AC4, AC5 and AC6 verified with fresh evidence and ticked. `cairn_validate` clean, toolchain consistency gate clean, `check()` 0/0/0. Three review lenses ran; the two Sonnet lenses returned zero findings, the [O] diff-bug lens returned ten, six reproduced against the branch head.
 - 2026-09-05: amendment return: AC3 — "`find_program()` returns what it returned before the `set_program()` call — including `NULL` with its warning where that is what it returned". Falsified only outside the domain of the walk AC3's evidence clause names, by a legacy file predating the `set_program()` call; contradicts this milestone's own Scope, which asks for both files to be removed. Status to `in-progress` for the amendment alone; AC3 unticked.
 - 2026-09-05: review — CI on PR #117 red on macos-latest and windows-latest, green on all four Linux legs and pkgdown. Both red legs fail `test-timeout-silence.R:351` and `test-timeout-refusal-blame.R:425` on `program_status`, which spawns nothing on a runner with no binaries installed, so a forced limit is never reached. Reproduced locally under an emptied `PATH` with both config dirs redirected. Carried into the amendment return's work.
+- 2026-09-05: AC3 amended at the implement mini gate, executing the review return. The falsified clause "`find_program()` returns what it returned before the `set_program()` call" is replaced by "`find_program()` answers as it did when nothing was remembered: `NULL` with its `Failed to find` warning, under the emptied `PATH` the walk runs under"; the antecedent now names a successful `unset_program()` rather than `set_program()`'s write, and the evidence names the three remembered configurations x four programs. No second `amendment return: AC3` line is written: the review's line of that shape already records this single return, and a second would read as a second return. The same false promise is fixed in `?unset_program`, its example, and the `NEWS.md` bullet.
+- 2026-09-05: re-audit: AC3 (full) — returned three findings against the mini gate's wording: the promise held over a `unset_program()` run that aborts with the file still on disk (F6's state, pinned at `test-program-status-and-unset.R:307`); the `program` axis was free while the evidence enumerated only states x locations; and the antecedent named `set_program()` as the writer, which cannot instantiate the legacy arm of its own walk, there being no exported writer for that directory. All three fixed before writing.
+- 2026-09-05: re-audit: AC3 (full) — the once re-entry, on the fixed wording. Returned two findings: the `PATH`-has-the-program arm has no reachable cell in the named walk, which empties `PATH` so the other states can assert the `Failed to find` warning; and the antecedent ranges over three remembered configurations while the evidence named two, the both-present one being where the defect was found. Both confirmed against `test-program-status-and-unset.R:203-244` and `helper-program-config.R:41-43`, taken to the user as further churn, and applied on selection.
+- 2026-09-05: T7 — the two timeout sweeps went red on the macOS and Windows CI legs because `program_status()` probes a version only for a program it resolved, so on a runner with no binaries it spawns nothing and a forced limit is never reached. `tm_force_timeout()` now intercepts resolution at `find_program()` as well as the two spawn wrappers, and a new grid case runs the whole domain under an emptied `PATH` with both config dirs empty. Discrimination measured: with the resolver mock removed the new case fails on `program_status` while the grid above it stays green on this machine.
 
 ## Decisions
 

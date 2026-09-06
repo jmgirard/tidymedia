@@ -4219,3 +4219,60 @@ supplying the environment — an exported function whose refusal must name a
 frame that is neither its own nor any tidymedia front door's. At that point the
 argument belongs in the signature and this entry is superseded, not worked
 around with a hidden option.
+
+## D088 — A four-program report silences the warning for an absent program and surfaces the two that name a repairable file (2026-09-06, from M116's plan gate; supersedes M113's milestone-local decision that `program_status()` suppresses every `find_program()` warning, and applies D049's audibility reasoning to a non-timeout condition; D049 stands unchanged)
+
+M113 suppressed every warning `find_program()` raises inside
+`program_status()`, on the reasoning that a caller asking which programs are
+missing is not told news by being told. That reasoning holds for exactly one of
+the three states the lookup can be in, and M113 applied it to all three.
+
+**The rule.** `program_status()` silences the warning for a program that is
+simply not there, and raises the two that name a file on this machine the
+caller can repair: a remembered location whose binary is gone, and a
+remembered-location file that does not hold one readable line. The distinction
+is not severity. It is whether the report's own `NA` already carries the whole
+fact. For an absent program it does — `NA` in both columns *is* "not found",
+and four such warnings would bury the table the call exists to return. For the
+other two it does not: `NA` there is indistinguishable from never-configured,
+while the actual state is a file sitting in the config directory that
+`unset_program()` or `set_program()` clears. A report that says only `NA` sends
+the caller to install a program they have already got.
+
+**Why not a fourth column.** Reporting the remembered location alongside the
+resolved one was weighed at the same gate and rejected: it changes the shape
+every reader of that tibble sees, permanently, to carry a state that is rare
+and already fixable, where a warning costs nothing to a caller who never hits
+it. The trade would be worth revisiting for a caller that must branch on
+staleness in code rather than be told about it — which is this entry's
+falsifier.
+
+**Falsified by** a caller who needs the stale-versus-absent distinction as data
+rather than as a condition, or by the two surfaced warnings proving noisy
+enough in ordinary use that the table is worse for them.
+
+## D089 — The memo's discard routes are four, not the two D044 recorded (2026-09-06, from M116; corrects D044's lifetime census, which M113 had already outgrown; the rest of D044 — the memo's placement below the option seam, its session lifetime, and its per-process invisibility to parallel workers — stands unchanged)
+
+D044 stated that the memoized encoder-name pool "is discarded on exactly two
+routes: the exported `refresh_ffmpeg_capabilities()`, and `set_program()`".
+That census was accurate when written and has been wrong since M113, which
+added `unset_program()` as a third without amending it. M116 adds the fourth: a
+partial removal inside `unset_program()` that deletes one of the two remembered
+files and then fails on the other now discards the memo before it aborts,
+because the file it did delete may be the one lookups were answering from.
+
+**The corrected census.** Four routes discard the memo:
+`refresh_ffmpeg_capabilities()`, `set_program()`, a successful
+`unset_program()`, and an `unset_program()` that removed at least one file
+before failing. An `unset_program()` that removed nothing does not — nothing
+about the resolved binary changed, and discarding there costs a re-probe for
+no reason.
+
+**What this does not change.** D044's rule that the memo sits strictly below the
+`tidymedia.nvenc_encoders` option seam, that it lives for the R session and is
+discarded by nothing else — not a new install, not a driver change, not time —
+and that `parallel = TRUE` workers each keep their own, are all untouched. Only
+the count and membership of the discard routes are corrected here.
+
+**Falsified by** a fifth route being added without this entry being superseded,
+which is the failure mode that produced it.

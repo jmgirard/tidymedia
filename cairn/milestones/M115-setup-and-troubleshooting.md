@@ -1,13 +1,13 @@
 # M115: A new user can tell whether the setup worked, and fix it when it did not
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M113
 - **Driving RR:** —
 - **Principles touched:** —
 - **Surface tier:** user-facing — the README and the getting-started path every new user takes
 - **Resolves:** —
-- **Branch/PR:** —
+- **Branch/PR:** `m115-setup-and-troubleshooting`
 
 ## Goal
 
@@ -69,7 +69,7 @@ it. Everything M114 covers.
 
 ## Tasks
 
-- [ ] T1: Add the verification step to each platform section, calling
+- [x] T1: Add the verification step to each platform section, calling
       `program_status()` from M113.
 - [ ] T2: Rewrite the macOS manual route so it ends at a working lookup, and
       follow it once end to end rather than deriving the prose from the code.
@@ -92,6 +92,8 @@ it. Everything M114 covers.
 - 2026-09-05: criteria audit ran in FULL mode (user-facing tier), fresh-context [O] reader, over the draft this milestone was split from (M114's). Its chunk-guard and `PATH`-emptied findings applied here identically and are fixed in AC3 and AC4; no finding was specific to this half.
 - 2026-09-05: plan gate chose splitting the setup and troubleshooting half out of the documentation scope the user selected, over one large docs milestone, because this half depends on M113's `program_status()` and the other half depends on nothing. Falsified by the two halves needing to cross-reference each other so tightly that they cannot be reviewed apart.
 - 2026-09-05: plan gate chose fixing the README over adding a setup vignette, because a reader hitting a missing binary is already in the README and installing the package is the only step before it. Falsified by the section outgrowing the README, which is the candidate row's trigger.
+- 2026-09-06: gate chose a shown-not-run check block (a live chunk would ship the maintainer's own paths and version as the reader's example answer, and would need a guard that blanks it on the machine the section is written for), one check per platform per program, and extending `tools/build_vignettes_without_binaries.R` rather than adding a second script.
+- 2026-09-06: T1 done. Seven `program_status()` check steps added to `README.Rmd`, one per platform route under each program, each with the recovery call for that route. Recovery paths are placeholders rather than asserted install locations, except the two the README already named. `README.md` is re-knitted once in T3.
 
 ## Decisions
 

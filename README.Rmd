@@ -41,6 +41,11 @@ devtools::install_github("jmgirard/tidymedia")
 **Debian/Ubuntu**
 
 1. Enter this code into your terminal:<br />`sudo apt-get install mediainfo`
+2. Check that R can find it:<br />
+`tidymedia::program_status()`<br />
+The `mediainfo` row should show a location and a version. If its location is
+`NA`, tidymedia cannot see the program: give it the path yourself with
+`tidymedia::set_mediainfo("/path/to/mediainfo")`.
 
 **Windows**
 
@@ -50,11 +55,28 @@ devtools::install_github("jmgirard/tidymedia")
 `tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")`<br />
 This asks you to confirm the path before it remembers it. In a script with no
 one to ask, add `confirm = FALSE`.
+4. Check that R can find it:<br />
+`tidymedia::program_status()`<br />
+The `mediainfo` row should show a location and a version. If its location is
+`NA`, the path in Step 3 is not where `mediainfo.exe` actually landed: look in
+the folder from Step 2 and run `tidymedia::set_mediainfo()` again with the path
+you find there.
 
 **Mac**
 
 1. Download the appropriate CLI .dmg file from:<br /><https://mediaarea.net/en/MediaInfo/Download/Mac_OS>
 2. Open the .dmg file and drag the program icon to the Applications folder
+3. The Applications folder is not on the `PATH`, so tell tidymedia where the
+   program landed (changing the path to match Step 2):<br />
+`tidymedia::set_mediainfo("/Applications/mediainfo")`<br />
+This asks you to confirm the path before it remembers it, and it is remembered
+across R sessions.
+4. Check that R can find it:<br />
+`tidymedia::program_status()`<br />
+The `mediainfo` row should show a location and a version. If its location is
+`NA`, the path in Step 3 is not where the program actually landed: find it in
+the Applications folder and run `tidymedia::set_mediainfo()` again with that
+path.
 
 #### 2. FFmpeg
 **tidymedia** uses [FFmpeg](https://ffmpeg.org/) to encode media files. If you would like to use these functions, you will need to install the command line interface (CLI) version of this program. Links and instructions for doing so are available [here](https://ffmpeg.org/download.html). Below are instructions for several popular platforms.
@@ -62,17 +84,34 @@ one to ask, add `confirm = FALSE`.
 **Debian/Ubuntu**
 
 1. Enter this code into your terminal:<br />`sudo apt-get install ffmpeg`
+2. Check that R can find it:<br />
+`tidymedia::program_status()`<br />
+The `ffmpeg` and `ffprobe` rows should show locations and versions. If they are
+`NA`, tidymedia cannot see the program: give it the path
+yourself with `tidymedia::set_ffmpeg("/path/to/ffmpeg")`.
 
 **Windows**
 
 1. Install the `tidymedia` package in R.
 2. Run `tidymedia::install_on_win()` in R and confirm the prompt, which names the digest and the archive it will download, the directory it will unpack into, and the program locations it may overwrite. The archive is checked against the SHA-256 digest gyan.dev publishes beside it before anything is unpacked, and no program location is remembered unless the extraction produced that program. To install from a different build, pass its address and its digest: `install_on_win(download_url = ..., archive_checksum = ...)`.
+3. Check that R can find it:<br />
+`tidymedia::program_status()`<br />
+The `ffmpeg` and `ffprobe` rows should show locations and versions. If they are
+`NA`, tidymedia cannot see the program: read the message
+`install_on_win()` printed, or point tidymedia at a build you already have with
+`tidymedia::set_ffmpeg("C:/path/to/ffmpeg.exe")`.
 
 **macOS Homebrew Install**
 
 1. Open the macOS Terminal or Linux shell prompt.
 2. Install [Homebrew](https://brew.sh/) by entering this code into your terminal:<br />`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 3. Enter this code into your terminal:<br />`brew install ffmpeg`
+4. Check that R can find it:<br />
+`tidymedia::program_status()`<br />
+The `ffmpeg` and `ffprobe` rows should show locations and versions. If they are
+`NA`, tidymedia cannot see the program: run `brew --prefix ffmpeg` in the
+terminal and give tidymedia the `bin/ffmpeg` under what it prints, with
+`tidymedia::set_ffmpeg("/path/to/ffmpeg")`.
 
 **macOS Manual Install**
 

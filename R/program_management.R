@@ -52,7 +52,7 @@ tm_install_dir <- function() {
 #' @seealso [set_program()] to point tidymedia at a binary in a non-standard
 #'   location, and [install_on_win()] to download FFmpeg on Windows.
 #' @family program management functions
-#' @examples
+#' @examplesIf nzchar(Sys.which("ffmpeg")) && nzchar(Sys.which("mediainfo"))
 #' # Returns the path to the binary, or NULL with a warning if it is not found
 #' find_ffmpeg()
 #' find_mediainfo()
@@ -87,11 +87,22 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
     } else {
       # If config file not found, return NULL value and warning
       location <- NULL
-      cli::cli_warn(c(
+      # The recovery this machine actually has. `install_on_win()` is named
+      # only where it runs and only for the programs it registers: on a Mac, or
+      # for mediainfo, it would send the caller at a call that refuses them.
+      # Both facts are read from the installer's own seam and its own list
+      # (`tm_os()`, `tm_install_registers`) rather than restated here, so the
+      # advice cannot drift from what the installer does (M115).
+      bullets <- c(
         "Failed to find {program}.",
-        "i" = "Check that it is installed and, if necessary, use \\
-               {.fn set_{program}}."
-      ))
+        "i" = "Check that it is installed, then use {.fn set_{program}} to \\
+               point tidymedia at it."
+      )
+      if (identical(tm_os(), "windows") && program %in% tm_install_registers) {
+        bullets <- c(bullets, "i" = "Or run {.fn install_on_win} to download \\
+                                     FFmpeg and remember where it landed.")
+      }
+      cli::cli_warn(bullets)
     }
   }
   

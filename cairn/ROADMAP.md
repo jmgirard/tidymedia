@@ -11,7 +11,7 @@ _Last hygiene check: 2026-09-06 (M114 done and archived; PR #118 squash-merged, 
 | M112 | No export publishes the internal `call` argument, and the duplicate exports are settled | done | — | normal | milestones/archive/M112-unpublish-the-call-argument.md |
 | M113 | One call says which programs tidymedia found, and a remembered location can be forgotten | done | — | normal | milestones/archive/M113-program-status-and-unset.md |
 | M114 | Verification, provenance and timeouts are taught in prose, not only on a reference page | done | — | normal | milestones/archive/M114-verification-and-timeout-vignette.md |
-| M115 | A new user can tell whether the setup worked, and fix it when it did not | planned | M113 | normal | milestones/M115-setup-and-troubleshooting.md |
+| M115 | A new user can tell whether the setup worked, and fix it when it did not | review | M113 | normal | milestones/M115-setup-and-troubleshooting.md |
 | M111 | The shipped metadata and the tarball say what CRAN's incoming checks expect | done | — | normal | milestones/archive/M111-shipped-metadata-and-tarball.md |
 | M110 | `set_program()` asks before it remembers a location | done | — | normal | milestones/archive/M110-set-program-confirmation.md |
 

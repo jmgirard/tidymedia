@@ -11,6 +11,26 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
+# Some of the chunks below run real commands, which means starting FFmpeg,
+# FFprobe or MediaInfo. Each of those is evaluated only when the program it
+# needs is installed, so this README knits on a machine that has none of them --
+# the machine every reader of the install section above is on. The two chunks
+# that only COMPILE a command carry no guard: they start nothing, and a reader
+# without the binaries should still see what the builder produces.
+# `tools/vignette_chunk_guards.R` is what says which chunk is which.
+has_ffmpeg <- nzchar(Sys.which("ffmpeg"))
+has_ffprobe <- nzchar(Sys.which("ffprobe"))
+has_mediainfo <- nzchar(Sys.which("mediainfo"))
+# Recorded on stderr rather than into the page: this line is what a build log
+# shows for the three programs, so a build that was meant to run without them
+# can be checked rather than assumed. `message()` would be captured by knitr and
+# then dropped with the rest of this chunk's output.
+writeLines(
+  paste0("tidymedia README build, Sys.which(): ", paste0(
+    c("ffmpeg", "ffprobe", "mediainfo"), "=[",
+    Sys.which(c("ffmpeg", "ffprobe", "mediainfo")), "]", collapse = " ")),
+  con = stderr()
+)
 ```
 
 # tidymedia
@@ -41,6 +61,11 @@ devtools::install_github("jmgirard/tidymedia")
 **Debian/Ubuntu**
 
 1. Enter this code into your terminal:<br />`sudo apt-get install mediainfo`
+2. Check that R can find it:<br />
+`tidymedia::program_status()`<br />
+The `mediainfo` row should show a location and a version. If its location is
+`NA`, tidymedia cannot see the program: give it the path yourself with
+`tidymedia::set_mediainfo("/path/to/mediainfo")`.
 
 **Windows**
 
@@ -50,11 +75,28 @@ devtools::install_github("jmgirard/tidymedia")
 `tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")`<br />
 This asks you to confirm the path before it remembers it. In a script with no
 one to ask, add `confirm = FALSE`.
+4. Check that R can find it:<br />
+`tidymedia::program_status()`<br />
+The `mediainfo` row should show a location and a version. If its location is
+`NA`, the path in Step 3 is not where `mediainfo.exe` actually landed: look in
+the folder from Step 2 and run `tidymedia::set_mediainfo()` again with the path
+you find there.
 
 **Mac**
 
 1. Download the appropriate CLI .dmg file from:<br /><https://mediaarea.net/en/MediaInfo/Download/Mac_OS>
 2. Open the .dmg file and drag the program icon to the Applications folder
+3. The Applications folder is not on the `PATH`, so tell tidymedia where the
+   program landed (changing the path to match Step 2):<br />
+`tidymedia::set_mediainfo("/Applications/mediainfo")`<br />
+This asks you to confirm the path before it remembers it, and it is remembered
+across R sessions.
+4. Check that R can find it:<br />
+`tidymedia::program_status()`<br />
+The `mediainfo` row should show a location and a version. If its location is
+`NA`, the path in Step 3 is not where the program actually landed: find it in
+the Applications folder and run `tidymedia::set_mediainfo()` again with that
+path.
 
 #### 2. FFmpeg
 **tidymedia** uses [FFmpeg](https://ffmpeg.org/) to encode media files. If you would like to use these functions, you will need to install the command line interface (CLI) version of this program. Links and instructions for doing so are available [here](https://ffmpeg.org/download.html). Below are instructions for several popular platforms.
@@ -62,23 +104,62 @@ one to ask, add `confirm = FALSE`.
 **Debian/Ubuntu**
 
 1. Enter this code into your terminal:<br />`sudo apt-get install ffmpeg`
+2. Check that R can find it:<br />
+`tidymedia::program_status()`<br />
+The `ffmpeg` and `ffprobe` rows should show locations and versions. If either
+is `NA`, tidymedia cannot see that program: give it the path yourself with
+`tidymedia::set_ffmpeg("/path/to/ffmpeg")` or
+`tidymedia::set_ffprobe("/path/to/ffprobe")`. The two are looked up separately,
+so a row that is still `NA` needs its own call.
 
 **Windows**
 
 1. Install the `tidymedia` package in R.
 2. Run `tidymedia::install_on_win()` in R and confirm the prompt, which names the digest and the archive it will download, the directory it will unpack into, and the program locations it may overwrite. The archive is checked against the SHA-256 digest gyan.dev publishes beside it before anything is unpacked, and no program location is remembered unless the extraction produced that program. To install from a different build, pass its address and its digest: `install_on_win(download_url = ..., archive_checksum = ...)`.
+3. Check that R can find it:<br />
+`tidymedia::program_status()`<br />
+The `ffmpeg` and `ffprobe` rows should show locations and versions. If either
+is `NA`, tidymedia cannot see that program: read the message
+`install_on_win()` printed, or point tidymedia at a build you already have with
+`tidymedia::set_ffmpeg("C:/path/to/ffmpeg.exe")` or
+`tidymedia::set_ffprobe("C:/path/to/ffprobe.exe")`. The two are looked up
+separately, so a row that is still `NA` needs its own call.
 
 **macOS Homebrew Install**
 
 1. Open the macOS Terminal or Linux shell prompt.
 2. Install [Homebrew](https://brew.sh/) by entering this code into your terminal:<br />`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 3. Enter this code into your terminal:<br />`brew install ffmpeg`
+4. Check that R can find it:<br />
+`tidymedia::program_status()`<br />
+The `ffmpeg` and `ffprobe` rows should show locations and versions. If either
+is `NA`, tidymedia cannot see that program: run `brew --prefix ffmpeg` in the
+terminal and give tidymedia the `bin/ffmpeg` and `bin/ffprobe` under what it
+prints, with `tidymedia::set_ffmpeg("/path/to/ffmpeg")` and
+`tidymedia::set_ffprobe("/path/to/ffprobe")`. The two are looked up separately,
+so a row that is still `NA` needs its own call.
 
 **macOS Manual Install**
 
-1. Download the latest snapshot version from:<br /><https://evermeet.cx/ffmpeg/get>
-2. Extract the contents of the downloaded [.7z](https://www.7-zip.org/) file
+1. Download the latest snapshot version from:<br /><https://evermeet.cx/ffmpeg/get><br />
+That address gives you `ffmpeg` on its own. The metadata functions also need
+`ffprobe`, which is a separate download:<br />
+<https://evermeet.cx/ffmpeg/getrelease/ffprobe/7z>
+2. Extract the contents of each downloaded [.7z](https://www.7-zip.org/) file
 3. Drag the extracted contents to the Applications folder
+4. The Applications folder is not on the `PATH`, so nothing looking a program up
+   by name will find it there. Tell tidymedia where each program landed
+   (changing the paths to match Step 3):<br />
+`tidymedia::set_ffmpeg("/Applications/ffmpeg")`<br />
+`tidymedia::set_ffprobe("/Applications/ffprobe")`<br />
+Each asks you to confirm the path before it remembers it, and it is remembered
+across R sessions. Set both: the two programs are looked up separately, so
+setting `ffmpeg` does not tell tidymedia where `ffprobe` is.
+5. Check that R can find them:<br />
+`tidymedia::program_status()`<br />
+The `ffmpeg` and `ffprobe` rows should show locations and versions. If either is
+`NA`, the path you gave in Step 4 is not where that program actually landed:
+find it in the Applications folder and run the call again with that path.
 
 ## Examples
 
@@ -115,20 +196,20 @@ extract_audio(video, "audio.aac", run = FALSE)
 
 `probe_all()` returns container- and stream-level metadata from FFprobe as tibbles, keyed by a leading `file` column so a whole batch stacks cleanly:
 
-```{r}
+```{r, eval = has_ffprobe}
 probe_all(video)$streams
 ```
 
 MediaInfo is available too, via `mediainfo_query()`, `mediainfo_template()`, and the `get_*()` shortcuts (see `vignette("metadata")`):
 
-```{r}
+```{r, eval = has_mediainfo}
 get_duration(video, unit = "sec")
 get_width(video)
 ```
 
 ### Query FFmpeg's capabilities
 
-```{r}
+```{r, eval = has_ffmpeg}
 head(ffmpeg_codecs())
 ```
 

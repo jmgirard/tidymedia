@@ -44,6 +44,10 @@ instructions for several popular platforms.
 
 1.  Enter this code into your
     terminal:<br />`sudo apt-get install mediainfo`
+2.  Check that R can find it:<br /> `tidymedia::program_status()`<br />
+    The `mediainfo` row should show a location and a version. If its
+    location is `NA`, tidymedia cannot see the program: give it the path
+    yourself with `tidymedia::set_mediainfo("/path/to/mediainfo")`.
 
 **Windows**
 
@@ -56,6 +60,11 @@ instructions for several popular platforms.
     `tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")`<br />
     This asks you to confirm the path before it remembers it. In a
     script with no one to ask, add `confirm = FALSE`.
+4.  Check that R can find it:<br /> `tidymedia::program_status()`<br />
+    The `mediainfo` row should show a location and a version. If its
+    location is `NA`, the path in Step 3 is not where `mediainfo.exe`
+    actually landed: look in the folder from Step 2 and run
+    `tidymedia::set_mediainfo()` again with the path you find there.
 
 **Mac**
 
@@ -63,6 +72,16 @@ instructions for several popular platforms.
     from:<br /><https://mediaarea.net/en/MediaInfo/Download/Mac_OS>
 2.  Open the .dmg file and drag the program icon to the Applications
     folder
+3.  The Applications folder is not on the `PATH`, so tell tidymedia
+    where the program landed (changing the path to match Step 2):<br />
+    `tidymedia::set_mediainfo("/Applications/mediainfo")`<br /> This
+    asks you to confirm the path before it remembers it, and it is
+    remembered across R sessions.
+4.  Check that R can find it:<br /> `tidymedia::program_status()`<br />
+    The `mediainfo` row should show a location and a version. If its
+    location is `NA`, the path in Step 3 is not where the program
+    actually landed: find it in the Applications folder and run
+    `tidymedia::set_mediainfo()` again with that path.
 
 #### 2. FFmpeg
 
@@ -77,6 +96,12 @@ several popular platforms.
 
 1.  Enter this code into your
     terminal:<br />`sudo apt-get install ffmpeg`
+2.  Check that R can find it:<br /> `tidymedia::program_status()`<br />
+    The `ffmpeg` and `ffprobe` rows should show locations and versions.
+    If either is `NA`, tidymedia cannot see that program: give it the
+    path yourself with `tidymedia::set_ffmpeg("/path/to/ffmpeg")` or
+    `tidymedia::set_ffprobe("/path/to/ffprobe")`. The two are looked up
+    separately, so a row that is still `NA` needs its own call.
 
 **Windows**
 
@@ -89,6 +114,15 @@ several popular platforms.
     remembered unless the extraction produced that program. To install
     from a different build, pass its address and its digest:
     `install_on_win(download_url = ..., archive_checksum = ...)`.
+3.  Check that R can find it:<br /> `tidymedia::program_status()`<br />
+    The `ffmpeg` and `ffprobe` rows should show locations and versions.
+    If either is `NA`, tidymedia cannot see that program: read the
+    message `install_on_win()` printed, or point tidymedia at a build
+    you already have with
+    `tidymedia::set_ffmpeg("C:/path/to/ffmpeg.exe")` or
+    `tidymedia::set_ffprobe("C:/path/to/ffprobe.exe")`. The two are
+    looked up separately, so a row that is still `NA` needs its own
+    call.
 
 **macOS Homebrew Install**
 
@@ -96,14 +130,39 @@ several popular platforms.
 2.  Install [Homebrew](https://brew.sh/) by entering this code into your
     terminal:<br />`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 3.  Enter this code into your terminal:<br />`brew install ffmpeg`
+4.  Check that R can find it:<br /> `tidymedia::program_status()`<br />
+    The `ffmpeg` and `ffprobe` rows should show locations and versions.
+    If either is `NA`, tidymedia cannot see that program: run
+    `brew --prefix ffmpeg` in the terminal and give tidymedia the
+    `bin/ffmpeg` and `bin/ffprobe` under what it prints, with
+    `tidymedia::set_ffmpeg("/path/to/ffmpeg")` and
+    `tidymedia::set_ffprobe("/path/to/ffprobe")`. The two are looked up
+    separately, so a row that is still `NA` needs its own call.
 
 **macOS Manual Install**
 
 1.  Download the latest snapshot version
-    from:<br /><https://evermeet.cx/ffmpeg/get>
-2.  Extract the contents of the downloaded [.7z](https://www.7-zip.org/)
-    file
+    from:<br /><https://evermeet.cx/ffmpeg/get><br /> That address gives
+    you `ffmpeg` on its own. The metadata functions also need `ffprobe`,
+    which is a separate download:<br />
+    <https://evermeet.cx/ffmpeg/getrelease/ffprobe/7z>
+2.  Extract the contents of each downloaded
+    [.7z](https://www.7-zip.org/) file
 3.  Drag the extracted contents to the Applications folder
+4.  The Applications folder is not on the `PATH`, so nothing looking a
+    program up by name will find it there. Tell tidymedia where each
+    program landed (changing the paths to match Step 3):<br />
+    `tidymedia::set_ffmpeg("/Applications/ffmpeg")`<br />
+    `tidymedia::set_ffprobe("/Applications/ffprobe")`<br /> Each asks
+    you to confirm the path before it remembers it, and it is remembered
+    across R sessions. Set both: the two programs are looked up
+    separately, so setting `ffmpeg` does not tell tidymedia where
+    `ffprobe` is.
+5.  Check that R can find them:<br />
+    `tidymedia::program_status()`<br /> The `ffmpeg` and `ffprobe` rows
+    should show locations and versions. If either is `NA`, the path you
+    gave in Step 4 is not where that program actually landed: find it in
+    the Applications folder and run the call again with that path.
 
 ## Examples
 

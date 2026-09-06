@@ -4175,3 +4175,47 @@ outcome on each of the three CI runners.
 manager route is unavailable or insufficient, or by a non-Windows caller
 confused at being asked to fix an argument for a call that cannot work on
 their machine.
+
+---
+
+## D087 — The blame environment is threaded through an internal implementation, never published as an exported formal (2026-09-05, from M112; supersedes M110's milestone-local decision that `call` stays a threaded formal on `set_program()`, and the same disposition M100 reached for `hardware_encoder()`; D074's siting rule, D042's carve-out for a `call`-threading helper and D049's blame ownership all stand unchanged)
+
+**What was decided.** No exported tidymedia function has a formal named `call`.
+Where a shared body must be blamed on the export the caller typed, the body
+moves to an internal function taking `call` with no default, and each export is
+a wrapper passing `rlang::current_env()`. `tm_set_program(program, location,
+confirm, call)` and `tm_hardware_encoder(codec, hardware, call)` are the two
+seams this covers; `hardware_encoder_available()` already had the shape.
+
+**What it supersedes.** M110 recorded, as a milestone-local decision, that
+`call` stays a threaded formal on `set_program()` against D074's siting
+paragraph, on the ground that D074's mechanism — each export re-calling the
+shared checker at its own front door — could not reach the seam: the
+no-executable abort and the consent refusal both sit below the config-path
+resolution and the prompt build, so re-calling them at five front doors would
+duplicate both bodies. That reasoning was sound and is untouched. What it did
+not consider is a third option: keep one body, thread `call`, and put the body
+somewhere the Rd usage line cannot reach. D074's objection was to duplicated
+bodies, and an internal implementation duplicates none.
+
+**Why the published formal was the defect.** `call` names an environment a
+refusal is reported from. Only tidymedia's own front doors have a value for it
+— a user has no reason to construct one, and the two documented as "rarely set
+directly" were, in practice, never set directly by anyone outside the package.
+An exported signature is a promise about what a caller may pass, and the Rd
+usage line is what a reader copies from; publishing an argument the package
+alone can use makes both say something untrue. It also puts an internal
+mechanism inside the compatibility surface: changing how blame is threaded
+would have become a breaking change.
+
+**What it rules out.** A future export that threads `call` as a published
+formal, whatever its blame need. The sweep in
+`tests/testthat/test-exported-call-formal.R` runs over
+`getNamespaceExports()` at every `devtools::test()` and refuses the pattern
+mechanically, so this is enforced rather than remembered.
+
+**Falsified by** a seam whose blame cannot be threaded without the caller
+supplying the environment — an exported function whose refusal must name a
+frame that is neither its own nor any tidymedia front door's. At that point the
+argument belongs in the signature and this entry is superseded, not worked
+around with a hidden option.

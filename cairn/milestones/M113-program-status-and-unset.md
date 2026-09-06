@@ -347,6 +347,24 @@ afterwards; `devtools::check()` `Status: OK`, 0 errors / 0 warnings / 0 notes,
 14m41s; `cairn_validate.py` exit 0 with every check PASS and no advisory;
 `pkgdown::check_pkgdown()` "No problems found."
 
+### PR conversation (read once, 2026-09-06, before the merge gate)
+
+`reviews` empty; `reviewThreads` filtered to `isResolved: false` returned none,
+with `hasNextPage` false; one conversation comment.
+
+- conversation: codecov[bot] PR #117 — noted. Patch coverage 97.18%, two lines
+  in the change not covered. Author `type` is `Bot`, so it does not touch the
+  chip; the `r-package` profile's test-doctrine makes coverage reporting
+  diagnostic-only and never a merge gate, and `codecov/patch` and
+  `codecov/project` are the only two non-passing statuses on the PR for that
+  reason.
+
+### CI (final head `8baf42c`)
+
+All eight check legs pass: `macos-latest (release)` 11m17s,
+`windows-latest (release)` 14m33s, `ubuntu-latest` release 21m0s / devel 22m58s
+/ oldrel-1 21m51s / 4.1.0 21m21s, `pkgdown` 2m25s, `test-coverage` 20m42s.
+
 ### Consistency gate (re-review)
 
 `cairn_validate.py` exit 0, all 16 PASS and all 7 advisories OK — the

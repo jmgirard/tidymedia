@@ -34,6 +34,7 @@ wrapped; use the Layer 0 escape hatch)."></head><body>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/workflow.html">A research preprocessing workflow</a></li>
     <li><a class="dropdown-item" href="../articles/batch.html">Batch processing</a></li>
     <li><a class="dropdown-item" href="../articles/metadata.html">Media metadata as tibbles</a></li>
+    <li><a class="dropdown-item" href="../articles/verification.html">Checking results and bounding runs</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -121,7 +122,7 @@ streams (as <code><a href="ffm_copy.html">ffm_copy</a></code> would).</p>
 <span class="r-in"><span><span class="fu"><a href="ffm_files.html">ffm_files</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">ffm_concat</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -f concat -safe 0 -i \"/tmp/RtmplOIEbN/ffm-concat1ef0309c57e0.txt\" -codec:v copy -codec:a copy -map \"0\" \"output.mp4\""</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmpk8PmFZ/ffm-concat1e4e5d7c0642.txt\" -codec:v copy -codec:a copy -map \"0\" \"output.mp4\""</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

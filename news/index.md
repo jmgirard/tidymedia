@@ -24,6 +24,26 @@
   a file, so there is no default. Called for a program with nothing
   remembered, it warns and returns `FALSE` rather than failing.
 
+### Documentation
+
+- A new vignette, “Checking results and bounding runs”
+  ([`vignette("verification")`](https://jmgirard.github.io/tidymedia/articles/verification.md)),
+  covers three things that had reference pages but no narrative:
+  checking a processed file against what you asked for with
+  [`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
+  and the batch runner’s `verify =` argument; recording how a run was
+  actually made with `ffm_batch(manifest = TRUE)`, `checksums = TRUE`
+  and
+  [`ffm_manifest()`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md);
+  and bounding a run that hangs with `options(tidymedia.timeout = )`,
+  [`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md)
+  and
+  [`local_timeout()`](https://jmgirard.github.io/tidymedia/reference/local_timeout.md).
+  It states what the wall-clock limit really bounds — how long R waits,
+  which runs up to 40 seconds past the limit you set when a program
+  ignores the first two signals — rather than promising the limit. The
+  workflow vignette’s reproducibility section now points at it.
+
 ### Breaking changes
 
 - [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)

@@ -8,3 +8,5 @@
   processing](https://jmgirard.github.io/tidymedia/articles/batch.md):
 - [Media metadata as
   tibbles](https://jmgirard.github.io/tidymedia/articles/metadata.md):
+- [Checking results and bounding
+  runs](https://jmgirard.github.io/tidymedia/articles/verification.md):

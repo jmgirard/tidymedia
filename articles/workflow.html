@@ -37,6 +37,7 @@
 <li><a class="dropdown-item" href="../articles/workflow.html">A research preprocessing workflow</a></li>
     <li><a class="dropdown-item" href="../articles/batch.html">Batch processing</a></li>
     <li><a class="dropdown-item" href="../articles/metadata.html">Media metadata as tibbles</a></li>
+    <li><a class="dropdown-item" href="../articles/verification.html">Checking results and bounding runs</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -235,6 +236,14 @@ collects them in a <code>command</code> column — gives you a complete,
 re-runnable record of how each processed file was produced. That record
 is the point: the pipeline above is not a one-off, but a specification
 you can re-apply to the next cohort of recordings.</p>
+<p>The command says what you asked for. To record what actually happened
+— the FFmpeg version that ran, when, and checksums of what went in and
+came out — run the batch with <code>manifest = TRUE</code> and read it
+back with <code><a href="../reference/ffm_manifest.html">ffm_manifest()</a></code>. To confirm each output really has
+the duration, dimensions and codecs you asked for, check it with
+<code><a href="../reference/verify_media.html">verify_media()</a></code>. Both, and the wall-clock limit that keeps a
+hung file from taking the session with it, are covered in
+<code><a href="../articles/verification.html">vignette("verification")</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="where-to-next">Where to next<a class="anchor" aria-label="anchor" href="#where-to-next"></a>
@@ -246,6 +255,9 @@ depth.</li>
 <li>
 <code><a href="../articles/metadata.html">vignette("metadata")</a></code> — reading each file’s metadata as
 a tibble.</li>
+<li>
+<code><a href="../articles/verification.html">vignette("verification")</a></code> — checking outputs, recording
+provenance, bounding a run that hangs.</li>
 <li>
 <code><a href="../articles/tidymedia.html">vignette("tidymedia")</a></code> — the task verbs and the builder
 beneath them.</li>

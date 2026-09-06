@@ -1,0 +1,306 @@
+---
+title: "Checking results and bounding runs"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Checking results and bounding runs}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+# The chunks below check and produce real files, which means starting FFmpeg or
+# FFprobe. Each is evaluated only when the program it needs is installed, so
+# this vignette builds on machines and CI images that have neither.
+has_ffmpeg <- nzchar(Sys.which("ffmpeg"))
+has_ffprobe <- nzchar(Sys.which("ffprobe"))
+has_both <- has_ffmpeg && has_ffprobe
+# Recorded on stderr rather than into the page: this line is what a build log
+# shows for the three programs, so a build that was meant to run without them
+# can be checked rather than assumed. `message()` would be captured by knitr and
+# then dropped with the rest of this chunk's output.
+writeLines(
+  paste0("tidymedia vignette build, Sys.which(): ", paste0(
+    c("ffmpeg", "ffprobe", "mediainfo"), "=[",
+    Sys.which(c("ffmpeg", "ffprobe", "mediainfo")), "]", collapse = " ")),
+  con = stderr()
+)
+# Work in a temporary directory: nothing is written beside the vignette sources,
+# and the paths in the reports below stay short enough to read.
+knitr::opts_knit$set(root.dir = tempdir())
+```
+
+```{r setup}
+library(tidymedia)
+```
+
+A processed file raises two questions that the pipeline itself cannot answer.
+Did the encode actually produce what you asked for? And a year later, can you
+say how a given file was made? This vignette covers the three facilities that
+answer them — checking an output against expectations, recording a run's
+provenance, and bounding a run that hangs so it stops the call instead of your
+session.
+
+We work on a copy of the sample clip that ships with the package:
+
+```{r}
+file.copy(
+  system.file("extdata", "sample.mp4", package = "tidymedia"),
+  "session01.mp4"
+)
+```
+
+## Check the output against what you asked for
+
+Every verb returns the FFmpeg command it compiled, and that command is a record
+of what you *asked* for. `verify_media()` answers the other half: it probes a
+file and compares its actual properties against your expectations, one row per
+check.
+
+```{r, eval = has_both}
+extract_audio("session01.mp4", "session01.m4a")
+
+verify_media("session01.m4a", audio_codec = "aac", duration = 1)
+```
+
+The report is a tibble with `file`, `check`, `expected`, `actual` and `pass`, so
+a failure tells you which property was wrong and what the file holds instead:
+
+```{r, eval = has_ffprobe}
+verify_media("session01.mp4", duration = 5, width = 1920, audio_codec = "aac")
+```
+
+Three things are worth knowing before you rely on it.
+
+**The checks are structural, not perceptual.** They read FFprobe's metadata —
+duration, dimensions, codec names, sample rate — and say nothing about whether
+the picture or the sound looks and sounds right. A re-encode that mangles the
+image passes every check above.
+
+**Numeric checks carry a tolerance; string checks do not.** A numeric
+expectation passes when `abs(actual - expected) <= tolerance`, and `tolerance`
+defaults to `0.1`. That is exact for integers like width and sample rate, and a
+little slack for `duration`, which moves when a cut snaps to a keyframe. Codec
+names must match exactly.
+
+**A property that is not there fails.** If the file has no stream of that kind,
+or FFprobe reports no such field, the actual value is `NA` and the check fails
+rather than being skipped. The audio file extracted above has no picture, so
+asking it for a width fails with nothing to report:
+
+```{r, eval = has_both}
+verify_media("session01.m4a", width = 320, audio_codec = "aac")
+```
+
+Beyond the named arguments, any FFprobe field can be checked by name. Extra
+names are resolved against the container first, then the video stream, then the
+audio stream, and the first match wins:
+
+```{r, eval = has_ffprobe}
+verify_media("session01.mp4", pix_fmt = "yuv420p", nb_streams = 2)
+```
+
+### Checking every job in a batch
+
+`ffm_batch()` and the `*_batch()` verbs take the same expectations through a
+`verify =` argument and add a `verified` column to the result, one logical per
+job. Pass a named list to hold every job to the same expectations:
+
+```{r, eval = has_both}
+jobs <- tibble::tibble(
+  input  = "session01.mp4",
+  output = "session01.mp3"
+)
+
+ffm_batch(
+  jobs,
+  verify = list(audio_codec = "mp3"),
+  .f = function(input, output, ...) {
+    ffm_files(input, output) |>
+      ffm_drop("video") |>
+      ffm_codec(audio = "libmp3lame")
+  }
+)
+```
+
+A failed check here marks the row and does not stop the batch — the remaining
+jobs still run, and `verified` tells you afterwards which outputs to look at.
+For expectations that differ per job, pass a function of the job columns
+instead of a list, and it is called once per row.
+
+## Record how the files were made
+
+A compiled command is a complete recipe, and `vignette("workflow")` builds its
+reproducibility story on exactly that: capture the command each verb returns —
+or the `command` column the batch runner adds — and you can re-run any step. The
+command is what you *asked* for, though, and it is silent about the run itself.
+Two FFmpeg builds accept the same command and can write different bytes.
+
+`ffm_batch(manifest = TRUE)` records the rest. The manifest rides along on the
+result; `ffm_manifest()` reads it out.
+
+```{r, eval = has_both}
+res <- ffm_batch(
+  jobs,
+  manifest = TRUE,
+  .f = function(input, output, ...) {
+    ffm_files(input, output) |>
+      ffm_drop("video") |>
+      ffm_codec(audio = "libmp3lame")
+  }
+)
+
+ffm_manifest(res)
+```
+
+One row per job, with the command alongside four things the command cannot
+carry:
+
+- `ffmpeg_version` and `ffprobe_version` — the versions that actually ran, read
+  from the binaries at run time rather than assumed. A version that could not be
+  read is `NA`.
+- `timestamp` — when the run happened, with its UTC offset.
+- `output_size` — the size in bytes of the file that came out, so a truncated or
+  empty result is visible in the record itself.
+- `input` and `output` — the paths as the job resolved them, with multiple inputs
+  (a stacked or concatenated job) joined by `;` in one cell.
+
+Ask for `checksums = TRUE` and each row also carries `input_md5` and
+`output_md5`, which is what lets you say later that a file on disk is the file
+this row describes:
+
+```{r, eval = has_both}
+res <- ffm_batch(
+  jobs,
+  manifest = TRUE,
+  checksums = TRUE,
+  .f = function(input, output, ...) {
+    ffm_files(input, output) |>
+      ffm_drop("video") |>
+      ffm_codec(audio = "libmp3lame")
+  }
+)
+
+ffm_manifest(res)
+```
+
+Checksums are off by default because they read every input and output in full,
+which is real time on a large study.
+
+Give `ffm_manifest()` a `path` and it writes the manifest as CSV as well as
+returning it, invisibly — one file to commit next to the processed data:
+
+```{r, eval = has_both}
+ffm_manifest(res, path = "session01_manifest.csv")
+
+file.exists("session01_manifest.csv")
+```
+
+A manifest is a record of a run, so there is nothing to record when nothing ran.
+A `run = FALSE` batch attaches none even when you ask for one, and reading it
+back is an error rather than an empty tibble — a silent empty record being the
+failure a provenance record exists to prevent:
+
+```{r, eval = has_ffmpeg, error = TRUE}
+compiled <- ffm_batch(jobs, run = FALSE, manifest = TRUE, .f = function(input, output, ...) {
+  ffm_files(input, output) |> ffm_drop("video")
+})
+
+ffm_manifest(compiled)
+```
+
+## Bound a run that hangs
+
+Every tidymedia call waits for the program it started to finish. A program that
+hangs — a network path that stalls, a malformed file FFmpeg will not give up on
+— takes the R session down with it, and in a batch of a thousand files that is
+the whole run. Set a wall-clock limit and the hang stops the call instead.
+
+The limit is a session option, in whole seconds:
+
+```{r, eval = FALSE}
+options(tidymedia.timeout = 600)
+```
+
+Unset, it is `0`, which means no limit — so nothing you already run changes
+behaviour until you ask for a bound.
+
+To bound one call rather than the session, wrap it in `with_timeout()`. The
+session's setting, or the absence of one, is back when the call returns, by any
+route:
+
+```{r, eval = has_ffmpeg}
+with_timeout(
+  extract_audio("session01.mp4", "bounded.m4a"),
+  seconds = 60
+)
+
+getOption("tidymedia.timeout")
+```
+
+To bound the rest of a function rather than an expression you wrap, say it as a
+statement with `local_timeout()`. Every program started after that line is
+bounded, and the caller's setting comes back when the function returns:
+
+```{r, eval = has_ffmpeg}
+convert_all <- function(files) {
+  local_timeout(60)
+  vapply(files, function(f) extract_audio(f, sub("[.]mp4$", ".m4a", f)),
+         character(1))
+}
+
+convert_all("session01.mp4")
+
+getOption("tidymedia.timeout")
+```
+
+### What the limit actually bounds
+
+The limit bounds **how long R waits**, not how long the program runs, and the
+two are not the same number. R escalates: it interrupts the program at the
+limit, asks it to terminate 20 seconds later, and kills it 20 seconds after
+that. A program that ignores the first two signals is therefore waited for up to
+**40 seconds longer than the limit you set** — measured here at 42.0 s under a
+2 s limit, on Linux and macOS alike. Set a limit meaning "give up somewhere
+around here", not "return at exactly this second", and leave that headroom in
+anything downstream that depends on the call returning.
+
+A fractional limit is refused rather than rounded, because R truncates it toward
+zero and `0` is the no-limit sentinel — `options(tidymedia.timeout = 0.5)` would
+otherwise leave the call unbounded:
+
+```{r, error = TRUE}
+with_timeout(extract_audio("session01.mp4", "x.m4a"), seconds = 0.5)
+```
+
+### A reached limit is never silent
+
+Every call that can start one of these programs either aborts or warns when the
+limit is reached; none of them quietly returns as though nothing happened.
+
+It **aborts**, naming the program and the limit, from the task verbs,
+`ffm_run()`, the escape hatches `ffmpeg()`, `ffprobe()` and `mediainfo()`, and
+from `verify_media()` — a probe that never answered is not an answer of "no",
+and absorbing it there would blame a good output for the probe's failure.
+
+It **warns** where one hung file must not discard the rest of the work.
+`probe_all()` and the `probe_*()` accessors, the MediaInfo readers and the
+`get_*()` helpers give an `NA` row and one warning at the end of the call.
+`ffm_batch()` and the `*_batch()` verbs mark the row `success = FALSE`, as for
+any failed job, and warn once at the end saying how many jobs timed out. The
+provenance manifest above warns that it could not read a version, and records
+`NA` for it.
+
+To act on either outcome in code, the abort carries the condition class
+`tidymedia_timeout`; the version-probe and dropped-track warnings carry
+`tidymedia_probe_timeout`, and the batch warning `tidymedia_batch_timeout`.
+
+## Where to next
+
+- `vignette("workflow")` — an end-to-end preprocessing pipeline.
+- `vignette("batch")` — the jobs-tibble batch runner in depth.
+- `vignette("metadata")` — reading each file's metadata as a tibble.
+- `?tidymedia` — the package's option seams in one place.

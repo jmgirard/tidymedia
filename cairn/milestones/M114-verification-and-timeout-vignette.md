@@ -1,6 +1,6 @@
 # M114: Verification, provenance and timeouts are taught in prose, not only on a reference page
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -80,7 +80,7 @@ candidate row. No behaviour change to any function this vignette teaches.
       `Sys.which()` answers from inside a setup chunk.
 - [x] T6: `_pkgdown.yml` row, `workflow.Rmd` cross-link, `check_pkgdown()`,
       `devtools::check()`.
-- [ ] T7: review return — show `ffm_batch(manifest = TRUE)`'s own output (AC1),
+- [x] T7: review return — show `ffm_batch(manifest = TRUE)`'s own output (AC1),
       close the remembered-location seam the no-binary build left open (AC4),
       and land the fix-now findings: the sweep's space-in-path blind spot, the
       cross-chunk guard mismatch, the elided md5 columns, the `ffprobe_version`
@@ -123,6 +123,7 @@ candidate row. No behaviour change to any function this vignette teaches.
 - 2026-09-06: T7, the check NOTE. `vignettes/verification.Rmd`'s one `behaviour` is now `behavior`, matching the 25 sites in `R/` and `workflow.Rmd`. `Comparing 'spelling.Rout' to 'spelling.Rout.save' ... OK` in the check below.
 - 2026-09-06: T7 instruments re-run over the final text. `tools/vignette_chunk_guards.R` exit 0: 64 chunks in five vignettes, 15 started a program, every one guarded, "unguarded spawning chunks: none" — unchanged from the pre-return run, the hardened matcher having nothing to catch on a machine whose paths hold no spaces. Discrimination re-proved after the hardening: a planted unguarded `probe_all()` chunk was the single UNGUARDED row, exit 1; reverted. `tools/build_vignettes_without_binaries.R` exit 0, `find_ffmpeg(): NULL`, `find_ffprobe(): NULL`, `find_mediainfo(): NULL`, and from inside the build `ffmpeg=[] ffprobe=[] mediainfo=[]`.
 - 2026-09-06: checkpoint committed with `devtools::check(document = TRUE, vignettes = TRUE)` still running on the final tree — `devtools::test()` was already clean on it (FAIL 0, WARN 10, SKIP 18, PASS 12900) and the check had reached "checking tests" with `Comparing 'spelling.Rout' to 'spelling.Rout.save' ... OK`, which is the NOTE this return had to clear, but the run had not yet reported its own result line. T7 stays unchecked until it does.
+- 2026-09-06: the check the line above was waiting on finished on that same tree: `devtools::check(document = TRUE, vignettes = TRUE)`, 5m 38.7s, **`Status: OK` — 0 errors, 0 warnings, 0 notes**, with "checking tests", "checking package vignettes" and "checking re-building of vignette outputs" all OK and `document()` leaving no diff. The 1 NOTE the return carried is gone from R CMD check's own status line, not only from devtools' summary. `cairn_validate` all sixteen checks PASS, seven advisories OK. T7 checked; status to review.
 
 ## Decisions
 

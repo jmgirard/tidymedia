@@ -7,7 +7,7 @@
 - **Principles touched:** IP1
 - **Resolves:** —
 - **Surface tier:** user-facing — an exported signature and the Rd usage line a reader copies from
-- **Branch/PR:** `m112-unpublish-the-call-argument`
+- **Branch/PR:** `m112-unpublish-the-call-argument` / https://github.com/jmgirard/tidymedia/pull/116
 
 ## Goal
 
@@ -40,11 +40,11 @@ unclassed-aborts candidate row.
 
 ## Acceptance criteria
 
-- [ ] AC1: No object in `getNamespaceExports("tidymedia")` that is a function
+- [x] AC1: No object in `getNamespaceExports("tidymedia")` that is a function
       has a formal named `call`. Evidence: the sweep's output naming every
       export it examined and the count, run before and after the change so the
       before-run shows the two hits.
-- [ ] AC2: Across the seven exports the change touches — `set_program`,
+- [x] AC2: Across the seven exports the change touches — `set_program`,
       `set_ffmpeg`, `set_ffprobe`, `set_ffplay`, `set_mediainfo`,
       `hardware_encoder`, `has_hardware_encoder` — an ARGUMENT refusal (a
       wrong-typed `location`, `confirm`, `codec` or `hardware`) and a BODY
@@ -52,15 +52,15 @@ unclassed-aborts candidate row.
       the export the caller typed, at the console and from a wrapper.
       Evidence: a table with one row per export x refusal form, carrying the
       frame each refusal named.
-- [ ] AC3: For each of `ffm`/`ffm_files` and
+- [x] AC3: For each of `ffm`/`ffm_files` and
       `mediainfo_summary`/`mediainfo_template`, either one name is gone from
       `NAMESPACE`, `_pkgdown.yml` and `man/`, or this file's Decisions section
       records why both stay, citing D014's pre-0.2.0 window. Evidence: the
       NAMESPACE diff or the decision entry.
-- [ ] AC4: A `cairn/DECISIONS.md` entry supersedes M110's `call`-stays-a-formal
+- [x] AC4: A `cairn/DECISIONS.md` entry supersedes M110's `call`-stays-a-formal
       decision by name, states the internal-implementation mechanism, and says
       what would falsify it. Evidence: the entry.
-- [ ] AC5: `devtools::document()` produces no diff; `devtools::test()` and
+- [x] AC5: `devtools::document()` produces no diff; `devtools::test()` and
       `devtools::check()` clean (0 errors, 0 warnings); a `NEWS.md` entry for
       the signature change.
 
@@ -114,3 +114,110 @@ unclassed-aborts candidate row.
 ## Decisions
 
 ## Review
+
+Fresh evidence gathered 2026-09-05 on `m112-unpublish-the-call-argument` at
+`8390acc`, against `master` at `819a5299`.
+
+**AC1 — no exported function has a formal named `call`. PASS.**
+The sweep is `tm_export_formals()` (`tests/testthat/helper-export-formals.R`),
+reading `getNamespaceExports("tidymedia")` and keeping the objects that are
+functions. Run twice today from a fresh session:
+
+| run | ref | exported functions examined | hits |
+|---|---|---|---|
+| before | `master` `819a5299`, in a detached worktree | 88 | 2 — `hardware_encoder`, `set_program` |
+| after | branch HEAD `8390acc` | 86 | 0 |
+
+The 88→86 drop is the two removed duplicate names (AC3), not a narrowed
+domain: the after-run's list still opens at `anonymize_video` and closes at
+`with_timeout`, and the sweep's own domain assertion (`nrow > 50`, and
+`set_program`/`hardware_encoder`/`ffm_files`/`mediainfo_template` all present)
+passes. Its positive control — `hardware_encoder_available()`, which really
+does carry a `call` formal — still trips the predicate, so the green is the
+two exports losing the argument rather than the detector going blind.
+
+**AC2 — every refusal names the export the caller typed. PASS.**
+`tm_blame_table()` (`tests/testthat/test-blame-frame-table.R`) built fresh
+today: 7 exports x 2 refusal forms = 14 rows, each measured at the console and
+again through one user wrapper, so 28 cells. Every cell names the export.
+
+| export | form | console | wrapper |
+|---|---|---|---|
+| `set_program` | argument | `set_program` | `set_program` |
+| `set_program` | body | `set_program` | `set_program` |
+| `set_ffmpeg` | argument | `set_ffmpeg` | `set_ffmpeg` |
+| `set_ffmpeg` | body | `set_ffmpeg` | `set_ffmpeg` |
+| `set_ffprobe` | argument | `set_ffprobe` | `set_ffprobe` |
+| `set_ffprobe` | body | `set_ffprobe` | `set_ffprobe` |
+| `set_ffplay` | argument | `set_ffplay` | `set_ffplay` |
+| `set_ffplay` | body | `set_ffplay` | `set_ffplay` |
+| `set_mediainfo` | argument | `set_mediainfo` | `set_mediainfo` |
+| `set_mediainfo` | body | `set_mediainfo` | `set_mediainfo` |
+| `hardware_encoder` | argument | `hardware_encoder` | `hardware_encoder` |
+| `hardware_encoder` | body | `hardware_encoder` | `hardware_encoder` |
+| `has_hardware_encoder` | argument | `has_hardware_encoder` | `has_hardware_encoder` |
+| `has_hardware_encoder` | body | `has_hardware_encoder` | `has_hardware_encoder` |
+
+The table's three tests pass (5 + 6 + 5 expectations). The frame columns are
+not vacuous: the discriminating control plants the defect — a refusal left to
+`rlang::caller_env()` — and it comes back naming `thunk` at the console and
+`w_leaky` through the wrapper, where the fixed shape names itself in both.
+A second test pins each row to its condition (`tidymedia_program_not_found`
+for a `set_*` body row, "must be a single string" for an argument row), so a
+body row that aborted in a checker instead cannot pass on the frame alone.
+
+The same table built against `master` `819a5299` returns 13 of 14 rows naming
+themselves; the one that does not is `has_hardware_encoder` / argument, which
+named `hardware_encoder` there. That is exactly the one exception the Scope
+Out clause declares, measured, and no other cell changed side.
+
+**AC3 — both duplicate names are gone. PASS.**
+The `master...HEAD` diff removes `export(ffm)` and `export(mediainfo_summary)`
+from `NAMESPACE`, the `ffm` and `mediainfo_summary` rows from `_pkgdown.yml`'s
+reference index, and `man/ffm.Rd` and `man/mediainfo_summary.Rd` from `man/`
+(the two files the diff lists as deleted). AC3's alternative branch — a
+recorded decision to keep both — is not taken, so nothing is owed the
+Decisions section on this criterion. A grep for either name across `R/`,
+`man/`, `tests/`, `vignettes/`, `README.*`, `NAMESPACE` and `_pkgdown.yml`
+returns only the recorded-fixture handling the work log describes: the
+`mediainfo_summary` cell dropped on read from `timeout-valid-baseline.rds`
+under a `stopifnot()` proving it byte-identical to `mediainfo_template`'s, and
+the same name inside M096's merge-base census strings, which are read and
+never rewritten.
+
+**AC4 — the superseding D-entry. PASS.**
+`cairn/DECISIONS.md` gains D087, added by this branch. It names M110's
+milestone-local decision as what it supersedes, and states why that decision's
+reasoning (D074's objection to duplicating a shared body at five front doors)
+does not reach the third option it did not consider. The mechanism is stated:
+the shared body moves to an internal taking `call` with no default, and each
+export is a wrapper passing `rlang::current_env()` — `tm_set_program()` and
+`tm_hardware_encoder()` named as the two seams. It states what it rules out (a
+future export publishing `call`, enforced by the AC1 sweep rather than
+remembered) and its falsifier: a seam whose blame cannot be threaded without
+the caller supplying the environment.
+
+**AC5 — document / test / check / NEWS. PASS.**
+`devtools::document()` run today leaves `man/`, `NAMESPACE` and `DESCRIPTION`
+clean in `git status` — no diff. `devtools::check()` on the branch:
+`Status: OK`, 0 errors / 0 warnings / 0 notes, 11m 1.7s, with the full test
+suite running inside it (`Running 'testthat.R' [9m/10m] OK`) and
+`spelling.R` OK. `NEWS.md` gains a Breaking changes section with three
+entries — the removed `call` argument, which function each refusal now names
+(including `has_hardware_encoder()`'s change), and the two removed duplicate
+names — none of which mentions a milestone number.
+
+Toolchain consistency gate (the `r-package` profile's `consistency-gate`
+slot), run today: `document()` no diff — pass; generated files not hand-edited
+— pass, by the same no-diff run; `README.md` in sync with `README.Rmd` — pass,
+the branch re-knits it (the diff carries fresh `tempdir()` paths, so
+`build_readme()` really ran); `pkgdown::check_pkgdown()` — "No problems
+found."; changelog entry for the user-visible change — pass, above; new
+top-level files needing `.Rbuildignore` — none added; full `devtools::check()`
+clean — pass, above.
+
+Universal cairn-file checks: `cairn_validate.py` exits 0, all checks passed,
+`release window` advisory not fired. `cairn/DESIGN.md` carries no IPn/GPn
+change on this branch (the file is untouched by the diff), so `cairn_impact.py
+--changed` is not owed.
+

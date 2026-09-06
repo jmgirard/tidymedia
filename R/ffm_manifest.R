@@ -132,10 +132,18 @@ tool_versions <- function(programs = c("ffmpeg", "ffprobe"),
                           locations = NULL,
                           call = rlang::caller_env()) {
   if (is.null(locations)) locations <- lapply(programs, tm_find_program_for_version)
+  # The limit is resolved once, here, above every probe. capture_version()
+  # turns any error below it into a silent NA, which is the right answer for a
+  # binary that will not answer its version flag and the wrong one for a
+  # `tidymedia.timeout` the caller set to something unusable: that is a
+  # machine-independent argument refusal and belongs above the availability
+  # question (D036), reported from the frame `call` names. run_program()
+  # resolves it again per probe; the value is the same and the call is cheap.
+  resolve_timeout(call = call)
   probes <- Map(
     function(loc, program) {
       capture_version(loc, tm_program_labels[[program]],
-                      flag = tm_version_flags[[program]])
+                      flag = tm_version_flags[[program]], call = call)
     },
     locations, programs
   )
@@ -191,15 +199,21 @@ tm_find_program_for_version <- function(program) {
 
 # Run `<tool> <flag>` and parse the version token; NA if the binary is absent
 # or the call fails.
+# `call` is the frame a refusal is reported from, threaded down to
+# run_program() so that a bad `options(tidymedia.timeout = )` blames the
+# exported call the user typed -- program_status() -- rather than this helper,
+# which is the first spawn on that path (M113; the blame sweep in
+# test-timeout-refusal-blame.R is what asks).
 # Returns the absorbed-timeout sentinel when the limit ended the wait, so
 # tool_versions() can tell that apart from every other reason a version is
 # missing. absorb_timeout() sits INSIDE the tryCatch() for the same reason it
 # does in count_audio_streams(): the outer handler catches every error, so a
 # timeout reaching it first would be flattened back into a silent NA.
-capture_version <- function(loc, name, flag = "-version") {
+capture_version <- function(loc, name, flag = "-version",
+                            call = rlang::caller_env()) {
   if (is.null(loc) || is.na(loc) || !nzchar(loc)) return(NA_character_)
   out <- tryCatch(
-    absorb_timeout(run_program(loc, flag, program = name)),
+    absorb_timeout(run_program(loc, flag, program = name, call = call)),
     error = function(e) NULL
   )
   if (is_absorbed_timeout(out)) return(out)

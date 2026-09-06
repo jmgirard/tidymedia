@@ -173,7 +173,7 @@ program_status <- function() {
   # The version probe's own timeout warning is NOT suppressed: it says the
   # limit ended the probe, which is a different fact from the program being
   # absent and is the one D048 made audible.
-  versions <- tool_versions(programs, locations)
+  versions <- tool_versions(programs, locations, call = rlang::current_env())
   tibble::tibble(
     program = programs,
     location = vapply(locations, tm_na_string, character(1)),

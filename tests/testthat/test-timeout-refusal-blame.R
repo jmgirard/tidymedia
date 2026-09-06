@@ -18,7 +18,11 @@ test_that("the sweep runs over a non-empty domain with a cell for each member", 
   # Guards on the guard: a domain that silently emptied, or a member with no
   # argument cell, would make every expectation below vacuously true.
   expect_gt(length(dom), 0)
-  expect_setequal(names(tm_timeout_blame_master()), dom)
+  # The recorded census is compared against the domain LESS the members added
+  # after it was measured (see tm_timeout_post_baseline()); the live sweep
+  # below still runs over all of `dom`.
+  expect_setequal(names(tm_timeout_blame_master()), tm_timeout_baseline_domain())
+  expect_true(all(tm_timeout_post_baseline() %in% dom))
   expect_true(all(dom %in% names(specs)))
 })
 
@@ -240,7 +244,7 @@ test_that("the valid and unset paths are byte-for-byte the pre-change ones (AC5)
   specs <- tm_timeout_call_specs(dir)
   withr::local_options(list(tidymedia.hardware_encoders = NULL))
   recorded <- tm_timeout_valid_baseline()
-  expect_setequal(names(recorded), tm_timeout_domain())
+  expect_setequal(names(recorded), tm_timeout_baseline_domain())
   # The blob still describes what this helper measures. Checked once, before the
   # 106 comparisons below, so a tm_spawn_trace() edit that invalidates the
   # fixture says so instead of arriving as 106 unexplained diffs (review G5).
@@ -251,7 +255,7 @@ test_that("the valid and unset paths are byte-for-byte the pre-change ones (AC5)
   # count is unchanged" would be a claim about a column of zeros.
   expect_gt(sum(vapply(recorded, function(x) x$unset$spawns, integer(1))), 0)
 
-  for (name in tm_timeout_domain()) {
+  for (name in tm_timeout_baseline_domain()) {
     expect_identical(tm_spawn_trace(name, specs[[name]], NULL, dir),
                      recorded[[name]]$unset, info = paste(name, "unset"))
     expect_identical(tm_spawn_trace(name, specs[[name]], 30, dir),

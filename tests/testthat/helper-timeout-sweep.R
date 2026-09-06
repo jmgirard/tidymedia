@@ -135,12 +135,47 @@ tm_timeout_recorded_domain <- function() {
     "mediainfo_query", "mediainfo_template",
     "normalize_audio", "normalize_audio_batch", "picture_in_picture",
     "picture_in_picture_batch", "probe_all", "probe_audio", "probe_container",
-    "probe_streams", "probe_video", "sample_frames", "sample_frames_batch",
+    "probe_streams", "probe_video", "program_status", "sample_frames",
+    "sample_frames_batch",
     "segment_video", "segment_video_batch", "separate_audio_video",
     "separate_audio_video_batch", "standardize_video",
     "standardize_video_batch", "strip_metadata", "strip_metadata_batch",
     "verify_media"
   ))
+}
+
+# tm_timeout_post_baseline(): domain members that did not exist at the ref the
+# three recorded censuses were measured at (`tm_timeout_valid_baseline_ref`).
+#
+# Two censuses -- `tm_timeout_blame_master()` and the committed
+# `timeout-valid-baseline.rds` -- say what a member did BEFORE M094 changed who
+# is blamed, and their membership is a written list. An export added afterwards
+# has no such
+# reading and cannot be given one: measuring it today and filing it under
+# "measured at ae5ff1c" would be composing a history rather than recording one.
+# So it is excluded from those two membership comparisons, by name, here.
+# `tm_timeout_reached_master()` needs no exclusion: it is computed from the live
+# domain rather than from a written list.
+#
+# Exclusion is not exemption. Every name below is still swept by the live rules
+# -- it blames itself for an invalid limit, and a reached limit still reaches
+# the caller -- and `tm_timeout_baseline_domain()` refuses an exclusion that is
+# hiding a member the record does have a cell for.
+#
+# `program_status()` entered the domain at M113: it probes each program's
+# version, which spawns.
+tm_timeout_post_baseline <- function() "program_status"
+
+# tm_timeout_baseline_domain(): the domain the recorded censuses can be compared
+# against, with the exclusion guarded rather than trusted.
+tm_timeout_baseline_domain <- function() {
+  post <- tm_timeout_post_baseline()
+  domain <- tm_timeout_domain()
+  # An excluded name that is not in the live domain excludes nothing and has
+  # been left behind; one the record DOES hold a cell for is being hidden.
+  stopifnot(all(post %in% domain))
+  stopifnot(!any(post %in% names(tm_timeout_blame_master())))
+  setdiff(domain, post)
 }
 
 # tm_timeout_call_specs(): one valid argument set per domain member, so a forced
@@ -192,6 +227,8 @@ tm_timeout_call_specs <- function(dir) {
     ffmpeg_codecs = list(),
     ffmpeg_encoders = list(),
     ffprobe = list(command = "-version"),
+    # program_status() takes no arguments: it probes all four programs by name.
+    program_status = list(),
     format_for_web = list(infile = vid, outfile = outv),
     format_for_web_batch = list(jobs = jobs_v),
     get_duration = list(file = vid),

@@ -58,7 +58,8 @@ test_that("the absorber partition is the reaching functions that can swallow", {
   expect_identical(
     tm_timeout_absorbers(),
     c("capture_version", "count_audio_streams", "ffm_batch", "ffm_run",
-      "run_separation_audio", "separate_audio_video", "verify_media")
+      "program_status", "run_separation_audio", "separate_audio_video",
+      "verify_media")
   )
 })
 

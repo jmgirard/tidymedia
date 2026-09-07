@@ -208,6 +208,8 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 
 - 2026-09-07: step-7 approval: PR #120 approved for merge.
 
+- 2026-09-07: PR #120 marked ready; the CI watcher hit the harness ceiling with eight of ten legs still pending at the approved head, so it was stopped rather than left armed at the merge. Not merged; the approval marker `cairn/.merge-approved` is written and unspent. Re-enter with `/milestone-review M116`, which resumes at the step-7 chip and step 8.
+
 ## Decisions
 
 ## Review

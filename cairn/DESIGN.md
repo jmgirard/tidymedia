@@ -92,6 +92,19 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
 
 ## Known issues
 
+- Four costs and inconsistencies around the remembered-location warnings are accepted
+  rather than pending a fix (M116 review). `unset_program()` discards the FFmpeg
+  capability memo on any removal that took, including an `unset_program("mediainfo")`
+  whose location cannot affect the encoder pool — one wasted re-probe. `tool_versions()`'s
+  `locations` length refusal sits above `resolve_timeout()`, so a caller with both an
+  unusable `tidymedia.timeout` and a mismatched `locations` gets the locations refusal;
+  no caller can reach both today. Neither `tidymedia_location_unreadable` nor
+  `tidymedia_location_gone` threads `call`, while the sibling
+  `tidymedia_no_remembered_location` in the same file does; both are raised from an
+  unexported body reached through four exported doors. And AC6's end-to-end
+  `ffm_batch(manifest = TRUE)` test sits behind `skip_if_no_ffmpeg()`, so that half runs
+  only where a binary is present — the mocked test beside it runs everywhere.
+
 - Ten arguments are refused below the verb the caller typed, and that position is
   accepted rather than pending a fix. `fallback` at the eight fan-out verbs is checked
   where the encoder question is asked, which D075 records as an accepted cost;

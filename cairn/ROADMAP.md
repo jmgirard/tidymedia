@@ -11,7 +11,7 @@ _Last hygiene check: 2026-09-06 (M115 done and archived; PR #119 squash-merged, 
 | M113 | One call says which programs tidymedia found, and a remembered location can be forgotten | done | — | normal | milestones/archive/M113-program-status-and-unset.md |
 | M114 | Verification, provenance and timeouts are taught in prose, not only on a reference page | done | — | normal | milestones/archive/M114-verification-and-timeout-vignette.md |
 | M115 | A new user can tell whether the setup worked, and fix it when it did not | done | M113 | normal | milestones/archive/M115-setup-and-troubleshooting.md |
-| M116 | A broken or stale remembered location is reported, not fatal or silent | in-progress | — | normal | milestones/M116-program-status-config-repair.md |
+| M116 | A broken or stale remembered location is reported, not fatal or silent | review | — | normal | milestones/M116-program-status-config-repair.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

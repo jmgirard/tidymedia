@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M116: A broken or stale remembered location is reported, not fatal or silent
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -142,7 +142,7 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
       does, this section compressed under the weight cap, `NEWS.md` narrowed to
       the three shapes the guard sees, the manifest test's baseline renamed to
       the callee it calls, `D-118` marked a plugin decision ([O]3, [O]4, [O]5).
-- [ ] T18: `devtools::document()`, `devtools::test()`, `devtools::check()` at
+- [x] T18: `devtools::document()`, `devtools::test()`, `devtools::check()` at
       the repaired head.
 
 ## Work log
@@ -200,6 +200,9 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: amendment return: AC4 — "Tests drive both callers: the `program_status()` path pins the program spellings in the message it emits, and the `ffm_batch(manifest = TRUE)` path pins the message it emits whole against the message a direct `tool_versions()` call on the same programs emits."
 
 - 2026-09-06: T17 — the weight-caps failure cleared by compressing Tasks, the heaviest plan-owned section, from 67 lines to 49 with T17 and T18 added; `cairn_validate` weight caps now PASS, the 18-task split tripwire the one advisory. `NEWS.md`'s Configuration headline narrowed to the three shapes the guard sees, measured at this head: a config file holding one empty line warns `tidymedia_location_unreadable`, one holding `"   "` warns `tidymedia_location_gone` about a missing binary — so the entry now says a spaces-only line is still read as a location. The manifest test's comparison baseline renamed `from_callee` with its comment corrected to say it is the shared callee and that the predicate leg is what discriminates (third review [O]3); the suite runs 40 assertions, 0 failures. `D-118` marked a cairn plugin decision in `cairn/ROADMAP.md` and in this file's T13 line, the third review's own citation left as review-owned text ([O]5). T11's mutation clause re-measured in a scratch copy: restoring the manifest-naming sentence reddens `:139`, `:161` and `:187` — every `expect_true` leg of the predicate — and leaves the `program_status()`-path test green; primary tree's `R/` untouched.
+
+- 2026-09-06: T18 — at the repaired head: `devtools::document()` no diff (`man/` and `NAMESPACE` both clean after the run); `devtools::test()` 0 failures, 13,175 passing, 18 skipped, 10 warnings, every one of the ten read off the log and all ten the pre-existing `warn_dropped_audio()` "Dropping 2 audio tracks from 1 input." in the two audio-stream suites and `test-ffmpeg.R:178`; `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes, 6m7s; `pkgdown::check_pkgdown()` no problems.
+- 2026-09-06: status → review; all eighteen tasks checked. AC4 carries the amended instrument clause and AC1, AC2, AC3, AC5, AC6 and AC7 are left for the fourth review to re-measure at this head, since T17 moved `NEWS.md` prose and test comments AC7 and AC4 rest on. [O]6, [O]7, [O]9 and [O]10 are still at maintainer triage; [O]8 stays rejected.
 
 ## Decisions
 

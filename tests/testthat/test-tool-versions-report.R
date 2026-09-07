@@ -20,6 +20,30 @@ tm_local_all_probes_timeout <- function(env = parent.frame()) {
   )
 }
 
+# AC4's wording contract as one predicate rather than a list of assertions
+# restated per test. Applied below to the message the source path actually
+# emits and to the retired stand-in, so a wording reverted in R/ffm_manifest.R
+# reddens the probe itself -- which its earlier shape, a literal checked
+# against assertions written beside it, could not (M116 review [O]4). Singular
+# and plural are both accepted: cli::qty() picks between them by how many
+# probes the limit killed, which is not what AC4 is about.
+tm_timeout_wording_holds <- function(message) {
+  message <- cli::ansi_strip(message)
+  labels <- c("FFmpeg", "FFprobe", "FFplay", "MediaInfo")
+  all(
+    grepl("The version probe timed out after", message, fixed = TRUE),
+    grepl("(That version is|Those versions are) recorded as NA", message),
+    grepl("options(tidymedia.timeout = )", message, fixed = TRUE),
+    # Neither caller is named: the same sentence explains an NA in a manifest
+    # and an NA in a returned tibble.
+    !grepl("manifest", message, fixed = TRUE),
+    # And no program is named by the display label the version flag is asked
+    # under, which is the spelling program_status()'s column does not use.
+    !any(vapply(labels, grepl, logical(1), x = message, fixed = TRUE))
+  )
+}
+
+
 test_that("the timeout warning names each program the way the report's column does", {
   # AC4. program_status() prints "ffmpeg" in its `program` column; a warning
   # explaining the NA beside it said "FFmpeg", so a reader had to match two
@@ -89,24 +113,36 @@ test_that("the timeout warning says what NA means without naming a caller", {
   expect_match(message, "Those versions are recorded as NA", fixed = TRUE)
   expect_match(message, "options(tidymedia.timeout = )", fixed = TRUE)
   expect_no_match(message, "manifest", fixed = TRUE)
+  # The individual assertions stay for the diagnosis they give on a failure;
+  # the predicate is what the probe below re-runs.
+  expect_true(tm_timeout_wording_holds(message))
 })
 
 test_that("the timeout wording guard reddens on the sentence it retired", {
-  # Mutation probe, the shape test-timeout-silence.R uses for the doc guards:
-  # every assertion above is a substring test, and a substring test is how a
-  # caller-specific sentence shipped green in the first place. The retired
-  # wording is restored into a stand-in message and the same assertions are
-  # checked to fail on it.
+  # Mutation probe, in the shape test-timeout-silence.R uses for the doc
+  # guards, with the leg that shape was missing: the predicate is run over the
+  # message R/ffm_manifest.R emits as well as over the retired stand-in. The
+  # first leg is what a reverted wording reddens; the second is what says the
+  # predicate discriminates rather than accepting anything.
+  testthat::local_mocked_bindings(
+    find_ffmpeg = function(...) "/usr/bin/ffmpeg",
+    find_ffprobe = function(...) "/usr/bin/ffprobe",
+    .package = "tidymedia"
+  )
+  tm_local_all_probes_timeout()
+  shipped <- conditionMessage(tm_collect_warnings(tool_versions())$warnings[[1]])
+
+  # The wording M116 retired: it named the caller and spelled the programs the
+  # way the version flag asks for them.
   mutant <- paste(
     "The version probe timed out after 2 seconds.",
     "FFmpeg and FFprobe.",
     "The manifest records NA for those versions; raise or remove",
     "options(tidymedia.timeout = )."
   )
-  expect_match(mutant, "manifest", fixed = TRUE)
-  expect_match(mutant, "FFmpeg", fixed = TRUE)
-  expect_no_match(mutant, "Those versions are recorded as NA", fixed = TRUE)
-  expect_no_match(mutant, "ffmpeg", fixed = TRUE)
+
+  expect_true(tm_timeout_wording_holds(shipped))
+  expect_false(tm_timeout_wording_holds(mutant))
 })
 
 test_that("one killed probe names only itself, in the column's spelling", {

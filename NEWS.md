@@ -116,7 +116,8 @@
 ## Configuration
 
 * A remembered program location that cannot be read no longer stops the call. A
-  configuration file holding nothing, or holding more than one line, made
+  configuration file holding nothing, holding more than one line, or holding a
+  single blank line made
   `find_ffmpeg()` -- and every call above it -- fail with an R error naming
   neither the program nor the file. It now warns with a condition you can
   catch by class -- `tidymedia_location_unreadable`, carrying the program and

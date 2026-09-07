@@ -87,13 +87,13 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 
 ## Coverage
 
-- AC1 → T1, T2, T5
-- AC2 → T3
-- AC3 → T5
-- AC4 → T6
+- AC1 → T1, T2, T5, T9, T10
+- AC2 → T3, T9, T10
+- AC3 → T5, T10
+- AC4 → T6, T11
 - AC5 → T4
 - AC6 → T7
-- AC7 → T8
+- AC7 → T8, T11
 
 ## Tasks
 
@@ -124,6 +124,20 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - [x] T7: `tool_versions()` length check below the `locations = NULL` default at
       `R/ffm_manifest.R:134`, with its three cases.
 - [x] T8: `NEWS.md` entry, `devtools::document()`, `devtools::check()`.
+- [x] T9: Both `find_program()` warnings name `unset_program("<program>")`, the
+      call the package exports, in place of the unexported `unset_ffmpeg()`;
+      the repair suite asserts the real spellings, with each advice bullet
+      instrumented so its own removal reddens (review [O]1, [O]2, [O]3).
+- [ ] T10: Doc and comment repairs — `?find_program`'s unreadable condition
+      widened to what the guard fires on, `?program_status`'s unreadable case
+      naming the pre-0.2.0 directory too, and `R/ffm_manifest.R:120-123`'s
+      "warnings suppressed" comment corrected to T5's two-class handler
+      (review [O]5, [O]6, [S-prior]1).
+- [ ] T11: AC4's wording assertions factored into one predicate the mutation
+      probe runs over both the message the source path emits and the retired
+      stand-in, so a reverted wording reddens the probe (review [O]4); then
+      `devtools::document()`, `devtools::test()`, `devtools::check()` re-run at
+      the repaired head.
 
 ## Work log
 
@@ -147,6 +161,13 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: status → review; all eight tasks checked.
 - 2026-09-06: review opened; draft PR #120 pushed, three fresh-context lenses spawned, `devtools::check()` running. Evidence gathering in progress — no criterion ticked yet.
 - 2026-09-06: review returned the milestone to `in-progress`. AC2 FAILED: the gone-location warning advises `unset_ffmpeg()` (`R/program_management.R:122`, and `:106` on AC1's branch), a function the package does not export, so `unset_program()` is not offered as the repair; and the `set_program()` half is uninstrumented — deleting that bullet left all 178 assertions green, `"set_ffmpeg()"` being a substring of `"unset_ffmpeg()"`. AC3-AC6 verified and ticked; AC1 and AC7 met but left unticked because the repair moves the code they were measured against. Defect return 1 for this milestone.
+- 2026-09-06: return question gate — both recommendations taken: the two warnings advise `{.code unset_program("{program}")}` rather than the bare `{.fn unset_program}`, because `unset_program()` takes no default (D079) and the caller needs the argument; and AC4's mutation probe is repaired by factoring its assertions into one predicate run over the real message and the stand-in, rather than deleting the probe or deriving the stand-in from the shipped text.
+- 2026-09-06: minor amendment — three return-repair tasks T9-T11 added for the seven findings marked fix-on-return, and the Coverage lines updated together; [O]7 is left to maintainer triage at re-review as the Review section directs.
+- 2026-09-06: T9 — both warnings now render `unset_program("ffmpeg")`; the repair suite asserts that spelling, asserts no `unset_<program>` wrapper is named, and each bullet was mutation-checked in turn: deleting the `set_program()` bullet and deleting the `unset_program()` bullet each reddened the suite, which the pre-return substring pairing did not.
+
+- 2026-09-06: T10 work done, box left open pending the suite — `?find_program`'s unreadable bullet now names the blank and missing forms the guard also rejects, `?program_status`'s unreadable case says the condition is raised from whichever config file the lookup reached rather than naming only the `R_user_dir()` one, and `R/ffm_manifest.R`'s comment now says `program_status()` muffles the plain not-found warning and lets the two classed ones through; the NEWS clause describing the unreadable state widened to match.
+- 2026-09-06: T11 work done, box left open pending the suite — AC4's wording assertions factored into `tm_timeout_wording_holds()`, which the probe runs over the message `tool_versions()` emits as well as over the retired stand-in; reverting the retired sentence into `R/ffm_manifest.R` reddened the probe's own `expect_true` leg (four failures, one of them at the probe), which the literal-against-itself shape could not.
+- 2026-09-06: checkpoint — T9 verified and checked; T10 and T11 written and their targeted suites green, with `devtools::document()` producing no diff, but the full `devtools::test()` and `devtools::check()` at this head have not returned, so both boxes stay open and the status stays `in-progress`.
 
 ## Decisions
 

@@ -52,9 +52,10 @@ tm_install_dir <- function() {
 #' * `tidymedia_location_gone` -- the location was read, but there is no
 #'   binary there any more. The condition carries the program in `tm_program`
 #'   and the location in `tm_location`.
-#' * `tidymedia_location_unreadable` -- the file holding the location is empty
-#'   or holds more than one line, so there is no location to try. The condition
-#'   carries the program in `tm_program` and the file in `tm_file`.
+#' * `tidymedia_location_unreadable` -- the file holding the location does not
+#'   hold one location to try: it is empty, or holds more than one line, or
+#'   holds a single line that is blank or missing. The condition carries the
+#'   program in `tm_program` and the file in `tm_file`.
 #'
 #' Either is repaired with [unset_program()], which forgets the location, or
 #' [set_program()], which replaces it.
@@ -103,7 +104,7 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
           c(
             "{program} is configured in {.file {config}}, but that file does \\
              not hold one location.",
-            "i" = "Use {.fn unset_{program}} to forget it, or \\
+            "i" = "Use {.code unset_program(\"{program}\")} to forget it, or \\
                    {.fn set_{program}} to point tidymedia at the binary again."
           ),
           class = "tidymedia_location_unreadable",
@@ -119,8 +120,8 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
             "{program} was configured at {.file {location}} but that file no \\
              longer seems to exist.",
             "i" = "Use {.fn set_{program}} to point tidymedia at it again.",
-            "i" = "Or use {.fn unset_{program}} to forget the remembered \\
-                   location.",
+            "i" = "Or use {.code unset_program(\"{program}\")} to forget the \\
+                   remembered location.",
             tm_install_bullet(program)
           ),
           class = "tidymedia_location_gone",
@@ -194,10 +195,12 @@ find_ffplay <- function() {
 #' A remembered location that cannot be used still warns, because there the
 #' `NA` would look exactly like a program you never had. Both cases name a file
 #' you can repair: a remembered location whose binary is gone
-#' (`tidymedia_location_gone`), and a file under
-#' `tools::R_user_dir("tidymedia", "config")` that does not hold one location
-#' (`tidymedia_location_unreadable`). Either is cleared with [unset_program()]
-#' or replaced with [set_program()]; the row is `NA` in both columns either way.
+#' (`tidymedia_location_gone`), and a config file that does not hold one
+#' location (`tidymedia_location_unreadable`). The unreadable case is raised
+#' from whichever file the lookup above reached, so it names the pre-0.2.0
+#' file as readily as the current one. Either is cleared with
+#' [unset_program()] or replaced with [set_program()]; the row is `NA` in both
+#' columns either way.
 #'
 #' The version is whatever the binary reports for its own version flag, so it
 #' is the FFmpeg build number for `ffmpeg`, `ffprobe` and `ffplay`, and the

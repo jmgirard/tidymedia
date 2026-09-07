@@ -53,7 +53,12 @@ test_that("a config file that is not one location warns and returns NULL", {
 test_that("the unreadable-location warning names the file and both repairs", {
   # The message, pinned once rather than in every cell above. It must name the
   # file the caller has to fix, and both calls that fix it: unset_program()
-  # removes the remembered location, set_program() replaces it.
+  # removes the remembered location, set_program() replaces it. Both are named
+  # as the package exports them -- there is no unset_ffmpeg(), and
+  # unset_program() takes no default (D079), so the advice carries the
+  # argument. The two spellings no longer share a substring, which is what let
+  # the set_program() assertion below pass while its bullet was deleted (M116
+  # review [O]3).
   dirs <- tm_redirect_config()
   path <- tm_config_file("ffmpeg", dirs$new)
   file.create(path)
@@ -63,8 +68,10 @@ test_that("the unreadable-location warning names the file and both repairs", {
 
   expect_match(message, "ffmpeg", fixed = TRUE)
   expect_match(message, basename(path), fixed = TRUE)
-  expect_match(message, "unset_ffmpeg()", fixed = TRUE)
+  expect_match(message, "unset_program(\"ffmpeg\")", fixed = TRUE)
   expect_match(message, "set_ffmpeg()", fixed = TRUE)
+  # Every advised call is one the package exports.
+  expect_no_match(message, "unset_ffmpeg", fixed = TRUE)
 })
 
 test_that("a malformed legacy file is read, and a readable current file wins", {
@@ -129,8 +136,14 @@ test_that("the gone-location warning offers both repairs, and the installer only
       message <- cli::ansi_strip(conditionMessage(condition))
 
       expect_match(message, "no longer seems to exist", fixed = TRUE, info = info)
+      # set_program()'s per-program wrapper is exported and named that way;
+      # unset_program() has no wrapper, so it is named with its argument. The
+      # two share no substring, so each assertion fails on its own bullet's
+      # removal -- the pairing that did not hold before M116's return.
       expect_match(message, paste0("set_", program, "()"), fixed = TRUE, info = info)
-      expect_match(message, paste0("unset_", program, "()"), fixed = TRUE, info = info)
+      expect_match(message, paste0("unset_program(\"", program, "\")"),
+                   fixed = TRUE, info = info)
+      expect_no_match(message, paste0("unset_", program), fixed = TRUE, info = info)
       offered <- identical(os, "windows") && program %in% tm_install_registers
       if (offered) {
         expect_match(message, "install_on_win()", fixed = TRUE, info = info)

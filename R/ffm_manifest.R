@@ -119,8 +119,9 @@ build_manifest <- function(pipelines, commands, versions, checksums) {
 #
 # `locations` lets a caller that has already resolved the binaries hand them
 # over rather than have them looked up a second time. program_status() does
-# that, because it resolves each program itself with find_program()'s warnings
-# suppressed and must not fire them again here.
+# that, because it resolves each program itself -- muffling find_program()'s
+# plain not-found warning while letting the two classed config warnings through
+# (M116) -- and must not fire any of them a second time here.
 #
 # This is where the timed-out probe becomes audible, because this is where the
 # probes are assembled -- one warning naming the tools the limit gave up on, not one

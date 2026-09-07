@@ -144,7 +144,7 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
       message whole against the `program_status()`-path message; the tautologous
       stand-in at `test-tool-versions-report.R:74` retired or repaired
       (re-review [O]2, floor).
-- [ ] T13: `NEWS.md` repairs — the false claim that a single-blank-line config
+- [x] T13: `NEWS.md` repairs — the false claim that a single-blank-line config
       used to fail with an R error removed (it warned), and the Configuration
       headline narrowed to what shipped, which is what `readLines()` returns
       rather than every unreadable config path; the directory-at-the-config-path
@@ -201,6 +201,7 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: return-2 question gate — both recommendations taken: AC4's `ffm_batch(manifest = TRUE)` pin drives the batch itself with `ffm_run()` mocked, rather than an end-to-end test gated on `skip_if_no_ffmpeg()`, so the pin runs on the binary-less CI legs too; and the locations-length abort drops `{.arg locations}` for "The locations supplied must name one location for each program.", keeping the caller frame the blame test pins, rather than dropping `call =` or routing the site to the existing argument-naming candidate row.
 - 2026-09-06: minor amendment — five return-repair tasks T12-T16 added for the eight findings marked fix-on-return, and the Coverage lines updated together; [O]7 and [O]8/[S-blame]3 stay at maintainer triage where the re-review put them, and [O]9 stays rejected as pre-existing.
 - 2026-09-06: T12 — the manifest-caller test now drives `ffm_batch(jobs, .f, manifest = TRUE)` with `ffm_run()` mocked, asserts the batch reached the manifest block (one job run, both manifest versions `NA`), and pins the `tidymedia_probe_timeout` message the batch call raised against the `program_status()`-path message and against `tm_timeout_wording_holds()`. Mutation-checked: renaming the timed-out programs back to their display labels in `R/ffm_manifest.R` reddened this test at its predicate leg (`:134`) as well as the `program_status()` test; source restored, `git diff` clean. The whole-message comparison alone cannot discriminate — both callers read one callee — which is why the predicate leg is what carries the pin.
+- 2026-09-06: T13 — the Configuration headline narrowed to a config file that "reads back as something other than one program location", which is what AC1's guard is scoped to, and the blank-line form moved out of the R-error claim: it warned about a missing binary before this branch (`Sys.which("")` is `""`), which the NEWS now says. The directory-at-the-config-path gap went to a ROADMAP candidate row rather than widening AC1 (D-118); `ROADMAP.md` is 28,746 bytes at 58 lines, still over its 24,000-byte budget and still needing `/cairn-triage`.
 
 ## Decisions
 

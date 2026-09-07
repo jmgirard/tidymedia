@@ -206,6 +206,8 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 
 - 2026-09-07: fourth review — all seven criteria verified with fresh evidence at `e74336b` and ticked; consistency gate passes both halves (`cairn_validate` exit 0, weight caps PASS, one split-tripwire advisory); three lenses returned twelve findings, none floor-qualifying; PR conversation holds one bot comment and no reviews.
 
+- 2026-09-07: step-7 approval: PR #120 approved for merge.
+
 ## Decisions
 
 ## Review

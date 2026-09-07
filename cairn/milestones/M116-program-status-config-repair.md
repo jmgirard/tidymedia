@@ -357,6 +357,17 @@ the repair moved the code and docs they were measured against.
   `tm_n_programs` 4 and `tm_n_locations` 1 / 3 / 0; the `NULL` default still
   returns a list. The two repair suites run 232 assertions, 0 failures.
 
+- **AC7 — not ticked.** The mechanical half is clean at this head:
+  `devtools::test()` 0 failures, 13,172 passing, 18 skipped, 10 warnings (9
+  located by name to `warn_dropped_audio()`, `R/ffmpeg.R:2721`, the
+  pre-existing dropped-track diagnostic); `devtools::document()` no diff;
+  `pkgdown::check_pkgdown()` no problems; and all ten CI legs, which run
+  `R CMD check` across five platforms, pass at `b4cb7a7`. The criterion's
+  `NEWS.md` clause is what fails it: [O]1 shows a false claim about the prior
+  behaviour of a blank-line config, and [O]5 a headline broader than what
+  shipped. The local `devtools::check()` was not re-run by this review — the
+  CI legs cover it, and the return moots it.
+
 ### Independent review — three fresh-context lenses
 
 User-facing tier with executable surface, so the full fan-out ran. Twelve

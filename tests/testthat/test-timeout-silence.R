@@ -207,8 +207,10 @@ test_that("a timed-out version probe warns once and names both tools", {
   expect_s3_class(warns[[1]], "tidymedia_probe_timeout")
   msg <- cli::ansi_strip(conditionMessage(warns[[1]]))
   expect_match(msg, "timed out")
-  expect_match(msg, "FFmpeg", fixed = TRUE)
-  expect_match(msg, "FFprobe", fixed = TRUE)
+  # The `program` column's spelling, not the display label the version flag is
+  # asked under: one program, one name, wherever the reader meets it (M116).
+  expect_match(msg, "ffmpeg", fixed = TRUE)
+  expect_match(msg, "ffprobe", fixed = TRUE)
 
   # The manifest's own shape is untouched: NA is what a version that could not
   # be read has always been recorded as.
@@ -230,8 +232,8 @@ test_that("only the killed probe is named when one tool answers", {
     v <- tool_versions()
     NULL
   }, warning = function(w) cli::ansi_strip(conditionMessage(w)))
-  expect_match(msg, "FFprobe", fixed = TRUE)
-  expect_no_match(msg, "FFmpeg", fixed = TRUE)
+  expect_match(msg, "ffprobe", fixed = TRUE)
+  expect_no_match(msg, "ffmpeg", fixed = TRUE)
 
   v <- suppressWarnings(tool_versions())
   expect_identical(v$ffmpeg, "8.1.2")

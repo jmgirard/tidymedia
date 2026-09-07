@@ -208,11 +208,15 @@ probe_all_impl <- function(infile, typed = TRUE, parallel = FALSE,
 #     stdout = TRUE), which is not an R condition and would otherwise read as a
 #     count of however many lines came back before the failure.
 count_audio_streams <- function(file) {
-  # find_ffprobe() can ERROR as well as warn, and the tryCatch() below does not
-  # reach it: find_program() readLines() a user config written by set_ffprobe()
-  # and then tests `if (Sys.which(location) == "")`, so an empty config gives
-  # `if (logical(0))` and a two-line one gives a length-2 condition -- both
-  # aborting the verb on a machine where it used to just run (M44 review F2).
+  # find_ffprobe() USED to error as well as warn, and the tryCatch() below does
+  # not reach it: find_program() readLines() a user config written by
+  # set_ffprobe() and then tested `if (Sys.which(location) == "")`, so an empty
+  # config gave `if (logical(0))` and a two-line one a length-2 condition --
+  # both aborting the verb on a machine where it used to just run (M44 review
+  # F2). M116 put a guard above that test, so those two shapes now warn
+  # `tidymedia_location_unreadable` and return NULL; the tryCatch() stays
+  # because the error channel is what this test exists to prove is absorbed,
+  # and nothing promises find_ffprobe() will never error again.
   # length(loc) != 1L rather than is.null() first: `character(0)` would make
   # is.na(loc) return logical(0) and `if` throw on that too.
   loc <- tryCatch(suppressWarnings(find_ffprobe()), error = function(e) NULL)

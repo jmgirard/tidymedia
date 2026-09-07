@@ -64,12 +64,21 @@ version the binary reported or <code>NA</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>A program that cannot be found gets <code>NA</code> in both columns rather than a
-warning, so the answer for four programs arrives as one table instead of a
-pile of messages. The lookup is <code><a href="find_program.html">find_program()</a></code>'s: the <code>PATH</code> first, then a
-location remembered by <code><a href="set_program.html">set_program()</a></code>, and finally a location a version of
-tidymedia before 0.2.0 remembered under
+    <p>A program that was never configured and is not installed gets <code>NA</code> in both
+columns rather than a warning, so the answer for four programs arrives as one
+table instead of a pile of messages. The lookup is <code><a href="find_program.html">find_program()</a></code>'s: the
+<code>PATH</code> first, then a location remembered by <code><a href="set_program.html">set_program()</a></code>, and finally a
+location a version of tidymedia before 0.2.0 remembered under
 <code>rappdirs::user_config_dir("tidymedia", "R")</code>.</p>
+<p>A remembered location that cannot be used still warns, because there the
+<code>NA</code> would look exactly like a program you never had. Both cases name a file
+you can repair: a remembered location whose binary is gone
+(<code>tidymedia_location_gone</code>), and a config file that does not hold one
+location (<code>tidymedia_location_unreadable</code>). The unreadable case is raised
+from whichever file the lookup above reached, so it names the pre-0.2.0
+file as readily as the current one. Either is cleared with
+<code><a href="unset_program.html">unset_program()</a></code> or replaced with <code><a href="set_program.html">set_program()</a></code>; the row is <code>NA</code> in both
+columns either way.</p>
 <p>The version is whatever the binary reports for its own version flag, so it
 is the FFmpeg build number for <code>ffmpeg</code>, <code>ffprobe</code> and <code>ffplay</code>, and the
 MediaInfo library version for <code>mediainfo</code>. A program that resolves but

@@ -65,12 +65,19 @@ asks FFmpeg which encoders it has; later calls reuse that answer rather than sta
 FFmpeg process per call, which is what makes a large batch practical. The
 answer is remembered for the rest of the session, so a build that changes
 underneath you – a fresh FFmpeg install, a new GPU driver, a different
-binary – is not seen until the record is discarded. There are two ways to
+binary – is not seen until the record is discarded. There are three ways to
 discard it:</p>
 <ul><li><p>call <code>refresh_ffmpeg_capabilities()</code> yourself, at any time;</p></li>
 <li><p>call <code><a href="set_program.html">set_program</a></code> (or <code><a href="set_program.html">set_ffmpeg</a></code>), which
 discards it for you, since pointing tidymedia at a different binary
-invalidates everything remembered about the old one.</p></li>
+invalidates everything remembered about the old one;</p></li>
+<li><p>call <code><a href="unset_program.html">unset_program</a></code> and have it remove something, for
+the same reason: forgetting a remembered location can change which
+binary tidymedia resolves to. A call that removed nothing leaves the
+record alone, since nothing about the resolved binary changed – and a
+call that removed one remembered file before failing on another
+discards it, because the file it did remove may be the one your lookups
+were answered from.</p></li>
 </ul><p>The record is per R process, and it does not travel to a worker. So unless
 you have set <code>tidymedia.hardware_encoders</code> yourself, a batch running on
 <code>W</code> workers asks FFmpeg <code>W</code> times rather than once, and

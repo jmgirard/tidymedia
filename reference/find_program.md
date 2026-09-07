@@ -37,6 +37,25 @@ remembered by a version of tidymedia before 0.2.0 was written to
 `rappdirs::user_config_dir("tidymedia", "R")`, and that file is read
 only when no file exists in the current directory.
 
+A remembered location that no longer works warns and returns `NULL`
+rather than failing, under a condition class you can catch:
+
+- `tidymedia_location_gone` – the location was read, but there is no
+  binary there any more. The condition carries the program in
+  `tm_program` and the location in `tm_location`.
+
+- `tidymedia_location_unreadable` – the file holding the location does
+  not hold one location to try: it is empty, holds more than one line,
+  or holds one empty line. A line holding only spaces is read as a
+  location, and raises `tidymedia_location_gone` instead. The condition
+  carries the program in `tm_program` and the file in `tm_file`.
+
+Either is repaired with
+[`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md),
+which forgets the location, or
+[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md),
+which replaces it.
+
 ## See also
 
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)

@@ -18,14 +18,26 @@ the version the binary reported or `NA`.
 
 ## Details
 
-A program that cannot be found gets `NA` in both columns rather than a
-warning, so the answer for four programs arrives as one table instead of
-a pile of messages. The lookup is
+A program that was never configured and is not installed gets `NA` in
+both columns rather than a warning, so the answer for four programs
+arrives as one table instead of a pile of messages. The lookup is
 [`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)'s:
 the `PATH` first, then a location remembered by
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md),
 and finally a location a version of tidymedia before 0.2.0 remembered
 under `rappdirs::user_config_dir("tidymedia", "R")`.
+
+A remembered location that cannot be used still warns, because there the
+`NA` would look exactly like a program you never had. Both cases name a
+file you can repair: a remembered location whose binary is gone
+(`tidymedia_location_gone`), and a config file that does not hold one
+location (`tidymedia_location_unreadable`). The unreadable case is
+raised from whichever file the lookup above reached, so it names the
+pre-0.2.0 file as readily as the current one. Either is cleared with
+[`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
+or replaced with
+[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md);
+the row is `NA` in both columns either way.
 
 The version is whatever the binary reports for its own version flag, so
 it is the FFmpeg build number for `ffmpeg`, `ffprobe` and `ffplay`, and

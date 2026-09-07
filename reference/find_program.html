@@ -79,6 +79,17 @@ location remembered by <code><a href="set_program.html">set_program()</a></code>
 version of tidymedia before 0.2.0 was written to
 <code>rappdirs::user_config_dir("tidymedia", "R")</code>, and that file is read only
 when no file exists in the current directory.</p>
+<p>A remembered location that no longer works warns and returns <code>NULL</code> rather
+than failing, under a condition class you can catch:</p><ul><li><p><code>tidymedia_location_gone</code> – the location was read, but there is no
+binary there any more. The condition carries the program in <code>tm_program</code>
+and the location in <code>tm_location</code>.</p></li>
+<li><p><code>tidymedia_location_unreadable</code> – the file holding the location does not
+hold one location to try: it is empty, holds more than one line, or holds
+one empty line. A line holding only spaces is read as a location, and
+raises <code>tidymedia_location_gone</code> instead. The condition carries the program in
+<code>tm_program</code> and the file in <code>tm_file</code>.</p></li>
+</ul><p>Either is repaired with <code><a href="unset_program.html">unset_program()</a></code>, which forgets the location, or
+<code><a href="set_program.html">set_program()</a></code>, which replaces it.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

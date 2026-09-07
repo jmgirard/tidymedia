@@ -153,6 +153,57 @@
 
 ### Configuration
 
+- A configuration file that holds nothing, holds more than one line, or
+  holds one empty line no longer stops the call, or answers about the
+  wrong thing. The first two made
+  [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+  – and every call above it – fail with an R error naming neither the
+  program nor the file; the third warned instead that the binary had
+  gone missing, which was not what was wrong with it. All three now warn
+  with a condition you can catch by class –
+  `tidymedia_location_unreadable`, carrying the program and the file –
+  and return `NULL`. A line holding only spaces is not one of these: it
+  is still read as a location, and still warns that the binary is
+  missing.
+  [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
+  clears the file;
+  [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+  replaces it.
+
+- The warning for a remembered location whose binary has gone now offers
+  [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
+  beside
+  [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md),
+  since forgetting the location is the other repair, and on Windows it
+  offers
+  [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+  on the same terms the not-found warning does. It carries the class
+  `tidymedia_location_gone`, with the program and the location, so it
+  can be caught.
+
+- [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)
+  no longer swallows those two warnings. A program that was never
+  configured and is not installed still gets `NA` in both columns and
+  says nothing about it – there, `NA` is the whole answer. A remembered
+  location that cannot be used is not: `NA` would read exactly like a
+  program you never had, while the real state is a file on your machine
+  you can clear in one call, so the warning naming it comes through.
+
+- [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
+  now discards what tidymedia remembers about your FFmpeg build whenever
+  a removal took, including a removal that cleared one of the two
+  configuration files and then failed on the other. That case used to
+  leave the remembered capabilities describing a binary the lookups had
+  already stopped resolving to.
+
+- The warning raised when a version probe runs out of time names each
+  program the way
+  [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)’s
+  `program` column does – `ffmpeg` rather than `FFmpeg` – and no longer
+  says the `NA` lands in a manifest. The same warning is raised from
+  [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md),
+  whose `NA` lands in a returned table.
+
 - The warning
   [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
   and its siblings give when they cannot find a program now names the

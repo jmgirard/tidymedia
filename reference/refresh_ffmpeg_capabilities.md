@@ -22,7 +22,7 @@ starting a new FFmpeg process per call, which is what makes a large
 batch practical. The answer is remembered for the rest of the session,
 so a build that changes underneath you – a fresh FFmpeg install, a new
 GPU driver, a different binary – is not seen until the record is
-discarded. There are two ways to discard it:
+discarded. There are three ways to discard it:
 
 - call `refresh_ffmpeg_capabilities()` yourself, at any time;
 
@@ -31,7 +31,16 @@ discarded. There are two ways to discard it:
   (or
   [`set_ffmpeg`](https://jmgirard.github.io/tidymedia/reference/set_program.md)),
   which discards it for you, since pointing tidymedia at a different
-  binary invalidates everything remembered about the old one.
+  binary invalidates everything remembered about the old one;
+
+- call
+  [`unset_program`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
+  and have it remove something, for the same reason: forgetting a
+  remembered location can change which binary tidymedia resolves to. A
+  call that removed nothing leaves the record alone, since nothing about
+  the resolved binary changed – and a call that removed one remembered
+  file before failing on another discards it, because the file it did
+  remove may be the one your lookups were answered from.
 
 The record is per R process, and it does not travel to a worker. So
 unless you have set `tidymedia.hardware_encoders` yourself, a batch

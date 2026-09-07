@@ -67,9 +67,10 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - [ ] AC4: `tool_versions()`'s `tidymedia_probe_timeout` warning names each
       timed-out program by the spelling `program_status()`'s `program` column
       uses (`"ffmpeg"`, not `"FFmpeg"`), and its remaining bullets read the same
-      on both callers. Tests pin the emitted message on the `program_status()`
-      path and on the `ffm_batch(manifest = TRUE)` path, and a mutant restoring
-      the manifest-naming sentence turns the `program_status()` test red.
+      on both callers. Tests drive both callers: the `program_status()` path
+      pins the program spellings in the message it emits, and the
+      `ffm_batch(manifest = TRUE)` path pins the message it emits whole against
+      the message a direct `tool_versions()` call on the same programs emits.
 - [x] AC5: `unset_program()` discards the memoized FFmpeg capabilities whenever
       a removal took, before aborting `tidymedia_location_not_removed`, and
       leaves them alone where nothing was removed. Tests fire both partial
@@ -90,76 +91,58 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - AC1 → T1, T2, T5, T9, T10
 - AC2 → T3, T9, T10
 - AC3 → T5, T10
-- AC4 → T6, T11, T12
+- AC4 → T6, T11, T12, T17
 - AC5 → T4
 - AC6 → T7
 - AC7 → T8, T11, T13, T15, T16
 
 ## Tasks
 
-- [x] T1: Regression tests for the malformed remembered-location state, crossing
-      the four `find_*()` exports against the empty and two-line forms, under
-      `tm_redirect_config()` (`tests/testthat/helper-program-config.R`). Record
-      in the work log that each is red first, and which R error it raises.
-- [x] T2: `find_program()` guards what it read back before
-      `R/program_management.R:79`'s `if (Sys.which(location) == "")` — the
-      `length(loc) != 1L` shape `count_audio_streams()` documents at
-      `R/ffprobe.R:213-219` — classing the malformed state and returning `NULL`.
-- [x] T3: Widen and class the stale-location warning at
-      `R/program_management.R:80-88`, deriving the installer bullet from
-      `tm_os()`/`tm_install_registers` the way the not-found branch at `:101-104`
-      does rather than restating the condition; tests cross OS against program.
+- [x] T1: Regression tests for the malformed remembered-location state, the four
+      `find_*()` exports crossed against the empty and two-line forms under
+      `tm_redirect_config()`; each red first, with the R error it raised logged.
+- [x] T2: `find_program()` guards what it read back before the `Sys.which()`
+      test, in the `length(x) != 1L` shape `count_audio_streams()` documents,
+      classing the malformed state and returning `NULL`.
+- [x] T3: Widen and class the stale-location warning, deriving the installer
+      bullet from `tm_os()`/`tm_install_registers` as the not-found branch does.
 - [x] T4: `unset_program()` drops the memo on any removal that took, above the
-      `tidymedia_location_not_removed` abort at `R/program_management.R:291-303`;
-      tests for both partial forms and the total-failure case.
-- [x] T5: `program_status()` (`R/program_management.R:183-185`) stops suppressing
-      the two classed config warnings and keeps suppressing the plain not-found
-      one; narrow `?program_status`, document both conditions on
-      `?find_program`, add the mixed four-program test.
-- [x] T6: Reword `tool_versions()`'s timeout warning (`R/ffm_manifest.R:154-166`)
-      to the `program` column spelling and a caller-neutral sentence about what
-      `NA` means; rename the local that overwrites the `programs` argument at
-      `:154`; pin the message on both callers with the mutation probe
-      `tests/testthat/test-timeout-silence.R:660-680` models.
-- [x] T7: `tool_versions()` length check below the `locations = NULL` default at
-      `R/ffm_manifest.R:134`, with its three cases.
+      `tidymedia_location_not_removed` abort; both partial forms tested.
+- [x] T5: `program_status()` stops suppressing the two classed config warnings
+      and keeps suppressing the plain not-found one; `?program_status` narrowed
+      and both conditions documented on `?find_program`.
+- [x] T6: Reword `tool_versions()`'s timeout warning to the `program` column
+      spelling and a caller-neutral `NA` sentence, and pin it on both callers.
+- [x] T7: `tool_versions()` length check below the `locations = NULL` default,
+      with its three cases.
 - [x] T8: `NEWS.md` entry, `devtools::document()`, `devtools::check()`.
-- [x] T9: Both `find_program()` warnings name `unset_program("<program>")`, the
-      call the package exports, in place of the unexported `unset_ffmpeg()`;
-      the repair suite asserts the real spellings, with each advice bullet
-      instrumented so its own removal reddens (review [O]1, [O]2, [O]3).
-- [x] T10: Doc and comment repairs — `?find_program`'s unreadable condition
-      widened to what the guard fires on, `?program_status`'s unreadable case
-      naming the pre-0.2.0 directory too, and `R/ffm_manifest.R:120-123`'s
-      "warnings suppressed" comment corrected to T5's two-class handler
-      (review [O]5, [O]6, [S-prior]1).
+- [x] T9: Both `find_program()` warnings name the exported
+      `unset_program("<program>")` in place of `unset_ffmpeg()`, each advice
+      bullet instrumented so its own removal reddens (review [O]1-[O]3).
+- [x] T10: Doc and comment repairs — `?find_program`, `?program_status`, and
+      `R/ffm_manifest.R`'s "warnings suppressed" comment ([O]5, [O]6,
+      [S-prior]1).
 - [x] T11: AC4's wording assertions factored into one predicate the mutation
-      probe runs over both the message the source path emits and the retired
-      stand-in, so a reverted wording reddens the probe (review [O]4); then
-      `devtools::document()`, `devtools::test()`, `devtools::check()` re-run at
-      the repaired head.
-- [x] T12: AC4's missing pin — a test that drives `ffm_batch(manifest = TRUE)`
-      itself, with `ffm_run()` stood in for so no binary is needed, captures the
-      `tidymedia_probe_timeout` warning the batch raises, and compares its
-      message whole against the `program_status()`-path message; the tautologous
-      stand-in at `test-tool-versions-report.R:74` retired or repaired
-      (re-review [O]2, floor).
-- [x] T13: `NEWS.md` repairs — the false claim that a single-blank-line config
-      used to fail with an R error removed (it warned), and the Configuration
-      headline narrowed to what shipped, which is what `readLines()` returns
-      rather than every unreadable config path; the directory-at-the-config-path
-      gap goes to a ROADMAP candidate row (re-review [O]1, [O]5).
-- [x] T14: The memo census in prose — `R/cache.R:8-10` restates D044's two
-      routes where D089 records four, and `R/cache.R:47-48` with
-      `?refresh_ffmpeg_capabilities` state the `unset_program()` route without
-      D089's removed-nothing carve-out (re-review [S-blame]1, [O]6).
-- [x] T15: Comments and docs T2 falsified or overreached — `R/ffprobe.R:211-215`
-      and `tests/testthat/test-audio-track-drop.R:150-153` still say a malformed
-      config aborts; `?find_program`'s unreadable bullet promises a "missing"
-      form the guard cannot see; and `R/ffm_manifest.R:141` names
-      `{.arg locations}` in an abort blamed on a frame without that argument
-      (re-review [S-blame]2, [O]3, [O]4).
-- [x] T16: `devtools::document()`, `devtools::test()`, `devtools::check()` at
+      probe runs over the emitted message as well as the retired stand-in
+      (review [O]4). Carries AC4's mutation check, moved here off the criterion
+      at the return-3 gate: a source mutant restoring the manifest-naming
+      sentence reddens each `expect_true` leg of that predicate.
+- [x] T12: AC4's missing pin — a test driving `ffm_batch(manifest = TRUE)` with
+      `ffm_run()` stood in for; the tautologous stand-in retired (re-review
+      [O]2, floor).
+- [x] T13: `NEWS.md` repairs — the false R-error claim about a blank-line config
+      removed and the Configuration headline narrowed (re-review [O]1, [O]5).
+- [x] T14: The memo census in prose — `R/cache.R` and
+      `?refresh_ffmpeg_capabilities` on D089's four routes with its
+      removed-nothing carve-out (re-review [S-blame]1, [O]6).
+- [x] T15: Comments and docs T2 falsified or overreached, and the
+      `{.arg locations}` blame (re-review [S-blame]2, [O]3, [O]4).
+- [x] T16: `devtools::document()`, `devtools::test()`, `devtools::check()`.
+- [x] T17: Return-3 repairs — AC4's instrument clause amended to what the suite
+      does, this section compressed under the weight cap, `NEWS.md` narrowed to
+      the three shapes the guard sees, the manifest test's baseline renamed to
+      the callee it calls, `D-118` marked a plugin decision ([O]3, [O]4, [O]5).
+- [ ] T18: `devtools::document()`, `devtools::test()`, `devtools::check()` at
       the repaired head.
 
 ## Work log
@@ -201,7 +184,7 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: return-2 question gate — both recommendations taken: AC4's `ffm_batch(manifest = TRUE)` pin drives the batch itself with `ffm_run()` mocked, rather than an end-to-end test gated on `skip_if_no_ffmpeg()`, so the pin runs on the binary-less CI legs too; and the locations-length abort drops `{.arg locations}` for "The locations supplied must name one location for each program.", keeping the caller frame the blame test pins, rather than dropping `call =` or routing the site to the existing argument-naming candidate row.
 - 2026-09-06: minor amendment — five return-repair tasks T12-T16 added for the eight findings marked fix-on-return, and the Coverage lines updated together; [O]7 and [O]8/[S-blame]3 stay at maintainer triage where the re-review put them, and [O]9 stays rejected as pre-existing.
 - 2026-09-06: T12 — the manifest-caller test now drives `ffm_batch(jobs, .f, manifest = TRUE)` with `ffm_run()` mocked, asserts the batch reached the manifest block (one job run, both manifest versions `NA`), and pins the `tidymedia_probe_timeout` message the batch call raised against the `program_status()`-path message and against `tm_timeout_wording_holds()`. Mutation-checked: renaming the timed-out programs back to their display labels in `R/ffm_manifest.R` reddened this test at its predicate leg (`:134`) as well as the `program_status()` test; source restored, `git diff` clean. The whole-message comparison alone cannot discriminate — both callers read one callee — which is why the predicate leg is what carries the pin.
-- 2026-09-06: T13 — the Configuration headline narrowed to a config file that "reads back as something other than one program location", which is what AC1's guard is scoped to, and the blank-line form moved out of the R-error claim: it warned about a missing binary before this branch (`Sys.which("")` is `""`), which the NEWS now says. The directory-at-the-config-path gap went to a ROADMAP candidate row rather than widening AC1 (D-118); `ROADMAP.md` is 28,746 bytes at 58 lines, still over its 24,000-byte budget and still needing `/cairn-triage`.
+- 2026-09-06: T13 — the Configuration headline narrowed to a config file that "reads back as something other than one program location", which is what AC1's guard is scoped to, and the blank-line form moved out of the R-error claim: it warned about a missing binary before this branch (`Sys.which("")` is `""`), which the NEWS now says. The directory-at-the-config-path gap went to a ROADMAP candidate row rather than widening AC1 (cairn plugin decision D-118, not a repo `D0xx` entry); `ROADMAP.md` is 28,746 bytes at 58 lines, still over its 24,000-byte budget and still needing `/cairn-triage`.
 - 2026-09-06: T14 — `R/cache.R`'s header comment now states D089's four routes in place of D044's two, and `?refresh_ffmpeg_capabilities`'s third bullet carries the carve-out: an `unset_program()` that removed nothing leaves the record alone, one that removed a file before failing discards it. The user-facing list stays three items because it enumerates calls, not routes.
 - 2026-09-06: T15 — the two comments T2 falsified now say the abort was the pre-M116 behaviour and why each `tryCatch()` stays (`R/ffprobe.R`, `tests/testthat/test-audio-track-drop.R`); `?find_program`'s unreadable bullet drops the "or missing" form the guard's `is.na()` leg cannot see; and the locations-length abort reads "The locations supplied must name one location for each program." with a comment saying why it is not `{.arg locations}`. Nothing in `tests/`, `vignettes/` or `man/` pinned any of the changed strings; the three affected suites run 341 assertions, 0 failures.
 - 2026-09-06: T16 — at the repaired head: `devtools::document()` no diff; `devtools::test()` 0 failures, 13,175 passing, 18 skipped, 10 warnings, all ten the pre-existing dropped-track diagnostic from `warn_dropped_audio()` (read off the log, not sampled: every warning entry is that message, in the two audio-stream suites and `test-ffmpeg.R:178`); `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes, 5m51s.
@@ -210,6 +193,13 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: third review returned the milestone to `in-progress` on two triggers. The consistency gate FAILED: `cairn_validate` weight caps, the milestone body at 164 plan-owned lines against the `<150` cap, Tasks the heaviest section at 67 lines for 16 tasks. And AC4 FAILED again, on a different clause of the same instrument sentence: restoring only the manifest-naming sentence reddens three tests and leaves the `program_status()` test — the one the clause names — green at 0 failures, measured in a scratch copy and reached independently by the diff-bug lens. AC1, AC2, AC3, AC5 and AC6 re-verified and ticked at `278ad96`; AC7 not ticked, `NEWS.md`'s headline still claiming one shape more than shipped. Defect return 3, the thrash rule's threshold; ten findings logged in the Review section.
 - 2026-09-06: correction — T12's work-log line said the batch-path message is pinned "against the `program_status()`-path message". It is not: the comparison baseline is a bare `tool_versions()` call, the shared callee. The test still discriminates through its wording-predicate leg, which is what carries the pin; the description was wrong.
 - 2026-09-06: return disposition, chosen by the maintainer at the return gate with a fourth repair round, parking and a re-plan all offered: narrow the promise. AC4's instrument clause is amended through the gated protocol to name what the suite does rather than wording no test satisfies, the shipped behaviour being unchanged and already verified; the over-cap Tasks section is compressed in the same pass; [O]3, [O]4 and [O]5 are fixed on return; [O]6, [O]7, [O]9 and [O]10 stay at maintainer triage; [O]8 is rejected as already dispositioned.
+
+- 2026-09-06: minor amendment — two return-3 repair tasks T17-T18 added for the disposition's fix-on-return items, and AC4's Coverage line updated to name T17.
+- 2026-09-06: re-audit: AC4 (full) — three findings on the wording the mini gate proposed: "turns the wording predicate red wherever it runs" was false at the one leg no source mutation can reach (`expect_false` over a literal the test writes itself), the manifest pin named no comparison baseline, and the mutant clause bound a test-file predicate rather than the shipped warning. The first two were fixed as clear repairs; the third went to the maintainer, who moved the mutation clause out of AC4 into T11 — the treatment the plan-gate audit gave two instrument clauses. Its further finding, that "read the same on both callers" rests on a proxy because the `program_status()` test asserts spellings only, was reported and left where the return gate put it: its repair is the widening the maintainer declined.
+- 2026-09-06: re-audit: AC4 (full) — one clear repair, that "a bare `tool_versions()` call" is false of the suite (the baseline at `test-tool-versions-report.R:116` passes `programs` and `locations`, and two genuinely bare calls sit elsewhere in the file), applied by naming the call as it is; and one judgment call, that the coverage sentence binds an instrument, which went to the maintainer with the re-entry spent — kept as written, being what the return-gate disposition asked for and how AC1, AC2, AC5 and AC6 are already written.
+- 2026-09-06: amendment return: AC4 — "Tests drive both callers: the `program_status()` path pins the program spellings in the message it emits, and the `ffm_batch(manifest = TRUE)` path pins the message it emits whole against the message a direct `tool_versions()` call on the same programs emits."
+
+- 2026-09-06: T17 — the weight-caps failure cleared by compressing Tasks, the heaviest plan-owned section, from 67 lines to 49 with T17 and T18 added; `cairn_validate` weight caps now PASS, the 18-task split tripwire the one advisory. `NEWS.md`'s Configuration headline narrowed to the three shapes the guard sees, measured at this head: a config file holding one empty line warns `tidymedia_location_unreadable`, one holding `"   "` warns `tidymedia_location_gone` about a missing binary — so the entry now says a spaces-only line is still read as a location. The manifest test's comparison baseline renamed `from_callee` with its comment corrected to say it is the shared callee and that the predicate leg is what discriminates (third review [O]3); the suite runs 40 assertions, 0 failures. `D-118` marked a cairn plugin decision in `cairn/ROADMAP.md` and in this file's T13 line, the third review's own citation left as review-owned text ([O]5). T11's mutation clause re-measured in a scratch copy: restoring the manifest-naming sentence reddens `:139`, `:161` and `:187` — every `expect_true` leg of the predicate — and leaves the `program_status()`-path test green; primary tree's `R/` untouched.
 
 ## Decisions
 

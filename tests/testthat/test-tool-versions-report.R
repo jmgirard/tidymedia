@@ -72,12 +72,11 @@ test_that("the timeout warning names each program the way the report's column do
 })
 
 test_that("the timeout warning reads the same from the manifest caller", {
-  # AC4's second pin, taken from the caller itself rather than from the callee
-  # both callers share: this drives ffm_batch(manifest = TRUE), which is what
-  # reaches tool_versions() on that path, and reads the warning the batch call
-  # raises. Its predecessor called tool_versions() twice with arguments the
-  # message does not read, so its whole-message comparison could not fail
-  # (M116 re-review [O]2).
+  # AC4's second pin, driven through the caller itself: this calls
+  # ffm_batch(manifest = TRUE), which is what reaches tool_versions() on that
+  # path, and reads the warning the batch call raises. Its predecessor called
+  # tool_versions() twice with arguments the message does not read, so its
+  # whole-message comparison could not fail (M116 re-review [O]2).
   #
   # ffm_run() is the stand-in, not the encoder: the batch has to reach its
   # `if (manifest)` block, which sits under `run = TRUE`, and every leg of the
@@ -108,7 +107,13 @@ test_that("the timeout warning reads the same from the manifest caller", {
       ffm_files(input, output) |> ffm_scale(32, 32)
     })
   )
-  from_status <- tm_collect_warnings(tool_versions(c("ffmpeg", "ffprobe"),
+  # The baseline is the shared callee, not the program_status() path: a bare
+  # tool_versions() call is what both callers reach, so comparing against it
+  # says the batch adds nothing of its own to the sentence. It cannot say the
+  # sentence is right -- one callee emits both messages -- which is why the
+  # predicate leg below is what carries this test's pin (M116 third review
+  # [O]3, which found the earlier name and comment claiming otherwise).
+  from_callee <- tm_collect_warnings(tool_versions(c("ffmpeg", "ffprobe"),
                                                    list("/usr/bin/ffmpeg",
                                                         "/usr/bin/ffprobe")))
 
@@ -125,11 +130,11 @@ test_that("the timeout warning reads the same from the manifest caller", {
   )
   expect_length(timeouts, 1L)
   message <- cli::ansi_strip(conditionMessage(timeouts[[1]]))
-  # Compared whole rather than by keyword: what AC4 asks is that the two
-  # callers get the same sentence, not that each contains some phrase.
+  # Compared whole rather than by keyword: the batch caller must add nothing
+  # to what the callee emits.
   expect_identical(
     message,
-    cli::ansi_strip(conditionMessage(from_status$warnings[[1]]))
+    cli::ansi_strip(conditionMessage(from_callee$warnings[[1]]))
   )
   expect_true(tm_timeout_wording_holds(message))
 })

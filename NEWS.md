@@ -115,15 +115,16 @@
 
 ## Configuration
 
-* A configuration file that reads back as something other than one program
-  location no longer stops the call, or answers about the wrong thing. A file
-  holding nothing, or holding more than one line, made `find_ffmpeg()` -- and
-  every call above it -- fail with an R error naming neither the program nor
-  the file; a file holding a single blank line warned instead that the binary
-  had gone missing, which was not what was wrong with it. All three now warn
-  with a condition you can catch by class -- `tidymedia_location_unreadable`,
-  carrying the program and the file -- and return `NULL`. `unset_program()`
-  clears the file; `set_program()` replaces it.
+* A configuration file that holds nothing, holds more than one line, or holds
+  one empty line no longer stops the call, or answers about the wrong thing.
+  The first two made `find_ffmpeg()` -- and every call above it -- fail with an
+  R error naming neither the program nor the file; the third warned instead
+  that the binary had gone missing, which was not what was wrong with it. All
+  three now warn with a condition you can catch by class --
+  `tidymedia_location_unreadable`, carrying the program and the file -- and
+  return `NULL`. A line holding only spaces is not one of these: it is still
+  read as a location, and still warns that the binary is missing.
+  `unset_program()` clears the file; `set_program()` replaces it.
 
 * The warning for a remembered location whose binary has gone now offers
   `unset_program()` beside `set_program()`, since forgetting the location is

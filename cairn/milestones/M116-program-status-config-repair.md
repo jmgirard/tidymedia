@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M116: A broken or stale remembered location is reported, not fatal or silent
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -64,7 +64,7 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
       carrying the stale program's name. `?program_status`'s sentence promising
       `NA` "rather than a warning" narrows to the never-configured case, and
       `?find_program` documents both new conditions.
-- [x] AC4: `tool_versions()`'s `tidymedia_probe_timeout` warning names each
+- [ ] AC4: `tool_versions()`'s `tidymedia_probe_timeout` warning names each
       timed-out program by the spelling `program_status()`'s `program` column
       uses (`"ffmpeg"`, not `"FFmpeg"`), and its remaining bullets read the same
       on both callers. Tests pin the emitted message on the `program_status()`
@@ -172,6 +172,8 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: T10 and T11 checked at the repaired head — `devtools::test()` 0 failures, 13,168 passing, 18 skipped, 10 warnings, 9 of them located by name to `warn_dropped_audio()` (`R/ffmpeg.R:2721`) in the audio-stream suites; `devtools::document()` no diff; `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes (14m48s).
 - 2026-09-06: T10 gained a test cell rather than shipping the widened wording as prose alone — a config file holding one blank line now asserts `tidymedia_location_unreadable` with `tm_program` and `tm_file`, so the third shape the help page and NEWS now name is instrumented; AC1's own crossing is unchanged.
 - 2026-09-06: status → review; all eleven tasks checked. AC1, AC2 and AC7 left for review to re-measure at this head; [O]7 left where the Review section put it, maintainer triage at re-review.
+
+- 2026-09-06: re-review returned the milestone to `in-progress`. AC4 FAILED on its instrument clause: the criterion asks that tests pin the emitted message on the `ffm_batch(manifest = TRUE)` path, and no test does — the test named for that caller calls `tool_versions()` twice with arguments the message does not read, so its whole-message comparison is a tautology. AC1, AC2, AC3, AC5 and AC6 re-verified and ticked at `b4cb7a7`; AC7 not ticked, and `NEWS.md` carries a false claim about the prior behaviour of a blank-line config ([O]1) and a headline broader than what shipped ([O]5). AC4's tick was written in this session and withdrawn: it was composed from the test's own comment rather than from what the test calls. Defect return 2 for this milestone; eleven other findings logged in the Review section for the return.
 
 ## Decisions
 
@@ -326,13 +328,25 @@ the repair moved the code and docs they were measured against.
   program that was never configured and is not installed gets `NA` in both
   columns rather than a warning", and `man/find_program.Rd` documents both
   conditions with their fields.
-- [x] **AC4.** The suite pins the message on the `program_status()` path and on
-  the `ffm_batch(manifest = TRUE)` path and compares the two whole. The mutant
-  clause was verified by a real source mutation at this head, not a modelled
-  one: restoring the retired manifest-naming sentence into `R/ffm_manifest.R`
-  turned four assertions red, including `test-tool-versions-report.R:144` —
-  the probe's own leg, which the first review found could not fail. Source
-  restored, `git diff` clean.
+- **AC4 — FAILS** (corrected: this line first ticked AC4, in error, and the
+  tick is withdrawn). The criterion asks that tests "pin the emitted message on
+  the `program_status()` path and on the `ffm_batch(manifest = TRUE)` path".
+  The first path holds. The second does not: no test in the suite pins the
+  timeout message through an `ffm_batch(manifest = TRUE)` call. The test named
+  for it (`test-tool-versions-report.R:74`, "reads the same from the manifest
+  caller") calls `tool_versions()` twice — the shared callee, not the caller
+  path — and its two calls differ only in a `locations` argument the message
+  does not read, so `expect_identical` on the two messages is a tautology that
+  cannot fail. `grep` over `tests/testthat/` for `tidymedia_probe_timeout`
+  returns four sites, all on `tool_versions()` or `count_audio_streams_all()`;
+  the file's one real `ffm_batch(manifest = TRUE)` test (`:233`) asserts
+  versions, never the warning. The rest of AC4 holds: the spelling and the
+  caller-neutral sentence are met, and the mutant clause was verified by a real
+  source mutation at this head — restoring the retired manifest-naming sentence
+  into `R/ffm_manifest.R` turned four assertions red, including
+  `test-tool-versions-report.R:144`, the probe's own leg; source restored,
+  `git diff` clean. The first tick was written from the test's own comment
+  rather than from what the test calls.
 - [x] **AC5.** All four removal shapes measured through the `tm_unlink()` seam
   with the memo seeded to one entry: legacy-left and new-left both abort
   `tidymedia_location_not_removed` with the memo at 0 entries; nothing-removed
@@ -342,3 +356,73 @@ the repair moved the code and docs they were measured against.
   empty-`list()` cases each abort `tidymedia_locations_mismatch` carrying
   `tm_n_programs` 4 and `tm_n_locations` 1 / 3 / 0; the `NULL` default still
   returns a list. The two repair suites run 232 assertions, 0 failures.
+
+### Independent review — three fresh-context lenses
+
+User-facing tier with executable surface, so the full fan-out ran. Twelve
+findings across two lenses; one is floor-qualifying.
+
+- **[O]2 — AC4's `ffm_batch(manifest = TRUE)` pin does not exist, and the test
+  standing in for it cannot fail.** **Floor return** — demonstrates AC4
+  failing, evidenced above. Fix on return.
+- **[O]1 — `NEWS.md:117-119` states a false fact about the prior behaviour.**
+  The clause added by `eff1d3c` says a file "holding a single blank line made
+  `find_ffmpeg()` … fail with an R error". It did not: `Sys.which("")` returns
+  `""` (measured), so before this branch a one-blank-line file took the
+  stale-location branch and warned. Confirmed. Fix on return.
+- **[O]5 — a config path that is a directory is still fatal**, so `NEWS.md:116`'s
+  headline ("a remembered program location that cannot be read no longer stops
+  the call") is broader than what shipped. Measured at this head: with a
+  directory at the config path, `find_ffmpeg()` and `program_status()` both die
+  with `cannot open the connection`. Outside AC1's domain, which is scoped to
+  what `readLines()` returns, so not a criterion failure. Fix the headline on
+  return; the behaviour gap goes to a candidate row rather than widening AC1
+  (D-118).
+- **[S-blame]1 — `R/cache.R:8-10` restates the two-route memo census that
+  D089, written by this milestone, supersedes with four.** The diff fixed the
+  user-facing roxygen thirty lines below and left the internal comment.
+  Confirmed by read. Fix on return.
+- **[S-blame]2 — this milestone's own change falsified two comments on
+  unmodified files.** `R/ffprobe.R:211-215` and
+  `tests/testthat/test-audio-track-drop.R:150-153` both state as fact that a
+  malformed config "makes it abort rather than warn"; T2 is what stopped that
+  being true. Confirmed by read. Fix on return.
+- **[O]6 — `R/cache.R:47-48` and `man/refresh_ffmpeg_capabilities.Rd` state the
+  `unset_program()` discard route without D089's carve-out** — an
+  `unset_program()` that removed nothing deliberately does not discard.
+  Confirmed by read. Fix on return.
+- **[O]3 — `R/program_management.R:110`'s `is.na(location)` leg cannot fire**
+  (`readLines()` does not return `NA`), and T10's doc widening promises it:
+  `man/find_program.Rd` says "blank **or missing**". The guard's defensive
+  shape is fine; the doc claim should shrink to what it can see. Fix on return.
+- **[O]4 — `R/ffm_manifest.R:141` names `{.arg locations}` in an abort blamed
+  on a frame that has no such argument** when `program_status()` supplies the
+  `call`. Reachable only through an internal bug. Fix on return.
+- **[O]7 — neither new warning threads `call`**, while the sibling
+  `tidymedia_no_remembered_location` in the same file does. Consistency only;
+  both are raised from an unexported body reached through four exported doors.
+  Maintainer triage at re-review.
+- **[O]9 — the `options(tidymedia.timeout = )` assertions pass only because
+  testthat sets `cli.condition_width = Inf`**; at 80 columns the message wraps
+  mid-token. Pre-existing wording, not introduced here. Rejected as
+  pre-existing.
+- **[O]8 / [S-blame]3 — the memo drop still fires for `mediainfo`**, restating
+  the first review's [O]7. Unchanged by the repair, as the first review's
+  routing intended. Maintainer triage at re-review.
+- **[S-prior] — no findings.** It traced the archived `## Review` sections
+  touching these files and confirmed each of the first return's [O]1-[O]6 and
+  [S-prior]1 closed; the probe found no inline PR review comments at all, so
+  the thread walk was correctly skipped.
+
+### Consistency gate
+
+`cairn_validate.py` — 16 PASS, exit 0, one advisory (M116 at 11 tasks against
+the 10-task split tripwire, the appended repair tasks). No `DESIGN.md`
+principle changed, so `cairn_impact.py` was not run. Toolchain slot:
+`document()` no diff; `pkgdown::check_pkgdown()` no problems; `README.Rmd`
+untouched by the branch; `NEWS.md` entry present but defective per [O]1 and
+[O]5; no new top-level files. CI on PR #120 at `b4cb7a7`: all ten legs pass,
+both codecov gates pass.
+
+**Outcome: returned to `in-progress` under the return floor.** Defect return 2
+for this milestone.

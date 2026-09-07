@@ -44,8 +44,8 @@ binary there any more. The condition carries the program in \code{tm_program}
 and the location in \code{tm_location}.
 \item \code{tidymedia_location_unreadable} -- the file holding the location does not
 hold one location to try: it is empty, or holds more than one line, or
-holds a single line that is blank or missing. The condition carries the
-program in \code{tm_program} and the file in \code{tm_file}.
+holds a single blank line. The condition carries the program in
+\code{tm_program} and the file in \code{tm_file}.
 }
 
 Either is repaired with \code{\link[=unset_program]{unset_program()}}, which forgets the location, or

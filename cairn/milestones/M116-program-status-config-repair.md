@@ -149,11 +149,11 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
       headline narrowed to what shipped, which is what `readLines()` returns
       rather than every unreadable config path; the directory-at-the-config-path
       gap goes to a ROADMAP candidate row (re-review [O]1, [O]5).
-- [ ] T14: The memo census in prose — `R/cache.R:8-10` restates D044's two
+- [x] T14: The memo census in prose — `R/cache.R:8-10` restates D044's two
       routes where D089 records four, and `R/cache.R:47-48` with
       `?refresh_ffmpeg_capabilities` state the `unset_program()` route without
       D089's removed-nothing carve-out (re-review [S-blame]1, [O]6).
-- [ ] T15: Comments and docs T2 falsified or overreached — `R/ffprobe.R:211-215`
+- [x] T15: Comments and docs T2 falsified or overreached — `R/ffprobe.R:211-215`
       and `tests/testthat/test-audio-track-drop.R:150-153` still say a malformed
       config aborts; `?find_program`'s unreadable bullet promises a "missing"
       form the guard cannot see; and `R/ffm_manifest.R:141` names
@@ -202,6 +202,8 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: minor amendment — five return-repair tasks T12-T16 added for the eight findings marked fix-on-return, and the Coverage lines updated together; [O]7 and [O]8/[S-blame]3 stay at maintainer triage where the re-review put them, and [O]9 stays rejected as pre-existing.
 - 2026-09-06: T12 — the manifest-caller test now drives `ffm_batch(jobs, .f, manifest = TRUE)` with `ffm_run()` mocked, asserts the batch reached the manifest block (one job run, both manifest versions `NA`), and pins the `tidymedia_probe_timeout` message the batch call raised against the `program_status()`-path message and against `tm_timeout_wording_holds()`. Mutation-checked: renaming the timed-out programs back to their display labels in `R/ffm_manifest.R` reddened this test at its predicate leg (`:134`) as well as the `program_status()` test; source restored, `git diff` clean. The whole-message comparison alone cannot discriminate — both callers read one callee — which is why the predicate leg is what carries the pin.
 - 2026-09-06: T13 — the Configuration headline narrowed to a config file that "reads back as something other than one program location", which is what AC1's guard is scoped to, and the blank-line form moved out of the R-error claim: it warned about a missing binary before this branch (`Sys.which("")` is `""`), which the NEWS now says. The directory-at-the-config-path gap went to a ROADMAP candidate row rather than widening AC1 (D-118); `ROADMAP.md` is 28,746 bytes at 58 lines, still over its 24,000-byte budget and still needing `/cairn-triage`.
+- 2026-09-06: T14 — `R/cache.R`'s header comment now states D089's four routes in place of D044's two, and `?refresh_ffmpeg_capabilities`'s third bullet carries the carve-out: an `unset_program()` that removed nothing leaves the record alone, one that removed a file before failing discards it. The user-facing list stays three items because it enumerates calls, not routes.
+- 2026-09-06: T15 — the two comments T2 falsified now say the abort was the pre-M116 behaviour and why each `tryCatch()` stays (`R/ffprobe.R`, `tests/testthat/test-audio-track-drop.R`); `?find_program`'s unreadable bullet drops the "or missing" form the guard's `is.na()` leg cannot see; and the locations-length abort reads "The locations supplied must name one location for each program." with a comment saying why it is not `{.arg locations}`. Nothing in `tests/`, `vignettes/` or `man/` pinned any of the changed strings; the three affected suites run 341 assertions, 0 failures.
 
 ## Decisions
 

@@ -54,8 +54,8 @@ tm_install_dir <- function() {
 #'   and the location in `tm_location`.
 #' * `tidymedia_location_unreadable` -- the file holding the location does not
 #'   hold one location to try: it is empty, or holds more than one line, or
-#'   holds a single line that is blank or missing. The condition carries the
-#'   program in `tm_program` and the file in `tm_file`.
+#'   holds a single blank line. The condition carries the program in
+#'   `tm_program` and the file in `tm_file`.
 #'
 #' Either is repaired with [unset_program()], which forgets the location, or
 #' [set_program()], which replaces it.

@@ -28,8 +28,13 @@ discard it:
 \item call \code{\link{set_program}} (or \code{\link{set_ffmpeg}}), which
 discards it for you, since pointing tidymedia at a different binary
 invalidates everything remembered about the old one;
-\item call \code{\link{unset_program}}, for the same reason: forgetting a
-remembered location can change which binary tidymedia resolves to.
+\item call \code{\link{unset_program}} and have it remove something, for
+the same reason: forgetting a remembered location can change which
+binary tidymedia resolves to. A call that removed nothing leaves the
+record alone, since nothing about the resolved binary changed -- and a
+call that removed one remembered file before failing on another
+discards it, because the file it did remove may be the one your lookups
+were answered from.
 }
 
 The record is per R process, and it does not travel to a worker. So unless

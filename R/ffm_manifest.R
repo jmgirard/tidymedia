@@ -140,7 +140,11 @@ tool_versions <- function(programs = c("ffmpeg", "ffprobe"),
   if (!is.null(locations) && length(locations) != length(programs)) {
     cli::cli_abort(
       c(
-        "{.arg locations} must name one location for each program.",
+        # Not {.arg locations}: `call` is the caller's frame, and
+        # program_status() -- the caller that supplies one -- has no such
+        # argument, so cli would name an argument the blamed call does not
+        # take (M116 re-review [O]4).
+        "The locations supplied must name one location for each program.",
         "x" = "{length(programs)} program{?s}, but \\
                {length(locations)} location{?s}."
       ),

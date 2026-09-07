@@ -470,3 +470,89 @@ both codecov gates pass.
 
 **Outcome: returned to `in-progress` under the return floor.** Defect return 2
 for this milestone.
+
+---
+
+## Third review 2026-09-06 (head `278ad96`, PR #120)
+
+Third review, after defect return 2. Master had not moved (branch 0 behind, 16
+ahead), so no merge preceded the evidence. Every criterion was re-measured at
+this head, the five the second review ticked included, because the return
+repair moved shipped message text, help-page wording and `NEWS.md` prose those
+measurements rested on.
+
+### Evidence per criterion
+
+- [x] **AC1.** Measured by direct rendering through the four `find_*()` exports
+  under a redirected `R_USER_CONFIG_DIR` and an emptied `PATH`: all twelve
+  cells — four programs against the empty, two-line and blank forms — warn
+  `tidymedia_location_unreadable` with `tm_program` naming the program,
+  `tm_file` `identical()` to the config file the lookup read, and a `NULL`
+  return. On the second half: `program_status()` with nothing configured
+  returns four rows and raises zero warnings; with one malformed file
+  (`ffplay`) it returns four rows, raises exactly one warning, that warning is
+  `tidymedia_location_unreadable` with `tm_program` `"ffplay"`, the `ffplay`
+  row is `NA` in `location` and `version`, and the other three rows are
+  `identical()` to the same call without the file.
+- [x] **AC2.** All twelve `os` × `program` cells rendered at this head. Every
+  one carries `tidymedia_location_gone` with `tm_program` naming the program
+  and `tm_location` `identical()` to the remembered path; every one renders
+  `set_<program>()` and `unset_program("<program>")`; none renders an
+  `unset_<program>` wrapper. `getNamespaceExports("tidymedia")` lists
+  `unset_program` as the only `unset_*` export and all four `set_*` wrappers,
+  so both advised calls exist. The `install_on_win()` offer appears on exactly
+  the three `windows` × `tm_install_registers` cells and is absent on
+  `windows` + `mediainfo` and on all eight `darwin`/`linux` cells. The crossing
+  is in the suite (`test-program-location-repair.R:145`, `:178`), and both
+  advice bullets are independently instrumented: deleting the `set_<program>()`
+  bullet from the gone-location warning and deleting the `unset_program()`
+  bullet each turn 12 of the repair suite's 195 assertions red, run in a
+  scratch copy of the tree so the primary checkout stayed clean.
+- [x] **AC3.** A four-program call with one stale location (`ffmpeg`), two
+  resolving (`ffprobe`, `ffplay`) and one never configured (`mediainfo`)
+  raises exactly one warning at this head: `tidymedia_location_gone` with
+  `tm_program` `"ffmpeg"`. The never-configured program contributes none and
+  its row is `NA` in both columns; a call with nothing configured raises zero.
+  `man/program_status.Rd:20` narrows the promise to "A program that was never
+  configured and is not installed gets `NA` in both columns rather than a
+  warning", and `man/find_program.Rd:42-48` documents both conditions with
+  their fields.
+- **AC4 — three clauses met, the fourth turns on a reading of its own wording;
+  not ticked.** The spelling clause holds: the rendered message names `ffmpeg`
+  and `ffprobe` and no display label, and its `NA` sentence reads "Those
+  versions are recorded as NA; raise or remove `options(tidymedia.timeout = )`"
+  with no caller named, identically from both callers. Both pins now exist and
+  drive the callers they name: `test-tool-versions-report.R:56` calls
+  `program_status()`, and `:106` calls
+  `ffm_batch(jobs, manifest = TRUE, .f = ...)` with `ffm_run()` mocked, then
+  compares the message the batch raised whole against the other path's — the
+  repair for return 2's floor finding. The fourth clause asks that "a mutant
+  restoring the manifest-naming sentence turns the `program_status()` test
+  red", and what it does depends on what that names. Measured in a scratch copy
+  at this head: restoring **only** the sentence naming the manifest reddens
+  three tests (the manifest-caller pin, the caller-neutral-sentence test and
+  the wording probe) and leaves the `program_status()`-path test green at 0
+  failures — that test asserts program spellings, which the sentence does not
+  touch. Restoring the **whole** retired message — the manifest sentence plus
+  the display-label naming, which is how the suite's own retired-mutant literal
+  spells it (`:168-173`) — reddens the `program_status()`-path test with 8
+  failures. The narrow reading fails the clause; the whole-message reading
+  meets it. Not ticked: resolving that ambiguity in the work's favour is the
+  reinterpretation review is forbidden, so the disposition goes to the
+  maintainer at the gate.
+- [x] **AC5.** All four removal shapes measured at this head through the
+  `tm_unlink()` seam, with the real memo environment seeded to one entry (a
+  call counter cannot say the memo is empty, which is what the criterion
+  asks). New-file-left and legacy-file-left both abort
+  `tidymedia_location_not_removed` with the memo at 0 entries; nothing-removed
+  aborts the same class with the memo intact at 1; both-removed returns with
+  no condition and the memo at 0.
+- [x] **AC6.** The recycling length-1, the length-3-against-4 and the
+  empty-`list()` cases each abort `tidymedia_locations_mismatch` carrying
+  `tm_n_programs` 4 and `tm_n_locations` 1 / 3 / 0. The `NULL` default still
+  answers (`ffmpeg` and `ffprobe` both `8.1.2` through a mocked probe), and the
+  end-to-end `ffm_batch(manifest = TRUE)` test runs and passes at this head
+  rather than skipping. The abort now reads "The locations supplied must name
+  one location for each program." — the wording change return 2 directed, which
+  leaves the class and both fields unchanged.
+

@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M116: A broken or stale remembered location is reported, not fatal or silent
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -207,6 +207,8 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: T16 — at the repaired head: `devtools::document()` no diff; `devtools::test()` 0 failures, 13,175 passing, 18 skipped, 10 warnings, all ten the pre-existing dropped-track diagnostic from `warn_dropped_audio()` (read off the log, not sampled: every warning entry is that message, in the two audio-stream suites and `test-ffmpeg.R:178`); `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes, 5m51s.
 - 2026-09-06: status → review; all sixteen tasks checked. AC4 is what returned the milestone and T12 is its repair; AC1, AC2 and AC7 are left for re-review to re-measure at this head, since T13-T15 moved NEWS text and doc wording AC7 and AC1 were measured against. [O]7 and [O]8/[S-blame]3 are still at maintainer triage, and [O]9 still rejected.
 - 2026-09-06: CI at `f3f0aea` — all ten legs pass (pkgdown, test-coverage, `ubuntu-latest` release/devel/oldrel-1/4.1.0, `macos-latest` release, `windows-latest` release) and both codecov gates pass.
+- 2026-09-06: third review returned the milestone to `in-progress` on two triggers. The consistency gate FAILED: `cairn_validate` weight caps, the milestone body at 164 plan-owned lines against the `<150` cap, Tasks the heaviest section at 67 lines for 16 tasks. And AC4 FAILED again, on a different clause of the same instrument sentence: restoring only the manifest-naming sentence reddens three tests and leaves the `program_status()` test — the one the clause names — green at 0 failures, measured in a scratch copy and reached independently by the diff-bug lens. AC1, AC2, AC3, AC5 and AC6 re-verified and ticked at `278ad96`; AC7 not ticked, `NEWS.md`'s headline still claiming one shape more than shipped. Defect return 3, the thrash rule's threshold; ten findings logged in the Review section.
+- 2026-09-06: correction — T12's work-log line said the batch-path message is pinned "against the `program_status()`-path message". It is not: the comparison baseline is a bare `tool_versions()` call, the shared callee. The test still discriminates through its wording-predicate leg, which is what carries the pin; the description was wrong.
 
 ## Decisions
 
@@ -555,4 +557,94 @@ measurements rested on.
   rather than skipping. The abort now reads "The locations supplied must name
   one location for each program." — the wording change return 2 directed, which
   leaves the class and both fields unchanged.
+- **AC7 — not ticked.** The mechanical half is clean at this head:
+  `devtools::test()` 0 failures, 13,175 passing, 18 skipped, 10 warnings (all
+  ten the pre-existing `warn_dropped_audio()` dropped-track diagnostic, read
+  off the log rather than sampled); `devtools::document()` no diff;
+  `pkgdown::check_pkgdown()` no problems; and all ten CI legs, which run
+  `R CMD check` across five platforms, pass at `f3f0aea` with both codecov
+  gates. `devtools::check()` was clean locally at the same code tree (Status
+  OK, 0/0/0, 5m51s) and its re-run at this head was still in flight when the
+  return was recorded, which moots it. The criterion's `NEWS.md` clause is
+  again what fails it: [O]5 below shows the Configuration headline still
+  claiming one shape more than shipped.
+
+### Consistency gate
+
+**FAILED.** `cairn_validate.py` — 16 PASS, exit 1, one FAIL: **weight caps**,
+`cairn/milestones/M116-program-status-config-repair.md` at 164 plan-owned lines
+against the `<150` cap, `shed >=15`; the breakdown names Tasks (67 lines, 16
+tasks) as the heaviest section. One advisory, the split tripwire at 16 tasks
+against 10. The remedy is the tracking rules' own: compress the single heaviest
+plan-owned section in one pass, which is implement-owned work, not a
+review-side patch. No `DESIGN.md` principle changed, so `cairn_impact.py` was
+not run. Toolchain slot otherwise clean: `document()` no diff;
+`pkgdown::check_pkgdown()` no problems; `README.Rmd` untouched by the branch;
+`NEWS.md` entry present but defective per [O]5; no new top-level files.
+
+### Independent review — three fresh-context lenses
+
+User-facing tier with executable surface, so the full fan-out ran. Ten findings
+from the diff-bug lens; the other two lenses returned none.
+
+- **[O]1 — AC4's mutant clause is not met: the manifest-naming mutant leaves
+  the `program_status()` test green.** `test-tool-versions-report.R:47`,
+  `R/ffm_manifest.R`. **Floor return** — demonstrates AC4 failing, and reached
+  independently by the review's own measurement above. The lens's proposed
+  one-line repair is to add the wording predicate to that test. Fix on return.
+- **[O]2 — AC4's pin clause is half met on the `program_status()` path**, for
+  the same reason: that test pins program spellings, not the emitted message.
+  Same repair as [O]1. Fix on return, with [O]1.
+- **[O]3 — the manifest test's comparison baseline is not the
+  `program_status()` path, though its variable name, its comment and this
+  milestone's own T12 work-log line all say it is.**
+  `test-tool-versions-report.R:111` is a bare `tool_versions()` call, the
+  shared callee. The predicate leg is what carries that test's pin, so the
+  test still discriminates; what is wrong is the description. Confirmed by
+  read. This is the same describe-vs-call mismatch that produced returns 1 and
+  2, and a later reviewer composing evidence from the comment would tick AC4
+  in error again. Fix on return.
+- **[O]4 — `NEWS.md:117` still claims one shape more than shipped.** A config
+  file holding a single whitespace-only line (`"   "`) passes the guard
+  (`nzchar("   ")` is `TRUE`) and takes the gone-location branch: measured at
+  this head, `find_ffmpeg()` warns `tidymedia_location_gone` saying the binary
+  "no longer seems to exist", which is the answering-about-the-wrong-thing the
+  headline says no longer happens. `?find_program` is correct — it enumerates
+  the empty, multi-line and single-blank-line forms only. Same shape as return
+  2's [O]5, which was treated as failing AC7's `NEWS.md` clause. Fix on return.
+- **[O]5 — `D-118` is cited in repo records but is not a repo decision.**
+  `cairn/ROADMAP.md:18` and two milestone lines cite it; `grep` over
+  `cairn/DECISIONS.md` returns zero hits, the repo's entries being `D044`-style.
+  It is a cairn *plugin* decision id, cited where a repo reader will look for a
+  repo entry. Tracking only. Fix on return.
+- **[O]6 — AC6's end-to-end clause is gated on a binary.**
+  `test-tool-versions-report.R:249` sits behind `skip_if_no_ffmpeg()`, so that
+  half of AC6 is not exercised on the binary-less CI legs; the mocked
+  `ffm_batch(manifest = TRUE)` test at `:74` does run everywhere and mitigates
+  it. Maintainer triage at re-review.
+- **[O]7 — the new `locations` length abort sits above `resolve_timeout()`**
+  (`R/ffm_manifest.R:140` against `:180`), so a caller with both an unusable
+  timeout option and a mismatched `locations` gets the locations refusal. No
+  caller can reach both today. Maintainer triage at re-review.
+- **[O]8 — `R/program_management.R:110`'s `is.na(location)` leg cannot fire**,
+  restating return 2's [O]3, which was closed on the doc side and left as an
+  accepted defensive shape. Re-reported because the lens was told to filter
+  nothing. Rejected as already dispositioned.
+- **[O]9 — neither new warning threads `call`**, restating return 2's [O]7.
+  Unchanged. Maintainer triage at re-review.
+- **[O]10 — the memo drop still fires for `mediainfo`**, restating return 2's
+  [O]8/[S-blame]3. Unchanged. Maintainer triage at re-review.
+- **[S-blame] — no findings.** It traced the modified lines to M44, M67, M113
+  and D044/D089 and found nothing this diff silently undoes; it confirmed the
+  `{.arg locations}` removal is a reasoned exception to the package's
+  convention rather than drift, and that mocking `ffm_run()` follows the
+  M69/M70-era pattern in `test-timeout-silence.R` rather than defeating it.
+- **[S-prior] — no findings.** It verified every fix-on-return item from both
+  earlier passes closed in this diff and every deferred or rejected item left
+  as it was. Its GitHub probe returned an empty array, so the per-PR thread
+  walk was correctly skipped.
+
+**Outcome: returned to `in-progress`.** Two independent triggers — the
+consistency gate's weight-caps failure, and [O]1 under the return floor.
+Defect return 3 for this milestone, which is the thrash rule's threshold.
 

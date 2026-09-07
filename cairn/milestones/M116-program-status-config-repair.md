@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M116: A broken or stale remembered location is reported, not fatal or silent
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -205,6 +205,7 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: T14 — `R/cache.R`'s header comment now states D089's four routes in place of D044's two, and `?refresh_ffmpeg_capabilities`'s third bullet carries the carve-out: an `unset_program()` that removed nothing leaves the record alone, one that removed a file before failing discards it. The user-facing list stays three items because it enumerates calls, not routes.
 - 2026-09-06: T15 — the two comments T2 falsified now say the abort was the pre-M116 behaviour and why each `tryCatch()` stays (`R/ffprobe.R`, `tests/testthat/test-audio-track-drop.R`); `?find_program`'s unreadable bullet drops the "or missing" form the guard's `is.na()` leg cannot see; and the locations-length abort reads "The locations supplied must name one location for each program." with a comment saying why it is not `{.arg locations}`. Nothing in `tests/`, `vignettes/` or `man/` pinned any of the changed strings; the three affected suites run 341 assertions, 0 failures.
 - 2026-09-06: T16 — at the repaired head: `devtools::document()` no diff; `devtools::test()` 0 failures, 13,175 passing, 18 skipped, 10 warnings, all ten the pre-existing dropped-track diagnostic from `warn_dropped_audio()` (read off the log, not sampled: every warning entry is that message, in the two audio-stream suites and `test-ffmpeg.R:178`); `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes, 5m51s.
+- 2026-09-06: status → review; all sixteen tasks checked. AC4 is what returned the milestone and T12 is its repair; AC1, AC2 and AC7 are left for re-review to re-measure at this head, since T13-T15 moved NEWS text and doc wording AC7 and AC1 were measured against. [O]7 and [O]8/[S-blame]3 are still at maintainer triage, and [O]9 still rejected.
 
 ## Decisions
 

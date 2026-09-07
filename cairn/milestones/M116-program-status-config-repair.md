@@ -36,7 +36,7 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 
 ## Acceptance criteria
 
-- [ ] AC1: A remembered-location file `readLines()` does not return exactly one
+- [x] AC1: A remembered-location file `readLines()` does not return exactly one
       line from — an empty file, or one holding two or more — makes
       `find_program()` warn with a `tidymedia_*` condition class carrying the
       program and the file path, and return `NULL`, where today it raises R's
@@ -49,7 +49,7 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
       `location` and `version`, the other three what the same call returns
       without the malformed file — and raises that warning once rather than
       suppressing it.
-- [ ] AC2: `find_program()`'s warning for a remembered location whose binary is
+- [x] AC2: `find_program()`'s warning for a remembered location whose binary is
       gone keeps its `set_program()` advice, adds `unset_program()` as the
       repair for the remembered location itself, adds the `install_on_win()`
       offer on the same derived condition the not-found branch uses
@@ -280,3 +280,65 @@ findings, one of them floor-qualifying.
   covered by decisions written for this milestone.
 - **[S-prior] — otherwise clean.** Each of T2–T7 traced to the M113 or M115
   finding it closes; no prior lesson walked back.
+
+---
+
+## Re-review 2026-09-06 (head `b4cb7a7`, PR #120)
+
+Second review of this milestone, after defect return 1. Master had not moved
+(branch 0 behind, 7 ahead), so no merge preceded the evidence. All ten CI legs
+pass at this SHA and both codecov gates pass. Every criterion below was
+re-measured at this head, including the four the first review ticked, because
+the repair moved the code and docs they were measured against.
+
+### Evidence per criterion
+
+- [x] **AC1.** Each of the four `find_*()` exports against each malformed form
+  warns `tidymedia_location_unreadable` carrying `tm_program` and `tm_file` and
+  returns `NULL`; rendered through `find_program()` under a redirected
+  `R_USER_CONFIG_DIR` and an emptied `PATH`, the empty, two-line and blank
+  forms all produce the class with `tm_file` naming the config file. On the
+  second half: `program_status()` with nothing configured returns four rows,
+  all `NA`, and raises zero warnings; with one malformed file (`ffplay`) it
+  returns four rows, raises exactly one `tidymedia_location_unreadable` with
+  `tm_program` `"ffplay"`, the `ffplay` row is `NA` in `location` and `version`
+  (`TRUE`), and the other three rows compare `identical()` to the same call
+  without the file (`TRUE`).
+- [x] **AC2.** The gone-location warning carries `tidymedia_location_gone` with
+  `tm_program` and `tm_location` on all four programs, and now advises calls
+  the package actually exports — the defect that returned this milestone.
+  Rendered per program: `set_ffmpeg()` / `set_ffprobe()` / `set_ffplay()` /
+  `set_mediainfo()` beside `unset_program("<program>")`, checked against
+  `getNamespaceExports("tidymedia")`, which lists `unset_program` as the only
+  `unset_*` export and all four `set_*` wrappers. The installer offer was
+  crossed over three operating systems × four programs, all twelve cells
+  measured: `install_on_win()` present on exactly `windows` × the three
+  programs `tm_install_registers` lists, absent on `windows` + `mediainfo` and
+  on every `darwin` and `linux` cell. Both advice bullets are now
+  independently instrumented — deleting either one reddens the repair suite,
+  where before `"set_ffmpeg()"` was a substring of the `unset_ffmpeg()` bullet
+  and the `set_program()` assertion could not fail.
+- [x] **AC3.** A four-program call with one stale location (`ffmpeg`), one
+  never-configured program (`mediainfo`) and two resolving raises exactly one
+  warning, `tidymedia_location_gone` with `tm_program` `"ffmpeg"`; the
+  never-configured program contributes none, and the nothing-configured
+  baseline raises zero. `man/program_status.Rd:20` narrows the promise to "A
+  program that was never configured and is not installed gets `NA` in both
+  columns rather than a warning", and `man/find_program.Rd` documents both
+  conditions with their fields.
+- [x] **AC4.** The suite pins the message on the `program_status()` path and on
+  the `ffm_batch(manifest = TRUE)` path and compares the two whole. The mutant
+  clause was verified by a real source mutation at this head, not a modelled
+  one: restoring the retired manifest-naming sentence into `R/ffm_manifest.R`
+  turned four assertions red, including `test-tool-versions-report.R:144` —
+  the probe's own leg, which the first review found could not fail. Source
+  restored, `git diff` clean.
+- [x] **AC5.** All four removal shapes measured through the `tm_unlink()` seam
+  with the memo seeded to one entry: legacy-left and new-left both abort
+  `tidymedia_location_not_removed` with the memo at 0 entries; nothing-removed
+  aborts the same class with the memo intact at 1; both-removed returns
+  invisibly with the memo at 0.
+- [x] **AC6.** The recycling length-1, the length-3-against-4 and the
+  empty-`list()` cases each abort `tidymedia_locations_mismatch` carrying
+  `tm_n_programs` 4 and `tm_n_locations` 1 / 3 / 0; the `NULL` default still
+  returns a list. The two repair suites run 232 assertions, 0 failures.

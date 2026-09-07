@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M116: A broken or stale remembered location is reported, not fatal or silent
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -57,26 +57,26 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
       lists), and carries a `tidymedia_*` class holding the program and the
       location. Tests cross operating system against program, including the
       `windows` + `mediainfo` cell where the installer bullet must be absent.
-- [ ] AC3: `program_status()` raises that stale-location warning rather than
+- [x] AC3: `program_status()` raises that stale-location warning rather than
       suppressing it, while a program that was never configured contributes
       none. A four-program call with one stale location and one
       never-configured program raises exactly one warning of that class,
       carrying the stale program's name. `?program_status`'s sentence promising
       `NA` "rather than a warning" narrows to the never-configured case, and
       `?find_program` documents both new conditions.
-- [ ] AC4: `tool_versions()`'s `tidymedia_probe_timeout` warning names each
+- [x] AC4: `tool_versions()`'s `tidymedia_probe_timeout` warning names each
       timed-out program by the spelling `program_status()`'s `program` column
       uses (`"ffmpeg"`, not `"FFmpeg"`), and its remaining bullets read the same
       on both callers. Tests pin the emitted message on the `program_status()`
       path and on the `ffm_batch(manifest = TRUE)` path, and a mutant restoring
       the manifest-naming sentence turns the `program_status()` test red.
-- [ ] AC5: `unset_program()` discards the memoized FFmpeg capabilities whenever
+- [x] AC5: `unset_program()` discards the memoized FFmpeg capabilities whenever
       a removal took, before aborting `tidymedia_location_not_removed`, and
       leaves them alone where nothing was removed. Tests fire both partial
       forms — current-directory file removed with the legacy file left, and the
       reverse — asserting the abort class and an empty memo, plus the
       total-failure case asserting the memo survives.
-- [ ] AC6: `tool_versions()` aborts with a `tidymedia_*` class when a non-`NULL`
+- [x] AC6: `tool_versions()` aborts with a `tidymedia_*` class when a non-`NULL`
       `locations` differs in length from `programs`, leaving the `NULL` default
       path reaching `ffm_batch()` unchanged. Tests fire the silently-recycling
       length-1 case, the length-3-against-4 case base R warns on, and the
@@ -146,7 +146,112 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: T7's blame test strengthened after review of the diff — it asserted only the class, so it was rewritten around a named wrapper and now asserts the condition's call names that wrapper.
 - 2026-09-06: status → review; all eight tasks checked.
 - 2026-09-06: review opened; draft PR #120 pushed, three fresh-context lenses spawned, `devtools::check()` running. Evidence gathering in progress — no criterion ticked yet.
+- 2026-09-06: review returned the milestone to `in-progress`. AC2 FAILED: the gone-location warning advises `unset_ffmpeg()` (`R/program_management.R:122`, and `:106` on AC1's branch), a function the package does not export, so `unset_program()` is not offered as the repair; and the `set_program()` half is uninstrumented — deleting that bullet left all 178 assertions green, `"set_ffmpeg()"` being a substring of `"unset_ffmpeg()"`. AC3-AC6 verified and ticked; AC1 and AC7 met but left unticked because the repair moves the code they were measured against. Defect return 1 for this milestone.
 
 ## Decisions
 
 ## Review
+
+Reviewed 2026-09-06 at branch head `9de2766`, PR #120. **Outcome: returned to
+`in-progress` under the return floor** — finding [O]1 demonstrates AC2 failing.
+
+### Evidence per criterion
+
+- **AC1 — not ticked.** The behaviour is met: all four `find_*()` exports
+  against both malformed forms warn `tidymedia_location_unreadable` carrying
+  `tm_program` and `tm_file` and return `NULL`, and `program_status()` over a
+  directory holding one malformed file returns four rows with that program's
+  `location` and `version` `NA`, the other three identical to the same call
+  without the file, raising the warning once
+  (`tests/testthat/test-program-location-repair.R`, 178 assertions green). Left
+  unticked because the AC2 repair moves this branch's message and the test at
+  `:64` that pins it; re-review re-measures at the new head.
+- **AC2 — FAILS.** The gone-location warning does not add `unset_program()` as
+  the repair. It interpolates `{.fn unset_{program}}`
+  (`R/program_management.R:122`), which renders as `unset_ffmpeg()` — a
+  function the package does not export (`NAMESPACE` has `unset_program` only;
+  the per-program wrappers are a declined candidate row). Rendered and
+  measured 2026-09-06. The same wrong spelling is at `:106` on AC1's
+  unreadable branch. The `set_program()` half of the criterion is also
+  uninstrumented: deleting the `set_program()` advice bullet from the
+  gone-location warning left all 178 assertions in the repair suite green,
+  because `"set_ffmpeg()"` is a substring of the `unset_ffmpeg()` bullet the
+  test also matches. The OS × program crossing and the `windows` + `mediainfo`
+  absent-installer cell do pass.
+- [x] **AC3.** A four-program call with one stale location, one never-configured
+  program and two resolving raises exactly one warning, `tidymedia_location_gone`
+  with `tm_program` `"ffmpeg"`; a call with nothing configured raises none
+  (`test-program-location-repair.R:258`, `:310`). `?program_status` narrows the
+  `NA`-without-warning promise to the never-configured case and `?find_program`
+  documents both conditions with their fields.
+- [x] **AC4.** The timeout warning names `ffmpeg`/`ffprobe`/`ffplay`/`mediainfo`
+  and none of the four display labels on the `program_status()` path, and the
+  message from the `ffm_batch(manifest = TRUE)` path compares identical whole
+  (`test-tool-versions-report.R:23`, `:50`, `:75`). The mutant clause was
+  verified by a real source mutation, not only the modelled one: restoring the
+  display-label naming and the manifest sentence in `R/ffm_manifest.R` turned
+  the `program_status()`-path test red at `:41` and `:45`. Source restored.
+- [x] **AC5.** Both partial forms abort `tidymedia_location_not_removed` with an
+  empty memo, and the removed-nothing case aborts with the memo intact
+  (`test-program-location-repair.R:184`, `:218`, `:240`).
+- [x] **AC6.** The recycling length-1, the length-3-against-4 and the empty-`list()`
+  cases all abort `tidymedia_locations_mismatch` carrying `tm_n_programs` and
+  `tm_n_locations`; the `NULL` default still answers, and
+  `ffm_batch(manifest = TRUE)` still records both versions
+  (`test-tool-versions-report.R:134`, `:163`, `:179`, `:197`).
+- **AC7 — not ticked.** Measured clean at this head: `devtools::check()` Status
+  OK, 0 errors / 0 warnings / 0 notes, 16m57s; `devtools::test()` 0 failures,
+  13,156 passing, 18 skipped, 10 warnings (the pre-existing dropped-track
+  diagnostic); `devtools::document()` no diff; `NEWS.md` carries the five
+  user-visible changes (`tool_versions()` is unexported, so AC6 is not one).
+  Left unticked because the AC2 repair changes shipped message text these runs
+  covered.
+
+### Consistency gate
+
+`cairn_validate.py` — 16 PASS, 7 advisories OK, no `release window` advisory.
+No `DESIGN.md` principle changed, so `cairn_impact.py` was not run. Toolchain
+slot: `document()` no diff; `NAMESPACE`/`man/` regenerate clean; `README.Rmd`
+untouched by the branch; `pkgdown::check_pkgdown()` no problems; `NEWS.md`
+entry present; no new top-level files; `check()` clean. CI on PR #120: all ten
+legs pass, both codecov gates pass.
+
+### Independent review — three fresh-context lenses
+
+User-facing tier with executable surface, so the full fan-out ran. Ten
+findings, one of them floor-qualifying.
+
+- **[O]1 — both new warnings advise a function that does not exist.**
+  `R/program_management.R:106`, `:122`. **Floor return** — demonstrates AC2
+  failing. Fix on return.
+- **[O]2 — the tests pin that spelling**, so the suite resists the fix:
+  `test-program-location-repair.R:64` and `:129`, 13 assertions across four
+  programs and three operating systems. Fix on return, with [O]1.
+- **[O]3 — the `set_program()`-advice assertions cannot fail**, `"set_ffmpeg()"`
+  being a substring of `"unset_ffmpeg()"` (`:65`, `:128`). Confirmed by
+  mutation. Fix on return, with [O]1.
+- **[O]4 — the AC4 mutation probe asserts a string literal it wrote itself**
+  (`test-tool-versions-report.R:130-146`), so no change to `R/ffm_manifest.R`
+  can redden it — the defect class `DESIGN.md:125` already records. AC4 holds
+  in substance on the real mutation run above. Fix on return.
+- **[S-prior]1 — a comment this diff's own change made false.**
+  `R/ffm_manifest.R:120-123` still says `program_status()` resolves each program
+  "with `find_program()`'s warnings suppressed"; T5 replaced that blanket
+  suppression with a handler that lets two classes through. Confirmed. Fix on
+  return.
+- **[O]5 — `?program_status` names only the `R_user_dir()` config directory**
+  for the unreadable case, but the pre-0.2.0 `rappdirs` directory produces it
+  too, as the diff's own test at `test-program-location-repair.R:70` proves.
+  Confirmed. Fix on return.
+- **[O]6 — `?find_program` describes the unreadable condition more narrowly than
+  the guard**: the docs say empty or more than one line, the guard also fires on
+  `is.na()` and `!nzchar()`. Fix on return.
+- **[O]7 — the memo drop fires for `mediainfo`**, whose location cannot affect
+  the encoder pool; the effect is one wasted re-probe, but the comment's stated
+  reason and D089's census inherit it. Pre-existing on the success path since
+  M113, widened here. Maintainer triage at re-review.
+- **[S-blame] — no findings.** Traced D088, D089, D044 and M113's intent; the
+  narrowing of M113's blanket suppression and the memo reordering are both
+  covered by decisions written for this milestone.
+- **[S-prior] — otherwise clean.** Each of T2–T7 traced to the M113 or M115
+  finding it closes; no prior lesson walked back.

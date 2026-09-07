@@ -74,6 +74,23 @@ test_that("the unreadable-location warning names the file and both repairs", {
   expect_no_match(message, "unset_ffmpeg", fixed = TRUE)
 })
 
+test_that("a config file holding one blank line is unreadable too", {
+  # The guard rejects three shapes, not two: it also refuses a single line that
+  # is blank or NA, because a location that is not a location resolves nowhere.
+  # AC1 crosses the empty and two-line forms; this cell is what instruments the
+  # help page's and NEWS's claim about the blank one (M116 review [O]6).
+  dirs <- tm_redirect_config()
+  path <- tm_config_file("ffmpeg", dirs$new)
+  writeLines("", path)
+
+  condition <- tryCatch(find_ffmpeg(), warning = function(w) w)
+  expect_s3_class(condition, "tidymedia_location_unreadable")
+  expect_identical(condition$tm_program, "ffmpeg")
+  expect_identical(condition$tm_file, path)
+  expect_null(suppressWarnings(find_ffmpeg()))
+})
+
+
 test_that("a malformed legacy file is read, and a readable current file wins", {
   # find_program() falls back to the pre-0.2.0 directory only when no current
   # file exists, so the guard has to hold on that arm too -- and must not fire

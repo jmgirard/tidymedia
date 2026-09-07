@@ -2,7 +2,7 @@
      section ownership". A phase skill never rewrites another phase's section. -->
 # M116: A broken or stale remembered location is reported, not fatal or silent
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -128,12 +128,12 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
       call the package exports, in place of the unexported `unset_ffmpeg()`;
       the repair suite asserts the real spellings, with each advice bullet
       instrumented so its own removal reddens (review [O]1, [O]2, [O]3).
-- [ ] T10: Doc and comment repairs — `?find_program`'s unreadable condition
+- [x] T10: Doc and comment repairs — `?find_program`'s unreadable condition
       widened to what the guard fires on, `?program_status`'s unreadable case
       naming the pre-0.2.0 directory too, and `R/ffm_manifest.R:120-123`'s
       "warnings suppressed" comment corrected to T5's two-class handler
       (review [O]5, [O]6, [S-prior]1).
-- [ ] T11: AC4's wording assertions factored into one predicate the mutation
+- [x] T11: AC4's wording assertions factored into one predicate the mutation
       probe runs over both the message the source path emits and the retired
       stand-in, so a reverted wording reddens the probe (review [O]4); then
       `devtools::document()`, `devtools::test()`, `devtools::check()` re-run at
@@ -168,6 +168,10 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: T10 work done, box left open pending the suite — `?find_program`'s unreadable bullet now names the blank and missing forms the guard also rejects, `?program_status`'s unreadable case says the condition is raised from whichever config file the lookup reached rather than naming only the `R_user_dir()` one, and `R/ffm_manifest.R`'s comment now says `program_status()` muffles the plain not-found warning and lets the two classed ones through; the NEWS clause describing the unreadable state widened to match.
 - 2026-09-06: T11 work done, box left open pending the suite — AC4's wording assertions factored into `tm_timeout_wording_holds()`, which the probe runs over the message `tool_versions()` emits as well as over the retired stand-in; reverting the retired sentence into `R/ffm_manifest.R` reddened the probe's own `expect_true` leg (four failures, one of them at the probe), which the literal-against-itself shape could not.
 - 2026-09-06: checkpoint — T9 verified and checked; T10 and T11 written and their targeted suites green, with `devtools::document()` producing no diff, but the full `devtools::test()` and `devtools::check()` at this head have not returned, so both boxes stay open and the status stays `in-progress`.
+
+- 2026-09-06: T10 and T11 checked at the repaired head — `devtools::test()` 0 failures, 13,168 passing, 18 skipped, 10 warnings, 9 of them located by name to `warn_dropped_audio()` (`R/ffmpeg.R:2721`) in the audio-stream suites; `devtools::document()` no diff; `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes (14m48s).
+- 2026-09-06: T10 gained a test cell rather than shipping the widened wording as prose alone — a config file holding one blank line now asserts `tidymedia_location_unreadable` with `tm_program` and `tm_file`, so the third shape the help page and NEWS now name is instrumented; AC1's own crossing is unchanged.
+- 2026-09-06: status → review; all eleven tasks checked. AC1, AC2 and AC7 left for review to re-measure at this head; [O]7 left where the Review section put it, maintainer triage at re-review.
 
 ## Decisions
 

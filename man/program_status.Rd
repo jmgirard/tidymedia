@@ -17,12 +17,22 @@ each: where it resolved to, and what version it reported. Nothing is
 installed, written, or changed by the call.
 }
 \details{
-A program that cannot be found gets \code{NA} in both columns rather than a
-warning, so the answer for four programs arrives as one table instead of a
-pile of messages. The lookup is \code{\link[=find_program]{find_program()}}'s: the \code{PATH} first, then a
-location remembered by \code{\link[=set_program]{set_program()}}, and finally a location a version of
-tidymedia before 0.2.0 remembered under
+A program that was never configured and is not installed gets \code{NA} in both
+columns rather than a warning, so the answer for four programs arrives as one
+table instead of a pile of messages. The lookup is \code{\link[=find_program]{find_program()}}'s: the
+\code{PATH} first, then a location remembered by \code{\link[=set_program]{set_program()}}, and finally a
+location a version of tidymedia before 0.2.0 remembered under
 \code{rappdirs::user_config_dir("tidymedia", "R")}.
+
+A remembered location that cannot be used still warns, because there the
+\code{NA} would look exactly like a program you never had. Both cases name a file
+you can repair: a remembered location whose binary is gone
+(\code{tidymedia_location_gone}), and a config file that does not hold one
+location (\code{tidymedia_location_unreadable}). The unreadable case is raised
+from whichever file the lookup above reached, so it names the pre-0.2.0
+file as readily as the current one. Either is cleared with
+\code{\link[=unset_program]{unset_program()}} or replaced with \code{\link[=set_program]{set_program()}}; the row is \code{NA} in both
+columns either way.
 
 The version is whatever the binary reports for its own version flag, so it
 is the FFmpeg build number for \code{ffmpeg}, \code{ffprobe} and \code{ffplay}, and the

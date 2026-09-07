@@ -147,11 +147,13 @@ test_that("an unanswered count warns about nothing", {
 })
 
 test_that("a locator that throws is as silent as one that returns NULL", {
-  # find_ffprobe() has TWO failure channels, not one: find_program() reads a
-  # user config written by set_ffprobe() and then tests it, so an empty or
-  # multi-line config makes it abort rather than warn. Without a tryCatch around
-  # the locator itself that abort escapes and takes the verb with it (M44 review
-  # F2), which the NULL-returning mock cannot detect.
+  # find_ffprobe() has TWO failure channels, not one. The state that showed it
+  # was an empty or multi-line user config, which made find_program() abort
+  # rather than warn until M116 guarded it; without a tryCatch around the
+  # locator itself that abort escaped and took the verb with it (M44 review
+  # F2), which the NULL-returning mock cannot detect. The mock below stands in
+  # for the error channel directly, so this test is unaffected by that repair
+  # and still says what happens if anything below find_ffprobe() throws.
   local_mocked_bindings(
     find_ffprobe = function() stop("argument is of length zero")
   )

@@ -62,3 +62,18 @@ tm_redirect_config <- function(env = parent.frame()) {
 tm_write_location <- function(dir, program, location) {
   writeLines(location, tm_config_file(program, dir))
 }
+
+# Run a call and hand back both its value and every warning it raised, muffled
+# so the suite does not see them. expect_warning() would stop at the first, and
+# what AC3 asks about is the whole set.
+tm_collect_warnings <- function(expr) {
+  warns <- list()
+  value <- withCallingHandlers(
+    expr,
+    warning = function(w) {
+      warns[[length(warns) + 1L]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
+  list(value = value, warnings = warns)
+}

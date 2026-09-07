@@ -35,6 +35,21 @@ location remembered by \code{\link[=set_program]{set_program()}} is read from
 version of tidymedia before 0.2.0 was written to
 \code{rappdirs::user_config_dir("tidymedia", "R")}, and that file is read only
 when no file exists in the current directory.
+
+A remembered location that no longer works warns and returns \code{NULL} rather
+than failing, under a condition class you can catch:
+\itemize{
+\item \code{tidymedia_location_gone} -- the location was read, but there is no
+binary there any more. The condition carries the program in \code{tm_program}
+and the location in \code{tm_location}.
+\item \code{tidymedia_location_unreadable} -- the file holding the location does not
+hold one location to try: it is empty, or holds more than one line, or
+holds a single blank line. The condition carries the program in
+\code{tm_program} and the file in \code{tm_file}.
+}
+
+Either is repaired with \code{\link[=unset_program]{unset_program()}}, which forgets the location, or
+\code{\link[=set_program]{set_program()}}, which replaces it.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("ffmpeg")) && nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}

@@ -5,10 +5,13 @@
 # `ffmpeg -encoders`, so an N-row batch paid N process spawns for an answer that
 # cannot change unless the binary does (D044).
 #
-# Lifetime is the R session. It is discarded only explicitly, via the exported
-# `refresh_ffmpeg_capabilities()`, or implicitly by `set_program()`, which is the
-# one package call that can repoint us at a different binary. The memo is
-# per-process, so `parallel = TRUE` workers each keep their own (D044). The
+# Lifetime is the R session. Four routes discard it, and D089 is the census:
+# the exported `refresh_ffmpeg_capabilities()`, `set_program()`, a successful
+# `unset_program()`, and an `unset_program()` that removed at least one of the
+# two remembered files before failing on the other -- the file it did delete
+# may be the one lookups were answering from. An `unset_program()` that removed
+# nothing does not discard: nothing about the resolved binary changed. The memo
+# is per-process, so `parallel = TRUE` workers each keep their own (D044). The
 # caller's `tidymedia.hardware_encoders` override IS carried into a worker
 # (R/timeout.R, M071); this memo is not, which is why a worker with no override
 # still asks its own binary.
@@ -36,14 +39,21 @@ cached_encoder_names <- function() {
 #' FFmpeg process per call, which is what makes a large batch practical. The
 #' answer is remembered for the rest of the session, so a build that changes
 #' underneath you -- a fresh FFmpeg install, a new GPU driver, a different
-#' binary -- is not seen until the record is discarded. There are two ways to
+#' binary -- is not seen until the record is discarded. There are three ways to
 #' discard it:
 #'
 #' \itemize{
 #'   \item call \code{refresh_ffmpeg_capabilities()} yourself, at any time;
 #'   \item call \code{\link{set_program}} (or \code{\link{set_ffmpeg}}), which
 #'     discards it for you, since pointing tidymedia at a different binary
-#'     invalidates everything remembered about the old one.
+#'     invalidates everything remembered about the old one;
+#'   \item call \code{\link{unset_program}} and have it remove something, for
+#'     the same reason: forgetting a remembered location can change which
+#'     binary tidymedia resolves to. A call that removed nothing leaves the
+#'     record alone, since nothing about the resolved binary changed -- and a
+#'     call that removed one remembered file before failing on another
+#'     discards it, because the file it did remove may be the one your lookups
+#'     were answered from.
 #' }
 #'
 #' The record is per R process, and it does not travel to a worker. So unless

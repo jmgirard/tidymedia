@@ -90,10 +90,10 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - AC1 → T1, T2, T5, T9, T10
 - AC2 → T3, T9, T10
 - AC3 → T5, T10
-- AC4 → T6, T11
+- AC4 → T6, T11, T12
 - AC5 → T4
 - AC6 → T7
-- AC7 → T8, T11
+- AC7 → T8, T11, T13, T15, T16
 
 ## Tasks
 
@@ -138,6 +138,29 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
       stand-in, so a reverted wording reddens the probe (review [O]4); then
       `devtools::document()`, `devtools::test()`, `devtools::check()` re-run at
       the repaired head.
+- [x] T12: AC4's missing pin — a test that drives `ffm_batch(manifest = TRUE)`
+      itself, with `ffm_run()` stood in for so no binary is needed, captures the
+      `tidymedia_probe_timeout` warning the batch raises, and compares its
+      message whole against the `program_status()`-path message; the tautologous
+      stand-in at `test-tool-versions-report.R:74` retired or repaired
+      (re-review [O]2, floor).
+- [ ] T13: `NEWS.md` repairs — the false claim that a single-blank-line config
+      used to fail with an R error removed (it warned), and the Configuration
+      headline narrowed to what shipped, which is what `readLines()` returns
+      rather than every unreadable config path; the directory-at-the-config-path
+      gap goes to a ROADMAP candidate row (re-review [O]1, [O]5).
+- [ ] T14: The memo census in prose — `R/cache.R:8-10` restates D044's two
+      routes where D089 records four, and `R/cache.R:47-48` with
+      `?refresh_ffmpeg_capabilities` state the `unset_program()` route without
+      D089's removed-nothing carve-out (re-review [S-blame]1, [O]6).
+- [ ] T15: Comments and docs T2 falsified or overreached — `R/ffprobe.R:211-215`
+      and `tests/testthat/test-audio-track-drop.R:150-153` still say a malformed
+      config aborts; `?find_program`'s unreadable bullet promises a "missing"
+      form the guard cannot see; and `R/ffm_manifest.R:141` names
+      `{.arg locations}` in an abort blamed on a frame without that argument
+      (re-review [S-blame]2, [O]3, [O]4).
+- [ ] T16: `devtools::document()`, `devtools::test()`, `devtools::check()` at
+      the repaired head.
 
 ## Work log
 
@@ -174,6 +197,10 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: status → review; all eleven tasks checked. AC1, AC2 and AC7 left for review to re-measure at this head; [O]7 left where the Review section put it, maintainer triage at re-review.
 
 - 2026-09-06: re-review returned the milestone to `in-progress`. AC4 FAILED on its instrument clause: the criterion asks that tests pin the emitted message on the `ffm_batch(manifest = TRUE)` path, and no test does — the test named for that caller calls `tool_versions()` twice with arguments the message does not read, so its whole-message comparison is a tautology. AC1, AC2, AC3, AC5 and AC6 re-verified and ticked at `b4cb7a7`; AC7 not ticked, and `NEWS.md` carries a false claim about the prior behaviour of a blank-line config ([O]1) and a headline broader than what shipped ([O]5). AC4's tick was written in this session and withdrawn: it was composed from the test's own comment rather than from what the test calls. Defect return 2 for this milestone; eleven other findings logged in the Review section for the return.
+
+- 2026-09-06: return-2 question gate — both recommendations taken: AC4's `ffm_batch(manifest = TRUE)` pin drives the batch itself with `ffm_run()` mocked, rather than an end-to-end test gated on `skip_if_no_ffmpeg()`, so the pin runs on the binary-less CI legs too; and the locations-length abort drops `{.arg locations}` for "The locations supplied must name one location for each program.", keeping the caller frame the blame test pins, rather than dropping `call =` or routing the site to the existing argument-naming candidate row.
+- 2026-09-06: minor amendment — five return-repair tasks T12-T16 added for the eight findings marked fix-on-return, and the Coverage lines updated together; [O]7 and [O]8/[S-blame]3 stay at maintainer triage where the re-review put them, and [O]9 stays rejected as pre-existing.
+- 2026-09-06: T12 — the manifest-caller test now drives `ffm_batch(jobs, .f, manifest = TRUE)` with `ffm_run()` mocked, asserts the batch reached the manifest block (one job run, both manifest versions `NA`), and pins the `tidymedia_probe_timeout` message the batch call raised against the `program_status()`-path message and against `tm_timeout_wording_holds()`. Mutation-checked: renaming the timed-out programs back to their display labels in `R/ffm_manifest.R` reddened this test at its predicate leg (`:134`) as well as the `program_status()` test; source restored, `git diff` clean. The whole-message comparison alone cannot discriminate — both callers read one callee — which is why the predicate leg is what carries the pin.
 
 ## Decisions
 

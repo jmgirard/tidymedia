@@ -72,28 +72,66 @@ test_that("the timeout warning names each program the way the report's column do
 })
 
 test_that("the timeout warning reads the same from the manifest caller", {
-  # The other caller, pinned so the wording cannot be tuned for one of them.
-  # Both messages are compared whole rather than by keyword: what AC4 asks is
-  # that they are the same sentence, not that each contains some phrase.
+  # AC4's second pin, taken from the caller itself rather than from the callee
+  # both callers share: this drives ffm_batch(manifest = TRUE), which is what
+  # reaches tool_versions() on that path, and reads the warning the batch call
+  # raises. Its predecessor called tool_versions() twice with arguments the
+  # message does not read, so its whole-message comparison could not fail
+  # (M116 re-review [O]2).
+  #
+  # ffm_run() is the stand-in, not the encoder: the batch has to reach its
+  # `if (manifest)` block, which sits under `run = TRUE`, and every leg of the
+  # fleet should measure this wording, including the ones with no FFmpeg on
+  # PATH. Nothing below the version probe is under test here.
+  ran <- 0L
   testthat::local_mocked_bindings(
     find_ffmpeg = function(...) "/usr/bin/ffmpeg",
     find_ffprobe = function(...) "/usr/bin/ffprobe",
+    ffm_run = function(pipeline, ...) {
+      ran <<- ran + 1L
+      invisible("")
+    },
     .package = "tidymedia"
   )
   tm_local_all_probes_timeout()
 
-  from_manifest <- tm_collect_warnings(tool_versions())
+  # ffm_files() reads the input off disk, so the job needs a real file; its
+  # contents never matter, because ffm_run() is mocked above.
+  input <- withr::local_tempfile(fileext = ".mp4")
+  writeLines("not a video", input)
+  jobs <- tibble::tibble(
+    input = input,
+    output = withr::local_tempfile(fileext = ".mp4")
+  )
+  from_manifest <- tm_collect_warnings(
+    ffm_batch(jobs, manifest = TRUE, .f = function(input, output, ...) {
+      ffm_files(input, output) |> ffm_scale(32, 32)
+    })
+  )
   from_status <- tm_collect_warnings(tool_versions(c("ffmpeg", "ffprobe"),
                                                    list("/usr/bin/ffmpeg",
                                                         "/usr/bin/ffprobe")))
 
-  expect_length(from_manifest$warnings, 1L)
+  # The batch really ran the manifest path: one job executed, and the manifest
+  # it attached carries the NA versions the warning is explaining.
+  expect_identical(ran, 1L)
+  manifest <- ffm_manifest(from_manifest$value)
+  expect_identical(manifest$ffmpeg_version, NA_character_)
+  expect_identical(manifest$ffprobe_version, NA_character_)
+
+  timeouts <- Filter(
+    function(w) inherits(w, "tidymedia_probe_timeout"),
+    from_manifest$warnings
+  )
+  expect_length(timeouts, 1L)
+  message <- cli::ansi_strip(conditionMessage(timeouts[[1]]))
+  # Compared whole rather than by keyword: what AC4 asks is that the two
+  # callers get the same sentence, not that each contains some phrase.
   expect_identical(
-    cli::ansi_strip(conditionMessage(from_manifest$warnings[[1]])),
+    message,
     cli::ansi_strip(conditionMessage(from_status$warnings[[1]]))
   )
-  expect_identical(from_manifest$value,
-                   list(ffmpeg = NA_character_, ffprobe = NA_character_))
+  expect_true(tm_timeout_wording_holds(message))
 })
 
 test_that("the timeout warning says what NA means without naming a caller", {

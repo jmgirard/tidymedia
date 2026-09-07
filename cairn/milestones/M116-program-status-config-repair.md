@@ -11,7 +11,7 @@
 - **Surface tier:** user-facing — changes what the four `find_*()` exports,
   `program_status()`, `unset_program()` and the batch manifest's timeout
   warning do and say.
-- **Branch/PR:** `m116-program-status-config-repair`
+- **Branch/PR:** `m116-program-status-config-repair` — https://github.com/jmgirard/tidymedia/pull/120
 
 ## Goal
 
@@ -145,6 +145,7 @@ showing the remembered location → weighed and rejected at the plan gate, no ro
 - 2026-09-06: T8 — `devtools::document()` no diff; `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes (17m52s); `devtools::test()` 0 failures, 13,155 passing, 18 skipped, the 10 warnings all the pre-existing dropped-track diagnostic in the audio-stream suites. NEWS entries added under Configuration; the first draft failed the spelling leg on "catchable", reworded rather than added to the wordlist.
 - 2026-09-06: T7's blame test strengthened after review of the diff — it asserted only the class, so it was rewritten around a named wrapper and now asserts the condition's call names that wrapper.
 - 2026-09-06: status → review; all eight tasks checked.
+- 2026-09-06: review opened; draft PR #120 pushed, three fresh-context lenses spawned, `devtools::check()` running. Evidence gathering in progress — no criterion ticked yet.
 
 ## Decisions
 

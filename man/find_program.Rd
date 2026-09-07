@@ -43,8 +43,9 @@ than failing, under a condition class you can catch:
 binary there any more. The condition carries the program in \code{tm_program}
 and the location in \code{tm_location}.
 \item \code{tidymedia_location_unreadable} -- the file holding the location does not
-hold one location to try: it is empty, or holds more than one line, or
-holds a single blank line. The condition carries the program in
+hold one location to try: it is empty, holds more than one line, or holds
+one empty line. A line holding only spaces is read as a location, and
+raises \code{tidymedia_location_gone} instead. The condition carries the program in
 \code{tm_program} and the file in \code{tm_file}.
 }
 

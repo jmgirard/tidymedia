@@ -107,8 +107,10 @@ test_that("the timeout warning reads the same from the manifest caller", {
       ffm_files(input, output) |> ffm_scale(32, 32)
     })
   )
-  # The baseline is the shared callee, not the program_status() path: a bare
-  # tool_versions() call is what both callers reach, so comparing against it
+  # The baseline is the shared callee, not the program_status() path: a direct
+  # tool_versions() call on the same programs the manifest path asks for --
+  # not a bare one, which four other tests in this file do make -- is what
+  # both callers reach underneath, so comparing against it
   # says the batch adds nothing of its own to the sentence. It cannot say the
   # sentence is right -- one callee emits both messages -- which is why the
   # predicate leg below is what carries this test's pin (M116 third review

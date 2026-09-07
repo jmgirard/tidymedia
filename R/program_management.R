@@ -53,8 +53,9 @@ tm_install_dir <- function() {
 #'   binary there any more. The condition carries the program in `tm_program`
 #'   and the location in `tm_location`.
 #' * `tidymedia_location_unreadable` -- the file holding the location does not
-#'   hold one location to try: it is empty, or holds more than one line, or
-#'   holds a single blank line. The condition carries the program in
+#'   hold one location to try: it is empty, holds more than one line, or holds
+#'   one empty line. A line holding only spaces is read as a location, and
+#'   raises `tidymedia_location_gone` instead. The condition carries the program in
 #'   `tm_program` and the file in `tm_file`.
 #'
 #' Either is repaired with [unset_program()], which forgets the location, or
@@ -96,8 +97,8 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
       # (measured 2026-09-06: "argument is of length zero" and "the condition
       # has length > 1"). set_program() cannot write either shape; a truncated
       # write or a hand-edit can. The same `length(x) != 1L` shape
-      # count_audio_streams() documents at R/ffprobe.R:213-219, and for the
-      # same reason: is.na() on character(0) answers logical(0), which `if`
+      # count_audio_streams() documents at R/ffprobe.R:220-221 and applies at
+      # :223, and for the same reason: is.na() on character(0) answers logical(0), which `if`
       # rejects in its turn.
       if (length(location) != 1L || is.na(location) || !nzchar(location)) {
         cli::cli_warn(

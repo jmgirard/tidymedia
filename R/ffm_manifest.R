@@ -178,9 +178,11 @@ tool_versions <- function(programs = c("ffmpeg", "ffprobe"),
     # field carries the display label the version flag is asked under
     # ("FFmpeg"), while program_status() prints "ffmpeg" in the column beside
     # the NA this warning explains, and a reader should not have to match two
-    # spellings of one program. A separate local, because overwriting the
-    # `programs` argument here left the warning's own count reading off a
-    # rebound name (M116).
+    # spellings of one program. A separate local rather than rebinding
+    # `programs`, which is what this block used to do: the count read
+    # correctly off the rebound name, so nothing was broken, but any later
+    # reader of `programs` below this point would have got the timed-out
+    # subset instead of the argument (M116).
     late <- names(probes)[timed_out]
     cli::cli_warn(
       c(

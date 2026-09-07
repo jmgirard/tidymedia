@@ -74,11 +74,13 @@ test_that("the unreadable-location warning names the file and both repairs", {
   expect_no_match(message, "unset_ffmpeg", fixed = TRUE)
 })
 
-test_that("a config file holding one blank line is unreadable too", {
-  # The guard rejects three shapes, not two: it also refuses a single line that
-  # is blank or NA, because a location that is not a location resolves nowhere.
-  # AC1 crosses the empty and two-line forms; this cell is what instruments the
-  # help page's and NEWS's claim about the blank one (M116 review [O]6).
+test_that("a config file holding one empty line is unreadable too", {
+  # The guard rejects three shapes, not two: it also refuses a single line with
+  # no characters in it, because a location that is not a location resolves
+  # nowhere. Empty, not merely blank -- the leg is !nzchar(), so a line holding
+  # only spaces passes here and takes the gone-location branch instead. AC1
+  # crosses the empty-file and two-line forms; this cell is what instruments
+  # the help page's and NEWS's claim about the third (M116 review [O]6).
   dirs <- tm_redirect_config()
   path <- tm_config_file("ffmpeg", dirs$new)
   writeLines("", path)

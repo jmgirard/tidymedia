@@ -822,3 +822,30 @@ working tree was not modified.
 No reviews of any state. One conversation comment, from `codecov[bot]`
 (`type` `Bot`), reporting coverage; it requests nothing. No unresolved review
 threads. The blocking rule does not fire.
+
+### Triage at the gate
+
+- **[O]1, [O]2, [O]3, [O]5 — fixed on the branch**, at the maintainer's
+  selection. `test-tool-versions-report.R:110` now says the baseline is a
+  direct `tool_versions()` call on the same programs the manifest path asks
+  for, and names the four bare calls elsewhere in the file that made "bare"
+  misread. `R/program_management.R:98` cites `R/ffprobe.R:220-221` with the
+  code at `:223`. `R/ffm_manifest.R:181` no longer claims the rebound
+  `programs` miscounted — it says the count read correctly and names the
+  hazard that remained. `?find_program`'s unreadable bullet reads "it is
+  empty, holds more than one line, or holds one empty line", with the
+  spaces-only carve-out stated; the test cell instrumenting it was renamed
+  from "blank" to "empty" for the same reason. All four are comment or
+  documentation edits with no behaviour change; `document()` regenerated
+  `man/find_program.Rd`, and the two affected suites run 235 assertions with
+  0 failures.
+- **[O]4, [O]6 — not taken**, at the maintainer's selection: both are
+  instrument changes AC4 and AC6 do not bind, on a milestone at the thrash
+  threshold.
+- **[O]7, [O]8, [O]9, [O]11 — folded into ROADMAP candidate rows** at the
+  hygiene pass, ending three reviews of deferral.
+- **[O]10 — folded** into the conditionally-spawning-member row, which already
+  carries the sweeps' coverage gaps.
+- **[O]12 — rejected**, already dispositioned as an accepted defensive shape.
+- **conversation: codecov[bot] PR #120 — noted** (a coverage report; requests
+  nothing).

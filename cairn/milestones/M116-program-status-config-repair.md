@@ -565,8 +565,9 @@ measurements rested on.
   `pkgdown::check_pkgdown()` no problems; and all ten CI legs, which run
   `R CMD check` across five platforms, pass at `f3f0aea` with both codecov
   gates. `devtools::check()` was clean locally at the same code tree (Status
-  OK, 0/0/0, 5m51s) and its re-run at this head was still in flight when the
-  return was recorded, which moots it. The criterion's `NEWS.md` clause is
+  OK, 0/0/0, 5m51s), and its re-run at this head, which landed after the
+  return was recorded, is also clean: Status OK, 0 errors / 0 warnings /
+  0 notes, 6m48s. The criterion's `NEWS.md` clause is
   again what fails it: [O]5 below shows the Configuration headline still
   claiming one shape more than shipped.
 

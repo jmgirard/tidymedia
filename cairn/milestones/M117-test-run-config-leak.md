@@ -79,6 +79,7 @@ milestone is scoped to the two config directories.
 - 2026-09-08: gate chose a hand-run `tools/` script over a CI leg, because the leak it guards against arose inside a half-finished working state rather than on a pushed branch, and a leg would cost about six minutes on every push; falsified by a leak that reaches a pushed branch. The CI question is not deferred to a backlog row -- it was settled, not postponed.
 - 2026-09-08: gate chose to leave the two leftover files on the maintainer's machine as Scope already directed; both were restored byte-identical with their original mtimes after T1's clean-state measurement.
 - 2026-09-08: T5 on the finished tree. `devtools::test()`: FAIL 0 | WARN 10 | SKIP 18 | PASS 13175. `devtools::check()`: Status OK, 0 errors, 0 warnings, 0 notes. Tasks all checked; status to review.
+- 2026-09-08: step-7 approval: PR #121 approved for merge, after the eight fix-now findings landed and all four criteria were re-measured against the shipped harness.
 
 ## Review
 

@@ -1,6 +1,6 @@
 # M118: The binary-executing tests skip on CRAN's own check
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -32,24 +32,24 @@ A ROADMAP candidate row holds the profiling work.
 
 ## Acceptance criteria
 
-- [x] AC1: Each of `skip_if_no_ffmpeg()`, `skip_if_no_ffprobe()` and
+- [ ] AC1: Each of `skip_if_no_ffmpeg()`, `skip_if_no_ffprobe()` and
       `skip_if_no_mediainfo()` skips when `NOT_CRAN` is unset, and does not skip on
       the CRAN account when `NOT_CRAN` is set to `true`.
-- [ ] AC2: With `NOT_CRAN` unset and the three binaries on `PATH`, a full run of the
+- [x] AC2: With `NOT_CRAN` unset and the three binaries on `PATH`, a full run of the
       suite makes no spawn that resolves one of the three names through `PATH`.
       Measured by shimming the three names onto `PATH` ahead of the real ones with a
       wrapper appending one line per call to a log; the same shim under
       `NOT_CRAN=true` writes a non-empty log, which is what shows the instrument can
       detect a spawn.
-- [ ] AC3: The two routes that escape AC2's shim are measured rather than assumed.
+- [x] AC3: The two routes that escape AC2's shim are measured rather than assumed.
       Under `NOT_CRAN` unset, a run with `PATH` emptied — the condition
       `tests/testthat/helper-program-config.R:43` creates for whole test files — and a
       run with a shim installed at a remembered absolute location for each of the three
       programs, which `find_program()` resolves without consulting `PATH`, each report
       zero spawns.
-- [ ] AC4: With `NOT_CRAN=true` and the three binaries on `PATH`, the set of skipped
+- [x] AC4: With `NOT_CRAN=true` and the three binaries on `PATH`, the set of skipped
       test names is the same as at this milestone's base commit.
-- [ ] AC5: `R CMD check --as-cran` with `NOT_CRAN` unset and the three binaries on
+- [x] AC5: `R CMD check --as-cran` with `NOT_CRAN` unset and the three binaries on
       `PATH` reports 0 errors, 0 warnings, and no note other than one naming the
       version number or a new submission.
 
@@ -85,6 +85,7 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: T1 measured. The precedent holds but names the wrong source. `devtools::check()` sets it (installed `devtools::check` carries `env_vars = c(NOT_CRAN = "true")`); `r-lib/actions/check-r-package@v2` does not — it calls `rcmdcheck::rcmdcheck()` with no `env`, and `rcmdcheck` 1.4.0's `env` default is `character()`. `setup-r@v2` is what sets it: run 34275894026's predecessor 34261398144 dumps `NOT_CRAN: true` in the job env from the `setup-r-dependencies` step onward, and no test in that run skipped for an "On CRAN" reason though three `skip_on_cran()` sites were in the suite. CI coverage survives this milestone; no re-gate needed.
 - 2026-09-08: amendment (substantive, Scope In) at the question gate: scope widened from three helpers to five. `skip_if_no_nvenc()` and `skip_if_no_videotoolbox()` each spawn a one-frame FFmpeg encode to decide, and check `Sys.which("ffmpeg")` inline rather than calling `skip_if_no_ffmpeg()`, so six tests (`test-nvenc.R:435,446,458`, `test-video-codec.R:480,489`, `test-hardware-backends.R:315`) would keep spawning under AC2. No acceptance criterion changed.
 - 2026-09-08: question gate chose a committed `tools/cran_spawn_check.R` for the AC2/AC3 shim over a throwaway harness, matching the two measurement scripts already in `tools/`; costs one `.Rbuildignore` entry.
+- 2026-09-08: amendment return: AC1 — "Each of `skip_if_no_ffmpeg()`, `skip_if_no_ffprobe()` and `skip_if_no_mediainfo()` skips when `NOT_CRAN` is unset". Falsified in an interactive session, where `testthat:::on_cran()` reads `!interactive()` on the unset branch and the helpers do not skip (measured at review under `R --interactive`: reason `NA`). AC1 names no procedure and does not bound the session's interactivity, so this is the never-reinterpret rule's unbounded-criterion case, not a defect in the work — `skip_on_cran()` is correct and CRAN's check is never interactive. Status set to in-progress for the amendment alone; the amendment round should also add the interactive guard `test-cran-skip-helpers.R` needs, since it goes red under `devtools::test()` from an interactive console today. First amendment return on this milestone; defect-return count unchanged at 0.
 - 2026-09-08: T2 done. `skip_on_cran()` added first in all five helpers, ahead of the binary question, so the reason reported on CRAN is "On CRAN" whether or not the machine has the binary. `tests/testthat/test-cran-skip-helpers.R` asserts which skip fires, never a bare one; proven able to fail by two planted defects — dropping the call from `skip_if_no_ffprobe()` (red on the missing skip and on the wrong reason) and moving it below the binary check in `skip_if_no_mediainfo()` (red on the ordering test alone). `devtools::test()` clean: FAIL 0, WARN 10, SKIP 18, PASS 13188.
 
 ## Decisions
@@ -126,4 +127,143 @@ A ROADMAP candidate row holds the profiling work.
   `PATH = ""` and `NOT_CRAN` unset — both conditions true at once — the reason
   is still "On CRAN", which is the ordering assertion. AC1 names the three name
   helpers; the file covers those plus the two hardware-probe helpers.
+  **Superseded — see the amendment return below. AC1's box is unticked: the
+  measurement above is sound but non-interactive, and the criterion as written
+  quantifies over more than that.**
+- AC2 PASS. `tools/cran_spawn_check.R --mode=path`, stand-ins prepended to
+  `PATH` ahead of the real binaries. Control (`--not-cran`): 1226 spawns —
+  ffmpeg 812, ffprobe 390, mediainfo 24 — suite exit 0 in 6.6 min, so the
+  instrument can see. CRAN condition (`NOT_CRAN` unset): 0 spawns, suite exit 0
+  in 4.4 min. The non-empty control is what makes the zero evidence.
+- AC3 PASS as written, with the caveat the plan already recorded. `--mode=config`
+  (the three names dropped from `PATH` by removing `/opt/homebrew/bin`, a
+  remembered absolute location for each pointing at a stand-in): the liveness
+  probe resolved FFmpeg through the remembered location and logged 1 line, so
+  the route is proved reachable; the suite then logged 0 spawns under both
+  `NOT_CRAN` states, exit 0. `--mode=emptypath`: 0 spawns, but suite exit 1 and
+  the script itself reports `instrumented=FALSE` — recorded as UNINSTRUMENTED,
+  not as evidence, exactly as the milestone's own decision log states. See
+  finding F3 below on how much the config zero carries.
+- AC4 PASS. Skipped-test sets compared by name, base `ea433d5` in a detached
+  worktree against the branch, both under `NOT_CRAN=true` with the three
+  binaries on `PATH`: 18 skipped test names each, and `diff` of the two sorted
+  sets is empty — identical, not merely equal in count. Branch runs 1579 tests
+  to the base's 1576, the three added by `test-cran-skip-helpers.R`.
+- AC5 PASS. `R CMD check --as-cran` (`--no-manual --as-cran`) with
+  `NOT_CRAN` unset and the three binaries on `PATH`: **0 errors, 0 warnings,
+  0 notes**, `Status: OK`, Duration 3m42s, tests step `[196s/202s]`. The
+  criterion allows one version/new-submission NOTE; there were none. Against
+  the base commit's 7m47s and `[368s/436s]` recorded at T5.
+
+### Consistency gate — PASS
+
+Universal cairn-file checks: `cairn_validate.py` exit 0, all 16 PASS/OK checks
+green, no `release window` advisory. `cairn_impact.py` skipped — the milestone's
+`Principles touched:` slot is `—` and no DESIGN.md principle changed.
+
+Toolchain checks, from the `r-package` profile's `consistency-gate` slot:
+`devtools::document()` produces no diff (`git status --porcelain` empty after);
+`devtools::check()` clean at 0/0/0 (above); `pkgdown::check_pkgdown()` passes;
+README.Rmd and README.md are in sync (untouched, same commit); no new exported
+object, so no `_pkgdown.yml` row is owed; no `NEWS.md` entry owed — the change
+is confined to the test suite and an `.Rbuildignore`d measurement script, and
+the gate asks only for user-visible changes; `tools/` is already covered by
+`.Rbuildignore`'s `^tools$`, and `check()` raised no missing-ignore NOTE.
+
+### Independent review — three lenses, full fan-out
+
+Declared surface tier is user-facing, so the full three-lens fan-out ran, each
+lens fresh-context on a distinct evidence base.
+
+**[S] blame-history — no findings.** The probe-encode ordering in
+`skip_if_no_nvenc()`/`skip_if_no_videotoolbox()` preserves M31's and M100's
+deliberate design rather than undoing it; the `find_ffprobe` NULL mock exercises
+D024's documented NA-standdown path and matches a pattern already used in four
+test files; the hand-rolled guard replaced in
+`test-unguarded-argument-front-doors.R` was never a deliberate variant.
+
+**[S] prior-review — no regression.** The existence probe returned `[]`: this
+repo has no inline PR review comments at all, so that surface was skipped after
+one call. No archived `## Review` section names any touched file. One
+related-file observation surfaced for completeness, which is F2 below.
+
+**[O] diff-bug — ten findings, listed with disposition.**
+
+- **F1 (floor-qualifying; routes to an amendment return — see below).** The new
+  `test-cran-skip-helpers.R` goes red in any *interactive* session, and AC1 as
+  written is falsified there. Verified independently at this review, not taken
+  on the reviewer's account: `testthat:::on_cran()` (testthat 3.3.2) is
+  `if (identical(Sys.getenv("NOT_CRAN"), "")) !interactive() else
+  !isTRUE(as.logical(env))`. The test file unsets `NOT_CRAN` via
+  `with_envvar(c(NOT_CRAN = NA))`, which lands on the `""` branch, so under
+  `R --interactive` `on_cran()` is `FALSE` and `skip_if_no_ffmpeg()` returns
+  without skipping (measured: reason `NA`). Test 1 then expects `"On CRAN"` and
+  gets `NA`; test 3 gets the binary-absence reason. The maintainer's own
+  `devtools::test()` from RStudio would report two failures. Every run recorded
+  in this milestone was non-interactive, which masked it.
+- **F2 (deferred to re-review triage).** `tools/cran_spawn_check.R` captures the
+  suite's exit `status` and only `cat()`s it — nothing branches on it, so a run
+  that dies early still prints `SPAWNS LOGGED: 0`, which reads as a clean zero.
+  Confirmed by reading the script. This is the shape M117's review found in the
+  sibling `tools/config_leak_check.R` ("a PASS reported for a command that never
+  ran"), and the emptypath false green the work log describes was this same
+  failure mode, fixed by labelling that one mode rather than by refusing to
+  report a zero beside a non-zero exit. A blanket `stop()` is the wrong repair —
+  `emptypath` exits 1 by design.
+- **F3 (deferred to re-review triage).** `config` mode prints
+  `instrumented=TRUE`, but its suite-level control cannot fail: with the three
+  names off `PATH` every helper skips on `Sys.which()` alone, so the suite never
+  reaches a remembered location whatever `NOT_CRAN` says, and the `NOT_CRAN=true`
+  control logs 0 for that reason rather than a good one. Only the liveness probe
+  can fail, and it tests the route, not the suite. AC3's second clause is
+  therefore weaker than AC2's — it shows the config route is reachable, not that
+  the suite declines to use it. The script warns about exactly this for
+  `emptypath` and not for `config`.
+- **F4, F5 (deferred; candidate-row material).** Two hand-rolled binary guards
+  of the same shape as the one this milestone patched survive, both confirmed by
+  reading: `test-program-status-and-unset.R:33`
+  (`skip_if_not(nzchar(Sys.which("ffplay")), ...)`), saved today only because
+  `skip_if_no_ffmpeg()` sits three lines above it; and `test-nvenc-memo.R:92`
+  (`skip_if(!nzchar(ffmpeg_path), ...)`), which spawns nothing today only
+  because `local_encoder_probe_counter()` mocks `ffmpeg_encoders()`. Related:
+  the instrument shims three of the four programs `find_program()` knows —
+  `ffplay` is unmeasured, though it is outside AC2's stated domain by
+  construction.
+- **F6 (deferred; comment accuracy).** The added comment in
+  `test-normalize-audio-batch.R` says the "needs no ffmpeg binary" note is "now
+  true rather than nearly so", but the production path still runs the
+  track-count probe first — the suppression lives in the test's mock, not in the
+  code. The mock itself is correct and the assertions still test what they claim.
+- **F7, F8, F9 (deferred; script hygiene).** `env[["TIDYMEDIA_SPAWN_LOG"]]` is
+  set and never read, implying a mechanism that does not exist (the shims bake
+  the path in at generation time). `--lib=DIR` skips `R CMD INSTALL` with no
+  freshness guard, so a re-run after an edit can measure the previously
+  installed package. The script is POSIX-only (`#!/bin/sh` shims, `tr`) and the
+  header documents every other assumption but not this one.
+- **F10 (deferred; stale prose).** Two statements in this file's decision log
+  are wrong: the script "costs one `.Rbuildignore` entry" (`^tools$` was already
+  there, and the diff correctly adds nothing), and it matches "the two
+  measurement scripts already in `tools/`" (there are five).
+
+Verified by the [O] lens and explicitly *not* problems: the CI claim in the new
+`helper-skip.R` comment is accurate — `r-lib/actions/setup-r`'s
+`src/installer.ts:807` does
+`if (!process.env["NOT_CRAN"]) core.exportVariable("NOT_CRAN", "true")`, and
+both test-running workflows use `setup-r@v2`, so neither CI checks nor covr
+coverage are gutted; `withr` is in Imports; no `skip_if_no_*()` is called at
+test-file top level, so the added skip cannot abort a whole file.
+
+### Disposition — amendment return on AC1
+
+F1 does not show the work wrong. `skip_on_cran()` is the correct idiom and
+CRAN's own check is never interactive, so the milestone's Goal is met. What F1
+shows is that **AC1's text is wrong**: it names no procedure and no measurement
+context, and quantifies over "when `NOT_CRAN` is unset" without bounding the
+session's interactivity — a dimension across which the behaviour genuinely
+differs. Under the never-reinterpret rule a charitable reading is not available
+at review, so this is an amendment return (M130), not a defect return, and it
+does not increment the defect-return count the thrash rule reads.
+
+The amendment round should also carry the interactive guard the test file needs;
+F2-F10 stay logged here and take their triage at the re-review's gate.
 

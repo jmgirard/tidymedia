@@ -8,7 +8,7 @@ _Last hygiene check: 2026-09-08 (M117 done and archived; PR #121 squash-merged, 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M118 | The binary-executing tests skip on CRAN's own check | review | — | normal | milestones/M118-cran-skips-binary-tests.md |
+| M118 | The binary-executing tests skip on CRAN's own check | in-progress | — | normal | milestones/M118-cran-skips-binary-tests.md |
 | M119 | The documentation defects the pre-CRAN audit measured are corrected | planned | — | normal | milestones/M119-shipped-docs-defects.md |
 | M120 | NEWS.md reads as release notes | planned | — | normal | milestones/M120-news-reads-as-release-notes.md |
 | M121 | A directory becomes a jobs tibble | planned | — | normal | milestones/M121-directory-to-jobs-tibble.md |

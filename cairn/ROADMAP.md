@@ -8,7 +8,7 @@ _Last hygiene check: 2026-09-07 (M116 done and archived; PR #120 squash-merged, 
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M117 | A test run leaves no location behind in the user's real config directories | planned | — | normal | milestones/M117-test-run-config-leak.md |
+| M117 | A test run leaves no location behind in the user's real config directories | in-progress | — | normal | milestones/M117-test-run-config-leak.md |
 | M118 | The binary-executing tests skip on CRAN's own check | planned | — | normal | milestones/M118-cran-skips-binary-tests.md |
 | M119 | The documentation defects the pre-CRAN audit measured are corrected | planned | — | normal | milestones/M119-shipped-docs-defects.md |
 | M120 | NEWS.md reads as release notes | planned | — | normal | milestones/M120-news-reads-as-release-notes.md |

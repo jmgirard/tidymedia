@@ -7,7 +7,7 @@
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — what runs on CRAN's machines is the shipped tarball's behaviour
-- **Branch/PR:** `m118-cran-skips-binary-tests`
+- **Branch/PR:** `m118-cran-skips-binary-tests` / https://github.com/jmgirard/tidymedia/pull/122
 
 ## Goal
 
@@ -32,7 +32,7 @@ A ROADMAP candidate row holds the profiling work.
 
 ## Acceptance criteria
 
-- [ ] AC1: Each of `skip_if_no_ffmpeg()`, `skip_if_no_ffprobe()` and
+- [x] AC1: Each of `skip_if_no_ffmpeg()`, `skip_if_no_ffprobe()` and
       `skip_if_no_mediainfo()` skips when `NOT_CRAN` is unset, and does not skip on
       the CRAN account when `NOT_CRAN` is set to `true`.
 - [ ] AC2: With `NOT_CRAN` unset and the three binaries on `PATH`, a full run of the
@@ -110,3 +110,20 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: timing. The check went 7m47s → 4m33.2s and its tests step `[368s/436s]` → `[223s/230s]`, 145 s off the tests step. The plan's gate expected about one minute, reasoning from a 5m06s binaries-hidden `devtools::test()`; skipping the execution tests also drops their fixture building and their waiting, not only FFmpeg's own time.
 - 2026-09-08: no `NEWS.md` entry. The change is confined to the test suite and the measurement script; no exported behaviour, message or default moves, so there is nothing user-visible to record.
 - 2026-09-08: all tasks done, `devtools::test()` clean — FAIL 0, WARN 10, SKIP 18, PASS 13188, the same figures as at T2. Status set to review.
+
+## Review
+
+- 2026-09-08: review opened. Branch synced with `master` at `ea433d5`; `master`
+  has not moved since the branch was cut, so nothing to merge in. Draft PR #122
+  opened for CI.
+- AC1 PASS. `devtools::test(filter = "cran-skip-helpers")` on the branch:
+  FAIL 0, WARN 0, SKIP 0, PASS 13 — the three `test_that()` blocks of
+  `tests/testthat/test-cran-skip-helpers.R` all green. They assert *which* skip
+  fires, never a bare one: with `NOT_CRAN` unset each of the five helpers
+  reports a reason matching "On CRAN"; with `NOT_CRAN=true` and the binary on
+  `PATH` each of the three name helpers does not skip at all (the control half,
+  which is what rules out an unconditionally-skipping helper); and with
+  `PATH = ""` and `NOT_CRAN` unset — both conditions true at once — the reason
+  is still "On CRAN", which is the ordering assertion. AC1 names the three name
+  helpers; the file covers those plus the two hardware-probe helpers.
+

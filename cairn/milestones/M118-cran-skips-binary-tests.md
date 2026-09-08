@@ -128,6 +128,26 @@ A ROADMAP candidate row holds the profiling work.
 
 ## Review
 
+### Re-review after the AC1 amendment (2026-09-08)
+
+- Opened on branch head `dc69b79`. `master` still at `ea433d5`, unmoved since the
+  branch was cut, so nothing to merge in. PR #122 already open (draft); all ten
+  CI legs green on `dc69b79` — six `R-CMD-check` platform legs, `pkgdown`,
+  `test-coverage`, and both codecov gates.
+- AC1 PASS, on the criterion's own procedure and under its own run conditions.
+  `Rscript -e 'testthat::test_local(filter = "cran-skip-helpers")'`: FAIL 0,
+  WARN 0, SKIP 0, PASS 18. `Rscript` reports `interactive()` as `FALSE`, and
+  `ffmpeg`, `ffprobe` and `mediainfo` all resolve to `/opt/homebrew/bin`, which
+  are the two conditions the amended criterion names. The 18 passes are the
+  file's four blocks: five helpers asserted to report `"On CRAN"` with
+  `NOT_CRAN="false"`, the same five with `NOT_CRAN` unset, the three name
+  helpers asserted NOT to skip with `NOT_CRAN=true` and the binary on `PATH`
+  (the control half, which is what rules out an unconditionally-skipping
+  helper), and five ordering assertions with `PATH = ""`. Nothing skipped, so
+  no assertion was silently absent.
+
+### First pass (2026-09-08)
+
 - 2026-09-08: review opened. Branch synced with `master` at `ea433d5`; `master`
   has not moved since the branch was cut, so nothing to merge in. Draft PR #122
   opened for CI.

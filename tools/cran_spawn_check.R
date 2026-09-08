@@ -29,10 +29,15 @@
 #              resolve, stand-ins included -- reported as UNINSTRUMENTED, because
 #              an empty log here is the absence of a reachable program and not
 #              evidence about the suite.
-#   config     PATH emptied AND a remembered absolute location pointing at each
-#              stand-in, written into a temporary R_USER_CONFIG_DIR. This is the
-#              instrumented form of the same escape route: a spawn that resolves
-#              through the config file lands in the log.
+#   config     the three names made unresolvable on PATH, AND a remembered
+#              absolute location pointing at each stand-in, written into a
+#              temporary R_USER_CONFIG_DIR. find_program() consults the config
+#              only when Sys.which() answers "", so the names have to go -- but
+#              PATH itself must keep working, or the suite dies before reaching
+#              any program at all (measured 2026-09-08: PATH="" exits 1 with an
+#              empty log for the CONTROL too, which is a false green). Only the
+#              directories that actually contain one of the three are dropped,
+#              named in the output, rather than a fixed list of system paths.
 #
 # --not-cran sets NOT_CRAN=true, the control: the same run must produce a
 # NON-EMPTY log, which is what shows the stand-ins can be seen at all. An empty
@@ -127,13 +132,32 @@ if (mode == "path") {
   env[["PATH"]] <- ""
   instrumented <- FALSE
 } else {
-  env[["PATH"]] <- ""
+  # Drop exactly the directories holding one of the three, so every other tool
+  # on PATH survives.
+  drop <- unique(dirname(real))
+  keep <- setdiff(strsplit(Sys.getenv("PATH"), .Platform$path.sep)[[1]], drop)
+  env[["PATH"]] <- paste(keep, collapse = .Platform$path.sep)
+  cat("dropped from PATH:", paste(drop, collapse = " "), "\n")
   dir.create(config_dir, recursive = TRUE)
   for (p in programs) {
     writeLines(file.path(shim_dir, p),
                file.path(config_dir, paste0(p, "_location.txt")))
   }
   env[["R_USER_CONFIG_DIR"]] <- file.path(root, "config")
+  # The names must be gone from the PATH the run will see, or find_program()
+  # never reaches the config file and this mode silently measures the PATH route
+  # again.
+  leftover <- withr::with_envvar(
+    c(PATH = env[["PATH"]]),
+    programs[nzchar(Sys.which(programs))]
+  )
+  if (length(leftover)) {
+    stop(
+      "still resolvable on the trimmed PATH, so the config route is not the ",
+      "one under test: ", paste(leftover, collapse = ", "),
+      call. = FALSE
+    )
+  }
 }
 
 cat(sprintf("mode=%s not_cran=%s instrumented=%s\n",
@@ -157,6 +181,41 @@ if (length(lib) != 1L) {
   }
 }
 env[["R_LIBS"]] <- paste(lib, Sys.getenv("R_LIBS"), sep = .Platform$path.sep)
+
+# The config mode needs a probe of its own. With the three names off PATH every
+# skip_if_no_*() helper skips on binary-absence alone -- they ask Sys.which()
+# directly -- so the suite never reaches a remembered location whatever NOT_CRAN
+# says, and its CONTROL is empty for that reason rather than for a good one.
+# What can be shown is that the route is LIVE: resolve and run one program the
+# way the package does, in the run's own environment, and see the line appear.
+# Without this the mode's zero is unfalsifiable.
+if (mode == "config") {
+  probe_status <- withr::with_envvar(env, {
+    system2(
+      file.path(R.home("bin"), "Rscript"),
+      c("-e", shQuote(paste(
+        'library(tidymedia);',
+        'loc <- tidymedia:::find_ffmpeg();',
+        'if (is.null(loc)) stop("find_ffmpeg() resolved nothing");',
+        'invisible(tidymedia:::run_program(loc, "-version", program = "FFmpeg"))'
+      ))),
+      stdout = FALSE, stderr = FALSE
+    )
+  })
+  probed <- length(readLines(log_file, warn = FALSE))
+  if (probe_status != 0L || probed == 0L) {
+    stop(
+      sprintf(
+        "the config route is not live here (probe exit %d, %d lines logged), ",
+        probe_status, probed
+      ),
+      "so a zero from this mode would mean nothing",
+      call. = FALSE
+    )
+  }
+  cat(sprintf("config-route probe: live, %d line(s) logged\n", probed))
+  writeLines(character(0), log_file)
+}
 
 started <- Sys.time()
 status <- withr::with_envvar(env, {

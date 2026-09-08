@@ -70,8 +70,8 @@ A ROADMAP candidate row holds the profiling work.
       comes from `r-lib/actions/check-r-package@v2`. If it does not, this milestone
       would silently gut CI coverage and stops here for a re-gate.
 - [x] T2: Add `skip_on_cran()` to the five helpers in `helper-skip.R`.
-- [ ] T3: Build the PATH-shim spawn counter and run the suite in both modes.
-- [ ] T4: Run the two escape-route conditions of AC3.
+- [x] T3: Build the PATH-shim spawn counter and run the suite in both modes.
+- [x] T4: Run the two escape-route conditions of AC3.
 - [ ] T5: Record the base-commit skipped-test set, then run `devtools::test()` in
       developer mode and `R CMD check --as-cran` in CRAN mode; record each run's
       `Duration` and tests-step timing against the base commit's 7m47s and
@@ -103,3 +103,6 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: amendment (substantive, Scope In) at a mini gate: three test sites added, found by the measurement rather than by reading. `test-unguarded-argument-front-doors.R:289` hand-rolled `skip_if_not(nzchar(Sys.which("ffmpeg")))` instead of calling the helper, so it never picked up the CRAN skip (2 × `ffmpeg -codecs`); `test-normalize-audio-batch.R:228` and `:239` carry no binary guard by design, and were each spawning one `ffprobe -select_streams a` from the track-count check that runs ahead of the refusal they assert. No acceptance criterion changed.
 - 2026-09-08: mini gate chose mocking `find_ffprobe()` to NULL in the normalize pair over skipping them on CRAN, so both keep running everywhere and their own "needs no ffmpeg binary" comment becomes true; an absent FFprobe is a documented state, `count_audio_streams()` answering NA and the check standing down, so the refusal under test fires from the same guard. Both files pass after the change.
 - 2026-09-08: the log line the stand-ins write now folds newlines and carriage returns in the arguments to spaces — the suite passes metadata values containing both, and the first control run wrote 1230 lines for 1228 spawns. The count is lines, so the error only inflated; the per-program tally was what it broke.
+- 2026-09-08: T3 done. Re-measured against the fixed instrument, same suite, same stand-ins: control (`NOT_CRAN=true`) 1226 spawns — 812 ffmpeg, 390 ffprobe, 24 mediainfo, suite exit 0 in 5.3 min; CRAN condition (`NOT_CRAN` unset) 0 spawns, exit 0 in 3.2 min.
+- 2026-09-08: T4 done, and the first config-mode attempt was a false green worth recording. With `PATH=""` the suite exits 1 before reaching any program, so that mode's CONTROL logged 0 as well — an empty log from an instrument that cannot see. The mode now drops only the directories actually holding one of the three (`/opt/homebrew/bin` here), keeping every other tool, and refuses to report unless a liveness probe first resolves FFmpeg through the remembered location and logs the spawn. With the route proved live (1 line), the suite logged 0 spawns through it under both `NOT_CRAN` states, exit 0.
+- 2026-09-08: AC3's emptied-`PATH` clause reports 0 spawns, and is recorded as UNINSTRUMENTED rather than as evidence: with `PATH` empty no stand-in is reachable either, and the run exits 1. What carries that route is the config run above, which realizes the same escape — a program resolved without consulting `PATH` — with a control that can fail.

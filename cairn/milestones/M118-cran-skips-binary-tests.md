@@ -1,13 +1,13 @@
 # M118: The binary-executing tests skip on CRAN's own check
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — what runs on CRAN's machines is the shipped tarball's behaviour
-- **Branch/PR:** —
+- **Branch/PR:** `m118-cran-skips-binary-tests`
 
 ## Goal
 
@@ -16,9 +16,11 @@ MediaInfo, while every other run of the suite still does.
 
 ## Scope
 
-**In:** `skip_on_cran()` in the three `skip_if_no_*` helpers
-(`tests/testthat/helper-skip.R:4-23`), and the measurement that shows no spawn
-survives it.
+**In:** `skip_on_cran()` in the five `skip_if_no_*` helpers — the three
+name-resolution helpers (`tests/testthat/helper-skip.R:4-23`) and the two
+hardware-probe helpers `skip_if_no_nvenc()` and `skip_if_no_videotoolbox()`,
+whose one-frame probe encode spawns FFmpeg before any of the three is consulted
+— and the measurement that shows no spawn survives it.
 
 **Out:** cutting the pure-R suite to reach a check-time target → declined at this
 plan's gate; the maintainer chose the cheap fix on the measurement below.
@@ -57,13 +59,13 @@ A ROADMAP candidate row holds the profiling work.
 
 ## Tasks
 
-- [ ] T1: Measure, do not trust, the precedent the repo records at
+- [x] T1: Measure, do not trust, the precedent the repo records at
       `tests/testthat/test-runtime-timeout.R:188-190` — that `devtools::check()` and
       the CI workflow both set `NOT_CRAN`, so CI keeps running these tests.
       `.github/workflows/R-CMD-check.yaml` sets no `NOT_CRAN` of its own, so the value
       comes from `r-lib/actions/check-r-package@v2`. If it does not, this milestone
       would silently gut CI coverage and stops here for a re-gate.
-- [ ] T2: Add `skip_on_cran()` to the three helpers at `helper-skip.R:4-23`.
+- [ ] T2: Add `skip_on_cran()` to the five helpers in `helper-skip.R`.
 - [ ] T3: Build the PATH-shim spawn counter and run the suite in both modes.
 - [ ] T4: Run the two escape-route conditions of AC3.
 - [ ] T5: Record the base-commit skipped-test set, then run `devtools::test()` in
@@ -76,3 +78,6 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-07: created by /milestone-plan.
 - 2026-09-07: plan-gate criteria audit ran in FULL mode (declared tier user-facing), two rounds, fresh-context [O] reader. Findings against this milestone: AC1's "skips on that account alone for no other reason" was self-contradictory, since the helpers must keep skipping for an absent binary (repaired); AC2's "every spawn the run actually makes" was unbounded, the PATH shim seeing only bare-name resolution while a remembered absolute location and `helper-program-config.R:43`'s emptied `PATH` both escape it (repaired — AC2 narrowed to `PATH`-resolved spawns, AC3 added for the two escape routes, and a control run added so an empty log is not read as success); AC4's equal skip counts passed a swap (repaired — compares the set of skipped test names); AC3's timing sentence was an unfalsifiable recording act (repaired — moved to T5).
 - 2026-09-07: plan gate chose `skip_on_cran()` in the three helpers over profiling and cutting the pure-R suite, because the measurement showed binary execution is about one minute of the six — `R CMD check` 7m47s with the binaries against a 5m06s binary-absent suite run (2026-09-07) — so the larger cut buys little against real risk to 1,568 test bodies; falsified by a CRAN check-time NOTE that survives this fix.
+- 2026-09-08: T1 measured. The precedent holds but names the wrong source. `devtools::check()` sets it (installed `devtools::check` carries `env_vars = c(NOT_CRAN = "true")`); `r-lib/actions/check-r-package@v2` does not — it calls `rcmdcheck::rcmdcheck()` with no `env`, and `rcmdcheck` 1.4.0's `env` default is `character()`. `setup-r@v2` is what sets it: run 34275894026's predecessor 34261398144 dumps `NOT_CRAN: true` in the job env from the `setup-r-dependencies` step onward, and no test in that run skipped for an "On CRAN" reason though three `skip_on_cran()` sites were in the suite. CI coverage survives this milestone; no re-gate needed.
+- 2026-09-08: amendment (substantive, Scope In) at the question gate: scope widened from three helpers to five. `skip_if_no_nvenc()` and `skip_if_no_videotoolbox()` each spawn a one-frame FFmpeg encode to decide, and check `Sys.which("ffmpeg")` inline rather than calling `skip_if_no_ffmpeg()`, so six tests (`test-nvenc.R:435,446,458`, `test-video-codec.R:480,489`, `test-hardware-backends.R:315`) would keep spawning under AC2. No acceptance criterion changed.
+- 2026-09-08: question gate chose a committed `tools/cran_spawn_check.R` for the AC2/AC3 shim over a throwaway harness, matching the two measurement scripts already in `tools/`; costs one `.Rbuildignore` entry.

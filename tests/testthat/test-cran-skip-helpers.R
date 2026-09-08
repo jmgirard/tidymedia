@@ -6,6 +6,12 @@
 # machine where NOT_CRAN never mattered. testthat::skip() signals a condition of
 # class "skip" carrying "Reason: <message>" (measured 2026-09-08), so the reason
 # string is what separates the two.
+#
+# Two ways of saying "on CRAN" are asked, because testthat has two branches
+# (`testthat:::on_cran()`, 3.3.2): NOT_CRAN="false" goes through as.logical() and
+# means CRAN in any session, while an unset NOT_CRAN means !interactive() -- so
+# from a console an unset variable says NOT on CRAN, and only the "false" form
+# can be asserted unconditionally.
 
 # Run `helper` with NOT_CRAN in the given state and return the skip reason, or
 # NA_character_ when it did not skip. `value = NA` unsets the variable.
@@ -29,7 +35,21 @@ cran_helpers <- list(
   skip_if_no_videotoolbox = skip_if_no_videotoolbox
 )
 
-test_that("each skip helper skips FOR CRAN when NOT_CRAN is unset", {
+test_that("each skip helper skips FOR CRAN when NOT_CRAN says CRAN", {
+  for (name in names(cran_helpers)) {
+    reason <- tm_skip_reason(cran_helpers[[name]], "false")
+    expect_match(
+      reason, "On CRAN",
+      info = paste0(name, " did not skip for CRAN with NOT_CRAN=false")
+    )
+  }
+})
+
+test_that("an unset NOT_CRAN means CRAN in the session CRAN checks in", {
+  # CRAN's own check is never interactive, so this is the condition that ships.
+  # From a console the same call correctly does not skip, which is why this is
+  # asked in its own block rather than folded into the one above.
+  skip_if(interactive(), "an unset NOT_CRAN means CRAN only when non-interactive")
   for (name in names(cran_helpers)) {
     reason <- tm_skip_reason(cran_helpers[[name]], NA)
     expect_match(
@@ -64,11 +84,12 @@ test_that("NOT_CRAN=true lifts the CRAN skip from the three name helpers", {
 test_that("the CRAN skip comes before the binary question", {
   # Both conditions hold at once -- on CRAN, and no binary reachable. The helper
   # must report CRAN, which is only true if skip_on_cran() runs first. PATH = ""
-  # is how helper-program-config.R:43 makes a program unreachable.
+  # is how helper-program-config.R:43 makes a program unreachable. NOT_CRAN is
+  # given as "false" so the ordering question is asked in either session kind.
   withr::with_envvar(c(PATH = ""), {
     for (name in names(cran_helpers)) {
       expect_match(
-        tm_skip_reason(cran_helpers[[name]], NA), "On CRAN",
+        tm_skip_reason(cran_helpers[[name]], "false"), "On CRAN",
         info = paste0(name, " reported the binary, not CRAN, when both applied")
       )
     }

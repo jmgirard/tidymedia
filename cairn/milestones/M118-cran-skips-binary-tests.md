@@ -1,6 +1,6 @@
 # M118: The binary-executing tests skip on CRAN's own check
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -32,9 +32,14 @@ A ROADMAP candidate row holds the profiling work.
 
 ## Acceptance criteria
 
-- [ ] AC1: Each of `skip_if_no_ffmpeg()`, `skip_if_no_ffprobe()` and
-      `skip_if_no_mediainfo()` skips when `NOT_CRAN` is unset, and does not skip on
-      the CRAN account when `NOT_CRAN` is set to `true`.
+- [x] AC1: In a non-interactive R session — the condition `R CMD check` runs the
+      test suite under — on a machine with `ffmpeg`, `ffprobe` and `mediainfo` all
+      on `PATH`, each of `skip_if_no_ffmpeg()`, `skip_if_no_ffprobe()` and
+      `skip_if_no_mediainfo()` skips with the reason `"On CRAN"` when `NOT_CRAN` is
+      unset, and does not skip when `NOT_CRAN` is set to `true`. Verified by
+      `Rscript -e 'testthat::test_local(filter = "cran-skip-helpers")'`; the file
+      sets `NOT_CRAN` itself per assertion, so the runner's own `NOT_CRAN="true"`
+      does not reach it.
 - [x] AC2: With `NOT_CRAN` unset and the three binaries on `PATH`, a full run of the
       suite makes no spawn that resolves one of the three names through `PATH`.
       Measured by shimming the three names onto `PATH` ahead of the real ones with a
@@ -55,7 +60,7 @@ A ROADMAP candidate row holds the profiling work.
 
 ## Coverage
 
-- AC1 → T2
+- AC1 → T2, T6
 - AC2 → T3
 - AC3 → T3, T4
 - AC4 → T5
@@ -76,6 +81,10 @@ A ROADMAP candidate row holds the profiling work.
       developer mode and `R CMD check --as-cran` in CRAN mode; record each run's
       `Duration` and tests-step timing against the base commit's 7m47s and
       `[368s/436s]` (measured 2026-09-07).
+- [x] T6: Guard `test-cran-skip-helpers.R` so it passes from an interactive console
+      as well: assert the CRAN branch with `NOT_CRAN="false"`, which fires in either
+      session kind, and ask the unset-variable question only where the session is
+      the non-interactive one CRAN checks in.
 
 ## Work log
 
@@ -87,6 +96,11 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: question gate chose a committed `tools/cran_spawn_check.R` for the AC2/AC3 shim over a throwaway harness, matching the two measurement scripts already in `tools/`; costs one `.Rbuildignore` entry.
 - 2026-09-08: amendment return: AC1 — "Each of `skip_if_no_ffmpeg()`, `skip_if_no_ffprobe()` and `skip_if_no_mediainfo()` skips when `NOT_CRAN` is unset". Falsified in an interactive session, where `testthat:::on_cran()` reads `!interactive()` on the unset branch and the helpers do not skip (measured at review under `R --interactive`: reason `NA`). AC1 names no procedure and does not bound the session's interactivity, so this is the never-reinterpret rule's unbounded-criterion case, not a defect in the work — `skip_on_cran()` is correct and CRAN's check is never interactive. Status set to in-progress for the amendment alone; the amendment round should also add the interactive guard `test-cran-skip-helpers.R` needs, since it goes red under `devtools::test()` from an interactive console today. First amendment return on this milestone; defect-return count unchanged at 0.
 - 2026-09-08: T2 done. `skip_on_cran()` added first in all five helpers, ahead of the binary question, so the reason reported on CRAN is "On CRAN" whether or not the machine has the binary. `tests/testthat/test-cran-skip-helpers.R` asserts which skip fires, never a bare one; proven able to fail by two planted defects — dropping the call from `skip_if_no_ffprobe()` (red on the missing skip and on the wrong reason) and moving it below the binary check in `skip_if_no_mediainfo()` (red on the ordering test alone). `devtools::test()` clean: FAIL 0, WARN 10, SKIP 18, PASS 13188.
+- 2026-09-08: re-audit: AC1 (full) — six findings on the drafted amendment. Three fixed before the gate: the named verification command did not run (`Rscript tests/testthat/test-cran-skip-helpers.R` has no `library()`/`source()`, so `testthat::test_local(filter=)` is named instead); the no-skip half could be vacuous on a machine missing a binary (the run condition "all three on `PATH`" added, which the sibling criteria already carry); "a reason naming CRAN" was looser than the file's own assertion (now the reason `"On CRAN"`). One declined: citing the planted-defect matrix inside AC1 would bind a property of the harness, which the instrument question forbids — the plants stay in T2's and T6's work-log lines. Two posed at the mini gate (below).
+- 2026-09-08: amendment return: AC1 — "In a non-interactive R session — the condition `R CMD check` runs the test suite under — on a machine with `ffmpeg`, `ffprobe` and `mediainfo` all on `PATH`, each of `skip_if_no_ffmpeg()`, `skip_if_no_ffprobe()` and `skip_if_no_mediainfo()` skips with the reason `"On CRAN"` when `NOT_CRAN` is unset, and does not skip when `NOT_CRAN` is set to `true`. Verified by `Rscript -e 'testthat::test_local(filter = "cran-skip-helpers")'`; the file sets `NOT_CRAN` itself per assertion, so the runner's own `NOT_CRAN="true"` does not reach it." The interactive axis the review's F1 falsified is now excluded by the criterion's own domain rather than reinterpreted. Accepted unchanged at the mini gate, so the wording spends no re-entry.
+- 2026-09-08: mini gate held AC1 at the three name-resolution helpers rather than widening it to all five, and closed the interactive failure as work (T6) rather than as a sixth criterion — the criteria set neither grows nor loosens on an amendment round. The two hardware-probe helpers keep their coverage through AC2's zero-spawn count and the test file, which asserts all five.
+- 2026-09-08: T6 done, and AC1 re-verified. `test-cran-skip-helpers.R` now asks the CRAN branch twice: `NOT_CRAN="false"`, which reaches `testthat:::on_cran()`'s `as.logical()` branch and so fires in either session kind, asserted unconditionally for all five helpers; and `NOT_CRAN` unset, which means CRAN only where `interactive()` is `FALSE`, in its own block behind `skip_if(interactive())`. The ordering block moved to `"false"` for the same reason. `Rscript -e 'testthat::test_local(filter = "cran-skip-helpers")'`: FAIL 0, SKIP 0, PASS 18. The same file from `R --interactive`: FAIL 0, SKIP 1, PASS 13 — ten failures before this task, measured 2026-09-08. Proven able to fail against the guarded file by re-planting T2's two defects: dropping `skip_on_cran()` from `skip_if_no_ffprobe()` (3 failures non-interactive, 2 interactive) and moving it below the binary check in `skip_if_no_mediainfo()` (1 failure interactive, which is the block the old file could not have caught).
+- 2026-09-08: `devtools::test()` clean after the amendment round — FAIL 0, WARN 10, SKIP 18, PASS 13193, five passes up on T5's 13188 and the same skip count. Status set back to review.
 
 ## Decisions
 

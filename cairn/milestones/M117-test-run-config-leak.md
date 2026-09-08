@@ -80,6 +80,7 @@ milestone is scoped to the two config directories.
 - 2026-09-08: gate chose to leave the two leftover files on the maintainer's machine as Scope already directed; both were restored byte-identical with their original mtimes after T1's clean-state measurement.
 - 2026-09-08: T5 on the finished tree. `devtools::test()`: FAIL 0 | WARN 10 | SKIP 18 | PASS 13175. `devtools::check()`: Status OK, 0 errors, 0 warnings, 0 notes. Tasks all checked; status to review.
 - 2026-09-08: step-7 approval: PR #121 approved for merge, after the eight fix-now findings landed and all four criteria were re-measured against the shipped harness.
+- 2026-09-08: CI wait hit the harness ceiling with 2 of 8 legs green (macos-latest release 7m36s, pkgdown 2m16s) and 6 pending; the moved watcher was stopped rather than left armed, and the merge was not made. PR #121 is ready for review, not draft.
 
 ## Review
 

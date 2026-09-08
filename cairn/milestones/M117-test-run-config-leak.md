@@ -7,7 +7,7 @@
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — the shipped test suite's filesystem behaviour is what CRAN's machines run
-- **Branch/PR:** `m117-test-run-config-leak`
+- **Branch/PR:** `m117-test-run-config-leak` — https://github.com/jmgirard/tidymedia/pull/121
 
 ## Goal
 
@@ -28,16 +28,16 @@ milestone is scoped to the two config directories.
 
 ## Acceptance criteria
 
-- [ ] AC1: On a machine where both `tools::R_user_dir("tidymedia", "config")` and
+- [x] AC1: On a machine where both `tools::R_user_dir("tidymedia", "config")` and
       `rappdirs::user_config_dir("tidymedia", "R")` are absent or empty before the
       run, `devtools::test()` leaves both absent or empty afterwards.
-- [ ] AC2: The same holds for `R CMD check` on the same machine.
-- [ ] AC3: The before/after comparison is shown able to fail in both forms it must
+- [x] AC2: The same holds for `R CMD check` on the same machine.
+- [x] AC3: The before/after comparison is shown able to fail in both forms it must
       cover: a planted write into each of the two directories from a test body makes
       AC1's comparison report a difference, and a planted write from outside any test
       body — during the check's build or install phase, which is where AC2's leaks
       would come from — makes AC2's comparison report a difference.
-- [ ] AC4: `devtools::check()` reports 0 errors and 0 warnings, and the `verify` slot
+- [x] AC4: `devtools::check()` reports 0 errors and 0 warnings, and the `verify` slot
       of `cairn/PROFILE.md` is clean.
 
 ## Coverage
@@ -79,3 +79,119 @@ milestone is scoped to the two config directories.
 - 2026-09-08: gate chose a hand-run `tools/` script over a CI leg, because the leak it guards against arose inside a half-finished working state rather than on a pushed branch, and a leg would cost about six minutes on every push; falsified by a leak that reaches a pushed branch. The CI question is not deferred to a backlog row -- it was settled, not postponed.
 - 2026-09-08: gate chose to leave the two leftover files on the maintainer's machine as Scope already directed; both were restored byte-identical with their original mtimes after T1's clean-state measurement.
 - 2026-09-08: T5 on the finished tree. `devtools::test()`: FAIL 0 | WARN 10 | SKIP 18 | PASS 13175. `devtools::check()`: Status OK, 0 errors, 0 warnings, 0 notes. Tasks all checked; status to review.
+
+## Review
+
+Evidence gathered 2026-09-08 on the branch at `b94650a`..`23f01c7`, PR #121.
+Preconditions: both real config directories were moved aside into the session
+scratchpad before the runs below (`current` held `ffmpeg_location.txt`,
+md5 `668376533c6a0169d1489b53cd897194`; `legacy` held `mediainfo_location.txt`,
+md5 `bce5cbc9a2639c0e6db112ec4710015b`), so each run started from the
+absent-or-empty state AC1 and AC2 name. Both are restored afterwards.
+
+- AC1 — PASS. `Rscript tools/config_leak_check.R -- Rscript -e 'devtools::test()'`
+  exited 0. Watched `/Users/jmgirard/Library/Preferences/org.R-project.R/R/tidymedia`
+  and `/Users/jmgirard/Library/Application Support/tidymedia`: each 0 files before
+  and 0 files after, "no difference" on both, and neither directory was created.
+  The suite itself: FAIL 0 | WARN 10 | SKIP 18 | PASS 13175.
+- AC2 — PASS. `Rscript tools/config_leak_check.R -- Rscript -e 'devtools::check()'`
+  exited 0 from the same clean state. Both watched directories: 0 files before,
+  0 files after, "no difference" on both. `R CMD check` itself: Status OK,
+  0 errors, 0 warnings, 0 notes, 5m 32.6s (tidymedia 0.1.0.9000).
+- AC3 — PASS, both forms. Test-body form:
+  `--plant=test-body --expect-difference -- Rscript -e 'devtools::test()'` exited 0,
+  reporting `+ added: tidymedia_leak_probe.txt` in both directories (0 files before,
+  1 after in each); the suite ran the planted test (PASS 13176 against AC1's 13175).
+  Build form: `--plant=build --expect-difference -- Rscript -e 'devtools::check(document = FALSE)'`
+  exited 0, the plant living in `R/zzz-config-leak-probe.R` — top-level package code
+  executed at the check's install phase, never inside a test — and reporting the same
+  `+ added:` line in both directories. Both plant files were removed on exit and both
+  probe files cleaned up: `git status` clean of them and both directories absent again
+  before the next run.
+- AC4 — PASS. `devtools::check()` (AC2's run): Status OK, 0 errors, 0 warnings,
+  0 notes. `verify` slot clean: that run's `document()` step left no diff
+  (`git status` showed only this milestone file), and `devtools::test()` was
+  FAIL 0 | WARN 10 | SKIP 18 | PASS 13175.
+
+### Consistency gate
+
+`cairn_validate.py` exit 0, all 16 checks PASS and all 7 advisories OK — the
+`release window` advisory did not fire. No `DESIGN.md` principle changed
+(`Principles touched: —`), so `cairn_impact.py` was not run.
+
+`r-package` profile `consistency-gate` slot: `devtools::check()`'s `document()`
+step left no diff; the diff hand-edits no generated file (`NAMESPACE`, `man/`,
+`data/` untouched); README.md and README.Rmd are in sync (both last written by
+`0cf121d`, and the diff touches neither); `pkgdown::check_pkgdown()` reports
+"No problems found"; no `NEWS.md` entry is owed, because `^tools$` is
+`.Rbuildignore`d and the milestone changes no shipped package behaviour;
+`^tools$` already covers the one new file; full `devtools::check()` clean.
+
+### Independent review
+
+Three fresh-context lenses, none having seen the implementation, each on a
+distinct evidence base. Executable surface is touched, so the full fan-out ran.
+
+**[S] blame-history — no findings.** It verified rather than refuted: `git show
+425c424` confirms M097 moved `test-nvenc-memo.R` off the `rappdirs` mock in the
+same commit that moved the package's write target, so the leak window closed
+there; `git log --all -S blockbin` finds the string only in M117's own commits,
+corroborating the ad-hoc-session account; the `set_program()` calls in
+`test-blame-frame-table.R` all refuse above the write; no recorded decision
+requires CI enforcement of config-directory hygiene, so the hand-run choice
+reverses nothing.
+
+**[S] prior-review record — two weak echoes, no regression.** The probe
+`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1` returned `[]`, so
+the per-PR thread walk was skipped; the archived `## Review` sections were the
+evidence base. It found the diff *satisfying* past findings rather than
+regressing them (M079/M112's positive-control demands, M113/M114-115's
+`XDG_CONFIG_HOME` lesson, M104's tilde-expansion trap). Its two candidates:
+`list.files(recursive = TRUE)` descends through a directory symlink (M103's
+primitive, but the harm M103 named was destructive cleanup, which this script
+never does off that enumeration); and `tm_watched_dirs()` deriving the watched
+paths from the same library calls under discussion (M097's F1 pattern, which on
+inspection does not reproduce — the script is establishing where the package
+would write, not asserting those functions are correct).
+
+**[O] diff-bug — ten findings**, ranked as the lens ranked them. All are in
+`tools/config_leak_check.R`; dispositions recorded at the gate below.
+
+1. A command that never ran still reports PASS (`:216-226`). `system2()`'s status
+   is printed but never gates the verdict, so a typo'd command or a missing
+   package gives 127, no directory changed, and `PASS`.
+2. A leak that rewrites an existing file with identical content is invisible
+   (`:74-81, :96`). State is name + md5 only, so on a populated machine a write
+   of the same bytes reads as no difference.
+3. The plant is not removed on interrupt, contradicting the header's own claim
+   (`:38-39` vs `:205-208`). `on.exit()` does not run on SIGINT/SIGTERM, so a
+   Ctrl-C'd `--plant=build` leaves `R/zzz-config-leak-probe.R` in the source tree
+   and the probe in both real directories.
+4. Plant cleanup leaves the directories it created above the leaf (`:132`,
+   `:164-174`). `dir.create(recursive = TRUE)` can make several levels;
+   `tm_remove_probe()` unlinks only the leaf.
+5. The watched directories are computed under `--vanilla` (`:43-58`), which
+   ignores `~/.Renviron`, while the measured run reads it — so a machine that
+   sets `R_USER_CONFIG_DIR` there would have the harness watch the wrong pair.
+6. Option parsing swallows options placed after `--` (`:183-197`), which combined
+   with finding 1 exits PASS.
+7. Plant paths are relative with no package-root check (`:139-142`, `:144-159`),
+   so a run from the wrong directory writes into an unrelated project.
+8. An `md5sum()` returning `NA` on both sides reads as unchanged (`:80`, `:96`).
+9. The file carries a `#!/usr/bin/env Rscript` shebang but is committed `100644`,
+   unlike two of its four siblings.
+10. Dead first assignment at `:147`.
+
+The lens also confirmed: `^tools$` covers the new file; T2's claim that no
+`set_program()` call site escapes the redirect is accurate (every one passes a
+non-string or a pinned-absent path and refuses above the write); clearing
+`R_USER_CONFIG_DIR` in `tm_watched_dirs()` is load-bearing, not belt-and-braces;
+the `%in%` fix is correct; and the two-plant split does reach the two origins
+AC3 names, since `R/zzz-*.R` executes at install where no test-body plant runs.
+
+**Return floor.** No finding demonstrates an acceptance criterion failing. AC1
+and AC2 were measured from the absent-or-empty precondition the criteria name,
+and both runs demonstrably executed (exit status 0 with the suite's own
+`PASS 13175` and `R CMD check`'s `Status: OK` in the logs), so finding 1's
+never-ran path was not on the evidence path. AC3's controls both reported the
+difference. Status stays `review`.

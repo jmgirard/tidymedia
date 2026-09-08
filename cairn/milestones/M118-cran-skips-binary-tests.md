@@ -1,6 +1,6 @@
 # M118: The binary-executing tests skip on CRAN's own check
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -109,3 +109,4 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: T5 done. AC4: the skipped-test sets are identical, base `ea433d5` and branch, 18 skipped tests each under `NOT_CRAN=true` with the binaries on `PATH`; the branch runs 1579 tests to the base's 1576, the three added by `test-cran-skip-helpers.R`. AC5: `R CMD check --as-cran` with `NOT_CRAN` unset reports 0 errors, 0 warnings, 1 NOTE, and the NOTE names only the new submission and the version's large components.
 - 2026-09-08: timing. The check went 7m47s → 4m33.2s and its tests step `[368s/436s]` → `[223s/230s]`, 145 s off the tests step. The plan's gate expected about one minute, reasoning from a 5m06s binaries-hidden `devtools::test()`; skipping the execution tests also drops their fixture building and their waiting, not only FFmpeg's own time.
 - 2026-09-08: no `NEWS.md` entry. The change is confined to the test suite and the measurement script; no exported behaviour, message or default moves, so there is nothing user-visible to record.
+- 2026-09-08: all tasks done, `devtools::test()` clean — FAIL 0, WARN 10, SKIP 18, PASS 13188, the same figures as at T2. Status set to review.

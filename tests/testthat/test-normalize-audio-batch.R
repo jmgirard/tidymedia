@@ -229,6 +229,14 @@ test_that("normalize_audio_batch(two_pass) rejects a fractional scalar channels 
   f <- make_input()
   # A bad scalar channels must fail up front (before Phase 1 wastes an analysis
   # pass per row), so this needs no ffmpeg binary.
+  #
+  # It needed no FFPROBE either, and was spawning one anyway: the track-count
+  # check runs ahead of the refusal, so this test made one `ffprobe
+  # -select_streams a` call before asserting anything (measured 2026-09-08).
+  # An absent FFprobe is a documented state -- count_audio_streams() answers NA
+  # and the check stands down silently -- so the refusal under test fires from
+  # the same guard, and the comment above is now true rather than nearly so.
+  local_mocked_bindings(find_ffprobe = function() NULL)
   jobs <- tibble::tibble(input = c(f, f), output = c("a.mp4", "b.mp4"))
   expect_error(
     normalize_audio_batch(jobs, two_pass = TRUE, channels = 1.5),
@@ -238,6 +246,8 @@ test_that("normalize_audio_batch(two_pass) rejects a fractional scalar channels 
 
 test_that("normalize_audio_batch(two_pass) rejects a fractional channels column before running FFmpeg", {
   f <- make_input()
+  # The sibling above carries the reasoning for this mock.
+  local_mocked_bindings(find_ffprobe = function() NULL)
   jobs <- tibble::tibble(
     input = c(f, f), output = c("a.mp4", "b.mp4"), channels = c(1, 1.5)
   )

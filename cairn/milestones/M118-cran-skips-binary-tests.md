@@ -20,7 +20,11 @@ MediaInfo, while every other run of the suite still does.
 name-resolution helpers (`tests/testthat/helper-skip.R:4-23`) and the two
 hardware-probe helpers `skip_if_no_nvenc()` and `skip_if_no_videotoolbox()`,
 whose one-frame probe encode spawns FFmpeg before any of the three is consulted
-— and the measurement that shows no spawn survives it.
+— plus the three test sites the measurement found reaching a binary outside any
+helper (`test-unguarded-argument-front-doors.R:289`, which hand-rolls the
+helper's own guard, and `test-normalize-audio-batch.R:228` and `:239`, whose
+incidental track-count check spawns FFprobe), and the measurement that shows no
+spawn survives it.
 
 **Out:** cutting the pure-R suite to reach a check-time target → declined at this
 plan's gate; the maintainer chose the cheap fix on the measurement below.
@@ -95,3 +99,7 @@ A ROADMAP candidate row holds the profiling work.
   runner rather than the change. `test_check()` sets only
   `TESTTHAT_IS_CHECKING`, which is what `tests/testthat.R` reaches under
   `R CMD check`.
+- 2026-09-08: T3 first measurement, path mode. Control (`NOT_CRAN=true`): 1228 spawns — 812 ffmpeg, 392 ffprobe, 24 mediainfo — suite exit 0 in 5.7 min, so the stand-ins are visible. CRAN condition (`NOT_CRAN` unset): 4 spawns, not zero. Located by a per-file sweep over all 91 test files, then by tracing `base::system2()` to name the calling test.
+- 2026-09-08: amendment (substantive, Scope In) at a mini gate: three test sites added, found by the measurement rather than by reading. `test-unguarded-argument-front-doors.R:289` hand-rolled `skip_if_not(nzchar(Sys.which("ffmpeg")))` instead of calling the helper, so it never picked up the CRAN skip (2 × `ffmpeg -codecs`); `test-normalize-audio-batch.R:228` and `:239` carry no binary guard by design, and were each spawning one `ffprobe -select_streams a` from the track-count check that runs ahead of the refusal they assert. No acceptance criterion changed.
+- 2026-09-08: mini gate chose mocking `find_ffprobe()` to NULL in the normalize pair over skipping them on CRAN, so both keep running everywhere and their own "needs no ffmpeg binary" comment becomes true; an absent FFprobe is a documented state, `count_audio_streams()` answering NA and the check standing down, so the refusal under test fires from the same guard. Both files pass after the change.
+- 2026-09-08: the log line the stand-ins write now folds newlines and carriage returns in the arguments to spaces — the suite passes metadata values containing both, and the first control run wrote 1230 lines for 1228 spawns. The count is lines, so the error only inflated; the per-program tally was what it broke.

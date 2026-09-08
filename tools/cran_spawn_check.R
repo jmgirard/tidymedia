@@ -72,9 +72,17 @@ for (p in programs) {
   writeLines(
     c(
       "#!/bin/sh",
-      # $$ and the argument list, so a line identifies WHICH program a spawn
-      # asked for rather than only that one happened.
-      sprintf('printf \'%%s\\t%%s\\n\' "%s" "$*" >> "%s"', p, log_file),
+      # The program name and its argument list, so a line identifies WHICH
+      # program a spawn asked for rather than only that one happened. Newlines
+      # and carriage returns in the arguments are folded to spaces first: the
+      # suite passes metadata values containing both, and without this one
+      # spawn writes several lines (measured 2026-09-08 -- 1230 lines for 1228
+      # spawns). The count is lines, so the error only ever inflates, but a
+      # per-program tally splits across the break and reads wrong.
+      sprintf(
+        'printf \'%%s\\t%%s\\n\' "%s" "$(printf \'%%s\' "$*" | tr \'\\n\\r\' \'  \')" >> "%s"',
+        p, log_file
+      ),
       sprintf('exec "%s" "$@"', real[[p]])
     ),
     path

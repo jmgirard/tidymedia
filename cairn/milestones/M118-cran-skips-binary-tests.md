@@ -72,7 +72,7 @@ A ROADMAP candidate row holds the profiling work.
 - [x] T2: Add `skip_on_cran()` to the five helpers in `helper-skip.R`.
 - [x] T3: Build the PATH-shim spawn counter and run the suite in both modes.
 - [x] T4: Run the two escape-route conditions of AC3.
-- [ ] T5: Record the base-commit skipped-test set, then run `devtools::test()` in
+- [x] T5: Record the base-commit skipped-test set, then run `devtools::test()` in
       developer mode and `R CMD check --as-cran` in CRAN mode; record each run's
       `Duration` and tests-step timing against the base commit's 7m47s and
       `[368s/436s]` (measured 2026-09-07).
@@ -106,3 +106,6 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: T3 done. Re-measured against the fixed instrument, same suite, same stand-ins: control (`NOT_CRAN=true`) 1226 spawns — 812 ffmpeg, 390 ffprobe, 24 mediainfo, suite exit 0 in 5.3 min; CRAN condition (`NOT_CRAN` unset) 0 spawns, exit 0 in 3.2 min.
 - 2026-09-08: T4 done, and the first config-mode attempt was a false green worth recording. With `PATH=""` the suite exits 1 before reaching any program, so that mode's CONTROL logged 0 as well — an empty log from an instrument that cannot see. The mode now drops only the directories actually holding one of the three (`/opt/homebrew/bin` here), keeping every other tool, and refuses to report unless a liveness probe first resolves FFmpeg through the remembered location and logs the spawn. With the route proved live (1 line), the suite logged 0 spawns through it under both `NOT_CRAN` states, exit 0.
 - 2026-09-08: AC3's emptied-`PATH` clause reports 0 spawns, and is recorded as UNINSTRUMENTED rather than as evidence: with `PATH` empty no stand-in is reachable either, and the run exits 1. What carries that route is the config run above, which realizes the same escape — a program resolved without consulting `PATH` — with a control that can fail.
+- 2026-09-08: T5 done. AC4: the skipped-test sets are identical, base `ea433d5` and branch, 18 skipped tests each under `NOT_CRAN=true` with the binaries on `PATH`; the branch runs 1579 tests to the base's 1576, the three added by `test-cran-skip-helpers.R`. AC5: `R CMD check --as-cran` with `NOT_CRAN` unset reports 0 errors, 0 warnings, 1 NOTE, and the NOTE names only the new submission and the version's large components.
+- 2026-09-08: timing. The check went 7m47s → 4m33.2s and its tests step `[368s/436s]` → `[223s/230s]`, 145 s off the tests step. The plan's gate expected about one minute, reasoning from a 5m06s binaries-hidden `devtools::test()`; skipping the execution tests also drops their fixture building and their waiting, not only FFmpeg's own time.
+- 2026-09-08: no `NEWS.md` entry. The change is confined to the test suite and the measurement script; no exported behaviour, message or default moves, so there is nothing user-visible to record.

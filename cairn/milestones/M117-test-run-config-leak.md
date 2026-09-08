@@ -82,12 +82,15 @@ milestone is scoped to the two config directories.
 
 ## Review
 
-Evidence gathered 2026-09-08 on the branch at `b94650a`..`23f01c7`, PR #121.
-Preconditions: both real config directories were moved aside into the session
-scratchpad before the runs below (`current` held `ffmpeg_location.txt`,
-md5 `668376533c6a0169d1489b53cd897194`; `legacy` held `mediainfo_location.txt`,
-md5 `bce5cbc9a2639c0e6db112ec4710015b`), so each run started from the
-absent-or-empty state AC1 and AC2 name. Both are restored afterwards.
+Evidence gathered 2026-09-08, PR #121. Every figure below is from a run of the
+harness **as it ships** — the fix-now repairs from the gate landed first, and
+all four measurements were then re-run, so nothing here describes superseded
+code. Preconditions: both real config directories were moved aside into the
+session scratchpad before each set of runs (`current` held
+`ffmpeg_location.txt`, md5 `668376533c6a0169d1489b53cd897194`; `legacy` held
+`mediainfo_location.txt`, md5 `bce5cbc9a2639c0e6db112ec4710015b`), so each run
+started from the absent-or-empty state AC1 and AC2 name, and both were restored
+afterwards with those md5s and their original mtimes re-verified.
 
 - AC1 — PASS. `Rscript tools/config_leak_check.R -- Rscript -e 'devtools::test()'`
   exited 0. Watched `/Users/jmgirard/Library/Preferences/org.R-project.R/R/tidymedia`
@@ -97,7 +100,7 @@ absent-or-empty state AC1 and AC2 name. Both are restored afterwards.
 - AC2 — PASS. `Rscript tools/config_leak_check.R -- Rscript -e 'devtools::check()'`
   exited 0 from the same clean state. Both watched directories: 0 files before,
   0 files after, "no difference" on both. `R CMD check` itself: Status OK,
-  0 errors, 0 warnings, 0 notes, 5m 32.6s (tidymedia 0.1.0.9000).
+  0 errors, 0 warnings, 0 notes, 5m 32.5s (tidymedia 0.1.0.9000).
 - AC3 — PASS, both forms. Test-body form:
   `--plant=test-body --expect-difference -- Rscript -e 'devtools::test()'` exited 0,
   reporting `+ added: tidymedia_leak_probe.txt` in both directories (0 files before,
@@ -109,9 +112,8 @@ absent-or-empty state AC1 and AC2 name. Both are restored afterwards.
   probe files cleaned up: `git status` clean of them and both directories absent again
   before the next run.
 - AC4 — PASS. `devtools::check()` (AC2's run): Status OK, 0 errors, 0 warnings,
-  0 notes. `verify` slot clean: that run's `document()` step left no diff
-  (`git status` showed only this milestone file), and `devtools::test()` was
-  FAIL 0 | WARN 10 | SKIP 18 | PASS 13175.
+  0 notes. `verify` slot clean: that run's `document()` step left no diff, and
+  `devtools::test()` was FAIL 0 | WARN 10 | SKIP 18 | PASS 13175.
 
 ### Consistency gate
 
@@ -143,44 +145,71 @@ reverses nothing.
 
 **[S] prior-review record — two weak echoes, no regression.** The probe
 `gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1` returned `[]`, so
-the per-PR thread walk was skipped; the archived `## Review` sections were the
-evidence base. It found the diff *satisfying* past findings rather than
+the per-PR thread walk was skipped and the archived `## Review` sections were
+the evidence base. It found the diff *satisfying* past findings rather than
 regressing them (M079/M112's positive-control demands, M113/M114-115's
-`XDG_CONFIG_HOME` lesson, M104's tilde-expansion trap). Its two candidates:
-`list.files(recursive = TRUE)` descends through a directory symlink (M103's
-primitive, but the harm M103 named was destructive cleanup, which this script
-never does off that enumeration); and `tm_watched_dirs()` deriving the watched
-paths from the same library calls under discussion (M097's F1 pattern, which on
-inspection does not reproduce — the script is establishing where the package
-would write, not asserting those functions are correct).
+`XDG_CONFIG_HOME` lesson, M104's tilde-expansion trap). Its two candidates and
+their dispositions: `list.files(recursive = TRUE)` descends through a directory
+symlink (M103's primitive) — **rejected**, out-of-scope taxonomy: the harm M103
+named was destructive cleanup off that enumeration, which this script does not
+do (`tm_remove_probe()` targets a fixed filename); and `tm_watched_dirs()`
+deriving the watched paths from the same library calls under discussion (M097's
+F1 pattern) — **rejected**, the lens itself confirmed it does not reproduce, the
+script establishing where the package would write rather than asserting those
+functions correct.
 
-**[O] diff-bug — ten findings**, ranked as the lens ranked them. All are in
-`tools/config_leak_check.R`; dispositions recorded at the gate below.
+**[O] diff-bug — ten findings**, ranked as the lens ranked them, all in
+`tools/config_leak_check.R`. Eight were fixed on the branch at the maintainer's
+direction at the gate; one was routed to a candidate row; one was defused by
+another's fix. Every fix is below, with what shows it works.
 
-1. A command that never ran still reports PASS (`:216-226`). `system2()`'s status
-   is printed but never gates the verdict, so a typo'd command or a missing
-   package gives 127, no directory changed, and `PASS`.
-2. A leak that rewrites an existing file with identical content is invisible
-   (`:74-81, :96`). State is name + md5 only, so on a populated machine a write
-   of the same bytes reads as no difference.
-3. The plant is not removed on interrupt, contradicting the header's own claim
-   (`:38-39` vs `:205-208`). `on.exit()` does not run on SIGINT/SIGTERM, so a
-   Ctrl-C'd `--plant=build` leaves `R/zzz-config-leak-probe.R` in the source tree
-   and the probe in both real directories.
-4. Plant cleanup leaves the directories it created above the leaf (`:132`,
-   `:164-174`). `dir.create(recursive = TRUE)` can make several levels;
-   `tm_remove_probe()` unlinks only the leaf.
-5. The watched directories are computed under `--vanilla` (`:43-58`), which
-   ignores `~/.Renviron`, while the measured run reads it — so a machine that
-   sets `R_USER_CONFIG_DIR` there would have the harness watch the wrong pair.
-6. Option parsing swallows options placed after `--` (`:183-197`), which combined
-   with finding 1 exits PASS.
-7. Plant paths are relative with no package-root check (`:139-142`, `:144-159`),
-   so a run from the wrong directory writes into an unrelated project.
-8. An `md5sum()` returning `NA` on both sides reads as unchanged (`:80`, `:96`).
-9. The file carries a `#!/usr/bin/env Rscript` shebang but is committed `100644`,
-   unlike two of its four siblings.
-10. Dead first assignment at `:147`.
+1. **Fixed.** A command that never ran still reported PASS: `system2()`'s status
+   was printed but never gated the verdict, so a typo'd command gave 127, no
+   directory changed, and the script said PASS. Two guards now: `Sys.which()`
+   refuses an unfindable command before anything is planted, and statuses 126
+   and 127 fail the verdict whatever `--expect-difference` asked for. Shown to
+   fire: `-- Rscritp -e 'devtools::test()'` exits 1 with "command not found on
+   PATH: Rscritp".
+2. **Fixed.** A leak that rewrote an existing file with identical content was
+   invisible, state being name + md5 only — on a populated machine the likeliest
+   leak of all, and precisely the one this repo has physical evidence of. State
+   now records md5, size and mtime. Shown to fire: writing
+   `/opt/homebrew/bin/ffmpeg` twice into a probe directory leaves the md5
+   identical on both sides and now reports `~ changed: ffmpeg_location.txt`.
+3. **Fixed.** The header claimed the plant is removed "whether the run succeeds,
+   fails, or is interrupted", which `on.exit()` does not deliver for every
+   signal. Both halves of the replacement text were measured rather than
+   recalled: a probe script under `Rscript` printed its `on.exit` message when
+   sent SIGINT and printed nothing when sent SIGTERM. The comment now names
+   Ctrl-C as covered, SIGTERM/SIGKILL as not, and lists the five paths to delete
+   by hand after a kill.
+4. **Fixed.** Plant cleanup unlinked only the leaf, leaving any intermediate
+   levels `dir.create(recursive = TRUE)` had made. It now walks back up, deleting
+   each empty level and stopping at the first that existed before the run.
+   Shown to work in AC3's control 1: `.../org.R-project.R/R/tidymedia` was
+   removed and `.../org.R-project.R/R` was kept, its other contents intact.
+5. **Routed to a candidate row.** The watched directories are computed under
+   `--vanilla`, which ignores `~/.Renviron`, while the measured run reads it — so
+   on a machine setting `R_USER_CONFIG_DIR` there the harness would watch the
+   wrong pair. Not fixed here: the repair changes what "the watched directories"
+   means, which is a design question rather than a defect in this instrument.
+   The search-first sweep found no existing candidate row covering it, so it
+   gets a new one — written in the post-merge hygiene commit, where pruning
+   M114's terminal row under the three-row cap pays for the line ROADMAP needs
+   to stay under 60.
+6. **Defused by fix 1.** Options placed after `--` are swallowed and become the
+   command name; the `Sys.which()` guard now makes that a loud refusal instead of
+   a silent PASS.
+7. **Fixed.** Plant paths are relative with no package-root check, so a run from
+   the wrong directory would write into an unrelated project. It now refuses
+   unless `DESCRIPTION` is present and names `tidymedia`. Shown to fire: run from
+   `/tmp` it exits 1 with "no DESCRIPTION here".
+8. **Fixed.** An `md5sum()` of `NA` on both sides read as unchanged, since
+   `identical(NA, NA)` is `TRUE`. An unreadable file's digest is now the literal
+   `unreadable`, and the mtime in the same state string moves on any rewrite.
+9. **Fixed.** The file carried a shebang but was committed `100644`; now `100755`,
+   matching two of its four siblings.
+10. **Fixed.** The dead first assignment in `tm_write_plant()` is gone.
 
 The lens also confirmed: `^tools$` covers the new file; T2's claim that no
 `set_program()` call site escapes the redirect is accurate (every one passes a
@@ -189,9 +218,13 @@ non-string or a pinned-absent path and refuses above the write); clearing
 the `%in%` fix is correct; and the two-plant split does reach the two origins
 AC3 names, since `R/zzz-*.R` executes at install where no test-body plant runs.
 
-**Return floor.** No finding demonstrates an acceptance criterion failing. AC1
+**Return floor.** No finding demonstrated an acceptance criterion failing. AC1
 and AC2 were measured from the absent-or-empty precondition the criteria name,
 and both runs demonstrably executed (exit status 0 with the suite's own
 `PASS 13175` and `R CMD check`'s `Status: OK` in the logs), so finding 1's
-never-ran path was not on the evidence path. AC3's controls both reported the
-difference. Status stays `review`.
+never-ran path was never on the evidence path. AC3's controls both reported the
+difference. Status stayed `review` throughout; no defect return was taken.
+
+**PR conversation.** No reviews and no unresolved threads on PR #121.
+- conversation: codecov[bot] PR #121 — noted; coverage unchanged at 98.43%,
+  requests nothing (author type `Bot`, so the merge chip was unaffected).

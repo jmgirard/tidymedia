@@ -82,3 +82,16 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: amendment (substantive, Scope In) at the question gate: scope widened from three helpers to five. `skip_if_no_nvenc()` and `skip_if_no_videotoolbox()` each spawn a one-frame FFmpeg encode to decide, and check `Sys.which("ffmpeg")` inline rather than calling `skip_if_no_ffmpeg()`, so six tests (`test-nvenc.R:435,446,458`, `test-video-codec.R:480,489`, `test-hardware-backends.R:315`) would keep spawning under AC2. No acceptance criterion changed.
 - 2026-09-08: question gate chose a committed `tools/cran_spawn_check.R` for the AC2/AC3 shim over a throwaway harness, matching the two measurement scripts already in `tools/`; costs one `.Rbuildignore` entry.
 - 2026-09-08: T2 done. `skip_on_cran()` added first in all five helpers, ahead of the binary question, so the reason reported on CRAN is "On CRAN" whether or not the machine has the binary. `tests/testthat/test-cran-skip-helpers.R` asserts which skip fires, never a bare one; proven able to fail by two planted defects — dropping the call from `skip_if_no_ffprobe()` (red on the missing skip and on the wrong reason) and moving it below the binary check in `skip_if_no_mediainfo()` (red on the ordering test alone). `devtools::test()` clean: FAIL 0, WARN 10, SKIP 18, PASS 13188.
+
+## Decisions
+
+- 2026-09-08: the spawn measurement runs the suite through `R CMD INSTALL` plus
+  `test_check()` from `tests/`, not through `devtools::test()` or
+  `testthat::test_local()`. Both of those force `NOT_CRAN="true"` inside the run
+  — `devtools:::r_env_vars()` carries it, and `test_local()` sets it too
+  (measured 2026-09-08: a probe test printed `Sys.getenv("NOT_CRAN")` as `true`
+  with the variable unset in the calling process). Under either runner
+  `skip_on_cran()` can never fire, so an empty spawn log would have measured the
+  runner rather than the change. `test_check()` sets only
+  `TESTTHAT_IS_CHECKING`, which is what `tests/testthat.R` reaches under
+  `R CMD check`.

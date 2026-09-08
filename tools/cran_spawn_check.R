@@ -13,7 +13,15 @@
 # (tests/testthat/helper-program-config.R:43).
 #
 #   Rscript tools/cran_spawn_check.R --mode=<path|emptypath|config> \
-#                                    [--not-cran] [--self-test-only]
+#                                    [--not-cran] [--self-test-only] [--lib=DIR]
+#
+# The suite is run the way `R CMD check` runs it -- the package installed into a
+# temporary library, then `test_check()` from `tests/`. NEITHER devtools::test()
+# NOR testthat::test_local() can be used here: both force NOT_CRAN="true" inside
+# the run (devtools:::r_env_vars() carries it; test_local() sets it too --
+# measured 2026-09-08 by a probe test printing Sys.getenv("NOT_CRAN") as "true"
+# with the variable unset in the calling process). Under either runner
+# skip_on_cran() can never fire, so an empty spawn log would mean nothing.
 #
 #   path       stand-ins prepended to PATH, the real binaries still behind them.
 #              The ordinary condition: bare-name resolution goes through them.
@@ -124,13 +132,37 @@ cat(sprintf("mode=%s not_cran=%s instrumented=%s\n",
             mode, if (not_cran) "true" else "unset", instrumented))
 cat(sprintf("log=%s\n", log_file))
 
+# Install into a temporary library, so `test_check()` below loads the package
+# the way a checked tarball's tests do.
+lib <- sub("^--lib=", "", grep("^--lib=", args, value = TRUE))
+if (length(lib) != 1L) {
+  lib <- file.path(root, "lib")
+  dir.create(lib, recursive = TRUE)
+  cat("installing into", lib, "\n")
+  inst <- system2(
+    file.path(R.home("bin"), "R"),
+    c("CMD", "INSTALL", paste0("--library=", shQuote(lib)), "."),
+    stdout = file.path(root, "install.out"), stderr = file.path(root, "install.err")
+  )
+  if (inst != 0L) {
+    stop("R CMD INSTALL failed; see ", file.path(root, "install.err"), call. = FALSE)
+  }
+}
+env[["R_LIBS"]] <- paste(lib, Sys.getenv("R_LIBS"), sep = .Platform$path.sep)
+
 started <- Sys.time()
 status <- withr::with_envvar(env, {
   # A separate R process, so the suite's own environment is the one the env
-  # vars above describe rather than this script's session.
+  # vars above describe rather than this script's session. `test_check()` from
+  # `tests/` is the call `tests/testthat.R` makes under R CMD check, and the one
+  # runner of the three that leaves NOT_CRAN alone.
   system2(
     file.path(R.home("bin"), "Rscript"),
-    c("-e", shQuote('devtools::test(reporter = "summary")')),
+    c("-e", shQuote(paste(
+      'setwd("tests");',
+      'library(testthat); library(tidymedia);',
+      'test_check("tidymedia", reporter = "summary")'
+    ))),
     stdout = file.path(root, "suite.out"), stderr = file.path(root, "suite.err")
   )
 })
@@ -139,6 +171,7 @@ elapsed <- round(as.numeric(difftime(Sys.time(), started, units = "mins")), 1)
 lines <- readLines(log_file, warn = FALSE)
 cat(sprintf("suite exit status: %d, %s min\n", status, elapsed))
 cat(sprintf("suite output: %s\n", file.path(root, "suite.out")))
+cat(sprintf("lib: %s\n", lib))
 cat(sprintf("SPAWNS LOGGED: %d\n", length(lines)))
 if (length(lines)) {
   counts <- table(sub("\t.*$", "", lines))

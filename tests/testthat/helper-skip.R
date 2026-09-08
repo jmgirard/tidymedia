@@ -1,7 +1,16 @@
 # Skip helpers for tests that shell out to external CLIs. Execution tests must
 # skip cleanly on machines (and CI images) where the binary is absent.
+#
+# M118 -- and they must skip on CRAN's own submission check, whose machines are
+# not ours to spend FFmpeg time on. skip_on_cran() reads NOT_CRAN and skips
+# unless it is "true"; devtools::check() sets it (env_vars in its formals) and
+# r-lib/actions/setup-r@v2 puts it in the CI job env, so the release gate and
+# every push still run these tests -- only CRAN opts out. It goes FIRST in each
+# helper, ahead of the binary question, so the reason reported on CRAN is "On
+# CRAN" whether or not the machine happens to have the binary.
 
 skip_if_no_ffmpeg <- function() {
+  testthat::skip_on_cran()
   testthat::skip_if_not(
     nzchar(Sys.which("ffmpeg")),
     message = "ffmpeg binary not available"
@@ -9,6 +18,7 @@ skip_if_no_ffmpeg <- function() {
 }
 
 skip_if_no_ffprobe <- function() {
+  testthat::skip_on_cran()
   testthat::skip_if_not(
     nzchar(Sys.which("ffprobe")),
     message = "ffprobe binary not available"
@@ -16,6 +26,7 @@ skip_if_no_ffprobe <- function() {
 }
 
 skip_if_no_mediainfo <- function() {
+  testthat::skip_on_cran()
   testthat::skip_if_not(
     nzchar(Sys.which("mediainfo")),
     message = "mediainfo binary not available"
@@ -28,6 +39,9 @@ skip_if_no_mediainfo <- function() {
 # encode and skip unless it exits 0 -- guarding execution tests against a listed-
 # but-unusable encoder.
 skip_if_no_nvenc <- function() {
+  # Ahead of everything: the probe encode below IS a spawn, so a CRAN skip
+  # placed after it would be too late (M118).
+  testthat::skip_on_cran()
   testthat::skip_if_not(
     nzchar(Sys.which("ffmpeg")),
     message = "ffmpeg binary not available"
@@ -119,6 +133,9 @@ tm_require_wildcard_name <- function(path) {
 # virtualized runners included, so the list answers nothing here and the
 # one-frame encode is the whole question.
 skip_if_no_videotoolbox <- function() {
+  # Ahead of everything: the probe encode below IS a spawn, so a CRAN skip
+  # placed after it would be too late (M118).
+  testthat::skip_on_cran()
   testthat::skip_if_not(
     nzchar(Sys.which("ffmpeg")),
     message = "ffmpeg binary not available"

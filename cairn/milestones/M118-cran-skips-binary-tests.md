@@ -65,7 +65,7 @@ A ROADMAP candidate row holds the profiling work.
       `.github/workflows/R-CMD-check.yaml` sets no `NOT_CRAN` of its own, so the value
       comes from `r-lib/actions/check-r-package@v2`. If it does not, this milestone
       would silently gut CI coverage and stops here for a re-gate.
-- [ ] T2: Add `skip_on_cran()` to the five helpers in `helper-skip.R`.
+- [x] T2: Add `skip_on_cran()` to the five helpers in `helper-skip.R`.
 - [ ] T3: Build the PATH-shim spawn counter and run the suite in both modes.
 - [ ] T4: Run the two escape-route conditions of AC3.
 - [ ] T5: Record the base-commit skipped-test set, then run `devtools::test()` in
@@ -81,3 +81,4 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: T1 measured. The precedent holds but names the wrong source. `devtools::check()` sets it (installed `devtools::check` carries `env_vars = c(NOT_CRAN = "true")`); `r-lib/actions/check-r-package@v2` does not — it calls `rcmdcheck::rcmdcheck()` with no `env`, and `rcmdcheck` 1.4.0's `env` default is `character()`. `setup-r@v2` is what sets it: run 34275894026's predecessor 34261398144 dumps `NOT_CRAN: true` in the job env from the `setup-r-dependencies` step onward, and no test in that run skipped for an "On CRAN" reason though three `skip_on_cran()` sites were in the suite. CI coverage survives this milestone; no re-gate needed.
 - 2026-09-08: amendment (substantive, Scope In) at the question gate: scope widened from three helpers to five. `skip_if_no_nvenc()` and `skip_if_no_videotoolbox()` each spawn a one-frame FFmpeg encode to decide, and check `Sys.which("ffmpeg")` inline rather than calling `skip_if_no_ffmpeg()`, so six tests (`test-nvenc.R:435,446,458`, `test-video-codec.R:480,489`, `test-hardware-backends.R:315`) would keep spawning under AC2. No acceptance criterion changed.
 - 2026-09-08: question gate chose a committed `tools/cran_spawn_check.R` for the AC2/AC3 shim over a throwaway harness, matching the two measurement scripts already in `tools/`; costs one `.Rbuildignore` entry.
+- 2026-09-08: T2 done. `skip_on_cran()` added first in all five helpers, ahead of the binary question, so the reason reported on CRAN is "On CRAN" whether or not the machine has the binary. `tests/testthat/test-cran-skip-helpers.R` asserts which skip fires, never a bare one; proven able to fail by two planted defects — dropping the call from `skip_if_no_ffprobe()` (red on the missing skip and on the wrong reason) and moving it below the binary check in `skip_if_no_mediainfo()` (red on the ordering test alone). `devtools::test()` clean: FAIL 0, WARN 10, SKIP 18, PASS 13188.

@@ -55,11 +55,12 @@ milestone is scoped to the two config directories.
       `mediainfo_location.txt` in the legacy `rappdirs` directory holding
       `/private/tmp/claude-501/.../25b4c341-.../scratchpad/blockbin.sh` (2026-08-26)
       and `ffmpeg_location.txt` under `R_user_dir` (2026-09-01).
-- [ ] T2: Name the escaping site(s) by file:line and fix them. The redirect helper is
+- [x] T2: Name what wrote each leftover file, and confirm no site escapes the
+      redirect at HEAD. The redirect helper is
       `tests/testthat/helper-program-config.R:41-60`; `R_USER_CONFIG_DIR` redirects
-      only the `tools::` half while `rappdirs::user_config_dir` is mocked (`:41-49`).
-      The un-redirected `set_program()` calls found so far are at
-      `tests/testthat/test-blame-frame-table.R:21-39` and `:115-119`.
+      the `tools::` half while `rappdirs::user_config_dir` is mocked (`:41-49`). The
+      `set_program()` calls at `tests/testthat/test-blame-frame-table.R:21-39` and
+      `:115-119` do not escape it: every one refuses before reaching a write.
 - [x] T3: Build the before/after harness over both directories.
 - [x] T4: Add both plant forms, confirm each comparison reports the difference, and
       revert every plant.
@@ -74,3 +75,6 @@ milestone is scoped to the two config directories.
 - 2026-09-08: T1 provenance of the two leftover files. `ffmpeg_location.txt` (2026-09-01, `/opt/homebrew/bin/ffmpeg`) matches what `tests/testthat/test-nvenc-memo.R:103` writes; `git show 425c424` moves that test from a `rappdirs` mock to `R_USER_CONFIG_DIR` in the same commit that moved the package's write target, so the leak existed only in M097's intermediate state and was fixed there. `mediainfo_location.txt` (2026-08-26) names a scratchpad path `blockbin.sh` that `git log --all -S blockbin` finds nowhere but M117's own plan commit — an ad-hoc session, never the suite.
 - 2026-09-08: T3 built `tools/config_leak_check.R` — watches both directories as a `--vanilla` subprocess with `R_USER_CONFIG_DIR` and `XDG_CONFIG_HOME` cleared computes them, snapshots file-by-md5 before and after a command, and exits non-zero on a difference (`--expect-difference` inverts that for the controls).
 - 2026-09-08: T4 both plants ran. The first pair FAILED and that is what caught a defect in the harness: `tm_dir_diff()` read membership with `[[`, which errors on a named character vector rather than returning NULL, so the run crashed the moment a name was absent from one side — the instrument could report nothing but "no difference". Fixed to `%in%`; both plants then PASSED, each reporting `+ added: tidymedia_leak_probe.txt` in both directories (`devtools::test()` PASS 13176 for the test-body plant; `devtools::check()` 0/0/0 for the build plant). A silent-case control with the plant present but never executed correctly reports no difference. Every plant reverted; `git status` clean of them.
+- 2026-09-08: T2 amended at the implementation gate, from "name the escaping site(s) by file:line and fix them" to naming what wrote each leftover file and confirming no site escapes at HEAD. The plan assumed a live escaping site; T1 measured none, and both leftovers are accounted for. Goal, Scope and the acceptance criteria are unchanged -- AC1 and AC2 ask what the run leaves behind, not that a fix was made.
+- 2026-09-08: gate chose a hand-run `tools/` script over a CI leg, because the leak it guards against arose inside a half-finished working state rather than on a pushed branch, and a leg would cost about six minutes on every push; falsified by a leak that reaches a pushed branch. The CI question is not deferred to a backlog row -- it was settled, not postponed.
+- 2026-09-08: gate chose to leave the two leftover files on the maintainer's machine as Scope already directed; both were restored byte-identical with their original mtimes after T1's clean-state measurement.

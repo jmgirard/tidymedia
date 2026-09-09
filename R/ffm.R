@@ -258,7 +258,7 @@ ffm_drop <- function(object,
 #' @return \code{object} but with the added instruction to crop the image(s).
 #' @seealso [ffm_scale()] to resize instead of crop; [crop_video()] and
 #'   [format_for_web()] are the task verbs built on it.
-#' @references https://ffmpeg.org/ffmpeg-filters.html#toc-crop
+#' @references https://ffmpeg.org/ffmpeg-filters.html#crop
 #' @family builder functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

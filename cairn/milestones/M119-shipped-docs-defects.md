@@ -47,7 +47,7 @@ naming surface → its own candidate row.
 - [x] AC4: A grep over `.github/SUPPORT.md` for `with $`, ` !` and `{{` returns
       nothing, and the package references derived from the template's placeholders
       name `tidymedia`.
-- [ ] AC5: `urlchecker::url_check()` over the built package reports no dead URL, and
+- [x] AC5: `urlchecker::url_check()` over the built package reports no dead URL, and
       every redirect it reports is either followed in the source or recorded with the
       reason it is kept.
 - [ ] AC6: `inst/CITATION` exists and `citation("tidymedia")` returns it rather than
@@ -77,7 +77,7 @@ naming surface → its own candidate row.
       keeping the four exported `find_*()` wrappers documented as they are.
 - [x] T4: Fill `.github/SUPPORT.md`'s placeholders (`:1` and `:3`) and point its
       support path at this package's issue tracker.
-- [ ] T5: Run `urlchecker::url_check()`; resolve the redirecting Contributor Covenant
+- [x] T5: Run `urlchecker::url_check()`; resolve the redirecting Contributor Covenant
       link and settle the FFmpeg anchor family, which spells the same filters both
       `#concat` and `#toc-concat`.
 - [ ] T6: Write `inst/CITATION` from DESCRIPTION's author block and ORCID.
@@ -94,3 +94,6 @@ naming surface → its own candidate row.
 - 2026-09-09: re-audit: AC2 (full) — not clean, four repairs returned: name the build-path substitution rather than leaving it invisible; state the `.html` count so an empty `vignettes/*.Rmd` glob cannot pass vacuously; name the enumerating command and pin it to one listing, since `.gitignore` blinds `git status` to every artifact kind at issue; restate the tracked-only clause as a precondition rather than an arm of the promise. All four taken. A fifth suggestion — extending the check to paths outside `vignettes/` — was declined as a domain widening past Scope In, which names the chunk that writes into `vignettes/`.
 - 2026-09-09: T3 — `@usage NULL` on the `find_program` block drops it from the topic's `\usage{}`, leaving the four exported wrappers; `@param program` went with it, since no documented usage takes it any more, and the description now names the four wrappers instead. `\alias{find_program}` stays, so `?find_program` and the package's own `[find_program()]` cross-references still resolve. `_pkgdown.yml:127` lists `find_ffmpeg` in place of `find_program` (gate choice): pkgdown resolves the alias to the same topic, so the topic stays indexed. Positive control run — deleting that index line makes `pkgdown::check_pkgdown()` abort in `check_missing_topics()`, so AC3's third conjunct discriminates rather than passing vacuously.
 - 2026-09-09: T4 — `.github/SUPPORT.md`'s two stripped placeholders now name `tidymedia` (`# Getting help with tidymedia`, `Thanks for using tidymedia!`); all three AC4 greps (`with $`, ` !`, `{{`) return nothing. T4's support-path clause was already true at head — line 19 pointed at `jmgirard/tidymedia/issues/new` — so nothing there changed. Gate choice also took the two tidyverse claims the template left: community.rstudio.com → Posit Community, and the "development of tidyverse packages" maintenance paragraph rewritten for a single maintainer. The reprex and tidyverse.org/help links stay: they are real external guides, not claims about this package. The file is `.Rbuildignore`d and holds no R code, so the `verify` slot was not re-run for this task; T7's `devtools::check()` covers the tree.
+- 2026-09-09: T5 — `urlchecker::url_check()` over the built package (`R CMD build` then the extracted tree) reports **All URLs are correct**: no dead URL, and no redirect, so AC5's disposition arm holds over an empty set. Positive control: a 404 injected into a valid Rd section of the built copy is caught (`✖ 404: Not Found`), so the dead-URL conjunct discriminates. **Second control is a negative result worth recording** — a known 2-hop redirect injected beside it was *not* reported; this urlchecker follows redirects silently and flags only failures, so AC5's redirect arm cannot fire under its own instrument.
+- 2026-09-09: T5 — the redirecting Contributor Covenant link was therefore found with `curl -IL`, not with the criterion's instrument: `README.Rmd:218` pointed at `https://contributor-covenant.org/version/2/0/CODE_OF_CONDUCT.html`, two hops from the live page. Repointed at the terminal URL (`https://www.contributor-covenant.org/version/2/0/code_of_conduct/`, 200, 0 redirects) and `README.md` rebuilt.
+- 2026-09-09: T5 — the anchor family is measured, not guessed: `ffmpeg-filters.html` was fetched and every anchor the tree uses resolves, `#crop`/`#toc-crop` and `#concat`/`#toc-concat` alike, so no link was dead. Per the gate, only the one shipped `@references` using a table-of-contents anchor changed (`R/ffm.R:261`, `#toc-crop` → `#crop`) so that a reader lands on the section; the 22-line `#toc-` comment block at `R/ffm.R:1678-1699` is source, not shipped documentation, and was left alone.

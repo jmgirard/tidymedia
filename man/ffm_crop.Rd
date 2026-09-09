@@ -38,7 +38,7 @@ ffm_files(video, "output.mp4") |>
   ffm_compile()
 }
 \references{
-https://ffmpeg.org/ffmpeg-filters.html#toc-crop
+https://ffmpeg.org/ffmpeg-filters.html#crop
 }
 \seealso{
 \code{\link[=ffm_scale]{ffm_scale()}} to resize instead of crop; \code{\link[=crop_video]{crop_video()}} and

@@ -1,6 +1,6 @@
 # M118: The binary-executing tests skip on CRAN's own check
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -94,11 +94,11 @@ A ROADMAP candidate row holds the profiling work.
       as well: assert the CRAN branch with `NOT_CRAN="false"`, which fires in either
       session kind, and ask the unset-variable question only where the session is
       the non-interactive one CRAN checks in.
-- [ ] T7: Repair `tools/cran_spawn_check.R` so it refuses to report a spawn count
+- [x] T7: Repair `tools/cran_spawn_check.R` so it refuses to report a spawn count
       beside a suite run that did not finish, and so the shim source quotes the
       paths it interpolates; then re-run `--mode=path` (AC2) and `--mode=config`
       (amended AC3) against the fixed instrument.
-- [ ] T8: The three prose and assertion repairs the re-review coupled to this
+- [x] T8: The three prose and assertion repairs the re-review coupled to this
       round: `cairn/DESIGN.md`'s execution-test convention gains the CRAN half;
       `test-normalize-audio-batch.R`'s new comment stops claiming the production
       path changed and its two `expect_error()` patterns name which refusal they
@@ -130,6 +130,8 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: amendment return: AC4 — "With `NOT_CRAN=true` and the three binaries on `PATH`, the set of skipped test names is the same at this milestone's base commit `ea433d5` and at the branch head. Each list is produced by `Rscript -e 'testthat::test_local(reporter = \"summary\")'` — non-interactive by construction, the session kind `R CMD check` runs the suite under — on one machine against the same resolved binaries, the base checked out in a detached worktree; the two lists of skipped test names are sorted and `diff`ed, `diff` empty and both lists non-empty, so an empty capture is not read as agreement." Accepted unchanged at the mini gate, so the wording spends no re-entry.
 - 2026-09-08: mini gate kept AC3 rather than retiring it, so the criteria set stays at five and neither grows nor loosens; the escape route it now certifies is package behaviour the shim is blind to, which is why the plan gate added the criterion. T7 and T8 added for the re-measurement and the four prose and assertion repairs the re-review coupled to this round.
 - 2026-09-08: T8 edits in, task not yet ticked — `devtools::test()` has not been re-run, the machine being held by T7's three measurement runs. `cairn/DESIGN.md:54`'s execution-test convention now carries the CRAN half; `test-normalize-audio-batch.R`'s comment says the production path still probes and the mock is the test's own, and its two `expect_error()` patterns name which refusal they expect (`filter = "normalize-audio-batch"`: FAIL 0, PASS 104). The tightened patterns are proven able to fail: renaming the column in the refusal's own message keeps the old `"channels|whole"` pattern green and turns the new one red. The superseding entry for the two wrong decision-log statements is below.
+- 2026-09-08: T7 done. `tools/cran_spawn_check.R` now refuses to report a spawn count beside a suite that exited non-zero, and `shQuote()`s the log path, the real binary path and the program name it bakes into each stand-in. Both proven able to fail: an instantly-dying suite planted into the runner prints `spawns logged (NOT A RESULT): 0` and `REFUSED: the suite exited 1` where the old script printed `SPAWNS LOGGED: 0`; and a `TMPDIR` holding a `$` and a single quote logged 0 lines for 3 direct calls under the pre-fix quoting against 3 after it. Re-measured against the fixed instrument: `--mode=path` control (`--not-cran`) 1226 spawns — ffmpeg 812, ffprobe 390, mediainfo 24 — exit 0 in 6 min; `--mode=path` CRAN condition 0 spawns, exit 0 in 3.8 min; `--mode=config` CRAN condition reports `config-route probe: live, 1 line(s) logged` and then 0 suite spawns, exit 0 in 3.3 min. AC2 and amended AC3 both hold on the fixed instrument, at the same figures as the pass before it.
+- 2026-09-08: T8 done. `devtools::test()` clean after the T8 edits — FAIL 0, WARN 10, SKIP 18, PASS 13193, the same figures as after T6. `devtools::document()` leaves no diff. Status set back to review.
 
 ## Decisions
 

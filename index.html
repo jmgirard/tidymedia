@@ -156,11 +156,11 @@
 <span>  <span class="fu"><a href="reference/ffm_codec.html">ffm_codec</a></span><span class="op">(</span>video <span class="op">=</span> <span class="st">"libx264"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/ffm_drop.html">ffm_drop</a></span><span class="op">(</span>streams <span class="op">=</span> <span class="st">"audio"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/Rtmpn5c3d7/temp_libpath147006c35cc6d/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmpUusOLy/temp_libpath5eac32dfc23e/tidymedia/extdata/sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""</span></span></code></pre></div>
 <p>Common tasks have their own verbs (Layer 2). Pass <code>run = FALSE</code> to see the command without executing it:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/extract_audio.html">extract_audio</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.aac"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/Rtmpn5c3d7/temp_libpath147006c35cc6d/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:0\" \"audio.aac\""</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "-y -i \"/private/var/folders/px/frfvbz4n0sx90__c62fwwzz40000gn/T/RtmpUusOLy/temp_libpath5eac32dfc23e/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:0\" \"audio.aac\""</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="read-metadata-as-tibbles">Read metadata as tibbles<a class="anchor" aria-label="anchor" href="#read-metadata-as-tibbles"></a>
@@ -206,7 +206,7 @@
 <div class="section level2">
 <h2 id="code-of-conduct">Code of Conduct<a class="anchor" aria-label="anchor" href="#code-of-conduct"></a>
 </h2>
-<p>Please note that the <strong>tidymedia</strong> project is released with a <a href="https://contributor-covenant.org/version/2/0/CODE_OF_CONDUCT.html" class="external-link">Contributor Code of Conduct</a>. By contributing to this project, you agree to abide by its terms.</p>
+<p>Please note that the <strong>tidymedia</strong> project is released with a <a href="https://www.contributor-covenant.org/version/2/0/code_of_conduct/" class="external-link">Contributor Code of Conduct</a>. By contributing to this project, you agree to abide by its terms.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

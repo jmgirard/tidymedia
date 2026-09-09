@@ -43,7 +43,7 @@ ffm_crop(object, width, height, x = "(in_w-out_w)/2", y = "(in_h-out_h)/2")
 
 ## References
 
-https://ffmpeg.org/ffmpeg-filters.html#toc-crop
+https://ffmpeg.org/ffmpeg-filters.html#crop
 
 ## See also
 

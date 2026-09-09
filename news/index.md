@@ -64,6 +64,26 @@
   is not there: each chunk that starts FFmpeg, FFprobe or MediaInfo is
   evaluated only when that program is installed.
 
+- `citation("tidymedia")` now returns a citation written for the
+  package, carrying the package website, instead of the entry R
+  generates automatically from `DESCRIPTION`.
+
+- The get-started vignette said a task verb returns the path it wrote.
+  It returns the compiled FFmpeg command, invisibly when it runs the
+  command and visibly under `run = FALSE`; the vignette now says so.
+
+- The reference page for finding a program now documents only the four
+  functions you can call –
+  [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_program.md),
+  [`find_ffprobe()`](https://jmgirard.github.io/tidymedia/reference/find_program.md),
+  [`find_ffplay()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+  and
+  [`find_mediainfo()`](https://jmgirard.github.io/tidymedia/reference/find_program.md).
+  The internal
+  [`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+  behind them is no longer shown as though it were part of the
+  interface.
+
 ### Breaking changes
 
 - [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)

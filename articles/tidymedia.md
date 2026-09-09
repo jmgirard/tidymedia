@@ -33,10 +33,13 @@ does exactly that:
 extract_audio(video, "audio.m4a")
 ```
 
-Every task verb runs FFmpeg immediately and returns the path it wrote.
-To see the command *without* running anything, pass `run = FALSE`; the
-verb compiles the exact FFmpeg invocation and returns it as a string you
-can inspect, log, or save:
+Task verbs run FFmpeg immediately and return the command they ran –
+invisibly, so nothing is printed. (A verb that writes two outputs, such
+as
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+returns both commands.) To see the command *without* running anything,
+pass `run = FALSE`; the verb compiles the exact FFmpeg invocation and
+returns it visibly, as a string you can inspect, log, or save:
 
 ``` r
 

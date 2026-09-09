@@ -1,8 +1,8 @@
-# Getting help with
+# Getting help with tidymedia
 
-Thanks for using ! Before filing an issue, there are a few places to
-explore and pieces to put together to make the process as smooth as
-possible.
+Thanks for using tidymedia! Before filing an issue, there are a few
+places to explore and pieces to put together to make the process as
+smooth as possible.
 
 ## Make a reprex
 
@@ -19,9 +19,9 @@ help!](https://www.tidyverse.org/help/) section of the tidyverse site.
 Armed with your reprex, the next step is to figure out [where to
 ask](https://www.tidyverse.org/help/#where-to-ask).
 
-- If it’s a question: start with
-  [community.rstudio.com](https://community.rstudio.com/), and/or
-  StackOverflow. There are more people there to answer questions.
+- If it’s a question: start with [Posit
+  Community](https://forum.posit.co/), and/or Stack Overflow. There are
+  more people there to answer questions.
 
 - If it’s a bug: you’re in the right place, [file an
   issue](https://github.com/jmgirard/tidymedia/issues/new).
@@ -41,13 +41,11 @@ qualifiers](https://help.github.com/articles/searching-issues-and-pull-requests/
 
 ## What happens next?
 
-To be as efficient as possible, development of tidyverse packages tends
-to be very bursty, so you shouldn’t worry if you don’t get an immediate
-response. Typically we don’t look at a repo until a sufficient quantity
-of issues accumulates, then there’s a burst of intense activity as we
-focus our efforts. That makes development more efficient because it
-avoids expensive context switching between problems, at the cost of
-taking longer to get back to you. This process makes a good reprex
-particularly important because it might be multiple months between your
-initial report and when we start working on it. If we can’t reproduce
-the bug, we can’t fix it!
+tidymedia is maintained by one person alongside other work, so
+development tends to be bursty and you shouldn’t worry if you don’t get
+an immediate response. Issues usually accumulate for a while, then get a
+burst of attention; that avoids expensive context switching between
+problems, at the cost of taking longer to get back to you. This process
+makes a good reprex particularly important, because it might be some
+time between your initial report and when the work on it starts. If the
+bug can’t be reproduced, it can’t be fixed!

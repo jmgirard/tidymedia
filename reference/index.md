@@ -213,8 +213,7 @@ Locate, configure, and install the FFmpeg and MediaInfo binaries.
 
 - [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)
   : Report which dependency programs tidymedia can find
-- [`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
-  [`find_mediainfo()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+- [`find_mediainfo()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
   [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
   [`find_ffprobe()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
   [`find_ffplay()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)

@@ -90,10 +90,12 @@ a transcription tool, for example. <code><a href="../reference/extract_audio.htm
 exactly that:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/extract_audio.html">extract_audio</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.m4a"</span><span class="op">)</span></span></code></pre></div>
-<p>Every task verb runs FFmpeg immediately and returns the path it
-wrote. To see the command <em>without</em> running anything, pass
+<p>Task verbs run FFmpeg immediately and return the command they ran –
+invisibly, so nothing is printed. (A verb that writes two outputs, such
+as <code><a href="../reference/separate_audio_video.html">separate_audio_video()</a></code>, returns both commands.) To see
+the command <em>without</em> running anything, pass
 <code>run = FALSE</code>; the verb compiles the exact FFmpeg invocation
-and returns it as a string you can inspect, log, or save:</p>
+and returns it visibly, as a string you can inspect, log, or save:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/extract_audio.html">extract_audio</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.m4a"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:a copy -vn -map \"0:a:0\" \"audio.m4a\""</span></span></code></pre></div>

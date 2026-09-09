@@ -1,12 +1,12 @@
 # Find the location of a dependency program
 
-Returns the location of the requested program as a string.
+Returns the location of one of the programs tidymedia drives as a
+string: `find_ffmpeg()`, `find_ffprobe()`, `find_ffplay()` and
+`find_mediainfo()`, one per program.
 
 ## Usage
 
 ``` r
-find_program(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"))
-
 find_mediainfo()
 
 find_ffmpeg()
@@ -16,16 +16,10 @@ find_ffprobe()
 find_ffplay()
 ```
 
-## Arguments
-
-- program:
-
-  A string indicating which program to find
-
 ## Value
 
-Either a string indicating whether the requested program was found or
-`NULL` if the program could not be found.
+The location of the program as a string, or `NULL` when it could not be
+found.
 
 ## Details
 

@@ -1,6 +1,6 @@
 # M118: The binary-executing tests skip on CRAN's own check
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -46,13 +46,13 @@ A ROADMAP candidate row holds the profiling work.
       wrapper appending one line per call to a log; the same shim under
       `NOT_CRAN=true` writes a non-empty log, which is what shows the instrument can
       detect a spawn.
-- [x] AC3: The two routes that escape AC2's shim are measured rather than assumed.
+- [ ] AC3: The two routes that escape AC2's shim are measured rather than assumed.
       Under `NOT_CRAN` unset, a run with `PATH` emptied — the condition
       `tests/testthat/helper-program-config.R:43` creates for whole test files — and a
       run with a shim installed at a remembered absolute location for each of the three
       programs, which `find_program()` resolves without consulting `PATH`, each report
       zero spawns.
-- [x] AC4: With `NOT_CRAN=true` and the three binaries on `PATH`, the set of skipped
+- [ ] AC4: With `NOT_CRAN=true` and the three binaries on `PATH`, the set of skipped
       test names is the same as at this milestone's base commit.
 - [x] AC5: `R CMD check --as-cran` with `NOT_CRAN` unset and the three binaries on
       `PATH` reports 0 errors, 0 warnings, and no note other than one naming the
@@ -101,6 +101,9 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: mini gate held AC1 at the three name-resolution helpers rather than widening it to all five, and closed the interactive failure as work (T6) rather than as a sixth criterion — the criteria set neither grows nor loosens on an amendment round. The two hardware-probe helpers keep their coverage through AC2's zero-spawn count and the test file, which asserts all five.
 - 2026-09-08: T6 done, and AC1 re-verified. `test-cran-skip-helpers.R` now asks the CRAN branch twice: `NOT_CRAN="false"`, which reaches `testthat:::on_cran()`'s `as.logical()` branch and so fires in either session kind, asserted unconditionally for all five helpers; and `NOT_CRAN` unset, which means CRAN only where `interactive()` is `FALSE`, in its own block behind `skip_if(interactive())`. The ordering block moved to `"false"` for the same reason. `Rscript -e 'testthat::test_local(filter = "cran-skip-helpers")'`: FAIL 0, SKIP 0, PASS 18. The same file from `R --interactive`: FAIL 0, SKIP 1, PASS 13 — ten failures before this task, measured 2026-09-08. Proven able to fail against the guarded file by re-planting T2's two defects: dropping `skip_on_cran()` from `skip_if_no_ffprobe()` (3 failures non-interactive, 2 interactive) and moving it below the binary check in `skip_if_no_mediainfo()` (1 failure interactive, which is the block the old file could not have caught).
 - 2026-09-08: `devtools::test()` clean after the amendment round — FAIL 0, WARN 10, SKIP 18, PASS 13193, five passes up on T5's 13188 and the same skip count. Status set back to review.
+- 2026-09-08: amendment return: AC3 — "The two routes that escape AC2's shim are measured rather than assumed." Both clauses report zero spawns, which is what the criterion's second sentence demands, but neither instruments its route: `--mode=config`'s planted `R_USER_CONFIG_DIR` is overwritten by `tm_redirect_config()` in the very test files that take the config route (`tests/testthat/helper-program-config.R:41-43`, read at review), and with the three names off `PATH` every helper skips on `Sys.which()` before that route is consulted, so the mode's control cannot fail; `--mode=emptypath` the script itself labels UNINSTRUMENTED. The criterion, not the work, is what is wrong — the amendment should narrow AC3 to what the liveness probe shows, that the escape route is reachable. First amendment return on AC3; defect-return count unchanged at 0.
+- 2026-09-08: amendment return: AC4 — "With `NOT_CRAN=true` and the three binaries on `PATH`, the set of skipped test names is the same as at this milestone's base commit." True in a non-interactive session, measured this pass at 18 identical names; from a console the branch skips one test the base does not, because T6's guard stands down there. AC4 names no procedure and does not bound the session's interactivity — the same unbounded-criterion shape AC1 carried, so the same amendment. First amendment return on AC4; defect-return count still 0.
+- 2026-09-08: re-review gate chose the amendment round over merging as-is or amending AC4 alone. The round carries, beside the two criteria, the findings coupled to them: R3 (refuse to report a zero beside a failed run), R4 (`shQuote` the shim paths), R7 (the CRAN half of the `DESIGN.md:54` convention), R8 (the overstated comment and the loose `expect_error` regexp) and R12 (the stale decision-log prose). R5, R6, R9, R10, R11 and R13 stay logged for triage at the re-review's gate.
 
 ## Decisions
 
@@ -289,6 +292,17 @@ swept across all 91 test files, so the added skip cannot abort a whole file.
 **PR conversation.** No reviews, no unresolved threads, one comment.
 `conversation: codecov[bot] PR #122 — noted` (coverage unchanged at 98.43%,
 requests nothing).
+
+### Disposition — amendment return on AC3 and AC4
+
+The milestone's Goal is met and the work is right: CRAN's check makes no spawn,
+and every other run still makes all 1226. What R1 and R2 show is that two
+criteria promise more than the evidence behind them delivers — AC3 claims a
+measurement of two routes that neither of its clauses instruments, and AC4
+quantifies over session kinds without naming one. Under the never-reinterpret
+rule neither can be read charitably at review, so both are amendment returns,
+not defect returns, and neither increments the defect-return count. Status is
+`in-progress` for that amendment alone; review stops here and resumes after it.
 
 ### First pass (2026-09-08)
 

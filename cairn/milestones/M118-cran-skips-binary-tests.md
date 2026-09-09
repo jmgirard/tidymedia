@@ -40,13 +40,13 @@ A ROADMAP candidate row holds the profiling work.
       `Rscript -e 'testthat::test_local(filter = "cran-skip-helpers")'`; the file
       sets `NOT_CRAN` itself per assertion, so the runner's own `NOT_CRAN="true"`
       does not reach it.
-- [ ] AC2: With `NOT_CRAN` unset and the three binaries on `PATH`, a full run of the
+- [x] AC2: With `NOT_CRAN` unset and the three binaries on `PATH`, a full run of the
       suite makes no spawn that resolves one of the three names through `PATH`.
       Measured by shimming the three names onto `PATH` ahead of the real ones with a
       wrapper appending one line per call to a log; the same shim under
       `NOT_CRAN=true` writes a non-empty log, which is what shows the instrument can
       detect a spawn.
-- [ ] AC3: The config-directory route that AC2's `PATH` shim cannot see is a real
+- [x] AC3: The config-directory route that AC2's `PATH` shim cannot see is a real
       route in the shipped package, not an assumption: with the three program names
       unresolvable on `PATH` and a logging stand-in written as FFmpeg's remembered
       location, `find_ffmpeg()` returns that location and `run_program()` spawns the
@@ -55,7 +55,7 @@ A ROADMAP candidate row holds the profiling work.
       reports at least one logged line. AC3 claims nothing about the suite's own
       spawn count under that mode, nor about the emptied-`PATH` route of
       `tests/testthat/helper-program-config.R:43`, which no stand-in can reach.
-- [ ] AC4: With `NOT_CRAN=true` and the three binaries on `PATH`, the set of skipped
+- [x] AC4: With `NOT_CRAN=true` and the three binaries on `PATH`, the set of skipped
       test names is the same at this milestone's base commit `ea433d5` and at the
       branch head. Each list is produced by
       `Rscript -e 'testthat::test_local(reporter = "summary")'` — non-interactive by
@@ -63,7 +63,7 @@ A ROADMAP candidate row holds the profiling work.
       machine against the same resolved binaries, the base checked out in a detached
       worktree; the two lists of skipped test names are sorted and `diff`ed, `diff`
       empty and both lists non-empty, so an empty capture is not read as agreement.
-- [ ] AC5: `R CMD check --as-cran` with `NOT_CRAN` unset and the three binaries on
+- [x] AC5: `R CMD check --as-cran` with `NOT_CRAN` unset and the three binaries on
       `PATH` reports 0 errors, 0 warnings, and no note other than one naming the
       version number or a new submission.
 
@@ -179,6 +179,153 @@ A ROADMAP candidate row holds the profiling work.
   `FALSE`, and `ffmpeg`, `ffprobe` and `mediainfo` all resolve to
   `/opt/homebrew/bin` — the two conditions the criterion names. Nothing
   skipped, so no assertion was silently absent.
+- AC2 PASS. `tools/cran_spawn_check.R --mode=path`, stand-ins prepended to
+  `PATH` ahead of the real binaries, on branch head `be6b410`. Control
+  (`--not-cran`): 1226 spawns — ffmpeg 812, ffprobe 390, mediainfo 24 — suite
+  exit 0 in 7.4 min, so the instrument sees. CRAN condition (`NOT_CRAN` unset):
+  0 spawns, suite exit 0 in 4.8 min. The non-empty control is what makes the
+  zero evidence; both runs exited 0, so the script reported them as results
+  rather than refusing them.
+- AC3 PASS, on the amended criterion's own procedure.
+  `tools/cran_spawn_check.R --mode=config`: `/opt/homebrew/bin` dropped from
+  `PATH` so none of the three names resolves there, a stand-in written as each
+  program's remembered location, and the config-route probe reports
+  `live, 1 line(s) logged` — `find_ffmpeg()` answered from the planted config
+  file and `run_program()` spawned the stand-in, which logged the call. That
+  one line is what the criterion asks for. The suite then logged 0 spawns and
+  exited 0 in 4.2 min, recorded here as the criterion says it is: not evidence.
+- AC4 PASS, under the criterion's own procedure and session kind.
+  `Rscript -e 'testthat::test_local(reporter = "summary")'` in each tree — base
+  `ea433d5` in a detached worktree, branch head `be6b410` — on this one machine
+  against the same `/opt/homebrew/bin` binaries. 18 skipped test names each,
+  both lists non-empty, and `diff` of the two sorted lists is empty: identical,
+  not merely equal in count.
+- AC5 PASS. `R CMD check --as-cran --no-manual` on a freshly built tarball with
+  `NOT_CRAN` unset (`env -u NOT_CRAN`) and the three binaries on `PATH`:
+  **0 errors, 0 warnings, 1 NOTE**, `Status: 1 NOTE`, tests step `[184s/190s]`.
+  The NOTE is `checking CRAN incoming feasibility`, and its whole body is
+  `New submission` plus `Version contains large components (0.1.0.9000)` — the
+  two the criterion allows, and nothing else. Against the base commit's 7m47s
+  and `[368s/436s]`.
+
+### Consistency gate — PASS (third pass)
+
+`cairn_validate.py` exit 0, 23 checks green, no `release window` advisory.
+`cairn_impact.py` not run — `Principles touched:` is `—` and no DESIGN.md
+principle changed (the DESIGN.md edit is a Conventions bullet, not an IP/GP).
+Toolchain half, from the `r-package` profile: `devtools::document()` leaves the
+tree clean; `R CMD check --as-cran` 0 errors / 0 warnings / 1 allowed NOTE
+above; `pkgdown::check_pkgdown()` reports no problems; README.Rmd and README.md
+untouched on this branch (last changed at `0cf121d`, before the base) and in
+sync; no new exported object, so no `_pkgdown.yml` row owed; no `NEWS.md` entry
+owed, the change being confined to the test suite, an `.Rbuildignore`d script
+and tracking files; `^tools$` present at `.Rbuildignore:21`.
+
+### Independent review — three lenses, full fan-out (third pass)
+
+Declared surface tier is user-facing and the diff touches executable surface,
+so all three lenses ran fresh-context on distinct evidence bases. V-numbers are
+this pass's; F- and R-numbers refer to the two passes recorded below.
+
+**[S] blame-history — no findings.** Traced every modified block to the commit
+that introduced it. `skip_on_cran()` sits ahead of the nvenc/videotoolbox probe
+encodes because the probe is itself a spawn, so a later placement would be too
+late; the `find_ffprobe` NULL mock puts the code into the NA stand-down
+`R/ffprobe.R:210-238` already documents; the loose `"channels|whole"` regexp it
+traced to `a33f2cb`, a mechanical rename-era commit, so it was never a
+deliberate guard against message instability and tightening it undoes nothing;
+the guard replaced at `test-unguarded-argument-front-doors.R:289` is a straight
+bugfix losing no coverage. It re-verified the CI claim against
+`.github/workflows/R-CMD-check.yaml:47` and `test-coverage.yaml:26`.
+
+**[S] prior-review — no regressions.** `gh api .../pulls/comments` returned
+`[]`, so the PR-thread walk was skipped by the probe gate and the doctrine
+modules were the surface. It confirmed R1, R2, R3, R4, R7, R8 and R12 each
+actually repaired rather than merely claimed, checking the base commit's
+`tools/` listing and `.Rbuildignore` itself. It re-surfaced R9 and R11 as still
+open in a file this pass edited — both already deferred, carried below as V15.
+
+**[O] diff-bug — sixteen findings.** Consolidated below, most severe first.
+Two of them (its findings 2 and 3, that AC4 and AC5 had no evidence at the
+current head) are closed by this pass's own runs above and are not carried
+forward as findings.
+
+- **V1.** `cairn/DESIGN.md:54-56`, added this pass repairing R7, now states
+  something the branch does not deliver: "`skip_on_cran()` ahead of that, so
+  CRAN's own check of the tarball spawns no binary even where its machine has
+  one". The check also runs 21 `@examplesIf nzchar(Sys.which(...))` example
+  blocks and the vignette chunks gated the same way, every one of which spawns
+  on a CRAN machine that has the binary. The Goal is correctly scoped to tests
+  and R13 recorded the examples fact as out of scope; the repair carried that
+  out-of-scope fact into a false statement in the architecture record. No
+  acceptance criterion fails. New this pass.
+- **V2.** `cairn/DESIGN.md:56` attributes the new CRAN clause to
+  `(D004, D024, D034)`, none of which decides anything about CRAN skipping, and
+  no D-entry was added — `DECISIONS.md` runs to D089 with no CRAN-skip entry.
+  The citation was correct for the pre-existing sentence and the added clause
+  inherits it without authority. New this pass.
+- **V3.** `tools/cran_spawn_check.R:254-275` refuses one false green and still
+  prints the other. T7's `reportable <- instrumented && status == 0L` catches a
+  dead suite; it does not catch a *control* run whose log came back empty. A
+  `--not-cran --mode=path` invocation whose shim directory failed to reach the
+  child's `PATH` prints `SPAWNS LOGGED: 0` and exits 0 — the shape AC2's second
+  sentence exists to rule out, left to the operator's eye across two
+  invocations. `self_test()` does not close it: it calls the stand-ins by
+  absolute path before any `PATH` surgery, so it proves the shims log, never
+  that the run can see them. New this pass; same family as R3/F2.
+- **V4.** `tests/testthat/helper-skip.R:5-11` states `skip_on_cran()`'s rule
+  wrongly — "reads NOT_CRAN and skips unless it is `"true"`". With `NOT_CRAN`
+  unset `testthat:::on_cran()` returns `!interactive()`, so an interactive
+  console does not skip. That is the F1 falsification, and the reason AC1 had
+  to be bounded and T6's guard added; the comment is where a maintainer looks
+  for the rule. New this pass (it landed at T2 and survived both earlier
+  passes).
+- **V5.** `cairn/ROADMAP.md:29` still carries the estimate this milestone
+  falsified — "ffmpeg execution is about one minute of six and M118's
+  `skip_on_cran()` buys only that" — against the measured 7m47s → 4m33.2s and
+  `[368s/436s]` → `[223s/230s]`. The diff touches the file and left the stale
+  sentence, which is the row's promotion condition. New this pass.
+- **V6.** `tools/cran_spawn_check.R:93,95` calls `shQuote()` without
+  `type = "sh"`, whose default is `type = "cmd"` on Windows — so the fix that
+  makes the shim source correct on POSIX would emit cmd-style quoting into a
+  `#!/bin/sh` file there. New this pass, low.
+- **V7.** `tools/cran_spawn_check.R:268` gates the non-zero exit on
+  `instrumented`, so `--mode=emptypath` exits 0 however the suite died: a run
+  that dies for a new reason is indistinguishable at the exit-code level from
+  the designed one, separated only by the prose NOTE. F2 says a blanket
+  `stop()` would be wrong, so this is narrow. New this pass, low.
+- **V8.** `tests/testthat/test-normalize-audio-batch.R:236` pins an upstream
+  `rlang` message string — `` "`channels` must be a whole number" `` is
+  `check_number_whole()`'s own wording, not the package's, so it will break on
+  an rlang wording change for a reason unrelated to tidymedia. Its sibling at
+  `:258` targets the package's own `cli_abort()`. New this pass, minor.
+- **V9.** R6 stands, and the obvious fix conflicts with AC2: extending
+  `test-cran-skip-helpers.R`'s `NOT_CRAN=true` control to the two hardware-probe
+  helpers would call each with `NOT_CRAN=true`, and each then runs a one-frame
+  probe encode — on a CRAN machine with FFmpeg that is a spawn from a file with
+  no CRAN skip of its own, falsifying AC2. Closing R6 needs a mock, not the
+  naive extension. Repeats R6; the constraint is new.
+- **V10-V15.** Repeats, all still open and all deferred at the re-review gate:
+  R5 (nothing in the repo fails if `setup-r@v2` stops exporting `NOT_CRAN`);
+  R9 (`--lib=DIR` skips `R CMD INSTALL` with no freshness guard); R10 (two
+  hand-rolled binary guards survive, and `ffplay` is shimmed by nothing);
+  R11 (`TIDYMEDIA_SPAWN_LOG` set and never read, `R_LIBS` gains a trailing
+  empty entry, the required working directory undocumented); R13 (examples
+  spawn on CRAN — now also the subject of V1).
+
+Verified by the [O] lens and explicitly *not* problems: `skip_on_cran()` really
+is first in all five helpers; `test-cran-skip-helpers.R` spawns nothing under
+CRAN conditions, block by block; the file still passes under the DESCRIPTION
+floor `testthat (>= 3.0.0)`, whose `on_cran()` is the simpler predicate; the
+`find_ffprobe` NULL mock does reach `count_audio_streams()`'s documented
+`NA_integer_` stand-down; both tightened patterns match without cli
+line-wrapping risk; the config-mode probe genuinely proves AC3's route, because
+the `leftover` check first establishes the three names are unresolvable on the
+trimmed `PATH`, so `find_ffmpeg()`'s answer can only come from the planted
+config file; T8's absence from the Coverage map is fine, since the rule maps
+criteria to tasks and not the reverse; and `test-ffmpeg-exit-condition.R:141`
+and `test-hardware-backends.R:319` spawn via bare `system2()` but sit under
+helper skips in their own bodies.
 
 ### Re-review after the AC1 amendment (2026-09-08)
 

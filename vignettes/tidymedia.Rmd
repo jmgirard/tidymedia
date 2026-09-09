@@ -12,6 +12,9 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+# Work in a temporary directory: the chunks below write real files, and none of
+# them belongs beside the vignette sources (verification.Rmd:33 set this).
+knitr::opts_knit$set(root.dir = tempdir())
 ```
 
 ```{r setup}

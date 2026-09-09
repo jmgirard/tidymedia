@@ -33,9 +33,14 @@ naming surface → its own candidate row.
       returns agrees with what `extract_audio()` returns in the chunk above it. Today
       the sentence says the verb "returns the path it wrote" while `extract_audio()`'s
       `@return` says the compiled FFmpeg command, invisibly when `run = TRUE`.
-- [ ] AC2: After `R CMD build` on a machine with the three binaries on `PATH`,
-      `vignettes/` in the working tree holds no file it did not hold before the build,
-      and the before listing contains only files tracked by git.
+- [x] AC2: Run with the three binaries on `PATH`, from a tree whose single
+      before-listing — `ls -A vignettes/`, not `git status`, which `.gitignore`
+      blinds here — names only paths tracked by git: `rmarkdown::render()` over
+      each `.Rmd` in `vignettes/`, at the format that vignette's YAML declares and
+      each completing without error, leaves `vignettes/` holding those paths plus
+      one `.html` per vignette, five in all, and no other path. `R CMD build`
+      builds in a temporary copy and cannot observe this; the in-place render is
+      the discriminating instrument.
 - [ ] AC3: `man/find_program.Rd` carries no `\usage{}` entry for `find_program`,
       `_pkgdown.yml` does not list `find_program` in its reference index, and
       `pkgdown::check_pkgdown()` passes.
@@ -64,9 +69,10 @@ naming surface → its own candidate row.
 
 - [x] T1: Settle which side of `vignettes/tidymedia.Rmd:43` is wrong by running the
       chunk above it, then correct the prose (or the chunk) to match.
-- [ ] T2: Give `vignettes/tidymedia.Rmd:39-41` a `root.dir = tempdir()` the way
-      `verification.Rmd:33` does, remove the untracked `vignettes/audio.m4a` the
-      current chunk left behind, and build to confirm nothing new lands.
+- [x] T2: Give `vignettes/tidymedia.Rmd`'s setup chunk a `root.dir = tempdir()`
+      the way `verification.Rmd:33` does, remove the untracked
+      `vignettes/audio.m4a` the current chunk left behind, and render in place to
+      confirm nothing new lands.
 - [ ] T3: Drop `find_program` from the Rd `\usage{}` and from `_pkgdown.yml:127`,
       keeping the four exported `find_*()` wrappers documented as they are.
 - [ ] T4: Fill `.github/SUPPORT.md`'s placeholders (`:1` and `:3`) and point its
@@ -83,3 +89,6 @@ naming surface → its own candidate row.
 - 2026-09-07: plan-gate criteria audit ran in FULL mode (declared tier user-facing), two rounds, fresh-context [O] reader. Findings against this milestone: the round-1 title quantified over all vignettes, all of `man/`, README and pkgdown while AC1 bound one sentence (repaired — title narrowed to what the audit measured); AC3's "`find_program` is not exported" conjunct was already true at head and could not fail (repaired — dropped, and `pkgdown::check_pkgdown()` added, since removing the index row while keeping the topic can trip PROFILE's consistency gate); AC3's round-1 `_pkgdown.yml` clause was unparseable (repaired); AC4's "every sentence naming a package names tidymedia" was falsified by the file's own reprex and tidyverse sentences and named no procedure (repaired — narrowed to the placeholder-derived references); AC5's dead-URL clause gained a disposition arm. AC1, AC2, AC5 and AC6 passed all six questions clean.
 - 2026-09-07: plan gate chose unexporting `find_program` from its docs over exporting the function, because GP1 prefers refusing surface to growing it and D014 makes a new permanent export a decision-level act rather than a documentation repair; falsified by a report of a caller needing the generic that the four wrappers cannot serve.
 - 2026-09-09: T1 — measured the chunk rather than guessing: `withVisible(extract_audio(video, "audio.m4a"))` returns the compiled command with `visible = FALSE`, and a knit of the vignette renders that chunk with no output block at all (FFmpeg's stderr does not reach the document). The prose was the wrong side; corrected to say the verb returns the command it ran, invisibly.
+- 2026-09-09: T2 — `root.dir = tempdir()` added to `vignettes/tidymedia.Rmd`'s setup chunk; the untracked `vignettes/audio.m4a` removed. Three procedures measured today against the unfixed tree: `R CMD build` no leak, `devtools::build_vignettes()` no leak, in-place `rmarkdown::render()` from `vignettes/` **reproduced** `audio.m4a`. Rendering all five in place with the fix leaves the five `.html` outputs and no media artifact.
+- 2026-09-09: AMENDMENT (substantive) — AC2's procedure changed from `R CMD build` to the in-place render, at the mini gate, recommendation taken. `R CMD build` copies the package tree to a temporary directory before building vignettes (`tools:::.build_packages` does `Tdir <- tempfile("Rbuild")` then `setwd(Tdir)`), so it reported the same clean result at head and after the fix: the criterion as planned could not fail. Instrument swap at the same promise size, not a widening; T2's wording followed as a minor amendment.
+- 2026-09-09: re-audit: AC2 (full) — not clean, four repairs returned: name the build-path substitution rather than leaving it invisible; state the `.html` count so an empty `vignettes/*.Rmd` glob cannot pass vacuously; name the enumerating command and pin it to one listing, since `.gitignore` blinds `git status` to every artifact kind at issue; restate the tracked-only clause as a precondition rather than an arm of the promise. All four taken. A fifth suggestion — extending the check to paths outside `vignettes/` — was declined as a domain widening past Scope In, which names the chunk that writes into `vignettes/`.

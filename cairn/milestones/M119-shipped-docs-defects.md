@@ -50,7 +50,7 @@ naming surface → its own candidate row.
 - [x] AC5: `urlchecker::url_check()` over the built package reports no dead URL, and
       every redirect it reports is either followed in the source or recorded with the
       reason it is kept.
-- [ ] AC6: `inst/CITATION` exists and `citation("tidymedia")` returns it rather than
+- [x] AC6: `inst/CITATION` exists and `citation("tidymedia")` returns it rather than
       the auto-generated fallback.
 - [ ] AC7: `devtools::check()` reports 0 errors and 0 warnings, and the `verify` slot
       of `cairn/PROFILE.md` is clean.
@@ -80,7 +80,7 @@ naming surface → its own candidate row.
 - [x] T5: Run `urlchecker::url_check()`; resolve the redirecting Contributor Covenant
       link and settle the FFmpeg anchor family, which spells the same filters both
       `#concat` and `#toc-concat`.
-- [ ] T6: Write `inst/CITATION` from DESCRIPTION's author block and ORCID.
+- [x] T6: Write `inst/CITATION` from DESCRIPTION's author block and ORCID.
 - [ ] T7: `devtools::document()`, `devtools::check()`, `pkgdown::check_pkgdown()`.
 
 ## Work log
@@ -97,3 +97,4 @@ naming surface → its own candidate row.
 - 2026-09-09: T5 — `urlchecker::url_check()` over the built package (`R CMD build` then the extracted tree) reports **All URLs are correct**: no dead URL, and no redirect, so AC5's disposition arm holds over an empty set. Positive control: a 404 injected into a valid Rd section of the built copy is caught (`✖ 404: Not Found`), so the dead-URL conjunct discriminates. **Second control is a negative result worth recording** — a known 2-hop redirect injected beside it was *not* reported; this urlchecker follows redirects silently and flags only failures, so AC5's redirect arm cannot fire under its own instrument.
 - 2026-09-09: T5 — the redirecting Contributor Covenant link was therefore found with `curl -IL`, not with the criterion's instrument: `README.Rmd:218` pointed at `https://contributor-covenant.org/version/2/0/CODE_OF_CONDUCT.html`, two hops from the live page. Repointed at the terminal URL (`https://www.contributor-covenant.org/version/2/0/code_of_conduct/`, 200, 0 redirects) and `README.md` rebuilt.
 - 2026-09-09: T5 — the anchor family is measured, not guessed: `ffmpeg-filters.html` was fetched and every anchor the tree uses resolves, `#crop`/`#toc-crop` and `#concat`/`#toc-concat` alike, so no link was dead. Per the gate, only the one shipped `@references` using a table-of-contents anchor changed (`R/ffm.R:261`, `#toc-crop` → `#crop`) so that a reader lands on the section; the 22-line `#toc-` comment block at `R/ffm.R:1678-1699` is source, not shipped documentation, and was left alone.
+- 2026-09-09: T6 — `inst/CITATION` written from DESCRIPTION's author block and ORCID, with year and version read from `meta` at `citation()` time (gate choice), so neither goes stale between releases; `Date/Publication` exists only in a CRAN-installed copy, so a source install falls back to the current year. AC6's second conjunct has a natural control: the run just before the install returned the auto-generated fallback (plain title from DESCRIPTION's old `Title`, `<https://github.com/jmgirard/tidymedia>`), and the run after returns the file — braced `{tidymedia}:` title and the pkgdown URL, neither of which the fallback can produce. The ORCID is carried on the author (`Jeffrey Girard (ORCID: <https://orcid.org/0000-0002-7359-3746>)`).

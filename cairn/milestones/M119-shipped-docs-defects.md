@@ -1,13 +1,13 @@
 # M119: The documentation defects the pre-CRAN audit measured are corrected
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP1
 - **Resolves:** —
 - **Surface tier:** user-facing — every artifact here ships or is read by a user
-- **Branch/PR:** —
+- **Branch/PR:** `m119-shipped-docs-defects`
 
 ## Goal
 
@@ -29,7 +29,7 @@ naming surface → its own candidate row.
 
 ## Acceptance criteria
 
-- [ ] AC1: The sentence at `vignettes/tidymedia.Rmd:43` stating what a task verb
+- [x] AC1: The sentence at `vignettes/tidymedia.Rmd:43` stating what a task verb
       returns agrees with what `extract_audio()` returns in the chunk above it. Today
       the sentence says the verb "returns the path it wrote" while `extract_audio()`'s
       `@return` says the compiled FFmpeg command, invisibly when `run = TRUE`.
@@ -62,7 +62,7 @@ naming surface → its own candidate row.
 
 ## Tasks
 
-- [ ] T1: Settle which side of `vignettes/tidymedia.Rmd:43` is wrong by running the
+- [x] T1: Settle which side of `vignettes/tidymedia.Rmd:43` is wrong by running the
       chunk above it, then correct the prose (or the chunk) to match.
 - [ ] T2: Give `vignettes/tidymedia.Rmd:39-41` a `root.dir = tempdir()` the way
       `verification.Rmd:33` does, remove the untracked `vignettes/audio.m4a` the
@@ -82,3 +82,4 @@ naming surface → its own candidate row.
 - 2026-09-07: created by /milestone-plan.
 - 2026-09-07: plan-gate criteria audit ran in FULL mode (declared tier user-facing), two rounds, fresh-context [O] reader. Findings against this milestone: the round-1 title quantified over all vignettes, all of `man/`, README and pkgdown while AC1 bound one sentence (repaired — title narrowed to what the audit measured); AC3's "`find_program` is not exported" conjunct was already true at head and could not fail (repaired — dropped, and `pkgdown::check_pkgdown()` added, since removing the index row while keeping the topic can trip PROFILE's consistency gate); AC3's round-1 `_pkgdown.yml` clause was unparseable (repaired); AC4's "every sentence naming a package names tidymedia" was falsified by the file's own reprex and tidyverse sentences and named no procedure (repaired — narrowed to the placeholder-derived references); AC5's dead-URL clause gained a disposition arm. AC1, AC2, AC5 and AC6 passed all six questions clean.
 - 2026-09-07: plan gate chose unexporting `find_program` from its docs over exporting the function, because GP1 prefers refusing surface to growing it and D014 makes a new permanent export a decision-level act rather than a documentation repair; falsified by a report of a caller needing the generic that the four wrappers cannot serve.
+- 2026-09-09: T1 — measured the chunk rather than guessing: `withVisible(extract_audio(video, "audio.m4a"))` returns the compiled command with `visible = FALSE`, and a knit of the vignette renders that chunk with no output block at all (FFmpeg's stderr does not reach the document). The prose was the wrong side; corrected to say the verb returns the command it ran, invisibly.

@@ -286,7 +286,9 @@ test_that("ffmpeg_codecs() refuses a wrong `sort_by_type` as its sibling does, s
 })
 
 test_that("ffmpeg_codecs() still returns both orderings", {
-  skip_if_not(nzchar(Sys.which("ffmpeg")), "FFmpeg not installed")
+  # The repo's own helper rather than a hand-rolled copy of it: the helper also
+  # carries the CRAN skip, and this test spawns `ffmpeg -codecs` twice (M118).
+  skip_if_no_ffmpeg()
   sorted <- ffmpeg_codecs(TRUE)
   plain <- ffmpeg_codecs(FALSE)
   # AC4's `ffmpeg_codecs()` half stated as a contract rather than as this

@@ -8,8 +8,6 @@
 \alias{find_ffplay}
 \title{Find the location of a dependency program}
 \usage{
-find_program(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo"))
-
 find_mediainfo()
 
 find_ffmpeg()
@@ -18,15 +16,14 @@ find_ffprobe()
 
 find_ffplay()
 }
-\arguments{
-\item{program}{A string indicating which program to find}
-}
 \value{
-Either a string indicating whether the requested program was found or
-\code{NULL} if the program could not be found.
+The location of the program as a string, or \code{NULL} when it could
+not be found.
 }
 \description{
-Returns the location of the requested program as a string.
+Returns the location of one of the programs tidymedia drives as a string:
+\code{\link[=find_ffmpeg]{find_ffmpeg()}}, \code{\link[=find_ffprobe]{find_ffprobe()}}, \code{\link[=find_ffplay]{find_ffplay()}} and \code{\link[=find_mediainfo]{find_mediainfo()}},
+one per program.
 }
 \details{
 The program is looked up on the \code{PATH} first. When it is not there, the

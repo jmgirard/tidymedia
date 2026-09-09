@@ -37,7 +37,9 @@ tm_install_dir <- function() {
 
 #' Find the location of a dependency program
 #'
-#' Returns the location of the requested program as a string.
+#' Returns the location of one of the programs tidymedia drives as a string:
+#' [find_ffmpeg()], [find_ffprobe()], [find_ffplay()] and [find_mediainfo()],
+#' one per program.
 #'
 #' The program is looked up on the `PATH` first. When it is not there, the
 #' location remembered by [set_program()] is read from
@@ -61,9 +63,9 @@ tm_install_dir <- function() {
 #' Either is repaired with [unset_program()], which forgets the location, or
 #' [set_program()], which replaces it.
 #'
-#' @param program A string indicating which program to find
-#' @return Either a string indicating whether the requested program was found or
-#'   `NULL` if the program could not be found.
+#' @usage NULL
+#' @return The location of the program as a string, or `NULL` when it could
+#'   not be found.
 #' @seealso [set_program()] to point tidymedia at a binary in a non-standard
 #'   location, and [install_on_win()] to download FFmpeg on Windows.
 #' @family program management functions

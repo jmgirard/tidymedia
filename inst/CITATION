@@ -1,0 +1,18 @@
+# Read from DESCRIPTION at citation() time, so neither the version nor the year
+# goes stale between releases. `Date/Publication` exists only in a CRAN-installed
+# copy; a source or development install falls back to the current year.
+year <- if (!is.null(meta$`Date/Publication`)) {
+  substr(meta$`Date/Publication`, 1, 4)
+} else {
+  format(Sys.Date(), "%Y")
+}
+
+bibentry(
+  bibtype = "Manual",
+  title   = "{tidymedia}: Media File Preprocessing and Metadata for the 'tidyverse'",
+  author  = person("Jeffrey", "Girard",
+                   comment = c(ORCID = "0000-0002-7359-3746")),
+  year    = year,
+  note    = paste("R package version", meta$Version),
+  url     = "https://jmgirard.github.io/tidymedia/"
+)

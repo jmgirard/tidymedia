@@ -40,7 +40,7 @@ A ROADMAP candidate row holds the profiling work.
       `Rscript -e 'testthat::test_local(filter = "cran-skip-helpers")'`; the file
       sets `NOT_CRAN` itself per assertion, so the runner's own `NOT_CRAN="true"`
       does not reach it.
-- [x] AC2: With `NOT_CRAN` unset and the three binaries on `PATH`, a full run of the
+- [ ] AC2: With `NOT_CRAN` unset and the three binaries on `PATH`, a full run of the
       suite makes no spawn that resolves one of the three names through `PATH`.
       Measured by shimming the three names onto `PATH` ahead of the real ones with a
       wrapper appending one line per call to a log; the same shim under
@@ -63,7 +63,7 @@ A ROADMAP candidate row holds the profiling work.
       machine against the same resolved binaries, the base checked out in a detached
       worktree; the two lists of skipped test names are sorted and `diff`ed, `diff`
       empty and both lists non-empty, so an empty capture is not read as agreement.
-- [x] AC5: `R CMD check --as-cran` with `NOT_CRAN` unset and the three binaries on
+- [ ] AC5: `R CMD check --as-cran` with `NOT_CRAN` unset and the three binaries on
       `PATH` reports 0 errors, 0 warnings, and no note other than one naming the
       version number or a new submission.
 
@@ -168,6 +168,17 @@ A ROADMAP candidate row holds the profiling work.
   five siblings rather than two.
 
 ## Review
+
+### Third pass — after the AC3/AC4 amendment (2026-09-09)
+
+- Opened on branch head `be6b410`. `master` still at `ea433d5`, unmoved since
+  the branch was cut, so nothing to merge in. PR #122 already open (draft).
+- AC1 PASS, on the criterion's own procedure and under its own run conditions.
+  `Rscript -e 'testthat::test_local(filter = "cran-skip-helpers")'`: FAIL 0,
+  WARN 0, SKIP 0, PASS 18. The same `Rscript` reports `interactive()` as
+  `FALSE`, and `ffmpeg`, `ffprobe` and `mediainfo` all resolve to
+  `/opt/homebrew/bin` — the two conditions the criterion names. Nothing
+  skipped, so no assertion was silently absent.
 
 ### Re-review after the AC1 amendment (2026-09-08)
 

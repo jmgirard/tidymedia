@@ -46,14 +46,23 @@ A ROADMAP candidate row holds the profiling work.
       wrapper appending one line per call to a log; the same shim under
       `NOT_CRAN=true` writes a non-empty log, which is what shows the instrument can
       detect a spawn.
-- [ ] AC3: The two routes that escape AC2's shim are measured rather than assumed.
-      Under `NOT_CRAN` unset, a run with `PATH` emptied — the condition
-      `tests/testthat/helper-program-config.R:43` creates for whole test files — and a
-      run with a shim installed at a remembered absolute location for each of the three
-      programs, which `find_program()` resolves without consulting `PATH`, each report
-      zero spawns.
+- [ ] AC3: The config-directory route that AC2's `PATH` shim cannot see is a real
+      route in the shipped package, not an assumption: with the three program names
+      unresolvable on `PATH` and a logging stand-in written as FFmpeg's remembered
+      location, `find_ffmpeg()` returns that location and `run_program()` spawns the
+      stand-in, which logs the call. Procedure:
+      `Rscript tools/cran_spawn_check.R --mode=config`, whose config-route probe
+      reports at least one logged line. AC3 claims nothing about the suite's own
+      spawn count under that mode, nor about the emptied-`PATH` route of
+      `tests/testthat/helper-program-config.R:43`, which no stand-in can reach.
 - [ ] AC4: With `NOT_CRAN=true` and the three binaries on `PATH`, the set of skipped
-      test names is the same as at this milestone's base commit.
+      test names is the same at this milestone's base commit `ea433d5` and at the
+      branch head. Each list is produced by
+      `Rscript -e 'testthat::test_local(reporter = "summary")'` — non-interactive by
+      construction, the session kind `R CMD check` runs the suite under — on one
+      machine against the same resolved binaries, the base checked out in a detached
+      worktree; the two lists of skipped test names are sorted and `diff`ed, `diff`
+      empty and both lists non-empty, so an empty capture is not read as agreement.
 - [x] AC5: `R CMD check --as-cran` with `NOT_CRAN` unset and the three binaries on
       `PATH` reports 0 errors, 0 warnings, and no note other than one naming the
       version number or a new submission.
@@ -61,8 +70,8 @@ A ROADMAP candidate row holds the profiling work.
 ## Coverage
 
 - AC1 → T2, T6
-- AC2 → T3
-- AC3 → T3, T4
+- AC2 → T3, T7
+- AC3 → T4, T7
 - AC4 → T5
 - AC5 → T5
 
@@ -85,6 +94,16 @@ A ROADMAP candidate row holds the profiling work.
       as well: assert the CRAN branch with `NOT_CRAN="false"`, which fires in either
       session kind, and ask the unset-variable question only where the session is
       the non-interactive one CRAN checks in.
+- [ ] T7: Repair `tools/cran_spawn_check.R` so it refuses to report a spawn count
+      beside a suite run that did not finish, and so the shim source quotes the
+      paths it interpolates; then re-run `--mode=path` (AC2) and `--mode=config`
+      (amended AC3) against the fixed instrument.
+- [ ] T8: The three prose and assertion repairs the re-review coupled to this
+      round: `cairn/DESIGN.md`'s execution-test convention gains the CRAN half;
+      `test-normalize-audio-batch.R`'s new comment stops claiming the production
+      path changed and its two `expect_error()` patterns name which refusal they
+      expect; and a superseding entry corrects this file's two wrong decision-log
+      statements about the script.
 
 ## Work log
 
@@ -104,6 +123,12 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: amendment return: AC3 — "The two routes that escape AC2's shim are measured rather than assumed." Both clauses report zero spawns, which is what the criterion's second sentence demands, but neither instruments its route: `--mode=config`'s planted `R_USER_CONFIG_DIR` is overwritten by `tm_redirect_config()` in the very test files that take the config route (`tests/testthat/helper-program-config.R:41-43`, read at review), and with the three names off `PATH` every helper skips on `Sys.which()` before that route is consulted, so the mode's control cannot fail; `--mode=emptypath` the script itself labels UNINSTRUMENTED. The criterion, not the work, is what is wrong — the amendment should narrow AC3 to what the liveness probe shows, that the escape route is reachable. First amendment return on AC3; defect-return count unchanged at 0.
 - 2026-09-08: amendment return: AC4 — "With `NOT_CRAN=true` and the three binaries on `PATH`, the set of skipped test names is the same as at this milestone's base commit." True in a non-interactive session, measured this pass at 18 identical names; from a console the branch skips one test the base does not, because T6's guard stands down there. AC4 names no procedure and does not bound the session's interactivity — the same unbounded-criterion shape AC1 carried, so the same amendment. First amendment return on AC4; defect-return count still 0.
 - 2026-09-08: re-review gate chose the amendment round over merging as-is or amending AC4 alone. The round carries, beside the two criteria, the findings coupled to them: R3 (refuse to report a zero beside a failed run), R4 (`shQuote` the shim paths), R7 (the CRAN half of the `DESIGN.md:54` convention), R8 (the overstated comment and the loose `expect_error` regexp) and R12 (the stale decision-log prose). R5, R6, R9, R10, R11 and R13 stay logged for triage at the re-review's gate.
+
+- 2026-09-08: re-audit: AC3 (full) — four findings on the drafted amendment, three fixed before the gate. The draft's "whose reported probe line count is at least 1" bound the measuring script's own liveness gate (`tools/cran_spawn_check.R:206-215`), which cannot report below 1 because a failure exits the script — the instrument question's case, so the subject was restated as package behaviour and the script demoted to procedure; "each program's remembered absolute location" described the three-program plant matrix where only FFmpeg is asserted (`:198`), narrowed to FFmpeg's; and Coverage still credited T3, corrected to T4, T7. The fourth, that AC3 could be retired outright since every config-route test file resolves only `tm_redirect_config()` stubs (`tests/testthat/helper-program-config.R:12-23`, `:41-43`) and never one of the three binaries, went to the mini gate.
+- 2026-09-08: re-audit: AC4 (full) — three findings, all fixed before the gate. The draft named a comparison but no command producing each list, though the runner choice is load-bearing (`devtools::test()` and `test_local()` both force `NOT_CRAN="true"` inside the run); two empty lists would have diffed clean, the false-green shape this milestone already hit twice; and the two runs were not bound to one machine, where the hardware-probe helpers make skip sets machine-dependent (`tests/testthat/helper-skip.R:41-65`, `:135-157`). The reader found no unbounded quantifier and confirmed both amendments narrow rather than widen.
+- 2026-09-08: amendment return: AC3 — "The config-directory route that AC2's `PATH` shim cannot see is a real route in the shipped package, not an assumption: with the three program names unresolvable on `PATH` and a logging stand-in written as FFmpeg's remembered location, `find_ffmpeg()` returns that location and `run_program()` spawns the stand-in, which logs the call. Procedure: `Rscript tools/cran_spawn_check.R --mode=config`, whose config-route probe reports at least one logged line. AC3 claims nothing about the suite's own spawn count under that mode, nor about the emptied-`PATH` route of `tests/testthat/helper-program-config.R:43`, which no stand-in can reach." Accepted unchanged at the mini gate, so the wording spends no re-entry.
+- 2026-09-08: amendment return: AC4 — "With `NOT_CRAN=true` and the three binaries on `PATH`, the set of skipped test names is the same at this milestone's base commit `ea433d5` and at the branch head. Each list is produced by `Rscript -e 'testthat::test_local(reporter = \"summary\")'` — non-interactive by construction, the session kind `R CMD check` runs the suite under — on one machine against the same resolved binaries, the base checked out in a detached worktree; the two lists of skipped test names are sorted and `diff`ed, `diff` empty and both lists non-empty, so an empty capture is not read as agreement." Accepted unchanged at the mini gate, so the wording spends no re-entry.
+- 2026-09-08: mini gate kept AC3 rather than retiring it, so the criteria set stays at five and neither grows nor loosens; the escape route it now certifies is package behaviour the shim is blind to, which is why the plan gate added the criterion. T7 and T8 added for the re-measurement and the four prose and assertion repairs the re-review coupled to this round.
 
 ## Decisions
 

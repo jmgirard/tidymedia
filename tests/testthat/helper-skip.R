@@ -2,8 +2,13 @@
 # skip cleanly on machines (and CI images) where the binary is absent.
 #
 # M118 -- and they must skip on CRAN's own submission check, whose machines are
-# not ours to spend FFmpeg time on. skip_on_cran() reads NOT_CRAN and skips
-# unless it is "true"; devtools::check() sets it (env_vars in its formals) and
+# not ours to spend FFmpeg time on. skip_on_cran() skips when NOT_CRAN is set
+# to anything but "true"; when NOT_CRAN is UNSET it skips only if the session is
+# non-interactive, which CRAN's check always is and an RStudio console never is
+# (testthat:::on_cran() is `if (identical(Sys.getenv("NOT_CRAN"), "")) !interactive()
+# else !isTRUE(as.logical(env))`). That second branch is why
+# test-cran-skip-helpers.R asks the unset question only behind
+# skip_if(interactive()). devtools::check() sets it (env_vars in its formals) and
 # r-lib/actions/setup-r@v2 puts it in the CI job env, so the release gate and
 # every push still run these tests -- only CRAN opts out. It goes FIRST in each
 # helper, ahead of the binary question, so the reason reported on CRAN is "On

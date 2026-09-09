@@ -133,6 +133,8 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: T7 done. `tools/cran_spawn_check.R` now refuses to report a spawn count beside a suite that exited non-zero, and `shQuote()`s the log path, the real binary path and the program name it bakes into each stand-in. Both proven able to fail: an instantly-dying suite planted into the runner prints `spawns logged (NOT A RESULT): 0` and `REFUSED: the suite exited 1` where the old script printed `SPAWNS LOGGED: 0`; and a `TMPDIR` holding a `$` and a single quote logged 0 lines for 3 direct calls under the pre-fix quoting against 3 after it. Re-measured against the fixed instrument: `--mode=path` control (`--not-cran`) 1226 spawns — ffmpeg 812, ffprobe 390, mediainfo 24 — exit 0 in 6 min; `--mode=path` CRAN condition 0 spawns, exit 0 in 3.8 min; `--mode=config` CRAN condition reports `config-route probe: live, 1 line(s) logged` and then 0 suite spawns, exit 0 in 3.3 min. AC2 and amended AC3 both hold on the fixed instrument, at the same figures as the pass before it.
 - 2026-09-08: T8 done. `devtools::test()` clean after the T8 edits — FAIL 0, WARN 10, SKIP 18, PASS 13193, the same figures as after T6. `devtools::document()` leaves no diff. Status set back to review.
 
+- 2026-09-09: step-7 approval: PR #122 approved for merge.
+
 ## Decisions
 
 - 2026-09-08: the spawn measurement runs the suite through `R CMD INSTALL` plus
@@ -207,6 +209,51 @@ A ROADMAP candidate row holds the profiling work.
   `New submission` plus `Version contains large components (0.1.0.9000)` — the
   two the criterion allows, and nothing else. Against the base commit's 7m47s
   and `[368s/436s]`.
+
+### Triage and dispositions (third pass, 2026-09-09)
+
+**Fixed on the branch, before the merge marker.** V1 and V2 together:
+`cairn/DESIGN.md`'s clause now says no *test* spawns a binary under CRAN's
+check and states in the same sentence that examples and vignette chunks, gated
+on `Sys.which()` alone, still do; the clause cites D090, appended this pass to
+record the convention the clause states. V3: an empty control log is refused
+rather than reported — `control_blind` now feeds the `reportable` flag, so such
+a run prints `spawns logged (NOT A RESULT): 0` and `REFUSED`, and exits 1.
+Proven able to fail by planting a control whose shim directory never reaches
+the child's `PATH` while the run itself exits 0: the pre-fix script printed a
+bare `SPAWNS LOGGED: 0` and exited 0. V4: the `helper-skip.R` comment now
+states `on_cran()`'s unset branch — non-interactive only — and names the guard
+that exists because of it. V5: the ROADMAP row's one-minute estimate corrected
+in place against the measured figures, marked `corrected M118`. V6:
+`shQuote(..., type = "sh")` on all three interpolations (a no-op on this
+machine, where `"sh"` is already the default, and the point is Windows).
+
+**Rejected, with reason.** V8 — pinning `rlang`'s own message text is what the
+tightening is *for*: the criterion the repo holds a test to is that it names
+which failure it expects, and an upstream wording change surfacing as one red
+test is the cheap end of that trade. A `class = "rlang_error"` assertion would
+not discriminate, since that class is shared by every rlang input check.
+
+**Follow-up, one candidate row written at the post-merge hygiene pass** (held
+until then so the ROADMAP's 60-line cap is never breached: this milestone's
+row turning terminal prunes M115's under the three-terminal-row rule, and the
+new row takes the freed line). It absorbs V7 (the emptied-`PATH` mode's exit
+code cannot distinguish a new failure from the designed one), V9 with its
+constraint (the two hardware-probe helpers have no control-half coverage, and
+extending the existing control to them would itself spawn under
+`NOT_CRAN=true`, so closing it needs a mock), and V10-V15 — the CI dependency
+on `setup-r@v2`, `--lib=DIR`'s missing freshness guard, the two surviving
+hand-rolled guards and the unshimmed `ffplay`, the script's three hygiene
+defects, and the examples that still spawn on CRAN.
+
+**PR conversation.** No reviews, no unresolved threads, one comment.
+`conversation: codecov[bot] PR #122 — noted` (coverage report, requests
+nothing).
+
+**Return floor.** None of the sixteen demonstrates an acceptance criterion
+failing, and none is a load-bearing defect in what the package does for its
+users, so no finding returns the milestone. Defect-return count stays 0;
+amendment returns stand at three (AC1, AC3, AC4), each once.
 
 ### Consistency gate — PASS (third pass)
 

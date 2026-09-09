@@ -4276,3 +4276,37 @@ the count and membership of the discard routes are corrected here.
 
 **Falsified by** a fifth route being added without this entry being superseded,
 which is the failure mode that produced it.
+
+## D090 — Execution tests skip on CRAN's own check; examples and vignettes do not (2026-09-09, from M118; extends the D004/D024/D034 execution-test convention with a second gate ahead of the binary question rather than replacing it — those three stand unchanged)
+
+Every `skip_if_no_*()` helper in `tests/testthat/helper-skip.R` calls
+`testthat::skip_on_cran()` **before** it asks whether the binary is present, so
+no test that would spawn FFmpeg, FFprobe or MediaInfo runs under CRAN's own
+check of the submitted tarball. The reason CRAN's log reports is "On CRAN"
+whether or not its machine happens to have the binary.
+
+**Why the gate goes first.** The two hardware-probe helpers decide by running a
+one-frame encode, so a CRAN gate placed after the probe would already have
+spent the spawn it exists to prevent. Ordering the gate ahead of the binary
+question also makes the reported reason answer the question a CRAN maintainer
+is actually asking — why the package declines to run these tests on their
+machine — rather than reporting a machine fact about their image.
+
+**Why CRAN and not everyone.** CRAN's machines are a shared resource the
+maintainer does not pay for and cannot profile; every other runner of this
+suite is one the maintainer chose. `devtools::check()` and
+`r-lib/actions/setup-r@v2` both put `NOT_CRAN=true` in the environment, so the
+release gate and every CI push still execute the full binary suite — only CRAN
+opts out. That dependency on an action the repo does not control is recorded as
+a known exposure in M118's review, not closed here.
+
+**What this does not cover.** Examples (`@examplesIf nzchar(Sys.which(...))`)
+and vignette chunks are gated on binary presence alone and still spawn wherever
+CRAN's machine has one. Extending the convention to them is a separate decision
+with a real cost — an example that never runs on CRAN's machines is an example
+whose output CRAN never checks — and is deliberately not taken here.
+
+**Falsified by** a test spawning one of the three binaries under a CRAN-mode
+check run, which `tools/cran_spawn_check.R` is the standing instrument for; the
+measured spawn counts and check timings live in M118's milestone record, not in
+this entry.

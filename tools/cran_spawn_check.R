@@ -90,9 +90,9 @@ for (p in programs) {
       # damage is a silent under-count rather than a visible failure.
       sprintf(
         'printf \'%%s\\t%%s\\n\' %s "$(printf \'%%s\' "$*" | tr \'\\n\\r\' \'  \')" >> %s',
-        shQuote(p), shQuote(log_file)
+        shQuote(p, type = "sh"), shQuote(log_file, type = "sh")
       ),
-      sprintf('exec %s "$@"', shQuote(real[[p]]))
+      sprintf('exec %s "$@"', shQuote(real[[p]], type = "sh"))
     ),
     path
   )
@@ -251,7 +251,14 @@ cat(sprintf("lib: %s\n", lib))
 # genuine zero is how a dead run reads as a clean one. The count is still
 # printed -- it is diagnostic -- but under a label that is not the result
 # label, and the script exits non-zero so a caller cannot miss it.
-reportable <- instrumented && status == 0L
+# The control exists to show the stand-ins are reachable FROM THE RUN, which
+# self_test() cannot show: it calls them by absolute path, before any PATH
+# surgery. So an empty control log is not a result either -- it is a shim
+# directory that never reached the child -- and refusing it here is what stops
+# AC2's second sentence from resting on the operator noticing across two
+# separate invocations.
+control_blind <- not_cran && instrumented && length(lines) == 0L
+reportable <- instrumented && status == 0L && !control_blind
 cat(sprintf("%s: %d\n",
             if (reportable) "SPAWNS LOGGED" else "spawns logged (NOT A RESULT)",
             length(lines)))
@@ -264,6 +271,12 @@ if (length(lines)) {
 if (!instrumented) {
   cat("NOTE: this mode reaches no stand-in, so an empty log says only that\n")
   cat("      nothing was resolvable -- read it with the config mode's result.\n")
+}
+if (control_blind) {
+  cat("REFUSED: the control logged nothing, so the stand-ins were not reachable\n")
+  cat("         from the run and a zero from the CRAN condition would mean\n")
+  cat("         nothing. Read", file.path(root, "suite.err"), "\n")
+  quit(status = 1L)
 }
 if (!reportable && instrumented) {
   cat(sprintf(

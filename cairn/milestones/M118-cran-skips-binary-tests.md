@@ -155,6 +155,141 @@ A ROADMAP candidate row holds the profiling work.
   session-kind caveat is finding R2 below, which is why this line names the
   session it ran in.
 
+- AC2 PASS. `tools/cran_spawn_check.R --mode=path`, stand-ins prepended to
+  `PATH` ahead of the real binaries. Control (`--not-cran`): 1226 spawns —
+  ffmpeg 812, ffprobe 390, mediainfo 24 — suite exit 0 in 5.7 min, so the
+  instrument sees. CRAN condition (`NOT_CRAN` unset): 0 spawns, suite exit 0 in
+  3.7 min. Same figures as the first pass, on the amended branch.
+- AC3 PASS as written, and the writing is the problem — see finding R1.
+  `--mode=config`: the liveness probe resolved FFmpeg through a remembered
+  location and logged 1 line in both runs, and the suite then logged 0 spawns
+  under both `NOT_CRAN` states, exit 0 in 3.7 min each. `--mode=emptypath`:
+  0 spawns, suite exit 1, the script's own output labelling the mode
+  UNINSTRUMENTED. Both clauses therefore "report zero spawns" literally, which
+  is what AC3 demands; neither clause delivers AC3's opening sentence, that the
+  two escape routes are "measured rather than assumed".
+- AC5 PASS. `R CMD check --as-cran --no-manual` with `NOT_CRAN` unset and the
+  three binaries on `PATH`: **0 errors, 0 warnings, 0 notes**, `Status: OK`,
+  Duration 5m26.8s, tests step `[243s/308s]`. Against the base commit's 7m47s
+  and `[368s/436s]`. Slower than the first pass's 3m42s because two other
+  measurement runs shared the machine; the criterion is about the counts, and
+  they are clean.
+
+### Consistency gate — PASS (re-review)
+
+`cairn_validate.py` exit 0, 23 checks green, no `release window` advisory.
+`cairn_impact.py` not run — `Principles touched:` is `—` and no DESIGN.md
+principle changed. Toolchain half, from the `r-package` profile:
+`devtools::document()` leaves the tree clean; `devtools::check()` 0/0/0 above;
+`pkgdown::check_pkgdown()` reports no problems; README.Rmd and README.md
+untouched and in sync; no new exported object, so no `_pkgdown.yml` row owed;
+no `NEWS.md` entry owed, the change being confined to the test suite and an
+`.Rbuildignore`d script; `^tools$` present at `.Rbuildignore:21`, and
+`check()` raised no missing-ignore NOTE. CI: all ten legs green on `dc69b79`.
+
+### Independent review — three lenses, full fan-out (re-review)
+
+Declared surface tier is user-facing and the diff touches executable surface,
+so all three lenses ran fresh-context on distinct evidence bases. F-numbers
+below refer to the first pass's findings, kept in the section that follows.
+
+**[S] blame-history — no findings.** Traced every modified block to the commit
+that introduced it: `skip_on_cran()` only prepends an early exit ahead of M31's
+and M100's probe logic rather than disturbing it; the `find_ffprobe` NULL mock
+exercises the documented NA-standdown path and the real spawn/warn path keeps
+its coverage in `test-audio-track-drop.R` and `test-check-tracks-seam.R`; the
+hand-rolled guard replaced at `test-unguarded-argument-front-doors.R:289`
+traces to M096 with no recorded reason for bypassing the shared helper. No
+D-entry addresses CRAN skip behaviour, so none is contradicted.
+
+**[S] prior-review — two regressions of taught lessons.** No archived `## Review`
+section names these files, and `gh api .../pulls/comments` returns `[]`, so the
+prior-review surface is the doctrine modules. Against those: R3 below is the
+shape M117's review found in the sibling `tools/config_leak_check.R` one
+milestone ago ("a PASS reported for a command that never ran"), and R1 is
+`false-greens.md`'s "control that stopped controlling". Both were found by this
+milestone's own first pass and deferred rather than repaired. Its third
+observation — that config mode redirects `R_USER_CONFIG_DIR` but not
+`XDG_CONFIG_HOME` — it withdrew on reading `R/program_management.R:83-90`,
+since the legacy path is consulted only when the new location holds no file.
+
+**[O] diff-bug — fifteen findings.** Consolidated below, most severe first.
+
+- **R1 (criterion-level; AC3).** Neither of AC3's two clauses instruments the
+  route it names. `--mode=config` plants a remembered location and points
+  `R_USER_CONFIG_DIR` at it, but the test files that actually take that route
+  call `tm_redirect_config()`, which sets its own `R_USER_CONFIG_DIR` and
+  `PATH = ""` (`tests/testthat/helper-program-config.R:41-43`) — so the plants
+  are invisible to exactly those files. Verified by reading the helper at this
+  review. The mode's suite-level control cannot fail either: with the three
+  names off `PATH`, every helper skips on `Sys.which()` before the config route
+  is consulted, so its `NOT_CRAN=true` control logs 0 for a reason unrelated to
+  the property. Only the liveness probe can fail, and it tests the route, not
+  the suite. `--mode=emptypath` is UNINSTRUMENTED by the script's own label.
+  AC3's clauses are literally satisfied and its opening promise is not.
+  Extends F3.
+- **R2 (criterion-level; AC4).** AC4 quantifies over sessions without bounding
+  interactivity, the shape AC1 was just amended for. The new guard means the
+  branch skips one test an interactive session that the base commit does not,
+  so the skip sets are identical non-interactively (measured above) and differ
+  by one from a console. Not a defect in the work.
+- **R3.** `tools/cran_spawn_check.R:221-248` captures the suite's exit status
+  and only prints it; nothing branches on it, so a run that dies early prints
+  `SPAWNS LOGGED: 0` in the same shape as a genuine clean zero. Repeats F2, and
+  M117's review found the identical shape in the sibling script.
+- **R4.** `tools/cran_spawn_check.R:87-93` interpolates the log path and the
+  real binary path into `/bin/sh` shim source with `sprintf` and no `shQuote`,
+  so a `TMPDIR` containing a space, quote or `$` yields a shim that either
+  fails to log — a silent under-count, since the `exec` still runs — or fails
+  to exec. New this pass.
+- **R5.** Nothing in the repo fails if CI stops setting `NOT_CRAN`. T1
+  established the value comes from `r-lib/actions/setup-r@v2`, which no file
+  here controls; if that changes, both workflows go green with the execution
+  coverage silently gone. New this pass.
+- **R6.** `test-cran-skip-helpers.R`'s control half covers only the three name
+  helpers, so `skip_if_no_nvenc()` and `skip_if_no_videotoolbox()` are pinned
+  by their CRAN-reason assertions alone: either helper reduced to a bare
+  `skip_on_cran()`, losing its `Sys.which`, encoder-list and probe-encode
+  logic, passes every block green. New this pass.
+- **R7.** `cairn/DESIGN.md:54` still states the convention as "Command
+  execution tests `skip_if` the ffmpeg/mediainfo binaries are absent"; the new
+  and load-bearing half, "and on CRAN", lives only as a comment in
+  `helper-skip.R`. New this pass.
+- **R8.** The comment added at `test-normalize-audio-batch.R` overstates what
+  changed — the production path still probes; the suppression is the test's
+  mock — and the pre-existing `expect_error(..., "channels|whole")` regexp is
+  loose enough to match an error raised by the newly-NULL FFprobe location
+  rather than by the refusal under test. Extends F6.
+- **R9.** `--lib=DIR` skips `R CMD INSTALL` with no freshness guard, so a
+  re-run after an edit can measure the previously installed package. Repeats F8.
+- **R10.** Two hand-rolled binary guards of the class this milestone patched
+  survive — `test-program-status-and-unset.R:33` and `test-nvenc-memo.R:92` —
+  each spawning nothing today only because of a neighbouring guard or mock, and
+  `ffplay` is shimmed by nothing at all. Repeats F4/F5.
+- **R11.** Script hygiene: `env[["TIDYMEDIA_SPAWN_LOG"]]` is set and never read;
+  the harness is POSIX-only and the header documents every other assumption;
+  `R_LIBS` gains a trailing empty entry and the required working directory is
+  undocumented. Repeats F7/F9 plus one new pair.
+- **R12.** Stale prose in this file's decision log: the script "costs one
+  `.Rbuildignore` entry" (`^tools$` was already there) and matches "the two
+  measurement scripts already in `tools/`" (there are five). Repeats F10.
+- **R13.** Outside the Goal's wording but bounding its win: `R CMD check` still
+  runs `@examplesIf nzchar(Sys.which("ffmpeg"))` examples, which spawn binaries
+  wherever CRAN's machine has them. The Goal says "tests", so nothing is
+  unsatisfied. New this pass.
+
+Dropped by the [O] lens after checking, and recorded so they are not re-found:
+the shim's `tr` under an inherited `PATH=""` does not under-count (the line is
+still written); `test-cran-skip-helpers.R` spawns nothing under CRAN;
+`expect_match(NA_character_, ...)` fails cleanly rather than erroring; the
+`names(present)` index is correct; the `find_ffprobe` mock does reach
+`count_audio_streams()`; no `skip_if_no_*()` is called at any file's top level,
+swept across all 91 test files, so the added skip cannot abort a whole file.
+
+**PR conversation.** No reviews, no unresolved threads, one comment.
+`conversation: codecov[bot] PR #122 — noted` (coverage unchanged at 98.43%,
+requests nothing).
+
 ### First pass (2026-09-08)
 
 - 2026-09-08: review opened. Branch synced with `master` at `ea433d5`; `master`

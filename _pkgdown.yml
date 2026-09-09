@@ -124,7 +124,7 @@ reference:
     Locate, configure, and install the FFmpeg and MediaInfo binaries.
   contents:
   - program_status
-  - find_program
+  - find_ffmpeg
   - set_program
   - unset_program
   - install_on_win

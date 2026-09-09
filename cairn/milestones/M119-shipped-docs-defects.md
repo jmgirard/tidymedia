@@ -41,7 +41,7 @@ naming surface → its own candidate row.
       one `.html` per vignette, five in all, and no other path. `R CMD build`
       builds in a temporary copy and cannot observe this; the in-place render is
       the discriminating instrument.
-- [ ] AC3: `man/find_program.Rd` carries no `\usage{}` entry for `find_program`,
+- [x] AC3: `man/find_program.Rd` carries no `\usage{}` entry for `find_program`,
       `_pkgdown.yml` does not list `find_program` in its reference index, and
       `pkgdown::check_pkgdown()` passes.
 - [ ] AC4: A grep over `.github/SUPPORT.md` for `with $`, ` !` and `{{` returns
@@ -73,7 +73,7 @@ naming surface → its own candidate row.
       the way `verification.Rmd:33` does, remove the untracked
       `vignettes/audio.m4a` the current chunk left behind, and render in place to
       confirm nothing new lands.
-- [ ] T3: Drop `find_program` from the Rd `\usage{}` and from `_pkgdown.yml:127`,
+- [x] T3: Drop `find_program` from the Rd `\usage{}` and from `_pkgdown.yml:127`,
       keeping the four exported `find_*()` wrappers documented as they are.
 - [ ] T4: Fill `.github/SUPPORT.md`'s placeholders (`:1` and `:3`) and point its
       support path at this package's issue tracker.
@@ -92,3 +92,4 @@ naming surface → its own candidate row.
 - 2026-09-09: T2 — `root.dir = tempdir()` added to `vignettes/tidymedia.Rmd`'s setup chunk; the untracked `vignettes/audio.m4a` removed. Three procedures measured today against the unfixed tree: `R CMD build` no leak, `devtools::build_vignettes()` no leak, in-place `rmarkdown::render()` from `vignettes/` **reproduced** `audio.m4a`. Rendering all five in place with the fix leaves the five `.html` outputs and no media artifact.
 - 2026-09-09: AMENDMENT (substantive) — AC2's procedure changed from `R CMD build` to the in-place render, at the mini gate, recommendation taken. `R CMD build` copies the package tree to a temporary directory before building vignettes (`tools:::.build_packages` does `Tdir <- tempfile("Rbuild")` then `setwd(Tdir)`), so it reported the same clean result at head and after the fix: the criterion as planned could not fail. Instrument swap at the same promise size, not a widening; T2's wording followed as a minor amendment.
 - 2026-09-09: re-audit: AC2 (full) — not clean, four repairs returned: name the build-path substitution rather than leaving it invisible; state the `.html` count so an empty `vignettes/*.Rmd` glob cannot pass vacuously; name the enumerating command and pin it to one listing, since `.gitignore` blinds `git status` to every artifact kind at issue; restate the tracked-only clause as a precondition rather than an arm of the promise. All four taken. A fifth suggestion — extending the check to paths outside `vignettes/` — was declined as a domain widening past Scope In, which names the chunk that writes into `vignettes/`.
+- 2026-09-09: T3 — `@usage NULL` on the `find_program` block drops it from the topic's `\usage{}`, leaving the four exported wrappers; `@param program` went with it, since no documented usage takes it any more, and the description now names the four wrappers instead. `\alias{find_program}` stays, so `?find_program` and the package's own `[find_program()]` cross-references still resolve. `_pkgdown.yml:127` lists `find_ffmpeg` in place of `find_program` (gate choice): pkgdown resolves the alias to the same topic, so the topic stays indexed. Positive control run — deleting that index line makes `pkgdown::check_pkgdown()` abort in `check_missing_topics()`, so AC3's third conjunct discriminates rather than passing vacuously.

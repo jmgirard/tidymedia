@@ -146,6 +146,15 @@ A ROADMAP candidate row holds the profiling work.
   helper), and five ordering assertions with `PATH = ""`. Nothing skipped, so
   no assertion was silently absent.
 
+- AC4 PASS, in the non-interactive session the run was made in. Skipped-test
+  sets compared by name, base `ea433d5` in a detached worktree against branch
+  head `dc69b79`, both under `NOT_CRAN=true` with the three binaries on `PATH`:
+  18 skipped test names each, and `diff` of the two sorted lists is empty —
+  identical, not merely equal in count. Expectation counts 13221 on the branch
+  against 13203 at base, the 18 added by `test-cran-skip-helpers.R`. The
+  session-kind caveat is finding R2 below, which is why this line names the
+  session it ran in.
+
 ### First pass (2026-09-08)
 
 - 2026-09-08: review opened. Branch synced with `master` at `ea433d5`; `master`

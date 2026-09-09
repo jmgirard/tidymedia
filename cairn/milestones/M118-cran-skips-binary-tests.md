@@ -187,7 +187,10 @@ A ROADMAP candidate row holds the profiling work.
   exit 0 in 7.4 min, so the instrument sees. CRAN condition (`NOT_CRAN` unset):
   0 spawns, suite exit 0 in 4.8 min. The non-empty control is what makes the
   zero evidence; both runs exited 0, so the script reported them as results
-  rather than refusing them.
+  rather than refusing them. **Re-measured after the gate-directed fixes**, on
+  the shipped script rather than the one those figures came from: control 1226
+  spawns — ffmpeg 812, ffprobe 390, mediainfo 24 — exit 0 in 5.3 min; CRAN
+  condition 0 spawns, exit 0 in 3.4 min. Same figures either side of the fix.
 - AC3 PASS, on the amended criterion's own procedure.
   `tools/cran_spawn_check.R --mode=config`: `/opt/homebrew/bin` dropped from
   `PATH` so none of the three names resolves there, a stand-in written as each
@@ -196,6 +199,9 @@ A ROADMAP candidate row holds the profiling work.
   file and `run_program()` spawned the stand-in, which logged the call. That
   one line is what the criterion asks for. The suite then logged 0 spawns and
   exited 0 in 4.2 min, recorded here as the criterion says it is: not evidence.
+  **Re-measured after the gate-directed fixes** on the shipped script: the probe
+  again reports `live, 1 line(s) logged`, the suite again logs 0, exit 0 in
+  3.4 min.
 - AC4 PASS, under the criterion's own procedure and session kind.
   `Rscript -e 'testthat::test_local(reporter = "summary")'` in each tree — base
   `ea433d5` in a detached worktree, branch head `be6b410` — on this one machine

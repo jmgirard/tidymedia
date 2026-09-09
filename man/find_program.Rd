@@ -17,8 +17,8 @@ find_ffprobe()
 find_ffplay()
 }
 \value{
-Either a string indicating whether the requested program was found or
-\code{NULL} if the program could not be found.
+The location of the program as a string, or \code{NULL} when it could
+not be found.
 }
 \description{
 Returns the location of one of the programs tidymedia drives as a string:

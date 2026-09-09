@@ -46,14 +46,12 @@
   evaluated only when that program is installed.
 
 * `citation("tidymedia")` now returns a citation written for the package,
-  carrying the author's ORCID and the package website, instead of the entry
-  R generates automatically from `DESCRIPTION`.
+  carrying the package website, instead of the entry R generates automatically
+  from `DESCRIPTION`.
 
 * The get-started vignette said a task verb returns the path it wrote. It
   returns the compiled FFmpeg command, invisibly when it runs the command and
-  visibly under `run = FALSE`; the vignette now says so. Its chunks also write
-  to a temporary directory, so building the vignettes no longer leaves media
-  files beside their sources.
+  visibly under `run = FALSE`; the vignette now says so.
 
 * The reference page for finding a program now documents only the four
   functions you can call -- `find_ffmpeg()`, `find_ffprobe()`, `find_ffplay()`

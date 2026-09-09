@@ -64,8 +64,8 @@ tm_install_dir <- function() {
 #' [set_program()], which replaces it.
 #'
 #' @usage NULL
-#' @return Either a string indicating whether the requested program was found or
-#'   `NULL` if the program could not be found.
+#' @return The location of the program as a string, or `NULL` when it could
+#'   not be found.
 #' @seealso [set_program()] to point tidymedia at a binary in a non-standard
 #'   location, and [install_on_win()] to download FFmpeg on Windows.
 #' @family program management functions

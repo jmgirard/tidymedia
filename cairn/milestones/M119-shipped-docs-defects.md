@@ -101,6 +101,8 @@ naming surface → its own candidate row.
 - 2026-09-09: T7 — `devtools::document()` leaves no diff; `devtools::check()` **0 errors, 0 warnings, 0 notes** in 5m47.3s (`checking Rd \usage sections`, `checking Rd contents` and `checking files in 'vignettes'` all OK, so T3's and T2's changes are clean at the check surface); `pkgdown::check_pkgdown()` no problems; `devtools::test()` FAIL 0, PASS 13266.
 - 2026-09-09: T7 — `NEWS.md` gained three Documentation entries for this milestone's user-visible changes (the citation, the vignette's corrected return-value sentence and its tempdir chunks, and the reference page dropping the internal generic), per the profile's changelog slot; `spelling::spell_check_package()` clean.
 - 2026-09-09: status → review.
+- 2026-09-09: review — seven criteria verified with fresh evidence, consistency gate clean, three review lenses run (13 findings, all from the [O] lens). Maintainer triage at the merge gate: five added claims corrected on the branch plus one stale ROADMAP line, three findings deferred to a candidate row, four rejected. Re-verified after the fixes: check 0/0/0, document no diff, check_pkgdown clean, cairn_validate clean.
+- 2026-09-09: step-7 approval: PR #123 approved for merge.
 - 2026-09-09: review — draft PR #123 opened. The seven acceptance-criterion boxes arrived ticked with no Review-section evidence; unticked at review entry and re-ticked one at a time against fresh evidence, per AC fencing.
 
 ## Review
@@ -223,3 +225,85 @@ fan-out ran, each lens fresh-context and on a distinct evidence base.
 - **[O] diff-bug** — thirteen findings, listed below with their dispositions.
 
 ### Findings and dispositions
+
+Triaged by the maintainer at the merge gate; the chosen option was to correct
+the five added claims on the branch, then merge.
+
+**Fixed on the branch (5, plus one tracking line):**
+
+1. `NEWS.md` — "carrying the author's ORCID and the package website". Neither the
+   rendered citation nor the BibTeX entry shows the ORCID: `print.bibentry`'s
+   default include set drops `person()`'s `comment`, which is where the ORCID
+   sits. Verified against the installed copy under AC6. → the ORCID clause
+   dropped; the entry now says "carrying the package website".
+2. `NEWS.md` — "building the vignettes no longer leaves media files beside their
+   sources". T2's own measurement found `R CMD build` and
+   `devtools::build_vignettes()` never leaked (both copy to a temp tree); only an
+   in-place `rmarkdown::render()` from `vignettes/` did, which is a developer
+   path, not a user one. → the sentence dropped from the release note.
+3. `vignettes/tidymedia.Rmd` — "Every task verb runs FFmpeg immediately and
+   returns the command it ran". `separate_audio_video()` (`R/ffmpeg.R:1149`)
+   carries `@family task verb functions` and its `@return` is "A named character
+   vector of the two compiled commands", so the universal is false. → the
+   quantifier softened and the two-output case named.
+4. `vignettes/tidymedia.Rmd` — "invisibly, which is why the chunk above shows no
+   output". That chunk is `eval`-guarded on `ffmpeg` and `ffprobe`, so in the
+   build a CRAN reader sees it was never evaluated and the stated cause is the
+   wrong one. → the causal clause replaced with "so nothing is printed".
+5. `R/program_management.R` `@return` — "Either a string indicating whether the
+   requested program was found". With `@usage NULL` no documented usage takes a
+   program argument, and the text says *whether* where the function gives
+   *where*. → rewritten to "The location of the program as a string, or `NULL`
+   when it could not be found."; `devtools::document()` re-run.
+6. `cairn/ROADMAP.md` — the docs-gaps row's item (i) still posed "which is wrong
+   is the open call" about `tidymedia.Rmd:41`, settled by AC1. → item (i) and
+   its `Note (i) is now M119 AC1` tail removed, the row's count corrected from
+   eleven to ten and marked `corrected M119`.
+
+**Deferred to a candidate row (3):**
+
+7. Eleven `find_program()` cross-references survive in shipped help prose —
+   `program_status.Rd:22,51,56`, `set_program.Rd:41,64,68`,
+   `unset_program.Rd:22,32,42,52`, `install_on_win.Rd:132`. `program_status.Rd:51`
+   reads "`find_program()` for one program at a time", recommending a function
+   that is not exported. Verified pre-existing: `git show
+   origin/master:man/program_status.Rd` carries the same three references, so the
+   diff did not introduce it, and AC3's three conjuncts pass regardless.
+8. The unreleased `NEWS.md` section both explains `unset_program()` in terms of
+   `find_program()` and calls it internal. The earlier entries came from prior
+   milestones; a coherence problem, not an error of fact.
+9. `README.md:193,201` embed an absolute session temp path
+   (`/private/var/folders/px/.../temp_libpath.../`) in knitted output, which is
+   why `build_readme()` produces churn on every run. Verified pre-existing —
+   `origin/master`'s README.md carries two such paths.
+
+**Rejected (4):**
+
+10. `R/ffm.R:1678-1699`'s `#toc-` comment block is now inconsistent with the
+    shipped anchors. Rejected: the implement gate decided this block is source,
+    not shipped documentation, and both anchor families were measured to resolve
+    (AC5), so nothing is broken — an intentional scope line, not a defect.
+11. The README code-of-conduct link points at the generic covenant rather than
+    the repo's `.github/CODE_OF_CONDUCT.md`. Rejected: the branch only repointed
+    an existing external link at its terminal URL; choosing a different target is
+    a change the diff did not make.
+12. `inst/CITATION`'s author carries no `role` where DESCRIPTION declares
+    `c("aut", "cre")`. Rejected: `citation()` renders correctly and nothing
+    requires the role in a CITATION `person()`.
+13. `vignettes/tidymedia.Rmd:16`'s comment pins `verification.Rmd:33`. Rejected
+    as a style nitpick; the reference is accurate today.
+
+**PR conversation (#123):** the reviews, issue-comment and unresolved-thread
+reads all came back empty — no comment, review or thread of any kind.
+
+### Post-fix re-verification
+
+The five fixes touch only prose and one roxygen `@return`, so every criterion
+they could reach was re-measured after them: `devtools::document()` regenerated
+`man/find_program.Rd` and then leaves no diff; `devtools::check(document =
+FALSE)` **Status: OK — 0 errors, 0 warnings, 0 notes** in 6m20.2s;
+`pkgdown::check_pkgdown()` `No problems found.`; `cairn_validate.py` exits 0.
+`rmarkdown::render()` over `vignettes/tidymedia.Rmd` in place completes without
+error, the rendered document carries the corrected sentence, and `ls -A
+vignettes/` after removing the `.html` is the same five tracked `.Rmd` — AC1's
+agreement and AC2's leave-nothing promise both still hold.

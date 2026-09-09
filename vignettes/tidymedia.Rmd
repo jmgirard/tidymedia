@@ -43,8 +43,9 @@ audio track of a recording — to hand to a transcription tool, for example.
 extract_audio(video, "audio.m4a")
 ```
 
-Every task verb runs FFmpeg immediately and returns the command it ran --
-invisibly, which is why the chunk above shows no output. To see the command
+Task verbs run FFmpeg immediately and return the command they ran --
+invisibly, so nothing is printed. (A verb that writes two outputs, such as
+`separate_audio_video()`, returns both commands.) To see the command
 *without* running anything, pass `run = FALSE`; the verb compiles the exact
 FFmpeg invocation and returns it visibly, as a string you can inspect, log, or
 save:

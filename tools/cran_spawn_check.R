@@ -84,11 +84,15 @@ for (p in programs) {
       # spawn writes several lines (measured 2026-09-08 -- 1230 lines for 1228
       # spawns). The count is lines, so the error only ever inflates, but a
       # per-program tally splits across the break and reads wrong.
+      # shQuote() on every interpolated path: a TMPDIR holding a space, a
+      # quote or a `$` would otherwise yield a shim that logs to the wrong
+      # place or not at all -- and since the `exec` below still runs, the
+      # damage is a silent under-count rather than a visible failure.
       sprintf(
-        'printf \'%%s\\t%%s\\n\' "%s" "$(printf \'%%s\' "$*" | tr \'\\n\\r\' \'  \')" >> "%s"',
-        p, log_file
+        'printf \'%%s\\t%%s\\n\' %s "$(printf \'%%s\' "$*" | tr \'\\n\\r\' \'  \')" >> %s',
+        shQuote(p), shQuote(log_file)
       ),
-      sprintf('exec "%s" "$@"', real[[p]])
+      sprintf('exec %s "$@"', shQuote(real[[p]]))
     ),
     path
   )
@@ -238,8 +242,19 @@ elapsed <- round(as.numeric(difftime(Sys.time(), started, units = "mins")), 1)
 lines <- readLines(log_file, warn = FALSE)
 cat(sprintf("suite exit status: %d, %s min\n", status, elapsed))
 cat(sprintf("suite output: %s\n", file.path(root, "suite.out")))
+cat(sprintf("suite errors: %s\n", file.path(root, "suite.err")))
 cat(sprintf("lib: %s\n", lib))
-cat(sprintf("SPAWNS LOGGED: %d\n", length(lines)))
+
+# A spawn count is a RESULT only when the run that produced it finished. A
+# suite that dies early logs few spawns or none for a reason that has nothing
+# to do with skip_on_cran(), and printing that number in the same shape as a
+# genuine zero is how a dead run reads as a clean one. The count is still
+# printed -- it is diagnostic -- but under a label that is not the result
+# label, and the script exits non-zero so a caller cannot miss it.
+reportable <- instrumented && status == 0L
+cat(sprintf("%s: %d\n",
+            if (reportable) "SPAWNS LOGGED" else "spawns logged (NOT A RESULT)",
+            length(lines)))
 if (length(lines)) {
   counts <- table(sub("\t.*$", "", lines))
   for (nm in names(counts)) cat(sprintf("  %s: %d\n", nm, counts[[nm]]))
@@ -249,4 +264,12 @@ if (length(lines)) {
 if (!instrumented) {
   cat("NOTE: this mode reaches no stand-in, so an empty log says only that\n")
   cat("      nothing was resolvable -- read it with the config mode's result.\n")
+}
+if (!reportable && instrumented) {
+  cat(sprintf(
+    "REFUSED: the suite exited %d, so the count above measures that failure\n",
+    status
+  ))
+  cat("         and not the package. Read", file.path(root, "suite.err"), "\n")
+  quit(status = 1L)
 }

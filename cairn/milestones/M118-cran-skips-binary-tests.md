@@ -129,6 +129,7 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: amendment return: AC3 — "The config-directory route that AC2's `PATH` shim cannot see is a real route in the shipped package, not an assumption: with the three program names unresolvable on `PATH` and a logging stand-in written as FFmpeg's remembered location, `find_ffmpeg()` returns that location and `run_program()` spawns the stand-in, which logs the call. Procedure: `Rscript tools/cran_spawn_check.R --mode=config`, whose config-route probe reports at least one logged line. AC3 claims nothing about the suite's own spawn count under that mode, nor about the emptied-`PATH` route of `tests/testthat/helper-program-config.R:43`, which no stand-in can reach." Accepted unchanged at the mini gate, so the wording spends no re-entry.
 - 2026-09-08: amendment return: AC4 — "With `NOT_CRAN=true` and the three binaries on `PATH`, the set of skipped test names is the same at this milestone's base commit `ea433d5` and at the branch head. Each list is produced by `Rscript -e 'testthat::test_local(reporter = \"summary\")'` — non-interactive by construction, the session kind `R CMD check` runs the suite under — on one machine against the same resolved binaries, the base checked out in a detached worktree; the two lists of skipped test names are sorted and `diff`ed, `diff` empty and both lists non-empty, so an empty capture is not read as agreement." Accepted unchanged at the mini gate, so the wording spends no re-entry.
 - 2026-09-08: mini gate kept AC3 rather than retiring it, so the criteria set stays at five and neither grows nor loosens; the escape route it now certifies is package behaviour the shim is blind to, which is why the plan gate added the criterion. T7 and T8 added for the re-measurement and the four prose and assertion repairs the re-review coupled to this round.
+- 2026-09-08: T8 edits in, task not yet ticked — `devtools::test()` has not been re-run, the machine being held by T7's three measurement runs. `cairn/DESIGN.md:54`'s execution-test convention now carries the CRAN half; `test-normalize-audio-batch.R`'s comment says the production path still probes and the mock is the test's own, and its two `expect_error()` patterns name which refusal they expect (`filter = "normalize-audio-batch"`: FAIL 0, PASS 104). The tightened patterns are proven able to fail: renaming the column in the refusal's own message keeps the old `"channels|whole"` pattern green and turns the new one red. The superseding entry for the two wrong decision-log statements is below.
 
 ## Decisions
 
@@ -153,6 +154,16 @@ A ROADMAP candidate row holds the profiling work.
 - 2026-09-08: timing. The check went 7m47s → 4m33.2s and its tests step `[368s/436s]` → `[223s/230s]`, 145 s off the tests step. The plan's gate expected about one minute, reasoning from a 5m06s binaries-hidden `devtools::test()`; skipping the execution tests also drops their fixture building and their waiting, not only FFmpeg's own time.
 - 2026-09-08: no `NEWS.md` entry. The change is confined to the test suite and the measurement script; no exported behaviour, message or default moves, so there is nothing user-visible to record.
 - 2026-09-08: all tasks done, `devtools::test()` clean — FAIL 0, WARN 10, SKIP 18, PASS 13188, the same figures as at T2. Status set to review.
+- 2026-09-08: superseding the 2026-09-08 work-log line that recorded the
+  question gate's choice of a committed `tools/cran_spawn_check.R`. Two of its
+  statements are wrong, measured at the base commit `ea433d5`: the script costs
+  no `.Rbuildignore` entry, because `^tools$` was already at `.Rbuildignore:21`
+  before the branch was cut; and `tools/` held five scripts, not two —
+  `build_vignettes_without_binaries.R`, `config_leak_check.R`,
+  `pkgdown_duplicate_topics.R`, `vignette_chunk_guards.R` and
+  `vignette_chunk_program_identity.R`. The choice itself stands unchanged: the
+  script is committed rather than thrown away, and the precedent it matches is
+  five siblings rather than two.
 
 ## Review
 

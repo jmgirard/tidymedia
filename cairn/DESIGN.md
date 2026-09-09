@@ -51,7 +51,9 @@ realtime/streaming, and full filtergraph DAGs.
   today D013's two-pass analysis pass and the nvenc encoder resolver, the two
   the D034 grep finds. The `run = TRUE` path may additionally run D024's
   diagnostic probes, which never run under `run = FALSE`. Command **execution**
-  tests `skip_if` the ffmpeg/mediainfo binaries are absent (D004, D024, D034).
+  tests `skip_if` the ffmpeg/mediainfo binaries are absent, and `skip_on_cran()`
+  ahead of that, so CRAN's own check of the tarball spawns no binary even where
+  its machine has one (D004, D024, D034).
 - Batch is one tibble-in/tibble-out runner, `ffm_batch(jobs, .f, …)`; `.f`
   builds one pipeline per row (pmap-style), one reproducible command per job (D007).
 - testthat 3e; usethis scaffolding; GitHub Actions CI. `man/` and `README.md`

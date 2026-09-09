@@ -1,6 +1,6 @@
 # M119: The documentation defects the pre-CRAN audit measured are corrected
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -52,7 +52,7 @@ naming surface → its own candidate row.
       reason it is kept.
 - [x] AC6: `inst/CITATION` exists and `citation("tidymedia")` returns it rather than
       the auto-generated fallback.
-- [ ] AC7: `devtools::check()` reports 0 errors and 0 warnings, and the `verify` slot
+- [x] AC7: `devtools::check()` reports 0 errors and 0 warnings, and the `verify` slot
       of `cairn/PROFILE.md` is clean.
 
 ## Coverage
@@ -81,7 +81,7 @@ naming surface → its own candidate row.
       link and settle the FFmpeg anchor family, which spells the same filters both
       `#concat` and `#toc-concat`.
 - [x] T6: Write `inst/CITATION` from DESCRIPTION's author block and ORCID.
-- [ ] T7: `devtools::document()`, `devtools::check()`, `pkgdown::check_pkgdown()`.
+- [x] T7: `devtools::document()`, `devtools::check()`, `pkgdown::check_pkgdown()`.
 
 ## Work log
 
@@ -98,3 +98,6 @@ naming surface → its own candidate row.
 - 2026-09-09: T5 — the redirecting Contributor Covenant link was therefore found with `curl -IL`, not with the criterion's instrument: `README.Rmd:218` pointed at `https://contributor-covenant.org/version/2/0/CODE_OF_CONDUCT.html`, two hops from the live page. Repointed at the terminal URL (`https://www.contributor-covenant.org/version/2/0/code_of_conduct/`, 200, 0 redirects) and `README.md` rebuilt.
 - 2026-09-09: T5 — the anchor family is measured, not guessed: `ffmpeg-filters.html` was fetched and every anchor the tree uses resolves, `#crop`/`#toc-crop` and `#concat`/`#toc-concat` alike, so no link was dead. Per the gate, only the one shipped `@references` using a table-of-contents anchor changed (`R/ffm.R:261`, `#toc-crop` → `#crop`) so that a reader lands on the section; the 22-line `#toc-` comment block at `R/ffm.R:1678-1699` is source, not shipped documentation, and was left alone.
 - 2026-09-09: T6 — `inst/CITATION` written from DESCRIPTION's author block and ORCID, with year and version read from `meta` at `citation()` time (gate choice), so neither goes stale between releases; `Date/Publication` exists only in a CRAN-installed copy, so a source install falls back to the current year. AC6's second conjunct has a natural control: the run just before the install returned the auto-generated fallback (plain title from DESCRIPTION's old `Title`, `<https://github.com/jmgirard/tidymedia>`), and the run after returns the file — braced `{tidymedia}:` title and the pkgdown URL, neither of which the fallback can produce. The ORCID is carried on the author (`Jeffrey Girard (ORCID: <https://orcid.org/0000-0002-7359-3746>)`).
+- 2026-09-09: T7 — `devtools::document()` leaves no diff; `devtools::check()` **0 errors, 0 warnings, 0 notes** in 5m47.3s (`checking Rd \usage sections`, `checking Rd contents` and `checking files in 'vignettes'` all OK, so T3's and T2's changes are clean at the check surface); `pkgdown::check_pkgdown()` no problems; `devtools::test()` FAIL 0, PASS 13266.
+- 2026-09-09: T7 — `NEWS.md` gained three Documentation entries for this milestone's user-visible changes (the citation, the vignette's corrected return-value sentence and its tempdir chunks, and the reference page dropping the internal generic), per the profile's changelog slot; `spelling::spell_check_package()` clean.
+- 2026-09-09: status → review.

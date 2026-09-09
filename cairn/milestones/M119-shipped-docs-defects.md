@@ -7,7 +7,7 @@
 - **Principles touched:** GP1
 - **Resolves:** —
 - **Surface tier:** user-facing — every artifact here ships or is read by a user
-- **Branch/PR:** `m119-shipped-docs-defects`
+- **Branch/PR:** `m119-shipped-docs-defects` — https://github.com/jmgirard/tidymedia/pull/123
 
 ## Goal
 
@@ -101,3 +101,125 @@ naming surface → its own candidate row.
 - 2026-09-09: T7 — `devtools::document()` leaves no diff; `devtools::check()` **0 errors, 0 warnings, 0 notes** in 5m47.3s (`checking Rd \usage sections`, `checking Rd contents` and `checking files in 'vignettes'` all OK, so T3's and T2's changes are clean at the check surface); `pkgdown::check_pkgdown()` no problems; `devtools::test()` FAIL 0, PASS 13266.
 - 2026-09-09: T7 — `NEWS.md` gained three Documentation entries for this milestone's user-visible changes (the citation, the vignette's corrected return-value sentence and its tempdir chunks, and the reference page dropping the internal generic), per the profile's changelog slot; `spelling::spell_check_package()` clean.
 - 2026-09-09: status → review.
+- 2026-09-09: review — draft PR #123 opened. The seven acceptance-criterion boxes arrived ticked with no Review-section evidence; unticked at review entry and re-ticked one at a time against fresh evidence, per AC fencing.
+
+## Review
+
+Fresh evidence gathered 2026-09-09 on branch `m119-shipped-docs-defects` at
+`28b5783`, against `origin/master` (0 behind, 7 ahead — the default branch had
+not moved since the branch was cut, so no merge-forward was needed). PR #123.
+
+- **AC1 — pass.** `withVisible(extract_audio(video, "audio.m4a"))` under
+  `devtools::load_all()` returns a length-1 character holding the compiled
+  FFmpeg command (`-y -i "…/sample.mp4" -codec:a copy -vn -map "0:a:0"
+  "audio.m4a"`) with `visible = FALSE`; the same call with `run = FALSE`
+  returns the identical string with `visible = TRUE`. The sentence now at
+  `vignettes/tidymedia.Rmd:43` says the verb "runs FFmpeg immediately and
+  returns the command it ran -- invisibly, which is why the chunk above shows
+  no output", and the `run = FALSE` paragraph says it returns visibly as a
+  string. Both agree with the measurement. The knitted `tidymedia.html` from
+  AC2's render carries that chunk as a `sourceCode` block with no output block
+  after it, so the "shows no output" clause holds of the rendered document too.
+- **AC2 — pass.** Precondition: `ls -A vignettes/` named exactly
+  `batch.Rmd metadata.Rmd tidymedia.Rmd verification.Rmd workflow.Rmd`, and
+  `git ls-files vignettes/` names those same five, so the before-listing was
+  tracked-only. All three binaries on `PATH` (`ffmpeg`, `ffprobe`, `mediainfo`
+  under `/opt/homebrew/bin`). Every vignette's YAML declares
+  `rmarkdown::html_vignette`; `rmarkdown::render()` ran over each of the five
+  from inside `vignettes/` at that format, all five completing without error.
+  The after-listing is those five `.Rmd` plus `batch.html metadata.html
+  tidymedia.html verification.html workflow.html` — ten paths, one `.html` per
+  vignette, five in all, and no other path. The five `.html` were then removed.
+- **AC3 — pass.** `man/find_program.Rd`'s `\usage{}` block holds only
+  `find_mediainfo()`, `find_ffmpeg()`, `find_ffprobe()` and `find_ffplay()`; a
+  grep for `find_program` inside that block returns 0 hits, as does a grep over
+  `_pkgdown.yml` (line 127 now lists `find_ffmpeg`). `pkgdown::check_pkgdown()`
+  reports `No problems found.` `\alias{find_program}` is still present, so
+  `?find_program` and the package's own `[find_program()]` cross-references
+  resolve.
+- **AC4 — pass.** `grep -F` over `.github/SUPPORT.md` for each of `with $`,
+  ` !` and `{{` returns no match. The references derived from the template's
+  placeholders name this package: `# Getting help with tidymedia`,
+  `Thanks for using tidymedia!`, and `tidymedia is maintained by one person
+  alongside other work`.
+- **AC5 — pass.** `R CMD build` into a scratch directory, then
+  `urlchecker::url_check()` over the extracted tree: 25 URLs fetched,
+  `All URLs are correct!` — no dead URL, and no redirect reported, so the
+  disposition arm holds over an empty set. Positive control: replacing
+  `https://ffmpeg.org/` in the built copy's DESCRIPTION with a non-existent
+  path makes the same call fail with `404: Not Found` at `DESCRIPTION:12:7`
+  and `DESCRIPTION:29:29` and exit non-zero, so the dead-URL conjunct
+  discriminates rather than passing vacuously. The instrument's limit stands as
+  the implementation recorded it — urlchecker follows redirects silently and
+  flags only failures, so its redirect arm cannot fire under its own
+  instrument; the two links the milestone repointed were therefore re-measured
+  directly. `https://www.contributor-covenant.org/version/2/0/code_of_conduct/`
+  as shipped in `README.Rmd:218` and `README.md:256` returns 200 with 0
+  redirects. Both FFmpeg filter anchors were checked against a fetched copy of
+  `ffmpeg-filters.html`: `crop`, `toc-crop`, `drawbox`, `concat` and
+  `toc-concat` all resolve, so no anchor was dead; `R/ffm.R:261`'s
+  `#toc-crop` → `#crop` change is a landing-target choice matching the three
+  other shipped `@references` anchors, which are all bare.
+- **AC6 — pass.** `inst/CITATION` exists. Installed to a scratch library and
+  run: `citation("tidymedia")` returns the file's entry — BibTeX
+  `title = {{tidymedia}: Media File Preprocessing and Metadata for the
+  'tidyverse'}`, `year = {2026}`, `note = {R package version 0.1.0.9000}`,
+  `url = {https://jmgirard.github.io/tidymedia/}`. Negative control on the same
+  installed copy with `CITATION` deleted: the auto-generated fallback comes back
+  instead — unbraced title, `url = {https://github.com/jmgirard/tidymedia}`
+  (DESCRIPTION's first URL), no `year`, and a warning that the year could not be
+  determined. The braced title, the pkgdown URL and the year are each something
+  the fallback cannot produce, so the criterion discriminates.
+- **AC7 — pass.** `devtools::check(document = FALSE)` after a clean
+  `devtools::document()`: **Status: OK — 0 errors, 0 warnings, 0 notes** in
+  6m19.4s. The `verify` slot of `cairn/PROFILE.md` is clean:
+  `devtools::document()` leaves no diff (`git status` shows only the milestone
+  file), and `devtools::test()` reports `FAIL 0 | WARN 12 | SKIP 5 |
+  PASS 13266`.
+
+### Consistency gate
+
+Universal cairn-file checks: `cairn_validate.py` exits 0 — every FAIL-able
+check PASS, every advisory OK, including `coverage complete` and `binding
+criteria`; the `release window` advisory did not fire. No `DESIGN.md` principle
+changed on this branch (the diff does not touch `cairn/DESIGN.md`), so
+`cairn_impact.py --changed` is not run.
+
+Toolchain checks, from the `r-package` profile's `consistency-gate` slot:
+`devtools::document()` no diff; generated files (`NAMESPACE`, `man/`) clean
+under that same check; `pkgdown::check_pkgdown()` `No problems found.`;
+`NEWS.md` carries entries for this milestone's user-visible changes under
+`## Documentation` and no user-facing file names a milestone number; no new
+top-level file, so no `.Rbuildignore` entry is owed, and `check()` reports no
+NOTE; `devtools::check()` clean as recorded under AC7. **README sync:**
+re-running `devtools::build_readme()` changes only the two knitted lines
+holding an absolute session temp path (`.../T/Rtmp<random>/temp_libpath<random>/`),
+which differs on every knit; the substantive content matches, so README.md is
+in sync. That embedded local path is pre-existing — `origin/master`'s README.md
+carries two of them — and is logged as a finding below. The rebuild was
+reverted so the branch diff stays clean.
+
+### Independent review
+
+Declared tier user-facing and the diff touches `R/`, so the full three-lens
+fan-out ran, each lens fresh-context and on a distinct evidence base.
+
+- **[S] blame-history** — zero findings. It reports that `find_program()` has
+  never appeared in `NAMESPACE` (only the four wrappers, since `52de4ac`), so
+  T3 removes a documentation artifact rather than a callable API; that the
+  22-line `#toc-` comment block in `R/ffm.R` entered verbatim in `49da73a`
+  (2020) as a leftover link checklist and states no convention; and that
+  `root.dir = tempdir()` extends `verification.Rmd`'s precedent. It could not
+  re-fetch the FFmpeg page from its seat, so the anchor claim was measured here
+  instead (AC5 above).
+- **[S] prior-PR-comments** — "no prior-review evidence" on the touched files.
+  The archived `## Review` sections it matched (M097, M113–M116, M64) concern
+  behavior this diff does not touch. The existence probe
+  (`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1`) returned `[]`,
+  so the per-PR walk was not paid for. It notes that M114/M115's lesson — a
+  vignette chunk guarded on one program can silently spawn another — is not
+  reintroduced: the `extract_audio()` chunk's `eval` guard already names both
+  `ffmpeg` and `ffprobe` and is unchanged.
+- **[O] diff-bug** — thirteen findings, listed below with their dispositions.
+
+### Findings and dispositions

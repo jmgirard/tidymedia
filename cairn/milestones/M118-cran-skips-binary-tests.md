@@ -214,7 +214,12 @@ A ROADMAP candidate row holds the profiling work.
   The NOTE is `checking CRAN incoming feasibility`, and its whole body is
   `New submission` plus `Version contains large components (0.1.0.9000)` — the
   two the criterion allows, and nothing else. Against the base commit's 7m47s
-  and `[368s/436s]`.
+  and `[368s/436s]`. **Re-run after the gate-directed fixes** on a tarball built
+  from the fixed tree: `Status: 1 NOTE` again, same NOTE body, tests step
+  `[175s/181s]`. (That run's `checking tests` listed `testthat.R` alone where
+  the first also listed `spelling.R`, which needs a Suggests package not present
+  at the second run; the criterion is about the error, warning and note counts,
+  and they are clean in both.)
 
 ### Triage and dispositions (third pass, 2026-09-09)
 

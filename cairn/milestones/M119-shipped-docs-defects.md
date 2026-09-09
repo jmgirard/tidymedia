@@ -103,6 +103,7 @@ naming surface → its own candidate row.
 - 2026-09-09: status → review.
 - 2026-09-09: review — seven criteria verified with fresh evidence, consistency gate clean, three review lenses run (13 findings, all from the [O] lens). Maintainer triage at the merge gate: five added claims corrected on the branch plus one stale ROADMAP line, three findings deferred to a candidate row, four rejected. Re-verified after the fixes: check 0/0/0, document no diff, check_pkgdown clean, cairn_validate clean.
 - 2026-09-09: step-7 approval: PR #123 approved for merge.
+- 2026-09-09: CI wait hit the harness ceiling at 590s with 2 of 8 legs green (macos-latest release, pkgdown) and 6 pending; watcher stopped, not left armed, and the merge not made. Resume re-derives the state.
 - 2026-09-09: review — draft PR #123 opened. The seven acceptance-criterion boxes arrived ticked with no Review-section evidence; unticked at review entry and re-ticked one at a time against fresh evidence, per AC fencing.
 
 ## Review

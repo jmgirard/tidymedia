@@ -4310,3 +4310,41 @@ whose output CRAN never checks — and is deliberately not taken here.
 check run, which `tools/cran_spawn_check.R` is the standing instrument for; the
 measured spawn counts and check timings live in M118's milestone record, not in
 this entry.
+
+## D091 — The changelog announces only what a caller of the last release could have written; a name that arrived and changed inside the same development cycle is dropped, not reported as a breaking change (2026-09-09, from M120; applies D014's pre-0.2.0 free-rename window to what the changelog says rather than to what the API may do, and leaves D014, D077, D078 and D079 standing)
+
+D014's rename policy is a clean break -- no `lifecycle` shims, old names removed
+rather than deprecated, on the stated grounds that the API is pre-0.2.0 and
+still soaking (D001). So a development cycle accumulates names that arrive,
+change, and change again before any user can call them. An append-only
+changelog reports each of those steps as a breaking change. The reader it is
+written for cannot act on any of them: the only names that can break their code
+are the ones the last release shipped.
+
+**The rule.** An entry in the changelog's development section is written for a
+caller of the last released version. A rename is announced when the old name
+was reachable in that release; a name introduced and renamed inside the current
+cycle is announced once, as the new export or argument it is, with no history
+of what it was called on the way. This governs what the changelog says. It
+changes nothing about what the API may do — D014's window is untouched, and
+every rename it permits still happens.
+
+**Why the cycle boundary and not the decision record.** The tempting domain is
+the set of renames the decision entries record, which is what M120 first tried:
+it is a list fixed by which entries an author remembered, and it admits renames
+no reader could have hit while missing renames no entry happened to record. The
+release boundary is a property of the package that a command settles — was this
+name reachable in the last release, or not — so the same question asked twice
+gets the same answer. M120's criteria are where that command and its measured
+result live; this entry carries no counts.
+
+**What this rules out.** A changelog organized as a log of the project's own
+decisions rather than of the reader's migration; and the reflex of announcing
+every rename a decision entry records, which over-announces exactly as far as
+it under-announces.
+
+**Falsified by** a reader who must act on an intra-cycle rename — a name that
+never shipped yet reached callers anyway, through a documented pre-release
+install path, a vignette teaching it, or a dependency pinned to a development
+commit. Any of those makes the release boundary the wrong cut and puts the
+decision record back in play.

@@ -23,9 +23,10 @@ default) lists every extension of that type.}
 list only the top level (\code{FALSE}, default).}
 }
 \value{
-A \link[tibble:tibble-package]{tibble} with one row per matching file
-and a single character column, \code{input}, holding each file's full
-path. Rows are in the order \code{\link[base]{list.files}} returns them.
+A \link[tibble:tibble-package]{tibble} with one row per matching
+non-hidden file and a single character column, \code{input}, holding each
+file's full path. Rows are in the order \code{\link[base]{list.files}}
+returns them.
 Every row is a path that exists and is not a directory: a subdirectory
 whose own name ends in a listed extension is never a row, nor — on macOS
 and Linux — is a symbolic link whose target is gone. Windows reports such

@@ -1,7 +1,7 @@
 # Tests for ffm_jobs(), the directory -> jobs-table export (M121). Every branch
 # here is binary-free: the function lists files and builds a tibble, and every
-# batch call -- ffm_batch() and the three *_batch() verbs -- runs with
-# `run = FALSE`.
+# batch call -- the one ffm_batch() call and the fifteen *_batch() verbs --
+# runs with `run = FALSE`.
 
 # A directory with one file of each shape the selector has to tell apart.
 local_media_dir <- function(env = parent.frame()) {

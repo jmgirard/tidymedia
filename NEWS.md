@@ -259,8 +259,9 @@
 
 ## New features
 
-* **`ffm_jobs()` turns a directory into a batch jobs table.** It lists the media
-  files in a directory and returns them as the tibble `ffm_batch()` takes: one
+* **`ffm_jobs()` turns a directory into a batch jobs table.** It lists the
+  non-hidden files in a directory that carry one of the extensions it knows for
+  a given media type, and returns them as the tibble `ffm_batch()` takes: one
   row per file, with the file's full path in an `input` column, and every row a
   path that exists and is not a directory — neither a subdirectory whose name
   ends in a matching extension nor, on macOS and Linux, a symbolic link whose

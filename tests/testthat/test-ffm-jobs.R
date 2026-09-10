@@ -1,6 +1,7 @@
 # Tests for ffm_jobs(), the directory -> jobs-table export (M121). Every branch
-# here is binary-free: the function lists files and builds a tibble, and the
-# one ffm_batch() call runs with `run = FALSE`.
+# here is binary-free: the function lists files and builds a tibble, and every
+# batch call -- ffm_batch() and the three *_batch() verbs -- runs with
+# `run = FALSE`.
 
 # A directory with one file of each shape the selector has to tell apart.
 local_media_dir <- function(env = parent.frame()) {
@@ -209,8 +210,10 @@ test_that("a directory holding only extension-named subdirectories reports no fi
 
 test_that("a multi-value `type` is refused, not silently reduced to its first", {
   dir <- local_media_dir()
-  # Both orders refuse. The forward order used to pass: arg_match() returns the
-  # first element when `arg` is identical() to `values`.
+  # Both refuse now. The full-set vector used to pass: arg_match() reduces `arg`
+  # to its first element whenever `arg` is setequal() to `values`, so any
+  # permutation slipped through. The two-element vector always aborted, but
+  # from arg_match(), not with the "single string" message asserted here.
   for (val in list(c("video", "audio", "image"), c("audio", "video"))) {
     cnd <- catch(ffm_jobs(dir, type = val))
     expect_s3_class(cnd, "error")

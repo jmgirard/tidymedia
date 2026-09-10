@@ -271,8 +271,9 @@
   else, because `ffm_batch()` passes every column of the jobs table to `.f` by
   name. The `*_batch()` verbs that derive their own output — among them
   `standardize_video_batch()` and `normalize_audio_batch()` — take it
-  unaltered; the others refuse it until you add the columns they name, an
-  `output` column above all.
+  unaltered; the others refuse it until you add the columns they name — an
+  `output` column for the verbs that cannot derive a container, and otherwise
+  whatever the task needs (`start` and `end`, `regions`, `inputs`, and so on).
 
 * **Six new task verbs.**
 

@@ -62,9 +62,10 @@ ffm_jobs <- function(directory, type, extension = NULL, recursive = FALSE) {
 tm_ffm_jobs <- function(directory, type, extension, recursive, call) {
   rlang::check_string(directory, arg = "directory", call = call)
   rlang::check_bool(recursive, arg = "recursive", call = call)
-  # check_string() before arg_match(): arg_match() takes the first element
-  # without complaint when `arg` is identical() to `values`, so a multi-value
-  # `type` would otherwise be accepted silently.
+  # check_string() before arg_match(): arg_match() reduces a multi-element
+  # `arg` to its first element without complaint whenever `arg` is setequal()
+  # to `values` — any permutation of the full set, not only the identical one —
+  # so a multi-value `type` would otherwise be accepted silently.
   rlang::check_string(type, arg = "type", call = call)
   type <- rlang::arg_match(type, media_types(), error_call = call)
 

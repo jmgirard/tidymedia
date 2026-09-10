@@ -11,7 +11,7 @@ _Last hygiene check: 2026-09-10 (M120 done and archived; PR #124 squash-merged, 
 | M118 | The binary-executing tests skip on CRAN's own check | done | — | normal | milestones/archive/M118-cran-skips-binary-tests.md |
 | M119 | The documentation defects the pre-CRAN audit measured are corrected | done | — | normal | milestones/archive/M119-shipped-docs-defects.md |
 | M120 | NEWS.md reads as release notes | done | — | normal | milestones/archive/M120-news-reads-as-release-notes.md |
-| M121 | A directory becomes a jobs tibble | in-progress | — | normal | milestones/M121-directory-to-jobs-tibble.md |
+| M121 | A directory becomes a jobs tibble | review | — | normal | milestones/M121-directory-to-jobs-tibble.md |
 | M122 | macOS and Windows run the package's FFmpeg code | planned | M118 | normal | milestones/M122-mac-windows-run-ffmpeg.md |
 
 ## Candidates

@@ -578,6 +578,13 @@ already has no repeated heading.
 
 ## Review
 
+### First pass — 2026-09-09 (superseded)
+
+This pass returned the milestone to `in-progress`; its twelve [O] findings plus
+the gate finding were dispositioned as T5-T16 and the record is kept below.
+Its acceptance evidence is superseded by the second pass, which measures the
+tree that T5-T23 produced.
+
 Reviewed 2026-09-09 on PR #124, against branch head `427d8d3`, after the AC4
 amendment. `origin/master` had not moved since the branch was cut (0 behind, 5
 ahead), so no merge was needed and every measurement below is against this tree.
@@ -682,7 +689,7 @@ The `r-package` profile's toolchain half:
   following the note writes a value that aborts. Carried below as finding G1
   rather than justified.
 
-## Review findings
+### First-pass review findings
 
 Three fresh-context lenses (user-facing tier, so the full fan-out). Every
 finding reported is logged here with its disposition; each was re-verified
@@ -824,3 +831,259 @@ does not fire. No unresolved review threads (`reviewThreads` filtered to
 - conversation: codecov[bot] PR — noted (reports coverage unchanged at 98.43%,
   4161 lines both sides, base `50d1995` against head `427d8d3`; requests
   nothing, author type `Bot`).
+
+### Second pass — 2026-09-10
+
+Reviewed on PR #124 (still a draft), against branch head `a9fa9ff`, after the
+return that produced T5-T23. `git fetch`: `origin/master` has not moved since
+the branch was cut (0 behind, 24 ahead), local `master` is level with it, and
+the branch is level with its own remote — so no merge was needed and every
+measurement below is against this tree. All five boxes arrived ticked carrying
+first-pass evidence; `NEWS.md` changed under every criterion since that pass, so
+all five were unticked at entry and are re-ticked one at a time below.
+
+**AC1 — pass, against a discriminating control.** `grep -n '^# ' NEWS.md`
+returns five `#` headings: `# tidymedia (development version)` at line 1, then
+the four released ones at 1380, 1440, 1484 and 1525. One development-version
+heading, carrying no number. Sweeping the development section (lines 1-1379)
+for `[0-9]+\.[0-9]+(\.[0-9]+)*` returns 14 distinct strings, each read in
+context: `4.1.0`/`4.5.0` are R versions, `1.1.0`/`1.2.0` rlang, `2.5.0`/`3.0.3`
+withr, `6.1.1`/`9.0.1` FFmpeg, and `42.0`, `2.0`, `1.7`, `0.46`, `0.1` are
+seconds and a tolerance. No tidymedia release version. The control: the same
+sweep over `origin/master:NEWS.md`'s development section returns `0.2.0` at its
+line 15, so the check fails when a release version is present. The one judgment
+call is unchanged from the first pass: `pre-1.0` at lines 5 and 188 reads as
+naming the versioning policy's threshold, not a release version for this
+section. Recorded, not dropped.
+
+**AC2 — pass, against a discriminating control.** A parse of `NEWS.md` grouping
+every `##` heading under its enclosing `#` section finds no heading occurring
+twice in any section: the development section carries six (Breaking changes,
+New features, Bug fixes, Performance, Documentation, Requirements), `0.1.0`
+three, `0.0.0.9002` three, `0.0.0.9001` three, `0.0.0.9000` none. The control:
+the same parse over `origin/master:NEWS.md` reports the development section's
+20 headings with `## New features` x3, `## Breaking changes` x3, `## Bug fixes`
+x3 and `## Documentation` x2 — the four repeats and the exact counts the
+criterion cites for the pre-collapse state, so the check both fails when
+repeats are present and confirms the criterion's stated starting point.
+
+**AC3 — pass, against a discriminating control.** `comm` over the sorted
+`export()` lines of `NAMESPACE` at head against `4b04fad9`: 63 exports then, 89
+now, 40 added and 14 removed — the criterion's counts, and the removed set is
+the plan's list exactly (`:=`, `as_label`, `as_name`, `audio_as_mp3`,
+`convert_fractions`, `enquo`, `enquos`, `ffm`, `get_codecs`, `get_encoders`,
+`get_framerate`, `get_samplingrate`, `mediainfo_summary`, `pad_integers`).
+Every one of the 54 names is matched in the development section on word
+boundaries that also exclude a preceding `.`: 0 missing added, 0 missing
+removed. The whole-bullet deletions of T13 and T20 cost nothing. The control:
+the same check over `origin/master:NEWS.md`'s development section reports
+`concatenate_videos_batch`, `strip_metadata` and `strip_metadata_batch` missing
+— the three T3 filled — so the check fails when names are absent.
+
+**AC4 — pass, against a discriminating control.** The formals diff the
+criterion specifies, run here from an R parse of `R/` at both trees (`git
+archive` of `4b04fad9` and of `HEAD` into scratch dirs; a top-level definition
+is `name <- function(...)` or `name = function(...)` with `name` a symbol). It
+reports 49 names exported in both `NAMESPACE`s and 48 parsed as such a
+definition at both — `.data` the sole exclusion, a reexported rlang pronoun —
+matching the criterion's figures. `git diff --name-only 1df6e23 HEAD` lists
+`NEWS.md` and three `cairn/` files only, so the `R/` tree the criterion pinned
+to `1df6e23` is the tree measured. The removed-argument set is
+`extract_audio()`'s `acodec` and `segment_video()`'s `ts_start` and `ts_stop`,
+three names, again as stated. All three are named with their replacements above
+the `# tidymedia 0.1.0` heading, at `NEWS.md:30-33`: `acodec` -> `audio_codec`,
+`ts_start`/`ts_stop` -> `start`/`end`. Both replacements check out against the
+current formals — `extract_audio(infile, outfile, audio_codec, audio_stream,
+run)` and `segment_video(infile, start, end, outfiles, ...)` — so the note's
+claim is derived, not composed. No removed argument needed the
+removed-with-no-successor alternative. The control for the criterion's bound:
+`acodec` also occurs at `NEWS.md:1469`, inside the released `0.1.0` section, so
+a whole-file grep would have reported it named on released text alone; bounding
+the check to lines 1-1379 is what makes it discriminate.
+
+One instrument note, recorded because it changes nothing but could have: the
+parse script first reported 44 rather than 48 parsing at both, excluding
+`find_ffmpeg`, `find_ffplay`, `find_ffprobe` and `find_mediainfo`. All four are
+plain top-level `name <- function() {` definitions in `R/program_management.R`
+at both trees; the script was dropping them because a zero-formal function
+yields `NULL` names and `out[[n]] <- NULL` deletes rather than assigns. Fixed
+in the script, not in the criterion — the criterion's 48 was right and the
+first instrument was wrong.
+
+**AC5 — pass.** The `verify` slot, run 2026-09-10 against this tree:
+`Rscript -e 'devtools::test()'` at `[ FAIL 0 | WARN 12 | SKIP 5 | PASS 13266 ]`.
+The five skips are hardware-encoder probes (`test-nvenc.R:435,446,458`,
+`test-video-codec.R:480,489`); none reads `NEWS.md`. Two of the suite's tests do
+assert on `NEWS.md`'s own wording (`test-check-tracks-docs.R:126`,
+`test-front-door-ordering.R:435`) and both pass here — the pair that caught the
+collapse's two dropped claims during implementation. No roxygen changed on this
+branch (`git diff --name-only origin/master...HEAD` is `NEWS.md`,
+`cairn/DECISIONS.md`, `cairn/ROADMAP.md` and this file), so `document()` was not
+required by the slot. Counts identical to the 2026-09-09 run, so T5-T23 moved
+nothing in the suite.
+
+Also confirmed independently of any criterion: the four released sections are
+byte-for-byte identical to `origin/master:NEWS.md` from `# tidymedia 0.1.0` down
+(`diff` of the two 148-line tails is empty), so Scope Out held.
+
+**Consistency gate — both halves clean.**
+`python3 scripts/cairn_validate.py` exits 0: every check PASS, 397 advisory
+warnings (396 the work-log line-wrapping advisory, plus a sizing tripwire —
+23 tasks against a 10 tripwire, an artifact of the return that appended T5-T23
+to a four-task plan, never a gate failure). The `release window` advisory did
+not fire. `Principles touched: —` and `DESIGN.md` is not in the diff, so
+`cairn_impact.py` was skipped.
+
+The `r-package` profile's toolchain half:
+- `devtools::document()` exits 0 and leaves no diff (`git status` shows only
+  this milestone file, edited by this review).
+- `pkgdown::check_pkgdown()`: "No problems found."
+- README: neither `README.Rmd` nor `README.md` is in the diff, and both were
+  last committed together at `0df9835`, so the knit is in sync.
+- Changelog: `NEWS.md` *is* the milestone's deliverable; no milestone number
+  reaches user-facing text (`grep -nE '\bM[0-9]{2,3}\b' NEWS.md README.md` is
+  empty).
+- No new top-level file: the only top-level path in the diff is `NEWS.md`, which
+  already ships; `.Rbuildignore:7` still carries `^cairn$`.
+- `devtools::check()`: **0 errors, 0 warnings, 0 notes** (7m 15.6s). The
+  first pass's spelling NOTE is gone — `centre` and `Relatedly` were its only
+  two words and no third took their place, and the saved `spelling.Rout`
+  comparison is OK. This closes T16.
+
+### Second-pass review findings
+
+Three fresh-context lenses again (user-facing tier, full fan-out). Every
+finding reported is logged here with its disposition; each was re-verified
+against the code before triage, and the verdicts are mine, not the reviewers'.
+
+**[O] diff-bug lens — 10 findings.** It independently re-measured and confirmed
+AC1-AC4, and separately verified the compiled commands of 14 verbs, ~20 error
+strings, all 11 condition classes, the three option names, the nine-container
+list, the nvenc/videotoolbox family table, T17's 10/3/2 collision partition,
+"Sixteen verbs take `hardware`" and "Nine scalar verbs" for `audio_stream` —
+all of which check out. Its findings, with my verdict on each:
+
+- **P1. `NEWS.md:190-195` — "`run` (and `parallel` on the batch verbs) shifts
+  one position" is false for four of the seven verbs the bullet names.**
+  CONFIRMED, branch-introduced. Measured `run`'s index in the parsed formals at
+  `4b04fad9` against HEAD: `extract_audio` 4 -> 5 (shift 1), `format_for_web`
+  3 -> 6 (shift 3), `separate_audio_video` 4 -> 9 (shift 5), `crop_video`
+  7 -> 12 (shift 5), `segment_video` 6 -> 11 (shift 5). The other two named
+  verbs, `convert_audio()` and `normalize_audio()`, have no definition in `R/`
+  at `4b04fad9` and are in the 40 added exports, so the claim describes no
+  released call at all; nor did any `_batch` sibling exist — `ffm_batch` is the
+  only `_batch` name in that `NAMESPACE` — so the `parallel` half describes no
+  released function either. The bullet's own opening sentence frames it as a
+  migration instruction ("calls that pass later arguments by position rather
+  than by name must be updated"), so the reader-facing reading is the net shift
+  from the version they have installed, and only the worked example
+  (`extract_audio`) is on a verb where the claim holds. The collapse is what
+  widened it: `origin/master` carried two narrower bullets, one over
+  `extract_audio`/`convert_audio`/two `_batch` siblings where the one-position
+  claim was true of the one released verb, and one over
+  `separate_audio_video()` where it was already wrong. Merging them added
+  `format_for_web`, `crop_video`, `segment_video` and `normalize_audio` to a
+  claim that holds for exactly one of the seven.
+- **P2. `NEWS.md:746-748` — eight exported Layer 1 builders are called "an
+  internal builder".** CONFIRMED, branch-introduced. `ffm_crop`, `ffm_scale`,
+  `ffm_fps`, `ffm_pixel_format`, `ffm_drawbox`, `ffm_overlay`, `ffm_loudnorm`
+  and `ffm_files` each carry an `export()` line in `NAMESPACE`; `CLAUDE.md` and
+  D002 make Layer 1 the package's documented public engine, and three of the
+  eight are introduced as new public builders 20 lines earlier in the same
+  section (`NEWS.md:723-737`).
+- **P3. `NEWS.md:756-758` — the merged argument list names arguments on verbs
+  that do not have them.** CONFIRMED, branch-introduced. "a `width`, `height`,
+  `x`, `y`, `fps` or `pixel_format` ... on `crop_video()`,
+  `standardize_video()` and `sample_frames_batch()`'s per-row rate":
+  `standardize_video()` has no `x` or `y` formal and `crop_video()` has no
+  `fps` or `pixel_format` (formals read at HEAD). A distributive reading is
+  available and presumably intended, but as written the list crosses two verbs
+  that reject each other's arguments, and it is the merge that produced the
+  crossed list.
+- **P4. `NEWS.md:162` — "Cutting with `segment_video(reencode = FALSE)` copies
+  every stream by definition".** CONFIRMED as a false claim; the sentence is
+  pre-existing (verbatim in `origin/master`), the contradiction is not.
+  Measured: `segment_video(v, 0, 1, out, reencode = FALSE, run = FALSE)`
+  compiles `-map "0:v?" -map "0:a?"`, so subtitle and data streams are dropped
+  — which is exactly what the branch's own paragraph 55 lines above says,
+  naming `segment_video(reencode = FALSE)` in the list of verbs that stopped
+  carrying them (`NEWS.md:104-110`). The collapse is what put the two within a
+  page of each other.
+- **P5. `NEWS.md:157` — "Their compiled commands therefore gain `-codec:a
+  copy`" is unconditional and false at the defaults for two of the four verbs.**
+  CONFIRMED as a false claim; pre-existing verbatim in `origin/master`.
+  Measured under `run = FALSE`: `compare_videos()` and `picture_in_picture()`
+  default to `audio_input = NULL`, map no audio, and compile no `-codec:a` at
+  all; `-codec:a copy` appears only once `audio_input` is given.
+- **P6. `NEWS.md:199-203` — the `standardize_video()` positional-break bullet
+  announces a break against a version that never shipped.** CONFIRMED;
+  pre-existing verbatim in `origin/master`, and the class D091 governs.
+  `standardize_video()` and `anonymize_video()` are both in the 40 added
+  exports with no definition in `R/` at `4b04fad9`, so "`pixel_format`,
+  `hardware`, `fallback` and `run` all shift one position" describes a shift no
+  caller experienced, and "`standardize_video(f, out, 1280, 720, 30,
+  "libx264", "yuv420p")` **now** reads `"yuv420p"` as the audio codec" asserts
+  a prior reading that never existed. Same class as first-pass O9, which the
+  user dispositioned to the branch as T13.
+- **P7. `NEWS.md:204-206` — "abbreviating `audio_codec` to `audio` no longer
+  works" on `normalize_audio()`.** CONFIRMED; pre-existing verbatim, same D091
+  class as P6. The ambiguity is real at HEAD (`audio_codec` and `audio_stream`
+  are both formals), but `normalize_audio()` is an added export, so partial
+  matching never worked there for a released caller.
+- **P8. `NEWS.md:1163-1164` — the `covr`/empty-`R/zzz.R` note is repo-internal
+  in a CRAN-facing changelog.** Verified pre-existing verbatim in
+  `origin/master`, and a scope judgment rather than a false claim.
+- **P9 (the lens's finding 4). A class of bug-fix entries whose subject is a
+  function no released version contained** (`NEWS.md:877`, `:965`, `:990`,
+  `:1003`, `:1066`, `:153`). Verified: all the named verbs are in the 40 added
+  exports. Pre-existing entries, and D091's rule as written governs *renames*
+  and what a name is announced as, not whether a development-cycle fix on a
+  development-cycle function may be recorded at all.
+- **P10 (the lens's finding 7). `NEWS.md:135-136`'s quoted FFmpeg error
+  `"Stream map '' matches no streams"` is not what FFmpeg prints.** **REFUTED
+  against the implementation, not against the reviewer's account of it.** The
+  lens reasoned from the compiled `-map "0:a:0"`. Run for real: a
+  video-only input built with `testsrc`, put through `normalize_audio()`,
+  makes FFmpeg print `Stream map '' matches no streams.` verbatim, followed by
+  `Failed to set value '0:a:0' for option 'map'`. The note's quote is exact.
+
+**[S] blame-history lens — no open finding.** It confirmed the four released
+sections byte-identical to `origin/master` (empty diff, 148 lines), and
+independently re-derived D091's own mechanism against `NAMESPACE` at
+`4b04fad9`: every name the collapse kept as a breaking change (`get_codecs`,
+`get_encoders`, `audio_as_mp3`, `get_samplingrate`, `get_framerate`, `ffm`,
+`mediainfo_summary`, the tidy-eval reexports, `pad_integers`,
+`convert_fractions`, `acodec`, `ts_start`/`ts_stop`) was reachable at 0.1.0,
+and every name it dropped (`segment_videos`, `standardize_videos`,
+`normalize_audios`, `anonymize_videos`, `extract_frames`, `has_nvenc`,
+`nvenc_encoder`) was not. It found D091 purely additive and no D-entry
+contradicted. Its measured-claim spot check (the 42.0s/2.0s timeout figures,
+the 20s/40s escalation, the 1.7s -> 0.46s probe benchmark, the withr
+2.5.0/3.0.3 paragraph, every `tidymedia_*` condition class, the
+`tm_rows`/`tm_row_status` fields) came back intact. Its one observation — the
+rlang-floor bullet's exact "132 places" softened to "well over a hundred
+places" — is T21's recorded decision, made because the count had gone stale
+twice and nothing a reader does depends on it. Not a finding. Note that this
+lens did not find P1, P4 or P5, which are the class it was hunting.
+
+**[S] prior-review lens — no regression.** The existence probe
+`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1` returned `[]`
+again, so the per-PR thread walk was skipped and the archived `## Review`
+sections were the evidence base, M119's chief among them. None of M119's five
+fixed composed-claims reappears: the citation note correctly says it carries
+the package website (`NEWS.md:1297`), the get-started note correctly says the
+verb returns the compiled command (`:1301-1302`), the false
+media-beside-the-sources claim is absent rather than reintroduced, and the
+`find_program()` mention is singular and consistent (`:1293`). Its one
+observation, `NEWS.md:490`'s "`NULL` now means the same thing on every codec
+argument in the package", is verbatim in `origin/master` and already carved out
+by the paragraph at `:501-508` — the same borderline item the first pass
+recorded.
+
+**Deviation carried from implementation, for disposition.** The 2026-09-10 work
+log records that D-136's re-read of a corrected claim is allowed "by the same
+reader", and that `SendMessage` was disabled in that session so the original
+reader could not be reached; the re-read went to a second fresh-context [O]
+reader instead. It met the freshness requirement and not the same-reader
+wording, and it is what caught T17's wrong partition. Recorded rather than
+treated as equivalent, per that log line's own request.

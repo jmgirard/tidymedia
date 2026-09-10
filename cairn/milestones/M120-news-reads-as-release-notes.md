@@ -1,6 +1,6 @@
 # M120: NEWS.md reads as release notes
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -570,6 +570,11 @@ already has no repeated heading.
   result established for a subset and stating it of the whole set. The audit and its
   one re-read caught both before review, which is what D-136 is for, but the re-read
   is a single allowance and this milestone has now spent it.
+- 2026-09-10: AC5. `verify` slot clean: `devtools::test()` at FAIL 0 | WARN 12 | SKIP
+  5 | PASS 13,266 -- the same counts as the 2026-09-09 run, so the twelve prose tasks
+  moved nothing in the suite, and the two tests that read `NEWS.md`'s own wording were
+  additionally run after each task. `devtools::check()` separately at 0/0/0 above.
+  Status -> review.
 
 ## Review
 

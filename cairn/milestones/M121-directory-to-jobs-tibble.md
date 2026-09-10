@@ -152,6 +152,8 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 
 - 2026-09-10: fourth review pass (descoped tree) — AC1-AC5 pass on fresh evidence, consistency gate clean. Full fan-out: prior-review 0 findings, blame-history 1 (S1), [O] 6 (O1-O6). No finding is floor-qualifying. At the gate, S1 and O2 were fixed as wording and filed as follow-ups (g)/(h), O3 got D092, O1 and O4 became follow-ups, and O5 and O6 were rejected. After the fixes, `check()` is 0/0/0. Defect returns stay 3; amendment returns 0.
 
+- 2026-09-10: step-7 approval: m121-directory-to-jobs-tibble approved for merge
+
 ## Review
 
 ### First pass — 2026-09-10 (defect return #1)
@@ -1025,3 +1027,11 @@ the AC1-AC5 evidence above still holds; AC5 was re-measured here. D092 appended;
 candidate row extended with (g), (h), `mka` under (c) and the one-liner clause
 under (e) (`ROADMAP.md` now 59 lines / 42,680 bytes against its 24,000-byte budget,
 worsened again; `/cairn-triage` remains the only remedy).
+
+**PR conversation read** (PR #125, once, immediately before the merge chip):
+`gh api --paginate .../pulls/125/reviews` returned no reviews; the `reviewThreads`
+GraphQL query filtered to `isResolved: false` returned no threads;
+`issues/125/comments` returned one comment.
+
+- conversation: codecov[bot] PR — noted (coverage report, requests nothing).
+  Author `type` is `Bot`, so the blocking rule does not apply.

@@ -260,16 +260,19 @@
 ## New features
 
 * **`ffm_jobs()` turns a directory into a batch jobs table.** It lists the media
-  files in a directory and returns them as the tibble `ffm_batch()` and the
-  `*_batch()` verbs take: one row per file, with the file's full path in an
-  `input` column. `type` names the category to list — `"video"`, `"audio"` or
-  `"image"` — and has no default. `extension` narrows within that type
+  files in a directory and returns them as the tibble `ffm_batch()` takes: one
+  row per file, with the file's full path in an `input` column, and no
+  subdirectory among them. `type` names the category to list — `"video"`,
+  `"audio"` or `"image"` — and has no default. `extension` narrows within that type
   (`"mp4"` and `".mp4"` both work, matched case-insensitively), and
   `recursive = TRUE` descends into subdirectories. A directory that does not
   exist, a type outside the three, and a call that matches no file are each an
   error naming `ffm_jobs()`. The returned table carries `input` and nothing
   else, because `ffm_batch()` passes every column of the jobs table to `.f` by
-  name — add the `output` column your pipeline needs before handing it over.
+  name. The `*_batch()` verbs that derive their own output — among them
+  `standardize_video_batch()` and `normalize_audio_batch()` — take it
+  unaltered; the others refuse it until you add the columns they name, an
+  `output` column above all.
 
 * **Six new task verbs.**
 

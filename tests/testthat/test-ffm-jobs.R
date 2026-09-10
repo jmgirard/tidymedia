@@ -243,6 +243,21 @@ test_that("the extension refusal agrees in number with the offenders it names", 
   expect_match(many, "are not among them", fixed = TRUE)
 })
 
+test_that("the verbs that derive their own output take the returned table unaltered", {
+  dir <- local_media_dir()
+  jobs <- ffm_jobs(dir, type = "video")
+
+  # The two the release note names by hand.
+  expect_no_error(standardize_video_batch(jobs, run = FALSE))
+  expect_no_error(normalize_audio_batch(jobs, run = FALSE))
+
+  # And the note's other half: a verb that cannot derive an output refuses the
+  # same table until the caller adds the column it names.
+  cnd <- catch(extract_audio_batch(jobs, run = FALSE))
+  expect_s3_class(cnd, "error")
+  expect_match(conditionMessage(cnd), "output")
+})
+
 # The vocabulary -----------------------------------------------------------
 
 test_that("media_types() and media_extensions() agree and stay lower-case", {

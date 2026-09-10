@@ -575,6 +575,7 @@ already has no repeated heading.
   moved nothing in the suite, and the two tests that read `NEWS.md`'s own wording were
   additionally run after each task. `devtools::check()` separately at 0/0/0 above.
   Status -> review.
+- 2026-09-10: step-7 approval: PR #124 approved for merge.
 
 ## Review
 
@@ -1163,5 +1164,3 @@ the ordinal forms `4th`/`5th` in the first draft of the table did add a `th`,
 so the table gives plain position numbers instead of a wordlist entry.
 `devtools::check()` re-run after every fix-now edit: **0 errors, 0 warnings, 0
 notes** (6m 43s).
-
-- 2026-09-10: step-7 approval: PR #124 approved for merge.

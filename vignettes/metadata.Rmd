@@ -118,7 +118,7 @@ Because every reader accepts a vector of files and keys its output by `file`,
 describing a whole directory is a one-liner:
 
 ```{r, eval = FALSE}
-files <- list.files("my/videos", pattern = "\\.mp4$", full.names = TRUE)
+files <- ffm_jobs("my/videos", type = "video")$input
 probe_all(files)$container
 ```
 

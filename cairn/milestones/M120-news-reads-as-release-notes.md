@@ -89,7 +89,7 @@ already has no repeated heading.
 - [x] T10: `NEWS.md:517-523` — restore a qualifier separating the family-not-
       encodable refusal from the backend-unavailable one; the former is refused
       whatever `fallback` is set to (`R/ffmpeg.R:3273-3276`, comment `:3325-3340`).
-- [ ] T11: `NEWS.md:96-99` — the second-track fixture is the standardize /
+- [x] T11: `NEWS.md:96-99` — the second-track fixture is the standardize /
       anonymize / segment observation; `format_for_web()` was measured on a
       third-track file. Split the claim or drop the verb it does not cover.
 - [ ] T12: restore the `two_pass = TRUE` ordering guarantee the collapse dropped
@@ -361,6 +361,15 @@ already has no repeated heading.
   `hardware_codec_families()` (`:3049-3051`) rather than copied from
   `origin/master`'s prose: nvenc covers h264/hevc/av1 and so has no `prores`,
   videotoolbox covers h264/hevc and so has neither `prores` nor `av1`.
+- 2026-09-10: T11. Split rather than dropped, since both observations are real and
+  each is worth a reader's attention. `origin/master` records two distinct fixtures:
+  the second-track file for `standardize_video()`/`anonymize_video()` (its lines
+  696-702) and for `segment_video(reencode = TRUE)` (its 666-670), and a third-track
+  file for `format_for_web()` and `normalize_audio()` (its 596-598). The merged
+  sentence had asserted the second-track run of all four. It now names which three
+  verbs the second-track file was run through and gives `format_for_web()` its own
+  third-track clause. `normalize_audio()` is not named here -- it is an audio verb and
+  does not belong to the keeps-every-track group this paragraph is about.
 
 ## Review
 

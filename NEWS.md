@@ -86,10 +86,13 @@
   **The verbs that now keep every track.** `standardize_video()`,
   `anonymize_video()`, `segment_video()` at its default `reencode = TRUE`, and
   `format_for_web()` emitted no mapping and so kept one track; they now keep all
-  of them. On a three-track test file whose default flag sat on the second
-  track, two tracks were discarded in silence and the second is what came out;
-  all three now survive. If you process multi-track sources, your outputs will
-  gain tracks they used to lose, and grow accordingly. `crop_video()` and
+  of them. Which track survived was the input's business rather than yours: on a
+  three-track test file flagged on its second track, `standardize_video()`,
+  `anonymize_video()` and `segment_video()` each kept that second track and
+  discarded the other two in silence, while `format_for_web()`, measured on a
+  three-track file flagged on its third, kept only the third. All three tracks
+  now survive in either case. If you process multi-track sources, your outputs
+  will gain tracks they used to lose, and grow accordingly. `crop_video()` and
   `segment_video(reencode = FALSE)` mapped every stream already, so that part is
   unchanged for them.
 

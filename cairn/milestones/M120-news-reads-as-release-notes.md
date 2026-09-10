@@ -1,13 +1,13 @@
 # M120: NEWS.md reads as release notes
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — NEWS.md ships and is the first thing a reader checks
-- **Branch/PR:** `m120-news-release-notes`
+- **Branch/PR:** `m120-news-release-notes` — https://github.com/jmgirard/tidymedia/pull/124
 
 ## Goal
 
@@ -37,7 +37,7 @@ already has no repeated heading.
       between `NAMESPACE` at head and `NAMESPACE` at commit `4b04fad9`, the commit
       that introduced the `# tidymedia 0.1.0` heading — 40 added and 14 removed as
       measured 2026-09-07.
-- [x] AC4: It names every rename recorded in `cairn/DECISIONS.md` D014, D077 and D078
+- [ ] AC4: It names every rename recorded in `cairn/DECISIONS.md` D014, D077 and D078
       since that commit which is not itself a `NAMESPACE` entry — the argument and
       option renames.
 - [x] AC5: The `verify` slot of `cairn/PROFILE.md` is clean.
@@ -155,3 +155,94 @@ already has no repeated heading.
   `tidymedia.hardware_encoders` (from `tidymedia.nvenc_encoders`, now at zero
   occurrences) each named as renames; `hardware =` named. AC5 as above.
 - 2026-09-09: status -> review.
+- 2026-09-09: review opened on PR #124; `origin/master` unmoved, no merge needed. The five
+  acceptance boxes arrived pre-ticked with no Review evidence; unticked at entry and re-ticked
+  one at a time under AC fencing. AC1, AC2, AC3 and AC5 pass with fresh evidence (AC3 against a
+  discriminating control). AC4 fails: `tidymedia.nvenc_encoders` occurs zero times in `NEWS.md`,
+  so the option rename D077 records is not named, and the 2026-09-09 work-log line claiming it
+  named reads zero occurrences as a pass.
+- 2026-09-09: amendment return: AC4 — "It names every rename recorded in `cairn/DECISIONS.md`
+  D014, D077 and D078 since that commit which is not itself a `NAMESPACE` entry and whose old
+  name was present at commit `4b04fad9` — the argument and option renames a 0.1.0 caller could
+  have written." AC4 as written sweeps in renames of names introduced and renamed inside this
+  development cycle, which the implement question gate had already dispositioned as dropped
+  rather than announced; the option is that class (`git grep nvenc_encoders 4b04fad9 -- R/` is
+  empty). Status -> in-progress for this amendment alone. First amendment return on AC4; zero
+  defect returns on this milestone.
+
+## Review
+
+Reviewed 2026-09-09 on PR #124, against branch head `7fa561f`. `origin/master`
+had not moved since the branch was cut (0 commits behind), so no merge was needed
+and the evidence below is against the current tree.
+
+**AC1 — pass.** `grep -n '^# ' NEWS.md` returns five `#` headings: `# tidymedia
+(development version)` at line 1, then the four released ones at 1363, 1423, 1467
+and 1508. One development-version heading, and it carries no number. A sweep of
+the development section (lines 1-1362) for `[0-9]+\.[0-9]+(\.[0-9]+)*` returns 14
+distinct strings: `1.1.0`, `1.2.0`, `2.5.0`, `3.0.3`, `4.1.0`, `4.5.0`, `6.1.1`
+and `9.0.1` are dependency and FFmpeg versions; `42.0`, `2.0`, `1.7`, `0.46` and
+`0.1` are seconds and a tolerance. No `0.2.0` remains. The one judgment call is
+`pre-1.0`, at lines 5 and 205 ("The package is pre-1.0 and", "in line with the
+package's pre-1.0 clean-break policy"): read as naming the versioning policy's
+threshold rather than naming a release version for this section, which is what
+Scope Out reserves for the release walk. Recorded here rather than dropped.
+
+**AC2 — pass.** A parse of `NEWS.md` grouping every `##` heading under its
+enclosing `#` section finds no heading occurring twice in any section: the
+development section carries six (Breaking changes, New features, Bug fixes,
+Performance, Documentation, Requirements), `0.1.0` three, `0.0.0.9002` three,
+`0.0.0.9001` three, `0.0.0.9000` none. The three-and-two-occurrence counts the
+criterion cites for the pre-collapse state are what the sweep found before the
+collapse; after it, zero repeats.
+
+**AC3 — pass, against a discriminating control.** `comm` over the sorted
+`export()` lines of `NAMESPACE` at head against `4b04fad9` gives 63 exports then,
+89 now, 40 added and 14 removed — the criterion's counts, and the removed set is
+the plan's list exactly. Every one of the 54 names is matched in the development
+section on non-word-character boundaries: 0 missing added, 0 missing removed. The
+control: the same check run against `origin/master:NEWS.md`'s development section
+reports `concatenate_videos_batch`, `strip_metadata` and `strip_metadata_batch`
+missing — the three T3 filled — so the check fails when the names are absent.
+
+**AC4 — FAIL.** Of the non-`NAMESPACE` renames the three entries record, the
+argument renames are named as renames: `acodec`/`vcodec` -> `audio_codec`/
+`video_codec` and `ts_start`/`ts_stop` -> `start`/`end` at `NEWS.md:30-36`, and
+`audio` -> `audio_input` at `:182-192`. D078 adds no rename of its own. The
+**option** rename D077 records — `tidymedia.nvenc_encoders` ->
+`tidymedia.hardware_encoders` — is not named: the old string occurs zero times in
+`NEWS.md`, the new one five times (lines 199, 527, 612, 618, 1163), and the nine
+`nvenc` mentions in the section are all the backend string `"nvenc"`. The
+work-log line of 2026-09-09 that records this criterion met states the option
+rename is "named as renames ... now at zero occurrences"; zero occurrences of the
+old name is the criterion failing, not meeting it.
+
+The work is right and the criterion is not. `git grep nvenc_encoders 4b04fad9 --
+R/` is empty and the 0.1.0 export list carries no `nvenc` or `hardware` name at
+all, so the option was introduced *and* renamed inside this development cycle —
+the same class the question gate dispositioned as dropped rather than announced
+("`has_nvenc`/`nvenc_encoder` ... arrived and were renamed inside this cycle, so
+a 0.1.0 reader never saw them"). That principle was settled at the implement
+question gate, after AC4 was written, and narrowed AC4's effective domain without
+amending it. AC4 as written sweeps in renames of names no 0.1.0 caller could have
+used. Routed as an amendment return, not a defect return.
+
+**AC5 — pass.** The `verify` slot: `Rscript -e 'devtools::test()'` at
+`[ FAIL 0 | WARN 12 | SKIP 5 | PASS 13266 ]`, run 2026-09-09 against this tree.
+The five skips are hardware-encoder probes (`test-nvenc.R:435,446,458`,
+`test-video-codec.R:480,489`); none reads `NEWS.md`. No roxygen changed on this
+branch (`git diff origin/master...HEAD --name-only` is `NEWS.md`,
+`cairn/ROADMAP.md` and this file), so `document()` was not required.
+
+**Consistency gate — partial, then stopped.**
+`python3 scripts/cairn_validate.py` exits 0: all checks passed, 78 advisory
+warnings, all of them the work-log line-wrapping advisory, which never fails a
+gate. The `release window` advisory did not fire. No `DESIGN.md` principle
+changed (`Principles touched: —`), so `cairn_impact.py` was skipped. The
+`r-package` profile's toolchain half was not reached: the criterion failure above
+takes the gate's exit, so `devtools::check()` and `pkgdown::check_pkgdown()` were
+not run. The branch touches no `R/`, `man/`, `NAMESPACE`, `README`, `_pkgdown.yml`
+or top-level file, so nothing those checks cover was modified.
+
+**Steps 5-9 not run.** The three review lenses, the approval gate and the merge
+were not reached. PR #124 stays a draft.

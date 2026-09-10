@@ -261,19 +261,25 @@
 
 * **`ffm_jobs()` turns a directory into a batch jobs table.** It lists the media
   files in a directory and returns them as the tibble `ffm_batch()` takes: one
-  row per file, with the file's full path in an `input` column, and no
-  subdirectory among them. `type` names the category to list — `"video"`,
-  `"audio"` or `"image"` — and has no default. `extension` narrows within that type
-  (`"mp4"` and `".mp4"` both work, matched case-insensitively), and
+  row per file, with the file's full path in an `input` column, and every row a
+  path that exists and is not a directory — neither a subdirectory whose name
+  ends in a matching extension nor a symbolic link whose target is gone.
+  `type` names the category to list — `"video"`, `"audio"` or `"image"` — and
+  has no default. `extension` narrows within that type (`"mp4"` and `".mp4"`
+  both work, matched case-insensitively), and
   `recursive = TRUE` descends into subdirectories. A directory that does not
   exist, a type outside the three, and a call that matches no file are each an
   error naming `ffm_jobs()`. The returned table carries `input` and nothing
   else, because `ffm_batch()` passes every column of the jobs table to `.f` by
-  name. The `*_batch()` verbs that derive their own output — among them
-  `standardize_video_batch()` and `normalize_audio_batch()` — take it
-  unaltered; the others refuse it until you add the columns they name — an
-  `output` column for the verbs that cannot derive a container, and otherwise
-  whatever the task needs (`start` and `end`, `regions`, `inputs`, and so on).
+  name. Six of the fifteen `*_batch()` task verbs take that table
+  unaltered: `standardize_video_batch()`, `normalize_audio_batch()`,
+  `format_for_web_batch()` and `strip_metadata_batch()` derive their own
+  output from `input`, and `crop_video_batch()` and `sample_frames_batch()` do
+  too once you pass their arguments. The other nine refuse it until you add a
+  column — three name `output` (`convert_audio_batch()`,
+  `extract_audio_batch()`, `picture_in_picture_batch()`) and the rest name
+  what their own task needs, such as `start` and `end`, `regions`, `inputs`,
+  or `timestamp`.
 
 * **Six new task verbs.**
 

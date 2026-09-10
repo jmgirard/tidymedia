@@ -26,9 +26,10 @@ list only the top level (\code{FALSE}, default).}
 A \link[tibble:tibble-package]{tibble} with one row per matching file
 and a single character column, \code{input}, holding each file's full
 path. Rows are in the order \code{\link[base]{list.files}} returns them.
-Subdirectories are never rows, including one whose own name ends in a
-listed extension. The call aborts rather than returning zero rows when
-nothing matches.
+Every row is a path that exists and is not a directory: a subdirectory
+whose own name ends in a listed extension is never a row, nor is a
+symbolic link whose target is gone. The call aborts rather than returning
+zero rows when nothing matches.
 }
 \description{
 List the media files in a directory and return them as the jobs table
@@ -40,8 +41,10 @@ story starts here rather than with a hand-rolled \code{list.files()} call.
 The returned tibble carries \code{input} and nothing else, deliberately:
 \code{\link[=ffm_batch]{ffm_batch()}} passes every column of the jobs table to \code{.f} by name, so
 an extra column would become an argument every \code{.f} has to accept. Add
-the columns your pipeline needs — an \code{output} column above all — with
-the usual data-frame tools; the examples below derive one from \code{input}.
+the columns your pipeline needs with the usual data-frame tools — some
+\code{*_batch()} verbs want an \code{output} column, others a
+task-specific one such as \code{start} and \code{end} — as the examples
+below derive an \code{output} from \code{input}.
 }
 \examples{
 folder <- system.file("extdata", package = "tidymedia")

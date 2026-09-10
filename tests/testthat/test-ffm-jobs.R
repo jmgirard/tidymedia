@@ -167,6 +167,7 @@ test_that("every argument-form refusal fires and names ffm_jobs()", {
     directory_numeric    = catch(ffm_jobs(1, type = "video")),
     type_missing         = catch(ffm_jobs(dir)),
     type_not_string      = catch(ffm_jobs(dir, type = 1)),
+    type_na              = catch(ffm_jobs(dir, type = NA_character_)),
     recursive_not_bool   = catch(ffm_jobs(dir, type = "video", recursive = "yes")),
     recursive_na         = catch(ffm_jobs(dir, type = "video", recursive = NA)),
     extension_numeric    = catch(ffm_jobs(dir, type = "video", extension = 1)),
@@ -198,6 +199,54 @@ test_that("a subdirectory matching the extension pattern is not a row", {
   deep <- ffm_jobs(dir, type = "video", recursive = TRUE)
   expect_true(all(jobs$input %in% deep$input))
   expect_true("deep.mp4" %in% basename(deep$input))
+})
+
+test_that("a dangling symbolic link is not a row, and rows stay absolute", {
+  dir <- local_media_dir()
+  linked <- file.symlink("../gone.mp4", file.path(dir, "broken.mp4"))
+  skip_if_not(isTRUE(linked), "this filesystem does not support symbolic links")
+
+  # list.files() yields the link, dir.exists() is FALSE on it, and
+  # normalizePath(mustWork = FALSE) returns an unresolvable path unchanged --
+  # so before the fix `broken.mp4` came back as a row, and from a relative
+  # `directory` it came back relative too.
+  withr::with_dir(dirname(dir), {
+    jobs <- ffm_jobs(basename(dir), type = "video")
+
+    expect_false("broken.mp4" %in% basename(jobs$input))
+    expect_setequal(basename(jobs$input), c("a.mp4", "b.MOV"))
+    expect_true(all(file.exists(jobs$input)))
+    expect_false(any(dir.exists(jobs$input)))
+    # Absolute however the directory was spelled: the criterion says full
+    # paths, and a relative `directory` is what made row 1 relative before.
+    expect_true(all(startsWith(jobs$input, "/") | grepl("^[A-Za-z]:", jobs$input)))
+  })
+})
+
+test_that("a directory holding only a dangling link reports no files", {
+  dir <- withr::local_tempdir()
+  linked <- file.symlink("../gone.mp4", file.path(dir, "broken.mp4"))
+  skip_if_not(isTRUE(linked), "this filesystem does not support symbolic links")
+
+  # The link is dropped before the zero-match check, so this is a refusal
+  # rather than a zero-row tibble.
+  cnd <- catch(ffm_jobs(dir, type = "video"))
+  expect_s3_class(cnd, "error")
+  expect_identical(blamed_verb(cnd), "ffm_jobs")
+  expect_match(conditionMessage(cnd), "No video files")
+})
+
+test_that("a symbolic link whose target exists is still a row", {
+  dir <- local_media_dir()
+  target <- file.path(dir, "sub", "deep.mp4")
+  linked <- file.symlink(target, file.path(dir, "live.mp4"))
+  skip_if_not(isTRUE(linked), "this filesystem does not support symbolic links")
+
+  # Discriminating against a predicate that drops every link rather than only
+  # the broken ones: this one resolves, so it belongs in the table.
+  jobs <- ffm_jobs(dir, type = "video")
+  expect_identical(nrow(jobs), 3L)
+  expect_true(all(file.exists(jobs$input)))
 })
 
 test_that("a directory holding only extension-named subdirectories reports no files", {
@@ -246,19 +295,43 @@ test_that("the extension refusal agrees in number with the offenders it names", 
   expect_match(many, "are not among them", fixed = TRUE)
 })
 
-test_that("the verbs that derive their own output take the returned table unaltered", {
+test_that("the NEWS entry's six-and-nine split over the *_batch() verbs holds", {
   dir <- local_media_dir()
   jobs <- ffm_jobs(dir, type = "video")
 
-  # The two the release note names by hand.
+  # The four that need no argument at all.
   expect_no_error(standardize_video_batch(jobs, run = FALSE))
   expect_no_error(normalize_audio_batch(jobs, run = FALSE))
+  expect_no_error(format_for_web_batch(jobs, run = FALSE))
+  expect_no_error(strip_metadata_batch(jobs, run = FALSE))
 
-  # And the note's other half: a verb that cannot derive an output refuses the
-  # same table until the caller adds the column it names.
-  cnd <- catch(extract_audio_batch(jobs, run = FALSE))
-  expect_s3_class(cnd, "error")
-  expect_match(conditionMessage(cnd), "output")
+  # And the two that take the table unaltered once their argument is supplied
+  # -- the pair the entry used to count among the refusers.
+  expect_no_error(
+    crop_video_batch(jobs, width = 100, height = 100, x = 0, y = 0, run = FALSE)
+  )
+  expect_no_error(sample_frames_batch(jobs, fps = 1, run = FALSE))
+
+  # The other nine refuse the bare table, each naming its own column. Three
+  # name `output`; the rest name what their task needs.
+  refusers <- list(
+    convert_audio        = list(quote(convert_audio_batch(jobs, run = FALSE)), "output"),
+    extract_audio        = list(quote(extract_audio_batch(jobs, run = FALSE)), "output"),
+    picture_in_picture   = list(quote(picture_in_picture_batch(jobs, run = FALSE)), "output"),
+    anonymize_video      = list(quote(anonymize_video_batch(jobs, run = FALSE)), "regions"),
+    compare_videos       = list(quote(compare_videos_batch(jobs, run = FALSE)), "inputs"),
+    concatenate_videos   = list(quote(concatenate_videos_batch(jobs, run = FALSE)), "inputs"),
+    extract_frame        = list(quote(extract_frame_batch(jobs, run = FALSE)), "timestamp"),
+    segment_video        = list(quote(segment_video_batch(jobs, run = FALSE)), "start"),
+    separate_audio_video = list(quote(separate_audio_video_batch(jobs, run = FALSE)),
+                                "audiofile")
+  )
+  expect_identical(length(refusers), 9L)
+  for (nm in names(refusers)) {
+    cnd <- catch(eval(refusers[[nm]][[1]]))
+    expect_s3_class(cnd, "error")
+    expect_match(conditionMessage(cnd), refusers[[nm]][[2]], info = nm)
+  }
 })
 
 # The vocabulary -----------------------------------------------------------

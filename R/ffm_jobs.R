@@ -10,8 +10,10 @@
 #' The returned tibble carries \code{input} and nothing else, deliberately:
 #' [ffm_batch()] passes every column of the jobs table to \code{.f} by name, so
 #' an extra column would become an argument every \code{.f} has to accept. Add
-#' the columns your pipeline needs — an \code{output} column above all — with
-#' the usual data-frame tools; the examples below derive one from \code{input}.
+#' the columns your pipeline needs with the usual data-frame tools — some
+#' \code{*_batch()} verbs want an \code{output} column, others a
+#' task-specific one such as \code{start} and \code{end} — as the examples
+#' below derive an \code{output} from \code{input}.
 #'
 #' @param directory A single string naming an existing directory.
 #' @param type The media category to list: \code{"video"}, \code{"audio"}, or
@@ -27,9 +29,10 @@
 #' @return A [tibble][tibble::tibble-package] with one row per matching file
 #'   and a single character column, \code{input}, holding each file's full
 #'   path. Rows are in the order \code{\link[base]{list.files}} returns them.
-#'   Subdirectories are never rows, including one whose own name ends in a
-#'   listed extension. The call aborts rather than returning zero rows when
-#'   nothing matches.
+#'   Every row is a path that exists and is not a directory: a subdirectory
+#'   whose own name ends in a listed extension is never a row, nor is a
+#'   symbolic link whose target is gone. The call aborts rather than returning
+#'   zero rows when nothing matches.
 #' @family builder functions
 #' @seealso [ffm_batch()], which consumes the returned table.
 #' @examples
@@ -102,12 +105,16 @@ tm_ffm_jobs <- function(directory, type, extension, recursive, call) {
     directory, pattern = pattern, full.names = TRUE,
     recursive = recursive, ignore.case = TRUE
   )
-  # A subdirectory whose own name ends in a listed extension matches the
-  # pattern too, and list.files() returns it when `recursive = FALSE`. Drop it:
-  # a directory is not a file to hand FFmpeg, and dropping it is also what
-  # makes `recursive = TRUE` a superset of `recursive = FALSE` rather than a
+  # list.files() yields names, not readable files: a subdirectory whose own
+  # name ends in a listed extension (when `recursive = FALSE`), and a symbolic
+  # link whose target is gone. Keep only what is both there and not a
+  # directory, rather than subtracting the non-file shapes one at a time --
+  # file.exists() follows links, so a dangling one is already FALSE, and it is
+  # also what keeps normalizePath() from passing an unresolvable path through
+  # unchanged. Dropping directories is additionally what makes
+  # `recursive = TRUE` a superset of `recursive = FALSE` rather than a
   # different set (list.files(recursive = TRUE) omits directories already).
-  files <- files[!dir.exists(files)]
+  files <- files[file.exists(files) & !dir.exists(files)]
   if (length(files) == 0) {
     scope <- if (recursive) " or its subdirectories" else ""
     cli::cli_abort(c(

@@ -11,7 +11,7 @@ _Last hygiene check: 2026-09-10 (M121 done and archived; PR #125 squash-merged, 
 | M119 | The documentation defects the pre-CRAN audit measured are corrected | done | — | normal | milestones/archive/M119-shipped-docs-defects.md |
 | M120 | NEWS.md reads as release notes | done | — | normal | milestones/archive/M120-news-reads-as-release-notes.md |
 | M121 | A directory becomes a jobs tibble | done | — | normal | milestones/archive/M121-directory-to-jobs-tibble.md |
-| M122 | macOS and Windows run the package's FFmpeg code | planned | M118 | normal | milestones/M122-mac-windows-run-ffmpeg.md |
+| M122 | macOS and Windows run the package's FFmpeg code | in-progress | M118 | normal | milestones/M122-mac-windows-run-ffmpeg.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

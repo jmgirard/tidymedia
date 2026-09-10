@@ -1,13 +1,13 @@
 # M122: macOS and Windows run the package's FFmpeg code
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M118
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** internal — CI configuration is dev tooling; no external consumer of the repo relies on it
-- **Branch/PR:** —
+- **Branch/PR:** `m122-mac-windows-run-ffmpeg`
 
 ## Goal
 
@@ -56,3 +56,4 @@ changing the matrix → the six legs stay six. Re-running the dependency floor h
 - 2026-09-07: created by /milestone-plan.
 - 2026-09-07: plan-gate criteria audit ran in REDUCED mode (declared tier internal), fresh-context [O] reader, asking only the bounded-promise, instrument and proportionality questions. It returned no findings: all three criteria passed every question asked of them.
 - 2026-09-07: plan gate chose installing the binaries on the existing two legs over adding dedicated execution-only legs, because the matrix already runs macOS and Windows and the gap is the install step rather than the coverage; falsified by the two legs becoming so slow or flaky that the check matrix stops being usable.
+- 2026-09-10: /milestone-implement started; branch `m122-mac-windows-run-ffmpeg` cut from `master` at 46f1b0a (in sync with origin).

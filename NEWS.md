@@ -833,11 +833,10 @@
     missing-file sweep is not uniform and is not a promise:
     `standardize_video_batch()` reports a bad `video_codec` before the sweep and
     a bad `width` after it. The refusal of duplicated inputs reports after it.
-  - On `standardize_video()`, a call passing both a bad `video_codec` and an
-    invalid `width`/`height`/`fps` reports the codec first, where it previously
-    reported the dimension; and a call passing both `hardware = "nvenc"` and bad
-    dimensions now reports the dimensions, where it used to report the missing
-    encoder.
+  - On `standardize_video()`, the dimension wins twice over: a call passing both
+    a bad `video_codec` and an invalid `width`/`height`/`fps` reports the
+    dimension, and so does a call passing both `hardware = "nvenc"` and bad
+    dimensions, which used to report the missing encoder.
   - `picture_in_picture_batch(jobs, audio_input = NA, audio_codec = "aac")`
     reports the `audio_codec` contradiction rather than the `audio_input` value:
     `NA` (or `NaN`) asks to drop the audio, so it *creates* the "needs an audio
@@ -860,9 +859,10 @@
   have. `compare_videos_batch()`'s out-of-range audio message named an internal
   variable (`aud`) rather than the argument. A non-character codec column now
   says "must be character (`NA` to leave the codec unset)" instead of "must be
-  character (no `NA`)", and a bad `video_codec` value on `anonymize_video()`,
-  `anonymize_video_batch()` or `extract_audio()` now says it "must be a single
-  string or `NULL`", `NULL` having become legal on those arguments. On
+  character (no `NA`)", and a bad codec value now says it "must be a single
+  string or `NULL`", `NULL` having become legal on those arguments — the
+  `video_codec` of `anonymize_video()` and `anonymize_video_batch()`, and the
+  `audio_codec` of `extract_audio()`, which has no `video_codec`. On
   `standardize_video_batch()` and `anonymize_video_batch()`, a jobs table
   invalid in both its `video_codec` and its `pixel_format` column now reports
   `pixel_format` first.
@@ -1312,10 +1312,11 @@
   assumed: the package's test suite has been run against the exact version of
   each package `Imports` names. One of them was wrong. `rlang` is now
   `(>= 1.2.0)`, up from `1.1.0`: tidymedia checks its arguments with
-  `rlang::check_string()`, `check_bool()` and their siblings in 132 places, and
-  rlang first exports those functions in 1.2.0 — so on an earlier rlang the
-  package's verbs failed at their own front doors. The other eight declared
-  floors were exercised at the version they name and stand unchanged.
+  `rlang::check_string()`, `check_bool()` and their siblings in well over a
+  hundred places, and rlang first exports those functions in 1.2.0 — so on an
+  earlier rlang the package's verbs failed at their own front doors. The other
+  nine declared floors were exercised at the version they name and stand
+  unchanged.
 
 * tidymedia now imports **digest**, which is what computes the SHA-256 of a
   downloaded FFmpeg archive. Base R gained `tools::sha256sum()` in 4.5.0, four

@@ -116,6 +116,12 @@ already has no repeated heading.
       the package lacks, not an encoder FFmpeg lacks (`R/ffmpeg.R:3021-3026`).
 - [x] T20: `NEWS.md:68` — D091 drops the `call`-argument bullet: `set_program()`
       never took `call` at `4b04fad9` and `hardware_encoder()` did not exist.
+- [x] T21: the four pre-existing false claims the claim audit found, dispositioned
+      to the branch by the user at the 2026-09-10 gate: `NEWS.md:839` (ordering),
+      `:866` (`extract_audio()`'s absent `video_codec`), `:1315` (stale count of
+      `rlang` check sites), `:1317` (eight declared floors, now nine).
+- [x] T22: `cairn/ROADMAP.md` — a candidate row for the collision gap T17 measured,
+      paid for by merging the two same-mechanism D039 guard-ordering rows.
 
 ## Work log
 
@@ -476,6 +482,35 @@ already has no repeated heading.
   was added and removed inside this cycle (removed at `5f171d9`), so the bullet's
   instruction to "drop it" addresses no one. Dropped. `hardware_encoder()` is still
   named six times and `set_program()` seven, so AC3 is unaffected.
+- 2026-09-10: gate on the claim audit's four pre-existing findings. Two choices, both
+  taken at the recommendation. (1) All four are fixed on this branch rather than left
+  to `/cairn-release` step 2, since the evidence is already measured and they ship to
+  CRAN otherwise; the user chose this WITHOUT the Scope amendment that was offered
+  beside it, so Scope In is unchanged and review will see a branch that corrected
+  claims its Scope does not name -- recorded here so that is a disposition on record
+  rather than drift. D-118 does not fire: no acceptance criterion was added and none
+  had its promise extended. (2) The collision gap goes to a ROADMAP candidate row.
+- 2026-09-10: T21. `NEWS.md:839`: measured three ways -- `video_codec = "aac -evil"`
+  against each of `width = -5`, `fps = -1` and `height = NA_character_` -- and the
+  dimension is reported every time, so the bullet had the order backwards. Rewritten
+  to state the dimension winning in both halves; the `hardware = "nvenc"` half was
+  re-run separately and does report `width`, so its "used to report the missing
+  encoder" history is kept. `:866`: `extract_audio(v, "a.aac", audio_codec = NA)`
+  raises the new wording on `audio_codec`; the verb has no `video_codec` formal at
+  all, so the sentence now splits the two arguments by verb. `:1315`: the count is
+  147 today (`check_string` 51, `check_bool` 46, `check_number_whole` 38,
+  `check_number_decimal` 12) against the 132 M077 measured, and it moves with every
+  milestone that adds a check -- so the number is dropped rather than re-fixed, since
+  nothing a reader does depends on it and it has now gone stale twice. `:1317`:
+  `DESCRIPTION` declares ten versioned `Imports`, so besides `rlang` there are nine,
+  not eight; `withr` is the one added since M077 measured it.
+- 2026-09-10: T22. Candidate row added for the five verbs where an explicit `output`
+  column is not collision-checked, carrying T17's measurement and the reason it is a
+  gap rather than a contract defect. Paid for by merging two rows that were one
+  mechanism -- the wrongly-typed-by-form divergence and the normalize pair's
+  copy/`audio_stream` divergence, both D039, both promoting on a report of the
+  divergence confusing a caller. `ROADMAP.md` holds at 59 lines, under the 60 cap;
+  nothing was dropped and both merged rows keep their content and citations.
 
 ## Review
 

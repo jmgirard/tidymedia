@@ -1227,7 +1227,7 @@
   the code the way they had — several pages still listed only some of the verbs
   that keep every audio track, omitting ones added later.
 
-* Three new vignettes and a reordered fourth. `vignette("verification")`,
+* Two new vignettes and a reordered third. `vignette("verification")`,
   "Checking results and bounding runs", covers three things that had reference
   pages but no narrative: checking a processed file against what you asked for
   with `verify_media()` and the batch runner's `verify =` argument; recording

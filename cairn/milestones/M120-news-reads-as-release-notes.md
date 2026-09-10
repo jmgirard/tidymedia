@@ -84,7 +84,7 @@ already has no repeated heading.
       auto-naming list and give the restarting `<basename>_<n>` to
       `segment_video_batch()` as well as the frame-writing verbs
       (`R/ffmpeg.R:3911,4134`).
-- [ ] T9: `NEWS.md:1217` — two vignettes are new, not three; the reordered one
+- [x] T9: `NEWS.md:1217` — two vignettes are new, not three; the reordered one
       is the third, not the fourth.
 - [ ] T10: `NEWS.md:517-523` — restore a qualifier separating the family-not-
       encodable refusal from the backend-unavailable one; the former is refused
@@ -345,6 +345,11 @@ already has no repeated heading.
   (`derive_frame_pattern()`, `:224`), so it gets its own clause. `_web.mp4`'s fixed
   extension is from the comment at `:6128-6129`; `formals(sample_frames_batch)`
   confirms the scalar `outdir` the new sentence mentions.
+- 2026-09-10: T9. `git ls-tree 4b04fad9 vignettes/` lists three (`batch.Rmd`,
+  `metadata.Rmd`, `tidymedia.Rmd`) and HEAD has five, so two are new --
+  `verification.Rmd` and `workflow.Rmd`, which are exactly the two the bullet's own
+  body then describes, the reordered one being "Get started" (`tidymedia.Rmd`). Count
+  and ordinal both corrected in the opening sentence; the body needed no change.
 
 ## Review
 

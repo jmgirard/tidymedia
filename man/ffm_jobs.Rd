@@ -23,15 +23,17 @@ default) lists every extension of that type.}
 list only the top level (\code{FALSE}, default).}
 }
 \value{
-A \link[tibble:tibble-package]{tibble} with one row per matching
-non-hidden file and a single character column, \code{input}, holding each
-file's full path. Rows are in the order \code{\link[base]{list.files}}
-returns them.
+A \link[tibble:tibble-package]{tibble} with one row per matching file
+whose name does not start with a dot, and a single character column,
+\code{input}, holding each file's full path. Rows are in the order
+\code{\link[base]{list.files}} returns them.
 Every row is a path that exists and is not a directory: a subdirectory
 whose own name ends in a listed extension is never a row, nor — on macOS
 and Linux — is a symbolic link whose target is gone. Windows reports such
 a link as existing, so there it can still be a row. The call aborts rather
-than returning zero rows when nothing matches.
+than returning zero rows when nothing matches. With
+\code{recursive = TRUE} the search follows a symbolic link to a directory,
+so a row can name a file outside \code{directory}.
 }
 \description{
 List the media files in a directory and return them as the jobs table

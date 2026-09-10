@@ -150,6 +150,8 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 - 2026-09-10: claim audit: 63 claims read, 3 corrected — tests/testthat/test-ffm-jobs.R, R/ffm_jobs.R, NEWS.md, vignettes/metadata.Rmd. Fresh-context [O] reader, authored none of the diff's added lines; it ran `ffm_jobs()` over fixture directories for hidden files, unlisted containers and the symlink cases, called all fifteen `*_batch()` verbs and read each refusal, checked `man/ffm_jobs.Rd` line by line against the roxygen, and ran the test file with `ffmpeg`, `ffprobe` and `mediainfo` off `PATH` (143 assertions, zero skips). The three corrections: the test file's header said "the three `*_batch()` verbs" where the file now calls fifteen (stale since T12); `@return`'s "one row per matching file" and `NEWS.md`'s "lists the media files" both promised over hidden files, which `list.files(all.files = FALSE)` never returns — candidate item (b)'s own case, so the sentences were the promise it falsified; and `vignettes/metadata.Rmd`'s "lists every video file in the folder" is false of `.ogv`, `.3gp`, `.mxf` and `.vob`, which are video files the closed vocabulary omits. The Windows half of the new symlink qualification is marked UNVERIFIABLE-HERE and was not asserted by the reader — it was read against the recorded return-#3 evidence instead, where `test-ffm-jobs.R:218` passing is what shows `file.exists()` is TRUE for a dead link on that runner. Re-read once: claims 1 and 2 returned TRUE-AS-WRITTEN; claim 3's `NEWS.md` half was still overclaiming, since a `.ogv` is a non-hidden file of media type video and is not listed, so the entry took the re-read's narrowest true wording — the non-hidden files carrying one of the extensions it knows for a given type. The vignette half returned TRUE-AS-WRITTEN. Deviation, as at all three earlier audits: the re-read was by a second fresh [O] reader rather than the first, because this session exposes no tool for continuing a finished subagent; a fresh reader is at least as independent, and the one-pass stopping rule was honored.
 - 2026-09-10: T18 — `devtools::check()` on the corrected tree: Status OK, 0 errors / 0 warnings / 0 notes, 7m 41.7s, `checking examples ... OK`, `checking tests ... OK`, `re-building of vignette outputs ... OK`. `pkgdown::check_pkgdown()` "No problems found". `verify` slot clean: `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 13409 (13406 at the return, +3 from the split absoluteness test); `devtools::document()` re-run produces no diff. `cairn_validate.py` exit 0 with one `sizing` advisory at 18 tasks; `binding criteria` passes on the amended AC1. AC5 met on the descoped tree. Status -> review.
 
+- 2026-09-10: fourth review pass (descoped tree) — AC1-AC5 pass on fresh evidence, consistency gate clean. Full fan-out: prior-review 0 findings, blame-history 1 (S1), [O] 6 (O1-O6). No finding is floor-qualifying. At the gate, S1 and O2 were fixed as wording and filed as follow-ups (g)/(h), O3 got D092, O1 and O4 became follow-ups, and O5 and O6 were rejected. After the fixes, `check()` is 0/0/0. Defect returns stay 3; amendment returns 0.
+
 ## Review
 
 ### First pass — 2026-09-10 (defect return #1)
@@ -982,3 +984,44 @@ by demonstration; two sit close enough that the disposition is the maintainer's.
   refusal's frame.
 
 Defect-return count stays **3**; amendment-return count **0**.
+
+#### Triage at the gate — 2026-09-10
+
+The maintainer took the recommended disposition on every question. Each
+finding's disposition:
+
+- **S1 → fix now (claim) + follow-up.** `@return` and the `NEWS.md` entry now
+  disclose that `recursive = TRUE` follows a symbolic link to a directory, so a
+  row can name a file outside `directory`. The behaviour itself goes to the
+  `ffm_jobs()` candidate row as item (h), a second route to the
+  outside-the-directory class pass 1 deferred into item (a).
+- **O2 → fix now (claim) + follow-up.** "non-hidden" in `@return` and `NEWS.md`
+  becomes "whose name does not start with a dot", which is true on every
+  platform and asserts nothing unmeasured about Windows; the hidden-attribute
+  case goes to the row as item (g). No amendment return: AC1's wording is
+  untouched.
+- **O1 → follow-up.** The missing `mka` is appended to candidate item (c), matching
+  the earlier `.ts`/`.ogv` deferral: it widens what the export accepts rather than
+  repairing a broken promise.
+- **O3 → fix now.** `cairn/DECISIONS.md` gains **D092**, which moves M121-1's
+  prefix ruling into the decision log as a reading of D014's `ffm_*` clause.
+  D014 is left unchanged.
+- **O4 → follow-up.** Folded into candidate item (e) beside the `batch.Rmd` doc
+  defect.
+- **O5 → reject, cosmetic.** Only the echoed form of the typed extension differs.
+- **O6 → reject, no user-visible effect.** Its only reachable consequence is the
+  Windows dangling-link pass-through item (f) already holds.
+
+Search-first for the follow-ups: the `ffm_jobs()` candidate row is the existing home
+for every one of them, so it was extended rather than duplicated.
+
+**Fix-now evidence.** `R/ffm_jobs.R` `@return` and the `NEWS.md` entry corrected
+per S1 and O2; `devtools::document()` rewrote `man/ffm_jobs.Rd`, and a second
+`document()` run added no diff. `devtools::check(document = FALSE)` on the
+corrected tree: `Status: OK`, `0 errors ✔ | 0 warnings ✔ | 0 notes ✔`, 5m 42.4s
+(`checking tests` includes `spelling.R`, which passed). `cairn_validate.py`: all
+checks passed, one `sizing` advisory (18 tasks). The fixes change prose only, so
+the AC1-AC5 evidence above still holds; AC5 was re-measured here. D092 appended; the `ffm_jobs()`
+candidate row extended with (g), (h), `mka` under (c) and the one-liner clause
+under (e) (`ROADMAP.md` now 59 lines / 42,680 bytes against its 24,000-byte budget,
+worsened again; `/cairn-triage` remains the only remedy).

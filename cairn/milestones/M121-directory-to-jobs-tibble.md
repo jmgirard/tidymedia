@@ -1,6 +1,6 @@
 # M121: A directory becomes a jobs tibble
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —

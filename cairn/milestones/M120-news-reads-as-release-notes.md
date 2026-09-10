@@ -98,10 +98,10 @@ already has no repeated heading.
 - [x] T13: `NEWS.md:181-192` — the `audio` -> `audio_input` bullet announces a
       rename on four verbs that are all new exports since `4b04fad9`; D091's own
       rule drops it, announcing `audio_input` once as the new argument it is.
-- [ ] T14: `cairn/ROADMAP.md:20` — remove the sentence claiming the unreleased
+- [x] T14: `cairn/ROADMAP.md:20` — remove the sentence claiming the unreleased
       `NEWS.md` section still explains `unset_program()` via `find_program()`;
       the rewrite left one mention (`NEWS.md:1278`), the one calling it internal.
-- [ ] T15: `cairn/DECISIONS.md:4317` — D091's "until 0.2.0 reaches CRAN"
+- [x] T15: `cairn/DECISIONS.md:4317` — D091's "until 0.2.0 reaches CRAN"
       overstates D014, which says "pre-0.2.0 and still soaking". Editable, not
       yet merged.
 - [ ] T16: `NEWS.md:318` — the accepted value is `"center"`, not `centre`
@@ -392,6 +392,19 @@ already has no repeated heading.
   all four exports are still named in the section (6, 5, 5 and 6 occurrences). AC4
   unaffected: `audio` is not one of its removed formals, since these verbs are not
   exported in both `NAMESPACE`s.
+- 2026-09-10: T14. `find_program` occurs exactly once in the development section
+  (`NEWS.md:1293`, the section running to the `# tidymedia 0.1.0` heading at 1378),
+  and that occurrence is the entry calling it internal -- so the candidate row's claim
+  that the section still explains `unset_program()` in terms of it was falsified by
+  this branch's own rewrite. Sentence removed; the row's shipped-`Rd` half, which is
+  what the row is for, stands untouched. ROADMAP still 59 lines, under the 60 cap.
+- 2026-09-10: T15. D091's premise restated in D014's own terms. D014
+  (`cairn/DECISIONS.md:176-177`) says "clean break -- no `lifecycle` shims; the API is
+  pre-0.2.0 and still soaking (D001). Old names are removed, not deprecated"; it names
+  no CRAN threshold, so "until 0.2.0 reaches CRAN" was an extrapolation of the entry
+  it cites. D091's rule is unaffected -- its boundary is the last released version,
+  not 0.2.0 -- so only the opening sentence changed, and the title line's "pre-0.2.0
+  free-rename window" already matched D014 and stands.
 
 ## Review
 

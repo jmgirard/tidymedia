@@ -4313,11 +4313,13 @@ this entry.
 
 ## D091 — The changelog announces only what a caller of the last release could have written; a name that arrived and changed inside the same development cycle is dropped, not reported as a breaking change (2026-09-09, from M120; applies D014's pre-0.2.0 free-rename window to what the changelog says rather than to what the API may do, and leaves D014, D077, D078 and D079 standing)
 
-D014 lets a name change outright until 0.2.0 reaches CRAN, so a development
-cycle accumulates names that arrive, change, and change again before any user
-can call them. An append-only changelog reports each of those steps as a
-breaking change. The reader it is written for cannot act on any of them: the
-only names that can break their code are the ones the last release shipped.
+D014's rename policy is a clean break -- no `lifecycle` shims, old names removed
+rather than deprecated, on the stated grounds that the API is pre-0.2.0 and
+still soaking (D001). So a development cycle accumulates names that arrive,
+change, and change again before any user can call them. An append-only
+changelog reports each of those steps as a breaking change. The reader it is
+written for cannot act on any of them: the only names that can break their code
+are the ones the last release shipped.
 
 **The rule.** An entry in the changelog's development section is written for a
 caller of the last released version. A rename is announced when the old name

@@ -124,6 +124,7 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 - 2026-09-10: claim audit: 38 claims read, 1 corrected — NEWS.md. Fresh-context [O] reader, authored none of the diff's added lines; it ran the new predicate against a `takes.mp4` directory, a dangling link, a live link and both `recursive` settings, called all fifteen `*_batch()` verbs and read each condition, ran the roxygen example against `inst/extdata`, and ran the test file with `ffmpeg` and `mediainfo` off `PATH` (140 assertions, zero skips). The one correction: the entry's "add a column" was singular where two of the nine refusers name more than one — `picture_in_picture_batch()` wants `main`, `overlay` and `output` together, and `separate_audio_video_batch()` `audiofile` and `videofile` — so the clause now names those two by hand. Re-read once and returned TRUE-AS-WRITTEN; verified again here by firing all three refusals. The reader also noted, as a fact rather than a false claim, that `normalizePath()` gives a live symlink's row its target's path; nothing in the diff says otherwise.
 - 2026-09-10: T16 — `devtools::check()` on the corrected tree: Status OK, 0 errors / 0 warnings / 0 notes, 8m 44.8s, `checking examples ... OK`, `checking tests ... OK` (417s), `re-building of vignette outputs ... OK`. `pkgdown::check_pkgdown()` "No problems found". `verify` slot clean: `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 13406; `devtools::document()` re-run produces no diff. AC5 met on the returned tree. Status -> review.
 - 2026-09-10: third review pass — all five criteria pass against fresh evidence (AC1 verified against both returned defects' own cases plus a live symlink and a relative `directory`; 19 refusal branches all blaming `ffm_jobs`; `check()` 0/0/0, `test()` PASS 13406, `document()` no diff). Consistency gate clean, `cairn_validate` exit 0 with one `sizing` advisory at 16 tasks. Three-lens fan-out: blame-history and prior-review each zero findings, [O] 11 findings, none floor-qualifying. Awaiting triage and the merge gate.
+- 2026-09-10: triage at the merge gate — [O]1-[O]4 filed as follow-ups by extending the existing `ffm_jobs()` candidate row (search-first: no new row; (a) extended, (d)/(e) added); [O]5-[O]11 rejected with reasons recorded in the Review section. PR conversation read: no reviews, no unresolved threads, one Codecov bot comment noted. **step-7 approval: PR #125 approved for merge.**
 
 ## Review
 
@@ -668,3 +669,50 @@ duplicate row is still a full path to a media file, contradicting `@return`'s
 user-visible hazards (a silent overwrite; a job run twice), so the load-bearing
 half of the floor is the maintainer's judgment at the gate. No amendment return:
 no finding shows a criterion itself to be wrong.
+
+#### Triage at the merge gate — 2026-09-10
+
+The maintainer chose to merge, filing findings 1-4 as candidate rows. Every
+finding's disposition:
+
+- **[O]1, [O]2 → follow-up.** Both absorbed into the existing `ffm_jobs()`
+  candidate row's item (a), which already held the colliding-`basename()` output
+  class from the symlink direction. Search-first: that row exists and is the
+  right home, so it was extended rather than duplicated — (a) now names the
+  `recursive = TRUE` route to the same collision with no symlink involved, and
+  the link-plus-target duplicate row.
+- **[O]3, [O]4 → follow-up.** Filed as items (d)/(e) on the same row (the
+  60-line ROADMAP cap admitted no second line), with their own promotion
+  condition: the next docs pass over either file, or a report of a reader
+  hand-building a jobs table after reading `batch.Rmd`.
+- **[O]5 → reject, pre-existing.** The `DESIGN.md` Layer-1 enumeration is
+  already missing `ffm_manifest`; bringing it current is a sweep of its own
+  rather than this milestone's to make. Pass 2 dispositioned it the same way.
+- **[O]6 → reject, pre-existing.** `DESIGN.md`'s Known-issues entry already
+  tracks hand-written container lists outside the generated enumeration; the new
+  list joins a tracked class rather than opening one.
+- **[O]7 → reject, pre-existing convention.** `R/program_management.R:293` and
+  `man/concatenate_videos_batch.Rd:39` cite decision ids the same way; whether
+  user-facing pages should is one decision to take once, not here.
+- **[O]8 → reject, pre-existing and cosmetic.** The `_pkgdown.yml` Layer-1
+  description already failed to cover `ffm_batch`.
+- **[O]9 → reject, cosmetic.** `extension = "."` is refused; only the message's
+  rendering of the empty string is odd.
+- **[O]10 → reject, intentional.** `arg_match()` supplies `type`'s "Did you
+  mean" hint on the exact-case refusal, and `extension`'s case-folding is what
+  lets `"MP4"` and `".mp4"` both work — the asymmetry is the two arguments'
+  different jobs.
+- **[O]11 → reject, disclosed not new.** The ROADMAP byte overrun is recorded in
+  the work log and in M120's hygiene stamp; `/cairn-triage` is the remedy and is
+  the user's to run.
+
+**PR conversation read** (PR #125, immediately before the merge chip):
+`gh api .../pulls/125/reviews` returned no reviews; the `reviewThreads` GraphQL
+query filtered to `isResolved: false` returned no threads; `issues/125/comments`
+returned one comment.
+
+- conversation: codecov[bot] PR — noted (reports all modified and coverable
+  lines covered by tests; requests nothing). Author `type` is `Bot`, so the
+  blocking rule does not apply.
+
+No `CHANGES_REQUESTED` review, so merge stayed the recommended option.

@@ -307,7 +307,8 @@
 
   `compare_videos()` and `picture_in_picture()` join them as the two fan-in task
   verbs: a side-by-side or stacked comparison video, and an inset overlay
-  (corner or centre `position`, `scale`, `margin`). Both drop audio by default:
+  (a `position` naming one of the four corners or `"center"`, plus `scale` and
+  `margin`). Both drop audio by default:
   `audio_input` is the 0-based index of the *input* whose audio to keep — `0`
   the first file passed in, `1` the second — and counts the verb's inputs, not
   one input's audio streams, so it is a different index from `audio_stream` on
@@ -1020,11 +1021,11 @@
   `ffm_overlay()` / `ffm_drawbox()` builders. A missing value in a `jobs` column
   is refused as before, by the column's own guard, which names the column.
 
-  Relatedly, `normalize_audio_batch(audio_codec = NA)` aborts instead of quietly
-  compiling the default command. A scalar `NA` was resolved the same way as an
-  `NA` cell in a jobs-table column — where it legitimately means "leave this
-  row's codec unset" — so an accidental `NA` argument produced a command with no
-  `-codec:a` and no indication that anything had been ignored.
+  In the same vein, `normalize_audio_batch(audio_codec = NA)` aborts instead of
+  quietly compiling the default command. A scalar `NA` was resolved the same way
+  as an `NA` cell in a jobs-table column — where it legitimately means "leave
+  this row's codec unset" — so an accidental `NA` argument produced a command
+  with no `-codec:a` and no indication that anything had been ignored.
 
 * `ffmpeg_codecs(sort_by_type = )` refuses a value that is not `TRUE` or
   `FALSE`, without running FFmpeg first. What it did before depended on the

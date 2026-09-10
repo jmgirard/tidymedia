@@ -104,7 +104,7 @@ already has no repeated heading.
 - [x] T15: `cairn/DECISIONS.md:4317` — D091's "until 0.2.0 reaches CRAN"
       overstates D014, which says "pre-0.2.0 and still soaking". Editable, not
       yet merged.
-- [ ] T16: `NEWS.md:318` — the accepted value is `"center"`, not `centre`
+- [x] T16: `NEWS.md:318` — the accepted value is `"center"`, not `centre`
       (`R/ffmpeg.R:7133,7529`); reword `Relatedly` (`NEWS.md:1008`) or add it to
       `inst/WORDLIST`. `devtools::check()` must return to 0 NOTEs, or the NOTE
       must be justifiable.
@@ -405,6 +405,13 @@ already has no repeated heading.
   it cites. D091's rule is unaffected -- its boundary is the last released version,
   not 0.2.0 -- so only the opening sentence changed, and the title line's "pre-0.2.0
   free-rename window" already matched D014 and stands.
+- 2026-09-10: T16. `centre` was a wrong value, not a spelling variant: the five
+  accepted `position` values read off `formals(picture_in_picture)$position` are
+  `"topright"`, `"topleft"`, `"bottomright"`, `"bottomleft"` and `"center"`, so the
+  phrase now names the four corners and `"center"` as the value a caller types.
+  `Relatedly` reworded to "In the same vein" per the gate, `inst/WORDLIST` unchanged.
+  `spelling::spell_check_package(".")` returns no spelling errors, so the NOTE's two
+  words are both gone; `devtools::check()` at completion is what confirms 0 NOTEs.
 
 ## Review
 

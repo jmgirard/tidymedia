@@ -1163,3 +1163,5 @@ the ordinal forms `4th`/`5th` in the first draft of the table did add a `th`,
 so the table gives plain position numbers instead of a wordlist entry.
 `devtools::check()` re-run after every fix-now edit: **0 errors, 0 warnings, 0
 notes** (6m 43s).
+
+- 2026-09-10: step-7 approval: PR #124 approved for merge.

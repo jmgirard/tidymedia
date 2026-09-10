@@ -1173,3 +1173,22 @@ the ordinal forms `4th`/`5th` in the first draft of the table did add a `th`,
 so the table gives plain position numbers instead of a wordlist entry.
 `devtools::check()` re-run after every fix-now edit: **0 errors, 0 warnings, 0
 notes** (6m 43s).
+
+**Resume 2026-09-10 (route c).** PR #124 read as `OPEN`, `mergedAt` null, no
+longer a draft. All five criterion boxes ticked against the second-pass evidence
+above and the step-7 approval line on record, so the resume route re-runs step 1
+and the conversation read and re-poses the merge chip. `git fetch`:
+`origin/master` still unmoved (0 behind, 29 ahead), local `master` level with it,
+the branch level with its remote, and the PR head (`fffc33e`) identical to the
+local head — the tree the evidence measures is the tree that would merge, so no
+step-3 re-run. **All ten CI legs green:** macos-latest (release), windows-latest
+(release), ubuntu-latest release / devel / oldrel-1 / 4.1.0, pkgdown,
+test-coverage, codecov/patch, codecov/project.
+
+**PR-conversation read (re-run, before the re-posed chip).** No reviews
+(`pulls/124/reviews` empty), so no `CHANGES_REQUESTED` and the blocking rule
+does not fire. No unresolved review threads (`reviewThreads` filtered to
+`isResolved: false` returns none; `hasNextPage` false). One conversation
+comment, unchanged.
+- conversation: codecov[bot] PR — noted (all modified lines covered; requests
+  nothing, author type `Bot`).

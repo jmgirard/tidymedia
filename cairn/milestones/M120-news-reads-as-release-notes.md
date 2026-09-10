@@ -472,3 +472,11 @@ make at the gate. O12 and the `NEWS.md:481` observation are pre-existing and
 rejected as out of scope. My recommendation to the maintainer is to return the
 milestone to `in-progress` rather than fix ten prose defects inside the review
 phase.
+
+**PR-conversation read (PR #124, 2026-09-09, before the gate).** No reviews at
+all (`pulls/124/reviews` empty), so no `CHANGES_REQUESTED` and the blocking rule
+does not fire. No unresolved review threads (`reviewThreads` filtered to
+`isResolved: false` returns none; `hasNextPage` false). One conversation comment.
+- conversation: codecov[bot] PR — noted (reports coverage unchanged at 98.43%,
+  4161 lines both sides, base `50d1995` against head `427d8d3`; requests
+  nothing, author type `Bot`).

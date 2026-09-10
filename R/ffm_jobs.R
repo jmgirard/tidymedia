@@ -27,7 +27,9 @@
 #' @return A [tibble][tibble::tibble-package] with one row per matching file
 #'   and a single character column, \code{input}, holding each file's full
 #'   path. Rows are in the order \code{\link[base]{list.files}} returns them.
-#'   The call aborts rather than returning zero rows when nothing matches.
+#'   Subdirectories are never rows, including one whose own name ends in a
+#'   listed extension. The call aborts rather than returning zero rows when
+#'   nothing matches.
 #' @family builder functions
 #' @seealso [ffm_batch()], which consumes the returned table.
 #' @examples
@@ -60,6 +62,10 @@ ffm_jobs <- function(directory, type, extension = NULL, recursive = FALSE) {
 tm_ffm_jobs <- function(directory, type, extension, recursive, call) {
   rlang::check_string(directory, arg = "directory", call = call)
   rlang::check_bool(recursive, arg = "recursive", call = call)
+  # check_string() before arg_match(): arg_match() takes the first element
+  # without complaint when `arg` is identical() to `values`, so a multi-value
+  # `type` would otherwise be accepted silently.
+  rlang::check_string(type, arg = "type", call = call)
   type <- rlang::arg_match(type, media_types(), error_call = call)
 
   if (!dir.exists(directory)) {
@@ -83,7 +89,7 @@ tm_ffm_jobs <- function(directory, type, extension, recursive, call) {
     if (length(unknown) > 0) {
       cli::cli_abort(c(
         "{.arg extension} must name {type} extensions.",
-        "x" = "{.val {unknown}} {?is/are} not one of them.",
+        "x" = "{.val {unknown}} {?is not one of them/are not among them}.",
         "i" = "Accepted for this type: {.val {wanted}}."
       ), call = call)
     }
@@ -95,6 +101,12 @@ tm_ffm_jobs <- function(directory, type, extension, recursive, call) {
     directory, pattern = pattern, full.names = TRUE,
     recursive = recursive, ignore.case = TRUE
   )
+  # A subdirectory whose own name ends in a listed extension matches the
+  # pattern too, and list.files() returns it when `recursive = FALSE`. Drop it:
+  # a directory is not a file to hand FFmpeg, and dropping it is also what
+  # makes `recursive = TRUE` a superset of `recursive = FALSE` rather than a
+  # different set (list.files(recursive = TRUE) omits directories already).
+  files <- files[!dir.exists(files)]
   if (length(files) == 0) {
     scope <- if (recursive) " or its subdirectories" else ""
     cli::cli_abort(c(

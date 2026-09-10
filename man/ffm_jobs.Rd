@@ -26,7 +26,9 @@ list only the top level (\code{FALSE}, default).}
 A \link[tibble:tibble-package]{tibble} with one row per matching file
 and a single character column, \code{input}, holding each file's full
 path. Rows are in the order \code{\link[base]{list.files}} returns them.
-The call aborts rather than returning zero rows when nothing matches.
+Subdirectories are never rows, including one whose own name ends in a
+listed extension. The call aborts rather than returning zero rows when
+nothing matches.
 }
 \description{
 List the media files in a directory and return them as the jobs table

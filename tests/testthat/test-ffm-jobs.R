@@ -39,9 +39,12 @@ test_that("`input` holds full paths that resolve to the listed files", {
   withr::with_dir(withr::local_tempdir(), {
     expect_true(all(file.exists(jobs$input)))
   })
-  expect_identical(
-    normalizePath(jobs$input, winslash = "/", mustWork = TRUE), jobs$input
-  )
+  # Stated independently of what ffm_jobs() returned: the two paths the fixture
+  # wrote, spelled from the directory's own normalized path. Asserting instead
+  # that normalizePath() is idempotent on jobs$input would hold whatever files
+  # came back.
+  root <- normalizePath(dir, winslash = "/", mustWork = TRUE)
+  expect_setequal(jobs$input, file.path(root, c("a.mp4", "b.MOV")))
 })
 
 test_that("the extension match is case-insensitive but the returned name is not", {
@@ -177,6 +180,67 @@ test_that("every argument-form refusal fires and names ffm_jobs()", {
     expect_identical(blamed_verb(cases[[nm]]), "ffm_jobs", info = nm)
   }
   expect_match(conditionMessage(cases$type_missing), "type")
+})
+
+test_that("a subdirectory matching the extension pattern is not a row", {
+  dir <- local_media_dir()
+  dir.create(file.path(dir, "takes.mp4"))
+
+  jobs <- ffm_jobs(dir, type = "video")
+  expect_false("takes.mp4" %in% basename(jobs$input))
+  expect_false(any(dir.exists(jobs$input)))
+  expect_setequal(basename(jobs$input), c("a.mp4", "b.MOV"))
+
+  # And with the directory dropped, recursive = TRUE is a superset of FALSE:
+  # before the fix `takes.mp4` was in FALSE only, since list.files(recursive =
+  # TRUE) omits directories.
+  deep <- ffm_jobs(dir, type = "video", recursive = TRUE)
+  expect_true(all(jobs$input %in% deep$input))
+  expect_true("deep.mp4" %in% basename(deep$input))
+})
+
+test_that("a directory holding only extension-named subdirectories reports no files", {
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "takes.mp4"))
+  cnd <- catch(ffm_jobs(dir, type = "video"))
+  expect_s3_class(cnd, "error")
+  expect_match(conditionMessage(cnd), "No video files")
+})
+
+test_that("a multi-value `type` is refused, not silently reduced to its first", {
+  dir <- local_media_dir()
+  # Both orders refuse. The forward order used to pass: arg_match() returns the
+  # first element when `arg` is identical() to `values`.
+  for (val in list(c("video", "audio", "image"), c("audio", "video"))) {
+    cnd <- catch(ffm_jobs(dir, type = val))
+    expect_s3_class(cnd, "error")
+    expect_identical(blamed_verb(cnd), "ffm_jobs")
+    expect_match(conditionMessage(cnd), "single string")
+  }
+})
+
+test_that("`extension` given as a factor is refused, and so is an empty `directory`", {
+  dir <- local_media_dir()
+
+  fac <- catch(ffm_jobs(dir, type = "video", extension = factor("mp4")))
+  expect_s3_class(fac, "error")
+  expect_identical(blamed_verb(fac), "ffm_jobs")
+  expect_match(conditionMessage(fac), "character vector")
+
+  empty_dir <- catch(ffm_jobs("", type = "video"))
+  expect_s3_class(empty_dir, "error")
+  expect_identical(blamed_verb(empty_dir), "ffm_jobs")
+  expect_match(conditionMessage(empty_dir), "existing directory")
+})
+
+test_that("the extension refusal agrees in number with the offenders it names", {
+  dir <- local_media_dir()
+  one <- conditionMessage(catch(ffm_jobs(dir, type = "video", extension = "wav")))
+  many <- conditionMessage(
+    catch(ffm_jobs(dir, type = "video", extension = c("wav", "png")))
+  )
+  expect_match(one, "is not one of them", fixed = TRUE)
+  expect_match(many, "are not among them", fixed = TRUE)
 })
 
 # The vocabulary -----------------------------------------------------------

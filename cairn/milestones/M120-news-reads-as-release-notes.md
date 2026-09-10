@@ -1,13 +1,13 @@
 # M120: NEWS.md reads as release notes
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — NEWS.md ships and is the first thing a reader checks
-- **Branch/PR:** —
+- **Branch/PR:** `m120-news-release-notes`
 
 ## Goal
 
@@ -52,7 +52,7 @@ already has no repeated heading.
 
 ## Tasks
 
-- [ ] T1: Compute the symmetric difference of the two `NAMESPACE`s and read D014,
+- [x] T1: Compute the symmetric difference of the two `NAMESPACE`s and read D014,
       D077 and D078 for the renames that are not `NAMESPACE` entries. The removed set
       measured 2026-09-07 is `:=`, `as_label`, `as_name`, `audio_as_mp3`,
       `convert_fractions`, `enquo`, `enquos`, `ffm`, `get_codecs`, `get_encoders`,
@@ -68,3 +68,33 @@ already has no repeated heading.
 
 - 2026-09-07: created by /milestone-plan.
 - 2026-09-07: plan-gate criteria audit ran in FULL mode (declared tier user-facing), two rounds, fresh-context [O] reader. Findings against this milestone: AC1's "no release version number is named" had no stated domain and was unsatisfiable over the whole file, which holds four real release headings (repaired — scoped to the development section); AC3's one-way set difference named only the 40 additions while AC4's two decision entries recovered some but not all of the 14 removals, leaving `ffm`, `pad_integers`, `convert_fractions`, `mediainfo_summary` and the `get_framerate`/`get_samplingrate` renames covered by neither (repaired — AC3 made symmetric, AC4 given D078 and narrowed to non-`NAMESPACE` renames). AC2 and AC5 passed all six questions clean.
+- 2026-09-09: T1. Symmetric difference of `NAMESPACE` at head against `4b04fad9` measured
+  with `comm` over the sorted `export()` lines: 40 added, 14 removed, matching the plan's
+  2026-09-07 counts and its removed list exactly. All 14 removed names are already named
+  once each in the development section; of the 40 added, three are named nowhere --
+  `concatenate_videos_batch`, `strip_metadata`, `strip_metadata_batch` -- so T3's fill is
+  those three. Non-`NAMESPACE` renames read from D014 (`acodec`/`vcodec` ->
+  `audio_codec`/`video_codec`, `ts_start`/`ts_stop` -> `start`/`end`, the full-word
+  compounds `pixel_format`/`sample_rate`, and `infile`/`outfile`/`infiles`/`file`), D077
+  (`audio` -> `audio_input` on the four fan-in verbs; `tidymedia.nvenc_encoders` ->
+  `tidymedia.hardware_encoders`; helper argument `hardware =`) and D078 (states the rule
+  behind D077's applications; adds no rename of its own). Every one is already named in
+  the section, so AC4 needs no fill, only preservation through the collapse.
+- 2026-09-09: question gate. Three choices, all taken at the recommendation. (1) The
+  development section ends with six headings -- Breaking changes, New features, Bug fixes,
+  Performance, Documentation, Requirements -- so the 13 one-off announcement headings and
+  the Configuration, Standardized function and argument names, Verification & provenance,
+  Multi-input verbs and Safe execution headings dissolve into them; 27 headings become 6.
+  (2) Bullets describing one feature at successive stages of the cycle merge into one entry
+  rather than being re-filed unchanged, so prose is rewritten and the section shrinks well
+  below 1,982 lines. (3) The eight stale function names the section still announces --
+  `normalize_audios`, `segment_videos`, `has_nvenc`, `anonymize_videos`, `extract_frames`,
+  `nvenc_encoder`, `standardize_videos`, `write_mediainfo_template`, 19 mentions -- are
+  corrected to the shipped names; the `find_program()` cross-reference split is left to the
+  [high] candidate row cut to hold it.
+- 2026-09-09: AC2's illustrative line numbers have drifted 13 lines since 2026-09-07 (M119
+  added content above them): `## New features` is at 3, 280 and 1415 rather than 3, 267 and
+  1402, and the other three sets moved likewise. The criterion's binding sentence -- the
+  sweep finding no `##` heading repeated within any one `#` section -- is unaffected, and
+  the counts it asserts (three, three, three and two occurrences) are correct as measured
+  today, so the wording is left alone rather than amended.

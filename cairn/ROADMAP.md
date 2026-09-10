@@ -10,7 +10,7 @@ _Last hygiene check: 2026-09-09 (M119 done and archived; PR #123 squash-merged, 
 |---|---|---|---|---|---|
 | M118 | The binary-executing tests skip on CRAN's own check | done | — | normal | milestones/archive/M118-cran-skips-binary-tests.md |
 | M119 | The documentation defects the pre-CRAN audit measured are corrected | done | — | normal | milestones/archive/M119-shipped-docs-defects.md |
-| M120 | NEWS.md reads as release notes | planned | — | normal | milestones/M120-news-reads-as-release-notes.md |
+| M120 | NEWS.md reads as release notes | in-progress | — | normal | milestones/M120-news-reads-as-release-notes.md |
 | M121 | A directory becomes a jobs tibble | planned | — | normal | milestones/M121-directory-to-jobs-tibble.md |
 | M122 | macOS and Windows run the package's FFmpeg code | planned | M118 | normal | milestones/M122-mac-windows-run-ffmpeg.md |
 | M117 | A test run leaves no location behind in the user's real config directories | done | — | normal | milestones/archive/M117-test-run-config-leak.md |

@@ -275,11 +275,12 @@
   unaltered: `standardize_video_batch()`, `normalize_audio_batch()`,
   `format_for_web_batch()` and `strip_metadata_batch()` derive their own
   output from `input`, and `crop_video_batch()` and `sample_frames_batch()` do
-  too once you pass their arguments. The other nine refuse it until you add a
-  column — three name `output` (`convert_audio_batch()`,
-  `extract_audio_batch()`, `picture_in_picture_batch()`) and the rest name
-  what their own task needs, such as `start` and `end`, `regions`, `inputs`,
-  or `timestamp`.
+  too once you pass their arguments. The other nine refuse it until you add the
+  columns their own task needs: `convert_audio_batch()` and
+  `extract_audio_batch()` ask for `output`, `picture_in_picture_batch()` for
+  `main`, `overlay` and `output`, and the rest name what they work on, such as
+  `start` and `end`, `regions`, `inputs`, `timestamp`, or `audiofile` and
+  `videofile`.
 
 * **Six new task verbs.**
 

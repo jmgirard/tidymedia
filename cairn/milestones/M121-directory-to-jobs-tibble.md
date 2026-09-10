@@ -27,7 +27,7 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 
 ## Acceptance criteria
 
-- [ ] AC1: A newly exported function returns a tibble carrying an `input` column of
+- [x] AC1: A newly exported function returns a tibble carrying an `input` column of
       full paths to the media files in a named directory, selected by a type or
       extension argument, and a demonstrated `ffm_batch()` call consumes that
       tibble's `input` column together with an `output` column derived from it,
@@ -41,7 +41,7 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 - [x] AC4: `vignettes/workflow.Rmd:40` and `vignettes/metadata.Rmd:121` call the new
       export in place of their hand-rolled `list.files()`; those are the only two
       such calls in `vignettes/` as measured 2026-09-07.
-- [x] AC5: `devtools::check()` reports 0 errors and 0 warnings, and the `verify` slot
+- [ ] AC5: `devtools::check()` reports 0 errors and 0 warnings, and the `verify` slot
       of `cairn/PROFILE.md` is clean.
 
 ## Coverage
@@ -472,3 +472,65 @@ the alternative the plan gate recorded against; the 2026-09-07 work-log entry re
 it as **refusing the feature under GP1** — no directory-listing export, callers keep
 `list.files()`. Trigger (a) has not fired: this is the second return, not the third.
 PR #125 stays open in draft.
+
+### Third pass — 2026-09-10
+
+Reviewed on branch `m121-directory-to-jobs-tibble` at abf66e2, 11 commits ahead of
+`origin/master` and **0 behind** — `origin/master` is still cc4761b, the cut point, so
+no merge was needed. Branch pushed; PR #125 was already open in draft, so no
+`gh pr create`.
+
+**Fencing note.** AC2-AC5 arrived carrying the second pass's ticks, but T13-T16 changed
+the tree under them, so that evidence was stale. All five boxes were unticked before
+this pass and re-ticked one at a time as each criterion's own fresh evidence landed.
+
+- **AC1 — pass.** Fresh fixture directory holding both returned defects' cases at once:
+  `a.mp4`, `b.MOV`, `c.wav`, `d.png`, `e.txt`, `sub/f.mkv`, a *subdirectory* named
+  `takes.mp4` holding `takes.mp4/g.mp4` (return #1), a dangling symlink
+  `broken.mp4 -> ../gone.mp4` (return #2), and a live symlink `link.mp4` into a sibling
+  directory's `live.mp4`. `ffm_jobs(d, type = "video")` returns a `tbl_df` whose only
+  column is `input`, 3 rows (`a.mp4`, `b.MOV`, `live.mp4`), `file.exists()` TRUE on all
+  three, `any(dir.exists())` FALSE, every path absolute — the subdirectory and the
+  dangling link are both gone. Called as `ffm_jobs("raw", type = "video")` from the
+  parent with a **relative** `directory`, all three rows are still absolute and all
+  three exist (return #2's second half). `recursive = FALSE` → 3 rows;
+  `recursive = TRUE` → 5, adding `f.mkv` and `g.mp4`, and the `FALSE` set is a subset
+  of the `TRUE` set. `extension = ".mp4"` narrows to 2 rows; `type = "audio"` returns
+  `c.wav` and `type = "image"` `d.png`, neither returning `e.txt`. Hand-off:
+  `jobs$output` derived from `input`, then
+  `ffm_batch(jobs, run = FALSE, .f = function(input, output, ...))` over the
+  **unreshaped** table returns `input, output, command`, its `input` column
+  `identical()` to the column passed in, and each row's `command` names that row's own
+  input and its own output — 3 of 3. **Discriminating control:** an `.f` ignoring its
+  arguments and always building row 1 matches 1 of 3, so the criterion separates the
+  two cases.
+- **AC2 — pass.** Nineteen refusal branches fired and each condition's
+  `conditionCall()` read with `rlang::call_name()`: **every one blames `ffm_jobs`**, 0
+  exceptions and 0 silent successes. The three AC2 names: a directory that does not
+  exist (`` `directory` does not name an existing directory ``), a type outside the set
+  (`` `type` must be one of "video", "audio", or "image", not "sound" ``), and a call
+  matching no file (`No video files were found in …`). The further branches T3/T8/T15
+  require: an all-dangling-link directory (refuses rather than returning zero rows), a
+  path that exists but is not a directory, `directory` non-string / `NA` / `""`, `type`
+  missing / non-string / `NA_character_` / multi-valued in **both** orders
+  (`c("video","audio","image")` and `c("audio","video")` alike abort with
+  `` `type` must be a single string, not a character vector ``), `recursive`
+  non-logical, `extension` non-character / a factor / zero-length / outside its type.
+  The extension refusal's grammar agrees in number: one unknown →
+  `"wav" is not one of them.`, two → `"wav" and "png" are not among them.`
+  D087 holds: `names(formals(ffm_jobs))` is `directory, type, extension, recursive` —
+  no published `call` formal.
+- **AC3 — pass.** `_pkgdown.yml:57` carries the `ffm_jobs` reference row;
+  `man/ffm_jobs.Rd` (89 lines) has `\value{}` at :25 and `\examples{}` at :49;
+  `NAMESPACE:30` is `export(ffm_jobs)`. All four files' first branch commit is the same
+  one — `git log --format=%h origin/master..HEAD -- <file> | tail -1` gives fc007d3 for
+  `R/ffm_jobs.R`, `NAMESPACE`, `man/ffm_jobs.Rd` and `_pkgdown.yml` alike. `R CMD
+  check`'s `checking examples ... OK` is the runnable reading.
+- **AC4 — pass.** The criterion's line numbers are dated addresses ("as measured
+  2026-09-07"), and at `origin/master` they are exactly the two `list.files()` sites:
+  `git grep -n 'list\.files' origin/master -- vignettes/` returns `metadata.Rmd:121`
+  and `workflow.Rmd:40`, and nothing else. Both are now `ffm_jobs()` calls —
+  `workflow.Rmd:40` is `jobs <- ffm_jobs("study/raw", type = "video")`, and the
+  metadata call is `files <- ffm_jobs("my/videos", type = "video")$input`, which T10's
+  two added prose lines moved from :121 to :123. `grep -rn "list\.files" vignettes/`
+  returns nothing (exit 1), so no third hand-rolled listing remains.

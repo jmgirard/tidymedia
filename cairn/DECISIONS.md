@@ -4348,3 +4348,33 @@ never shipped yet reached callers anyway, through a documented pre-release
 install path, a vignette teaching it, or a dependency pinned to a development
 commit. Any of those makes the release boundary the wrong cut and puts the
 decision record back in play.
+
+## D092 — Layer 1's `ffm_*` surface includes the jobs-table functions around the runner, not only command assembly (2026-09-10, from M121; reads D014's "`ffm_*` marks Layer-1 engine surface only" clause, which stands unchanged)
+
+D014 reserves `ffm_*` for Layer 1 and keeps it off everything else, but does not
+say what counts as Layer 1's surface. The family already held two members that
+assemble no command — `ffm_batch()`, the runner, and `ffm_manifest()` — and M121
+added a third, `ffm_jobs()`, which turns a directory into the jobs table the
+runner consumes.
+
+**The rule.** Layer 1's surface is the engine and the tables it runs on: the
+builder verbs that assemble a command, the runner that executes a jobs table,
+and the functions whose whole purpose is to produce or describe that table. A
+function in that last group takes the `ffm_*` prefix, even though it calls no
+FFmpeg and builds no argument vector.
+
+**Why.** The prefix tells a reader where a function sorts in the reference
+index and which layer's conventions govern it. A jobs-table constructor is
+read beside `ffm_batch()` and shares its contract, not a task verb's: it takes
+no `_batch` sibling under D014, because it produces the table rather than
+consuming it. A task-verb name would put it under Layer 2's conventions, and a
+metadata prefix (`probe_*`, `get_*`) would claim a backend it does not call.
+
+**What this rules out.** Putting `ffm_*` on a general utility just because the
+engine calls it (path helpers, option readers), and giving a jobs-table
+constructor a `_batch` sibling.
+
+**Falsified by** a function that produces a jobs table but is not read beside
+`ffm_batch()` — for example one whose table only a Layer 2 `*_batch()` verb
+accepts and `ffm_batch()` cannot run. That would tie the prefix to the runner
+it serves, not to the table it produces.

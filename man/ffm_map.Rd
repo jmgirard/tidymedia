@@ -72,6 +72,7 @@ Other builder functions:
 \code{\link[=ffm_files]{ffm_files()}},
 \code{\link[=ffm_fps]{ffm_fps()}},
 \code{\link[=ffm_hstack]{ffm_hstack()}},
+\code{\link[=ffm_jobs]{ffm_jobs()}},
 \code{\link[=ffm_loudnorm]{ffm_loudnorm()}},
 \code{\link[=ffm_output_options]{ffm_output_options()}},
 \code{\link[=ffm_overlay]{ffm_overlay()}},

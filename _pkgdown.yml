@@ -54,6 +54,7 @@ reference:
   - ffm_compile
   - ffm_run
   - ffm_batch
+  - ffm_jobs
   - print.tidymedia_ffm
 - title: "Layer 2: task verbs"
   desc: >

@@ -37,12 +37,23 @@ session <- system.file("extdata", "sample.mp4", package = "tidymedia")
 Picture a study folder with one file per camera per session:
 
 ```{r, eval = FALSE}
-recordings <- list.files("study/raw", pattern = "\\.mp4$", full.names = TRUE)
-recordings
-#> [1] "study/raw/session01_camA.mp4" "study/raw/session01_camB.mp4"
-#> [2] "study/raw/session02_camA.mp4" "study/raw/session02_camB.mp4"
-#> ...
+jobs <- ffm_jobs("study/raw", type = "video")
+jobs
+#> # A tibble: 4 × 1
+#>   input
+#>   <chr>
+#> 1 /data/study/raw/session01_camA.mp4
+#> 2 /data/study/raw/session01_camB.mp4
+#> 3 /data/study/raw/session02_camA.mp4
+#> 4 /data/study/raw/session02_camB.mp4
 ```
+
+`ffm_jobs()` returns the jobs tibble the batch runners take: one row per file,
+with the file's full path in an `input` column. The paths come back absolute
+for every file that resolves, however you spell the folder, which is why the
+output above shows the study folder at its full location rather than as
+`study/raw`. The next section adds an
+`output` column to that table and hands it to a `*_batch()` verb.
 
 ## 1. Standardize the recordings
 
@@ -63,10 +74,7 @@ the whole folder from a jobs tibble (see `vignette("batch")` for the batch
 model). Every task verb has a `*_batch()` companion like this one:
 
 ```{r, eval = FALSE}
-jobs <- tibble::tibble(
-  input  = recordings,
-  output = sub("/raw/", "/std/", recordings)
-)
+jobs$output <- sub("/raw/", "/std/", jobs$input)
 standardize_video_batch(jobs, width = 1280, height = 720, fps = 30)
 ```
 

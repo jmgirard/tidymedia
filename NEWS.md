@@ -259,6 +259,34 @@
 
 ## New features
 
+* **`ffm_jobs()` turns a directory into a batch jobs table.** It lists the
+  files in a directory whose names do not start with a dot and that carry one
+  of the extensions it knows for a given media type, and returns them as the
+  tibble `ffm_batch()` takes: one row per file, with the file's full path in an `input` column, and every row a
+  path that exists and is not a directory — neither a subdirectory whose name
+  ends in a matching extension nor, on macOS and Linux, a symbolic link whose
+  target is gone (Windows reports such a link as existing, so there it can
+  still be a row).
+  `type` names the category to list — `"video"`, `"audio"` or `"image"` — and
+  has no default. `extension` narrows within that type (`"mp4"` and `".mp4"`
+  both work, matched case-insensitively), and
+  `recursive = TRUE` descends into subdirectories, including through a
+  symbolic link to a directory, so a row can then name a file outside the
+  one given. A directory that does not
+  exist, a type outside the three, and a call that matches no file are each an
+  error naming `ffm_jobs()`. The returned table carries `input` and nothing
+  else, because `ffm_batch()` passes every column of the jobs table to `.f` by
+  name. Six of the fifteen `*_batch()` task verbs take that table
+  unaltered: `standardize_video_batch()`, `normalize_audio_batch()`,
+  `format_for_web_batch()` and `strip_metadata_batch()` derive their own
+  output from `input`, and `crop_video_batch()` and `sample_frames_batch()` do
+  too once you pass their arguments. The other nine refuse it until you add the
+  columns their own task needs: `convert_audio_batch()` and
+  `extract_audio_batch()` ask for `output`, `picture_in_picture_batch()` for
+  `main`, `overlay` and `output`, and the rest name what they work on, such as
+  `start` and `end`, `regions`, `inputs`, `timestamp`, or `audiofile` and
+  `videofile`.
+
 * **Six new task verbs.**
 
   - `standardize_video()` re-encodes a video to a reproducible,

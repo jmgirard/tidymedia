@@ -181,19 +181,6 @@
   an audio row and a video row, the returned table collapses the two into one
   `codec` column carrying each row's encoder for its own stream.
 
-* `compare_videos()`, `picture_in_picture()` and their `_batch` siblings call
-  the argument that picks whose sound to keep `audio_input`, not `audio`. It is
-  the same argument: the 0-based index of the *input* whose audio is carried,
-  `NULL` for a silent output, and a `jobs` column of the same name overriding it
-  row by row. Only the name changes, so that it says what it counts the way
-  `audio_stream` says it counts one input's tracks. `ffm_codec(audio = )` and
-  `ffm_copy(audio = )` are unchanged. No alias is kept: a call still spelling
-  `audio =` on these four verbs is an error, which R reports as the argument
-  matching more than one formal (`audio` is a prefix of both `audio_input` and
-  `audio_codec`). A `jobs` table still carrying an `audio` column is not
-  refused: the column is unread, so those rows fall back to the verb's
-  `audio_input` default and write a silent output. Rename the column.
-
 * `hardware_encoder()` and `has_hardware_encoder()` take a second argument
   naming which backend to answer for, and it has no default:
   `has_hardware_encoder("h264", "nvenc")`, `hardware_encoder("h264",
@@ -320,8 +307,14 @@
 
   `compare_videos()` and `picture_in_picture()` join them as the two fan-in task
   verbs: a side-by-side or stacked comparison video, and an inset overlay
-  (corner or centre `position`, `scale`, `margin`). Both drop audio by default;
-  pass `audio_input` an input index to carry that input's track.
+  (corner or centre `position`, `scale`, `margin`). Both drop audio by default:
+  `audio_input` is the 0-based index of the *input* whose audio to keep — `0`
+  the first file passed in, `1` the second — and counts the verb's inputs, not
+  one input's audio streams, so it is a different index from `audio_stream` on
+  the single-input verbs. `NULL`, the default, maps no audio at all; naming an
+  input the call does not have is an R error raised before FFmpeg runs. On the
+  `_batch` siblings an `audio_input` column overrides the argument row by row,
+  an `NA` cell meaning what `NULL` means to the scalar.
 
 * **Two-pass loudness normalization.** `normalize_audio(two_pass = TRUE)` runs
   an analysis pass to measure the input's loudness, then a linear correction

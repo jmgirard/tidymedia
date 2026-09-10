@@ -2,16 +2,15 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-09-10 (M120 done and archived; PR #124 squash-merged, all ten CI legs green. One amendment return (AC4, rebased from three hand-picked decision entries onto a formals diff after a criteria re-audit found a recall-fixed enumeration) and one defect return, both on their own tracks and neither near the thrash threshold. Two review passes, full three-lens fan-out each. First pass: 12 [O] findings, ten branch-introduced defects in the new release-note prose plus a `check()` NOTE on `centre`, a value the code rejects — the user chose to return; fixed as T5-T16, then a claim audit (300 claims, 8 corrected) and its one re-read added T17-T23. Second pass: all five criteria pass, AC1-AC4 each against a discriminating control, and `devtools::check()` at 0/0/0. 10 [O] findings — seven fixed on the branch at the user's direction, two rejected out of scope, one refuted by running the call rather than reading the argument (FFmpeg does print `Stream map '' matches no streams`). The load-bearing one: a migration instruction saying `run` "shifts one position" across seven verbs, true of one — rebuilt as a table of measured positions. Blame-history and prior-review lenses: no regression. **LESSONS 35 lines, 19,994/20,000** — M120's lesson folded into the M088 derived-claims line as its set-vs-state case, paid for by merging M104+M105 (two `Sys.which()` traps), merging M096 into M113 (two ways the computed timeout domain lies), and retiring M089's `build_readme()` line into M119's instruments line, whose family it belongs to. `false-greens.md` 25,996/26,000 and `guard-ordering.md` 5,451/11,000, both unchanged and under. **`ROADMAP.md` is 36,923 bytes against its 24,000-byte budget** at 58 of 60 lines, worse again than M119's 35,401; `/cairn-triage` is overdue by five passes and remains the only remedy. M117's terminal row pruned to hold the three-terminal-row cap (M118, M119, M120 kept); its archive summary is untouched. `cairn_validate` clean.)_
+_Last hygiene check: 2026-09-10 (M121 done and archived; PR #125 squash-merged, all ten CI checks green. Three defect returns, no amendment return; AC1's Windows dangling-link case descoped to candidate item (f), and the fourth pass filed (g)/(h) and D092. LESSONS 35 lines, 19,991/20,000; `false-greens.md` 25,996/26,000 and `guard-ordering.md` 5,451/11,000 unchanged. **`ROADMAP.md` 41,080 bytes against its 24,000-byte budget**; `/cairn-triage` remains the only remedy. M118's terminal row pruned. `cairn_validate` clean.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M118 | The binary-executing tests skip on CRAN's own check | done | — | normal | milestones/archive/M118-cran-skips-binary-tests.md |
 | M119 | The documentation defects the pre-CRAN audit measured are corrected | done | — | normal | milestones/archive/M119-shipped-docs-defects.md |
 | M120 | NEWS.md reads as release notes | done | — | normal | milestones/archive/M120-news-reads-as-release-notes.md |
-| M121 | A directory becomes a jobs tibble | review | — | normal | milestones/M121-directory-to-jobs-tibble.md |
+| M121 | A directory becomes a jobs tibble | done | — | normal | milestones/archive/M121-directory-to-jobs-tibble.md |
 | M122 | macOS and Windows run the package's FFmpeg code | planned | M118 | normal | milestones/M122-mac-windows-run-ffmpeg.md |
 
 ## Candidates

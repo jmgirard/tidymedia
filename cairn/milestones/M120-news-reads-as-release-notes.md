@@ -92,7 +92,7 @@ already has no repeated heading.
 - [x] T11: `NEWS.md:96-99` — the second-track fixture is the standardize /
       anonymize / segment observation; `format_for_web()` was measured on a
       third-track file. Split the claim or drop the verb it does not cover.
-- [ ] T12: restore the `two_pass = TRUE` ordering guarantee the collapse dropped
+- [x] T12: restore the `two_pass = TRUE` ordering guarantee the collapse dropped
       — a bad loudness target refused before the analysis pass measures the
       input — or state in the work log why it should not be announced.
 - [ ] T13: `NEWS.md:181-192` — the `audio` -> `audio_input` bullet announces a
@@ -370,6 +370,14 @@ already has no repeated heading.
   verbs the second-track file was run through and gives `format_for_web()` its own
   third-track clause. `normalize_audio()` is not named here -- it is an audio verb and
   does not belong to the keeps-every-track group this paragraph is about.
+- 2026-09-10: T12. Restored per the gate, into the merged Bug-fixes ordering paragraph
+  beside the before-any-row-runs guarantee it belongs with, in
+  `origin/master:NEWS.md:1126-1127`'s own words. Re-derived on both arms rather than
+  taken from that prose: the scalar checks targets at `R/ffmpeg.R:2638`
+  (`check_loudnorm_targets()`) and measures at `:2678` (`run_loudnorm_analysis()`),
+  and `normalize_audio_batch()` checks each row's targets at `:5264` and measures at
+  `:5318` (`run_loudnorm_analysis_batch()`), so the ordering holds for the batch
+  sibling the paragraph is about as well as the scalar.
 
 ## Review
 

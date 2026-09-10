@@ -790,7 +790,9 @@
   Each `_batch` sibling refuses such a value whether it arrives as the verb's
   own argument or in a `jobs` column of the same name, and refuses it before any
   row runs, so a large table fails immediately rather than after building the
-  first row's command. Two shapes that used to slip through are now caught: a
+  first row's command. Under `two_pass = TRUE`, a bad loudness target is refused
+  before the analysis pass measures the input, instead of after that measurement
+  was already spent. Two shapes that used to slip through are now caught: a
   malformed value in the scalar argument was discarded in silence whenever the
   table carried a column of the same name, since the column wins; and a
   `direction` or `position` column had its type checked but never its values, so

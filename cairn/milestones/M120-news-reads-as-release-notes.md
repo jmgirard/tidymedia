@@ -122,6 +122,8 @@ already has no repeated heading.
       `rlang` check sites), `:1317` (eight declared floors, now nine).
 - [x] T22: `cairn/ROADMAP.md` — a candidate row for the collision gap T17 measured,
       paid for by merging the two same-mechanism D039 guard-ordering rows.
+- [x] T23: the claim-audit re-read's two findings — T17's replacement sentence was
+      wrong in both halves, and T21's nvenc history clause is unsupported.
 
 ## Work log
 
@@ -535,6 +537,39 @@ already has no repeated heading.
   `centre` and `Relatedly` were the NOTE's only two words and no third took their
   place. `document()` not run: no roxygen changed on this branch, whose whole diff
   outside `cairn/` is `NEWS.md`.
+- 2026-09-10: claim-audit re-read returned `7 replacement claims checked, 2 wrong`.
+  Both re-verified here before acting. Findings 2, 3, 5, 6 and 7 hold: `audio_stream`
+  is a formal of exactly 18 exports, the hardware wording makes no claim false for
+  prores, the codec-message split is right for all three verbs, both counts check out,
+  and neither deletion left a dangling reference or an unnamed export.
+  **T17's replacement was wrong in both halves, and the error is mine, not the first
+  reader's.** I measured the derived case on three verbs (`standardize_video_batch`,
+  `normalize_audio_batch`, `anonymize_video_batch`) and wrote the result of all five,
+  adding `segment_video_batch` and `extract_frame_batch` to a claim no measurement of
+  them supported. Re-measured over all fifteen task-verb `_batch` siblings, both cases:
+  ten refuse a repeated `output` path; three (`standardize`, `normalize`, `anonymize`)
+  call only `reject_duplicate_inputs()` and refuse a duplicated `input` when deriving;
+  two (`segment_video_batch`, `extract_frame_batch`) call neither guard and refuse
+  nothing. The count nine was wrong twice over -- ten reject a repeated output, and my
+  fourteen had omitted `sample_frames_batch()`, which guards at the pattern level
+  (`R/ffmpeg.R:4503`). The two unguarded verbs cannot collide on derived names anyway:
+  numbering runs across the rows sharing an input (`sample_1`, `sample_2`, measured),
+  so the exception clause described a refusal that could not happen.
+  T21's "which used to report the missing encoder" is dropped: the reader sampled
+  eleven commits across the cycle, including pre-M64 and pre-M095, and the dimension
+  is reported at every one for `width`, `fps`, `height` and the batch form. The clause
+  appears to be true of `pixel_format`, not of dimensions, so it is removed rather
+  than re-aimed -- re-aiming it would be a claim about a verb-argument pair nothing
+  here measured.
+- 2026-09-10: T23. Both corrections applied. The ROADMAP candidate row added at T22
+  carried the same wrong partition and is rewritten to the measured one, now naming
+  the three-way split and the numbering behaviour; still 59 lines.
+  **Method note for LESSONS at review:** two rounds running, a fix for a finding
+  introduced the next finding -- T10's prores clause caught by the audit, T17's
+  partition caught by the re-read. Both were the same move: taking a reason or a
+  result established for a subset and stating it of the whole set. The audit and its
+  one re-read caught both before review, which is what D-136 is for, but the re-read
+  is a single allowance and this milestone has now spent it.
 
 ## Review
 

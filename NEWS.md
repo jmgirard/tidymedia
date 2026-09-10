@@ -369,12 +369,14 @@
   frame. `sample_frames_batch()` names a directory rather than a file — given
   neither an `outdir` column nor the argument, it writes each input's numbered
   sequence into a `<basename>_frames` directory beside that input.
-  Nine of them reject two rows that resolve to the same output path, so one file
-  cannot silently overwrite another. On `standardize_video_batch()`,
-  `normalize_audio_batch()`, `anonymize_video_batch()`, `segment_video_batch()`
-  and `extract_frame_batch()` that guard covers derived names only: two rows
-  naming the same input with no `output` column are refused, but an `output`
-  column that repeats a path is not. The two audio verbs, the fan-in
+  Ten of them reject two rows that resolve to the same output path, so one file
+  cannot silently overwrite another. Three — `standardize_video_batch()`,
+  `normalize_audio_batch()` and `anonymize_video_batch()` — instead refuse two
+  rows naming the same input when no `output` column is given, and do not check
+  an `output` column that repeats a path. `segment_video_batch()` and
+  `extract_frame_batch()` check neither: they number their outputs per input, so
+  derived names cannot collide, but a repeated `output` column is accepted and
+  the second row overwrites the first. The two audio verbs, the fan-in
   verbs and `picture_in_picture_batch()` require an `output` column and derive
   nothing: an audio destination's extension picks the output format, and a row
   naming many inputs has no single basename to build from.
@@ -836,7 +838,7 @@
   - On `standardize_video()`, the dimension wins twice over: a call passing both
     a bad `video_codec` and an invalid `width`/`height`/`fps` reports the
     dimension, and so does a call passing both `hardware = "nvenc"` and bad
-    dimensions, which used to report the missing encoder.
+    dimensions.
   - `picture_in_picture_batch(jobs, audio_input = NA, audio_codec = "aac")`
     reports the `audio_codec` contradiction rather than the `audio_input` value:
     `NA` (or `NaN`) asks to drop the audio, so it *creates* the "needs an audio

@@ -1,6 +1,6 @@
 # M120: NEWS.md reads as release notes
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -70,6 +70,44 @@ already has no repeated heading.
 - [x] T3: Check the collapsed section against T1's two lists and fill what is missing.
 - [x] T4: Confirm the four released sections below are untouched; run the profile's
       `verify` slot.
+
+- [ ] T5: `NEWS.md:365-368` — drop `picture_in_picture_batch()` from the
+      `inputs` list-column group; it takes fixed `main`/`overlay`/`output`
+      columns (`R/ffmpeg.R:7510-7518`, D015).
+- [ ] T6: `NEWS.md:375-376` — the `output`-required sentence leaves
+      `separate_audio_video_batch()` described as auto-deriving; it requires
+      `audiofile` and `videofile` and derives neither (`R/ffmpeg.R:6610-6620`).
+- [ ] T7: `NEWS.md:30-35` — remove both "already" claims and the
+      rename-the-columns instruction; neither `audio_codec`/`video_codec` nor
+      `segment_video_batch`'s `start`/`end` columns existed at `4b04fad9`.
+- [ ] T8: `NEWS.md:370-373` — add `_anonymized` (`R/ffmpeg.R:2194,2434`) to the
+      auto-naming list and give the restarting `<basename>_<n>` to
+      `segment_video_batch()` as well as the frame-writing verbs
+      (`R/ffmpeg.R:3911,4134`).
+- [ ] T9: `NEWS.md:1217` — two vignettes are new, not three; the reordered one
+      is the third, not the fourth.
+- [ ] T10: `NEWS.md:517-523` — restore a qualifier separating the family-not-
+      encodable refusal from the backend-unavailable one; the former is refused
+      whatever `fallback` is set to (`R/ffmpeg.R:3273-3276`, comment `:3325-3340`).
+- [ ] T11: `NEWS.md:96-99` — the second-track fixture is the standardize /
+      anonymize / segment observation; `format_for_web()` was measured on a
+      third-track file. Split the claim or drop the verb it does not cover.
+- [ ] T12: restore the `two_pass = TRUE` ordering guarantee the collapse dropped
+      — a bad loudness target refused before the analysis pass measures the
+      input — or state in the work log why it should not be announced.
+- [ ] T13: `NEWS.md:181-192` — the `audio` -> `audio_input` bullet announces a
+      rename on four verbs that are all new exports since `4b04fad9`; D091's own
+      rule drops it, announcing `audio_input` once as the new argument it is.
+- [ ] T14: `cairn/ROADMAP.md:20` — remove the sentence claiming the unreleased
+      `NEWS.md` section still explains `unset_program()` via `find_program()`;
+      the rewrite left one mention (`NEWS.md:1278`), the one calling it internal.
+- [ ] T15: `cairn/DECISIONS.md:4317` — D091's "until 0.2.0 reaches CRAN"
+      overstates D014, which says "pre-0.2.0 and still soaking". Editable, not
+      yet merged.
+- [ ] T16: `NEWS.md:318` — the accepted value is `"center"`, not `centre`
+      (`R/ffmpeg.R:7133,7529`); reword `Relatedly` (`NEWS.md:1008`) or add it to
+      `inst/WORDLIST`. `devtools::check()` must return to 0 NOTEs, or the NOTE
+      must be justifiable.
 
 ## Work log
 
@@ -231,6 +269,23 @@ already has no repeated heading.
 - 2026-09-09: all five acceptance boxes unticked. AC4's wording changed and `NEWS.md` changed
   under AC1-AC3, so the review evidence recorded for them is stale; re-review measures all
   five fresh.
+
+- 2026-09-09: review returned the milestone. All five acceptance criteria pass with
+  fresh evidence (AC1-AC4 each against a discriminating control) and the universal
+  consistency checks are clean, so nothing failed on the criteria. What failed is the
+  deliverable: `devtools::check()` returned 1 NOTE on two words this branch added to
+  `NEWS.md`, one of them (`centre`, `NEWS.md:318`) a value the code does not accept;
+  and the [O] lens found ten further branch-introduced defects in the newly written
+  release-note prose -- two that send a reader to build a jobs table the verb rejects
+  (`NEWS.md:365-368`, `:375-376`), two user-visible guarantees the collapse lost
+  (`NEWS.md:517-523`, and the `two_pass` ordering sentence dropped with no
+  replacement), three claims that read as measured and are not (`NEWS.md:30-35`,
+  `:1217`, `:96-99`), the milestone's own new rule unapplied to `NEWS.md:181-192`, and
+  two stale tracking claims (`ROADMAP.md:20`, `DECISIONS.md:4317`). Two pre-existing
+  findings rejected as out of scope. Put to the user at the merge gate with a
+  recommendation to return; the user chose to send it back. Logged as T5-T16; status
+  -> in-progress. First defect return on this milestone (one amendment return, on its
+  own track). Steps 8-10 not run; PR #124 stays a draft.
 
 ## Review
 

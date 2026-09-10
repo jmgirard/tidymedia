@@ -154,6 +154,8 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 
 - 2026-09-10: step-7 approval: m121-directory-to-jobs-tibble approved for merge
 
+- 2026-09-10: branch pushed to PR #125 at 2872ddf and merge marker written; the CI wait hit the harness ceiling. Fresh `gh pr checks 125`: `macos-latest (release)` and `pkgdown` pass; `windows-latest (release)`, four `ubuntu-latest` legs and `test-coverage` still pending, none failed. Watcher stopped and marker removed unused; no merge attempted. Resume with `/milestone-review M121` (resume route (c)).
+
 ## Review
 
 ### First pass — 2026-09-10 (defect return #1)

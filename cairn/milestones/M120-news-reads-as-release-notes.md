@@ -71,7 +71,7 @@ already has no repeated heading.
 - [x] T4: Confirm the four released sections below are untouched; run the profile's
       `verify` slot.
 
-- [ ] T5: `NEWS.md:365-368` — drop `picture_in_picture_batch()` from the
+- [x] T5: `NEWS.md:365-368` — drop `picture_in_picture_batch()` from the
       `inputs` list-column group; it takes fixed `main`/`overlay`/`output`
       columns (`R/ffmpeg.R:7510-7518`, D015).
 - [ ] T6: `NEWS.md:375-376` — the `output`-required sentence leaves
@@ -286,6 +286,30 @@ already has no repeated heading.
   recommendation to return; the user chose to send it back. Logged as T5-T16; status
   -> in-progress. First defect return on this milestone (one amendment return, on its
   own track). Steps 8-10 not run; PR #124 stays a draft.
+- 2026-09-10: question gate (return session). Two choices, both taken at the
+  recommendation. (1) T12's dropped two-pass ordering guarantee is restored rather
+  than argued away: it is observable by a 0.1.0 caller who spends an analysis pass on
+  a call that should have been refused, it is true at HEAD
+  (`check_loudnorm_targets()` at `R/ffmpeg.R:2638` precedes `run_loudnorm_analysis()`
+  at `:2678`), and `origin/master:NEWS.md:1126-1127` supplies the wording, so the
+  restore re-files prose rather than composing it. (2) T16's `Relatedly`
+  (`NEWS.md:1008`) is reworded rather than added to `inst/WORDLIST`, keeping the
+  wordlist for domain vocabulary; `centre` -> `center` is a wrong claim
+  (`R/ffmpeg.R:7133,7529`) and not a gate question.
+- 2026-09-10: minor amendment (cadence, no task or criterion wording changed). T5-T16
+  are prose edits to `NEWS.md` and two `cairn/` files, and the profile's `verify` slot
+  is the full suite (13,266 assertions). Running it per task would spend it twelve
+  times over edits no task makes to `R/`. Per task the two tests that assert on
+  `NEWS.md`'s own wording are run (`test-check-tracks-docs.R`,
+  `test-front-door-ordering.R` -- the pair that caught the collapse's two dropped
+  sentences on 2026-09-09); the full `verify` slot runs once at completion, where
+  step 9 requires it regardless.
+- 2026-09-10: T5. `picture_in_picture_batch()` is out of the fan-in `inputs`
+  list-column group and has its own bullet naming the fixed `main`/`overlay` columns,
+  derived from its roxygen at `R/ffmpeg.R:7505-7518` ("not a list-column; D015").
+  `concatenate_videos_batch()` and `compare_videos_batch()` were each checked against
+  their own `@param jobs` (`R/ffmpeg.R:7226-7229`, `:7290-7291`) and do carry the
+  list-column, so the group is correct once it is the only two.
 
 ## Review
 

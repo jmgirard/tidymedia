@@ -364,8 +364,10 @@
     `sample_frames_batch()` and `separate_audio_video_batch()`.
   - Fan-in transforms, whose rows name **many** inputs each and so carry an
     `inputs` list-column plus a required `output` column:
-    `concatenate_videos_batch()`, `compare_videos_batch()` and
-    `picture_in_picture_batch()`.
+    `concatenate_videos_batch()` and `compare_videos_batch()`.
+  - `picture_in_picture_batch()`, whose two inputs have distinct roles and so
+    carries fixed `main` and `overlay` columns rather than a list-column, plus a
+    required `output` column.
 
   The `output` column is optional on the verbs that can derive a name — outputs
   are auto-named per input (`_standardized`, `_normalized`, `_stripped`,

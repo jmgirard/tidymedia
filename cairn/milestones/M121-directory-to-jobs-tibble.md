@@ -894,6 +894,91 @@ below was re-ticked as its own fresh evidence landed.
   top-level files, so no `.Rbuildignore` entry needed ✔ ·
   `devtools::check()` 0 errors / 0 warnings / 0 notes ✔.
 
-_Checkpoint, mid-pass: AC1-AC5 evidence and the consistency gate are recorded; the
-three-lens fan-out is still running and its findings, triage and the merge gate
-follow._
+#### Independent review — full three-lens fan-out (surface tier: user-facing)
+
+**[S] prior-review record — no regression.** Primary surface: this milestone's own
+three prior `## Review` passes, its four claim audits, and `cairn/LESSONS.md`. The
+diff matches each prescribed fix rather than contradicting it: the
+`file.exists() & !dir.exists()` predicate return #2 specified, the Windows
+carve-out disclosed in `@return`/`NEWS.md` per the descope, `skip_on_os("windows")`
+above the `skip_if_not(isTRUE(linked))` guards per T17, the test header's
+"fifteen" verbs, and the `setequal()` attribution in the `check_string()` comment.
+The GitHub probe (`gh api .../pulls/comments?per_page=1`) returned `[]`, so the
+per-PR walk was skipped. Zero findings.
+
+**[S] blame-history — one finding, no regression of runtime code.** The branch
+modifies no pre-existing runtime line; D079, D087 and D001/GP1 are followed as
+cited; `NEWS.md` holds one new entry and restates nothing; the 22 `man/*.Rd`
+touches are one-line `@family` link insertions.
+
+- **S1 — `recursive = TRUE` descends through a directory symbolic link, so an
+  `input` row can name a file outside `directory`** — the mechanism the 2026-09-03
+  (M103) LESSONS line warns about, built into new exported surface with no test and
+  no disclosure. **Verified:** `inside/a.mp4` plus `inside/link → ../outside`
+  holding `escaped.mp4`; `ffm_jobs(inside, type = "video", recursive = TRUE)`
+  returns `.../inside/a.mp4` and `.../outside/escaped.mp4`; `recursive = FALSE`
+  returns `a.mp4` alone. Read-only here — no deletion hazard as in M103 — and the
+  row exists, is not a directory, and carries a vocabulary extension.
+
+**[O] diff-bug — 6 findings, ranked by the reviewer.** Each re-run against the
+implementation here, not taken from the reviewer's account.
+
+1. **O1 — CONFIRMED: `media_extensions("audio")` omits `.mka`, the container
+   tidymedia itself tells users to write.** `R/ffm_jobs.R:147-148`'s audio list is
+   `wav, mp3, m4a, aac, flac, ogg, oga, opus, wma, aiff, aif`, while
+   `multi_audio_extensions` (`R/ffmpeg.R:671`) holds `mka` first and
+   `separate_audio_video()`'s message at `R/ffmpeg.R:799` recommends Matroska
+   (`.mka`). A folder of the package's own multi-track audio output is invisible to
+   `ffm_jobs(type = "audio")`, and `extension = "mka"` is refused with an `i` bullet
+   that omits it. A new mechanism beside candidate item (c): the gap contradicts a
+   vocabulary the package already ships, not merely a neighbour's extension.
+2. **O2 — PREMISE CONFIRMED, WINDOWS BEHAVIOUR UNVERIFIED HERE: "non-hidden" in
+   `@return`, `NEWS.md` and AC1 is dot-prefix visibility only.** `?list.files`
+   defines `all.files = FALSE` as "following Unix-style visibility, that is files
+   whose name does not start with a dot" (read from `base`'s Rd), so a Windows file
+   carrying the hidden *attribute* without a leading dot is returned. AC1's
+   contents clause carries no platform carve-out and names no procedure defining
+   "hidden". Not executed: no Windows machine in this environment.
+3. **O3 — CONFIRMED: the `ffm_*` prefix on a non-engine utility is decided only in
+   the work log.** D014 says "`ffm_*` marks Layer-1 engine surface only; nothing
+   outside Layer 1 uses it"; milestone-local decision M121-1 places `ffm_jobs()`
+   there, and `grep -n "M121-1\|ffm_jobs" cairn/DECISIONS.md cairn/DESIGN.md`
+   returns nothing. The `DESIGN.md` Layer-1 enumeration half was rejected as
+   pre-existing at pass 3 ([O]5, `ffm_manifest` already absent); the D-entry half
+   is the new part.
+4. **O4 — CONFIRMED: the vignettes' "one-liner" now aborts where `list.files()`
+   returned `character(0)`** (`vignettes/metadata.Rmd:123`,
+   `vignettes/workflow.Rmd:40`). A folder of only unlisted containers errors out of
+   a chunk sold as a one-liner. Documented contract (`@return`: "aborts rather than
+   returning zero rows"); both chunks are `eval = FALSE`.
+5. **O5 — CONFIRMED, cosmetic: the extension refusal echoes the normalized form.**
+   `extension = ".WAV"` → `✖ "wav" is not one of them.`
+6. **O6 — by construction, no user-visible defect: `mustWork = FALSE` at
+   `R/ffm_jobs.R:129` is unreachable leniency** on macOS/Linux after the
+   `file.exists() & !dir.exists()` filter; its only remaining effect is the Windows
+   dangling-link pass-through item (f) already holds.
+
+Checked and clean by the [O] lens: the AC1 hand-off with `ffmpeg` off `PATH`; AC2
+blame including `check_required()`'s frame; the `NEWS.md` six-and-nine split
+against all fifteen `*_batch()` verbs; no overwrite hazard in the six advertised
+verbs; the superset property; `_pkgdown.yml`, `\value{}`, the runnable example.
+
+#### Return-floor assessment
+
+No finding demonstrates AC1 failing on a measured case, so none is floor-qualifying
+by demonstration; two sit close enough that the disposition is the maintainer's.
+
+- **S1** returns an existing, non-directory, vocabulary-extension file — every
+  property AC1's binding sentence names — at a path outside `directory`. The first
+  pass confirmed the same class by the file-link route (pass 1 [O]4, "`input` can
+  point outside `directory`") and it was deferred into candidate item (a), not
+  returned; this is a second route to that class.
+- **O2** is unverified by execution, and it bears on the word "non-hidden", which
+  AC1 does not define. If the maintainer reads it as showing the criterion
+  unbounded (it names no procedure deciding "hidden"), it is an **amendment
+  return** — none is yet recorded on M121, so no second-occurrence stop applies.
+  Otherwise its repair is a claim correction in `@return` and `NEWS.md`.
+- **O1, O3-O6** are follow-up or reject material: none touches a returned row or a
+  refusal's frame.
+
+Defect-return count stays **3**; amendment-return count **0**.

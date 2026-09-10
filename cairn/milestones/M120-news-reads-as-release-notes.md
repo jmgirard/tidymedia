@@ -27,17 +27,17 @@ already has no repeated heading.
 
 ## Acceptance criteria
 
-- [ ] AC1: `NEWS.md` opens with a single development-version `#` heading, and the
+- [x] AC1: `NEWS.md` opens with a single development-version `#` heading, and the
       development section names no release version number.
-- [ ] AC2: A sweep over every `#` section of `NEWS.md` finds no `##` heading repeated
+- [x] AC2: A sweep over every `#` section of `NEWS.md` finds no `##` heading repeated
       within any one section. Today the development section carries `## New features`
       at lines 3, 267 and 1402, `## Breaking changes` at 48, 523 and 1943, `## Bug
       fixes` at 868, 1845 and 1961, and `## Documentation` at 20 and 1666.
-- [ ] AC3: The development section names every export in the symmetric difference
+- [x] AC3: The development section names every export in the symmetric difference
       between `NAMESPACE` at head and `NAMESPACE` at commit `4b04fad9`, the commit
       that introduced the `# tidymedia 0.1.0` heading — 40 added and 14 removed as
       measured 2026-09-07.
-- [ ] AC4: Parse every top-level `name <- function(...)` definition in `R/` at commit
+- [x] AC4: Parse every top-level `name <- function(...)` definition in `R/` at commit
       `4b04fad9` and at the branch head, take the names `export()`ed in both
       `NAMESPACE`s, and enumerate the formal argument names present at `4b04fad9` and
       absent at head. For each, the content above the `# tidymedia 0.1.0` heading names
@@ -47,7 +47,7 @@ already has no repeated heading.
       at both (`.data` is a reexported rlang pronoun, not a function), and the
       enumeration returns `extract_audio()`'s `acodec` and `segment_video()`'s
       `ts_start` and `ts_stop`.
-- [ ] AC5: The `verify` slot of `cairn/PROFILE.md` is clean.
+- [x] AC5: The `verify` slot of `cairn/PROFILE.md` is clean.
 
 ## Coverage
 
@@ -234,80 +234,241 @@ already has no repeated heading.
 
 ## Review
 
-Reviewed 2026-09-09 on PR #124, against branch head `7fa561f`. `origin/master`
-had not moved since the branch was cut (0 commits behind), so no merge was needed
-and the evidence below is against the current tree.
+Reviewed 2026-09-09 on PR #124, against branch head `427d8d3`, after the AC4
+amendment. `origin/master` had not moved since the branch was cut (0 behind, 5
+ahead), so no merge was needed and every measurement below is against this tree.
+The evidence recorded at the first review pass is superseded: AC4's wording
+changed and `NEWS.md` changed under AC1-AC3, so all five were re-measured.
 
-**AC1 — pass.** `grep -n '^# ' NEWS.md` returns five `#` headings: `# tidymedia
-(development version)` at line 1, then the four released ones at 1363, 1423, 1467
-and 1508. One development-version heading, and it carries no number. A sweep of
-the development section (lines 1-1362) for `[0-9]+\.[0-9]+(\.[0-9]+)*` returns 14
-distinct strings: `1.1.0`, `1.2.0`, `2.5.0`, `3.0.3`, `4.1.0`, `4.5.0`, `6.1.1`
-and `9.0.1` are dependency and FFmpeg versions; `42.0`, `2.0`, `1.7`, `0.46` and
-`0.1` are seconds and a tolerance. No `0.2.0` remains. The one judgment call is
-`pre-1.0`, at lines 5 and 205 ("The package is pre-1.0 and", "in line with the
-package's pre-1.0 clean-break policy"): read as naming the versioning policy's
-threshold rather than naming a release version for this section, which is what
-Scope Out reserves for the release walk. Recorded here rather than dropped.
+**AC1 - pass, against a discriminating control.** `grep -n '^# ' NEWS.md`
+returns five `#` headings: `# tidymedia (development version)` at line 1, then
+the four released ones at 1363, 1423, 1467 and 1508. One development-version
+heading, and it carries no number. Sweeping the development section (lines
+1-1362) for `[0-9]+\.[0-9]+(\.[0-9]+)*` returns 14 distinct strings, each read
+in context: `4.1.0`/`4.5.0` are R versions, `1.1.0`/`1.2.0` rlang,
+`2.5.0`/`3.0.3` withr, `6.1.1`/`9.0.1` FFmpeg, and `42.0`, `2.0`, `1.7`, `0.46`
+and `0.1` are seconds and a tolerance. No tidymedia release version. The
+control: the same sweep over `origin/master:NEWS.md`'s development section
+returns `0.2.0` at its line 15 ("a version of tidymedia before 0.2.0"), so the
+check fails when a release version is present. The one judgment call is
+`pre-1.0` at lines 5 and 205 ("The package is pre-1.0 and", "the package's
+pre-1.0 clean-break policy"): read as naming the versioning policy's threshold
+rather than naming a release version for this section. Recorded, not dropped.
 
-**AC2 — pass.** A parse of `NEWS.md` grouping every `##` heading under its
-enclosing `#` section finds no heading occurring twice in any section: the
-development section carries six (Breaking changes, New features, Bug fixes,
-Performance, Documentation, Requirements), `0.1.0` three, `0.0.0.9002` three,
-`0.0.0.9001` three, `0.0.0.9000` none. The three-and-two-occurrence counts the
-criterion cites for the pre-collapse state are what the sweep found before the
-collapse; after it, zero repeats.
+**AC2 - pass, against a discriminating control.** A parse of `NEWS.md` grouping
+every `##` heading under its enclosing `#` section finds no heading occurring
+twice in any section: the development section carries six (Breaking changes,
+New features, Bug fixes, Performance, Documentation, Requirements), `0.1.0`
+three, `0.0.0.9002` three, `0.0.0.9001` three, `0.0.0.9000` none. The control:
+the same parse over `origin/master:NEWS.md` reports the development section's
+20 headings with `## New features` x3, `## Breaking changes` x3, `## Bug fixes`
+x3 and `## Documentation` x2 - the four repeats and the exact counts the
+criterion cites for the pre-collapse state, so the check both fails when
+repeats are present and confirms the criterion's stated starting point.
 
-**AC3 — pass, against a discriminating control.** `comm` over the sorted
-`export()` lines of `NAMESPACE` at head against `4b04fad9` gives 63 exports then,
-89 now, 40 added and 14 removed — the criterion's counts, and the removed set is
-the plan's list exactly. Every one of the 54 names is matched in the development
-section on non-word-character boundaries: 0 missing added, 0 missing removed. The
-control: the same check run against `origin/master:NEWS.md`'s development section
-reports `concatenate_videos_batch`, `strip_metadata` and `strip_metadata_batch`
-missing — the three T3 filled — so the check fails when the names are absent.
+**AC3 - pass, against a discriminating control.** `comm` over the sorted
+`export()` lines of `NAMESPACE` at head against `4b04fad9`: 63 exports then, 89
+now, 40 added and 14 removed - the criterion's counts, and the removed set is
+the plan's list exactly (`:=`, `as_label`, `as_name`, `audio_as_mp3`,
+`convert_fractions`, `enquo`, `enquos`, `ffm`, `get_codecs`, `get_encoders`,
+`get_framerate`, `get_samplingrate`, `mediainfo_summary`, `pad_integers`).
+Every one of the 54 names is matched in the development section on word
+boundaries that also exclude a preceding `.`: 0 missing added, 0 missing
+removed. The control: the same check over `origin/master:NEWS.md`'s development
+section reports `concatenate_videos_batch`, `strip_metadata` and
+`strip_metadata_batch` missing - the three T3 filled - so the check fails when
+names are absent.
 
-**AC4 — FAIL.** Of the non-`NAMESPACE` renames the three entries record, the
-argument renames are named as renames: `acodec`/`vcodec` -> `audio_codec`/
-`video_codec` and `ts_start`/`ts_stop` -> `start`/`end` at `NEWS.md:30-36`, and
-`audio` -> `audio_input` at `:182-192`. D078 adds no rename of its own. The
-**option** rename D077 records — `tidymedia.nvenc_encoders` ->
-`tidymedia.hardware_encoders` — is not named: the old string occurs zero times in
-`NEWS.md`, the new one five times (lines 199, 527, 612, 618, 1163), and the nine
-`nvenc` mentions in the section are all the backend string `"nvenc"`. The
-work-log line of 2026-09-09 that records this criterion met states the option
-rename is "named as renames ... now at zero occurrences"; zero occurrences of the
-old name is the criterion failing, not meeting it.
+**AC4 - pass, against a discriminating control.** The formals diff the
+criterion specifies, run here from an R parse of `R/` at both trees (`git
+archive` of `4b04fad9` and of head into scratch dirs; a top-level definition is
+`name <- function(...)` or `name = function(...)` with `name` a symbol). It
+reports 49 names exported in both `NAMESPACE`s and 48 parsed as such a
+definition at both - `.data` the sole exclusion, a reexported rlang pronoun -
+matching the criterion's figures. `427d8d3` changed only `NEWS.md` and three
+`cairn/` files, so the tree the criterion pinned to `1df6e23` is the tree
+measured. The removed-argument set is `extract_audio()`'s `acodec` and
+`segment_video()`'s `ts_start` and `ts_stop`, three names, again as stated.
+All three are named with their replacements in the content above the `#
+tidymedia 0.1.0` heading, at `NEWS.md:30-35`: `acodec` -> `audio_codec`,
+`ts_start`/`ts_stop` -> `start`/`end`. Both replacements check out against the
+current formals - `extract_audio(infile, outfile, audio_codec, audio_stream,
+run)` and `segment_video(infile, start, end, ...)` - so the note's claim is
+derived, not composed. No removed argument needed the removed-with-no-successor
+alternative. The control for the criterion's bound: `acodec` also occurs at
+`NEWS.md:1452`, inside the released `0.1.0` section, so a whole-file grep would
+have reported it named on released text alone; bounding the check to lines
+1-1362 is what makes it discriminate.
 
-The work is right and the criterion is not. `git grep nvenc_encoders 4b04fad9 --
-R/` is empty and the 0.1.0 export list carries no `nvenc` or `hardware` name at
-all, so the option was introduced *and* renamed inside this development cycle —
-the same class the question gate dispositioned as dropped rather than announced
-("`has_nvenc`/`nvenc_encoder` ... arrived and were renamed inside this cycle, so
-a 0.1.0 reader never saw them"). That principle was settled at the implement
-question gate, after AC4 was written, and narrowed AC4's effective domain without
-amending it. AC4 as written sweeps in renames of names no 0.1.0 caller could have
-used. Routed as an amendment return, not a defect return.
-
-**AC5 — pass.** The `verify` slot: `Rscript -e 'devtools::test()'` at
-`[ FAIL 0 | WARN 12 | SKIP 5 | PASS 13266 ]`, run 2026-09-09 against this tree.
+**AC5 - pass.** The `verify` slot, run 2026-09-09 against this tree:
+`Rscript -e 'devtools::test()'` at `[ FAIL 0 | WARN 12 | SKIP 5 | PASS 13266 ]`.
 The five skips are hardware-encoder probes (`test-nvenc.R:435,446,458`,
-`test-video-codec.R:480,489`); none reads `NEWS.md`. No roxygen changed on this
+`test-video-codec.R:480,489`); none reads `NEWS.md`. Two of the suite's tests do
+assert on `NEWS.md`'s wording (`test-check-tracks-docs.R:126`,
+`test-front-door-ordering.R:435`) and both pass here - the pair that caught the
+collapse's two dropped claims during implementation. No roxygen changed on this
 branch (`git diff origin/master...HEAD --name-only` is `NEWS.md`,
-`cairn/ROADMAP.md` and this file), so `document()` was not required.
+`cairn/DECISIONS.md`, `cairn/ROADMAP.md` and this file), so `document()` was not
+required.
 
-**Consistency gate — partial, then stopped.**
-`python3 scripts/cairn_validate.py` exits 0: all checks passed, 78 advisory
+**Consistency gate — universal half clean, toolchain half 1 NOTE.**
+`python3 scripts/cairn_validate.py` exits 0: every check PASS, 136 advisory
 warnings, all of them the work-log line-wrapping advisory, which never fails a
-gate. The `release window` advisory did not fire. No `DESIGN.md` principle
-changed (`Principles touched: —`), so `cairn_impact.py` was skipped. The
-`r-package` profile's toolchain half was not reached: the criterion failure above
-takes the gate's exit, so `devtools::check()` and `pkgdown::check_pkgdown()` were
-not run. The branch touches no `R/`, `man/`, `NAMESPACE`, `README`, `_pkgdown.yml`
-or top-level file, so nothing those checks cover was modified.
+gate. The `release window` advisory did not fire. `Principles touched: —` and
+`DESIGN.md` is not in the diff, so `cairn_impact.py` was skipped.
 
-**Steps 5-9 not run.** The three review lenses, the approval gate and the merge
-were not reached. PR #124 stays a draft.
-- 2026-09-09: `verify` slot re-run after the `NEWS.md` correction: `devtools::test()` at
-  FAIL 0 | WARN 12 | SKIP 5 | PASS 13,266, same five hardware-encoder skips. No roxygen
-  changed, so `document()` was not run. Status -> review.
+The `r-package` profile's toolchain half:
+- `devtools::document()` exits 0 and leaves no diff (`git status` shows only
+  this milestone file, edited by this review).
+- `pkgdown::check_pkgdown()`: "No problems found."
+- README: neither `README.Rmd` nor `README.md` is in the diff, and both were
+  last committed together at `0df9835`, so the knit is in sync.
+- Changelog: `NEWS.md` *is* the milestone's deliverable; no milestone number
+  reaches user-facing text (`grep -nE '\bM[0-9]{2,3}\b' NEWS.md README.md` is
+  empty).
+- No new top-level file: the only top-level path in the diff is `NEWS.md`, which
+  already ships; `.Rbuildignore:7` still carries `^cairn$`.
+- `devtools::check()`: **0 errors, 0 warnings, 1 NOTE** (5m 38s). The NOTE is
+  the `spelling` test: two words this branch introduced into `NEWS.md` and that
+  are in neither `inst/WORDLIST` nor the dictionary — `Relatedly` (`NEWS.md:1008`)
+  and `centre` (`NEWS.md:318`). Both are absent from `origin/master:NEWS.md`, so
+  the NOTE is branch-introduced. `Relatedly` is a wordlist gap and justifiable.
+  `centre` is not: the sentence reads "corner or centre `position`", and the
+  value the code accepts is `"center"` (`R/ffmpeg.R:7133,7529`), so a reader
+  following the note writes a value that aborts. Carried below as finding G1
+  rather than justified.
+
+## Review findings
+
+Three fresh-context lenses (user-facing tier, so the full fan-out). Every
+finding reported is logged here with its disposition; each was re-verified
+against the code before triage, and the verdicts below are mine, not the
+reviewers'.
+
+**[O] diff-bug lens — 12 findings.** It re-measured and confirmed AC1-AC4
+independently, confirmed the released sections byte-identical, and confirmed
+that every function name, condition class, `tm_*` field and option name the
+development section mentions exists in `R/`. Its findings are about the prose
+the collapse newly wrote. Verified CONFIRMED:
+
+- **O1. `NEWS.md:365-368` — `picture_in_picture_batch()` takes no `inputs`
+  list-column.** The branch-new sentence groups it with the fan-in verbs that
+  "carry an `inputs` list-column plus a required `output` column". Its roxygen
+  (`R/ffmpeg.R:7510-7518`) documents fixed `main`/`overlay`/`output` columns and
+  cites D015 by name ("not a list-column; D015"). A reader following the note
+  builds a jobs table the verb rejects.
+- **O2. `NEWS.md:375-376` — "The audio verbs and the fan-in verbs require
+  `output` and derive nothing" mis-describes `separate_audio_video_batch()`.**
+  The note lists that verb under single-input transforms, whose `output` it says
+  is optional and auto-derived. The code requires `audiofile` *and* `videofile`
+  and derives neither (`R/ffmpeg.R:6610-6620`, roxygen at `:6470-6473`).
+- **O3. `NEWS.md:30-35` — both "already" claims are false at the 0.1.0 tree.**
+  `git grep audio_codec 4b04fad9 -- R/` is empty, so the re-encode verbs did not
+  "already take" `audio_codec`/`video_codec`; `segment_video_batch` is one of the
+  40 added exports, so its `start`/`end` columns did not "already use those
+  names". The bullet then tells a 0.1.0 caller to "Rename the arguments and the
+  columns" — columns they could not have had. This is the sentence `427d8d3`
+  rewrote to be derived rather than composed.
+- **O4. `NEWS.md:370-373` — the auto-naming list is wrong in two ways.** It omits
+  `_anonymized`, which `anonymize_video_batch()` derives
+  (`R/ffmpeg.R:2194-2196,2434`), and it attributes the restarting
+  `<basename>_<n>` to "the frame-writing verbs" alone, when
+  `segment_video_batch()` derives it too (`R/ffmpeg.R:3911,4134`).
+- **O5. `NEWS.md:1217` — "Three new vignettes and a reordered fourth."**
+  `git ls-tree 4b04fad9 vignettes/` lists three; HEAD has five. Two are new
+  (`verification.Rmd`, `workflow.Rmd`), and the bullet itself goes on to name
+  only those two plus the reordered "Get started". A merge artifact.
+- **O6. `NEWS.md:517-523` — the merge dropped a qualifier that kept two error
+  cases apart.** `origin/master`'s development section said asking a backend for
+  a family it cannot encode is refused "whatever `fallback` is set to". HEAD says
+  that case "is an error" and four lines later that "`fallback = TRUE` re-encodes
+  in software with a message instead", so a reader concludes `fallback = TRUE`
+  rescues av1 under videotoolbox. `R/ffmpeg.R:3273-3276` and the comment at
+  `:3325-3340` state a `(family, backend)` pair the table lacks is refused on
+  both arms.
+- **O7. `NEWS.md:96-99` — one measured run is asserted of four verbs, and is
+  wrong for one.** "On a three-track test file whose default flag sat on the
+  second track ... the second is what came out" now covers `standardize_video()`,
+  `anonymize_video()`, `segment_video()` and `format_for_web()`.
+  `origin/master`'s development section recorded two different fixtures: the
+  second-track file for the standardize/anonymize case (its line 701) and the
+  segment case (its line 669), and a *third*-track file for
+  `format_for_web()`/`normalize_audio()` (its lines 597-598). The merged sentence
+  reads as one observation and is a composition of two.
+- **O8. A user-visible ordering guarantee was dropped with no replacement.**
+  `origin/master`'s development section (its lines 1127-1128) stated that under
+  `two_pass = TRUE` a bad loudness target is refused "before the analysis pass
+  measures the input, instead of after that measurement was already spent".
+  Neither phrase occurs anywhere in HEAD's lines 1-1362, and it is not in the
+  merged Bug-fixes ordering paragraph. No acceptance criterion covers this.
+- **O9. `NEWS.md:181-192` — the `audio` -> `audio_input` rename is the class D091
+  says to drop, and it survived.** `compare_videos`, `compare_videos_batch`,
+  `picture_in_picture` and `picture_in_picture_batch` are all in the 40 added
+  exports, so no caller of 0.1.0 could have written `audio =` on any of them.
+  D091 (written on this branch) says such a name "is announced once, as the new
+  export or argument it is, with no history of what it was called on the way" —
+  the reasoning that removed `tidymedia.nvenc_encoders`, `has_nvenc()` and
+  `vcodec`. The bullet also spends a paragraph on renaming a `jobs` column that
+  never shipped.
+- **O10. `cairn/ROADMAP.md:20` — the branch edited this row and left a sentence
+  in it that its own rewrite falsified.** The row still reads "The unreleased
+  `NEWS.md` section has the same split, explaining `unset_program()` in terms of
+  `find_program()` while a later entry calls it internal." At HEAD `find_program`
+  occurs once in the development section (`NEWS.md:1278`), in the entry that
+  calls it internal; the `unset_program()` bullet does not mention it.
+- **O11. `cairn/DECISIONS.md:4317` — D091 overstates the entry it cites.** "D014
+  lets a name change outright until 0.2.0 reaches CRAN"; D014
+  (`cairn/DECISIONS.md:176-177`) says only "the API is pre-0.2.0 and still
+  soaking (D001)". The CRAN-arrival threshold is an extrapolation, and D091's
+  argument turns on where that boundary sits. D091 has not merged, so it is still
+  editable rather than superseded-only.
+- **O12. Pre-existing, carried through unchanged.** `NEWS.md:1303-1304` "The
+  other eight declared floors were exercised" — `DESCRIPTION` carries 10
+  versioned `Imports`, so excluding `rlang` leaves nine. Verified present
+  verbatim in `origin/master:NEWS.md:99-100`, so the diff did not introduce it.
+  Also `NEWS.md:178-180`'s "collapses the two into one `codec` column", likewise
+  verbatim from `origin/master`.
+
+**[S] blame-history lens — no open finding.** It independently re-derived the
+`vcodec` correction, the two test-caught dropped sentences
+(`test-front-door-ordering.R:435`, `test-check-tracks-docs.R:126`), and the AC4
+amendment, and found each already resolved at HEAD. It confirmed D091 does not
+contradict D014/D077/D078/D079, that the released sections are byte-identical,
+and that the genuinely 0.1.0-reachable renames (`get_samplingrate`,
+`get_framerate`, `get_codecs`, `get_encoders`) are still announced as renames.
+Note that it did **not** find O8 or O9, which are the same class it was hunting.
+
+**[S] prior-review lens — no regression, one borderline observation.** The
+existence probe `gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1`
+returned `[]`, so there are no inline PR review comments at all and the per-PR
+thread walk was skipped; the archived `## Review` sections were the evidence
+base (M074, M080, M087, M090, M094, M097, M099, M106, M119). None of M119's five
+fixed composed-claims is touched — all sit in the released sections. Its one
+observation: `NEWS.md:481`'s "`NULL` now means the same thing on every codec
+argument in the package" reuses the total quantifier the branch had just had to
+fix at `NEWS.md:30`. Verified present verbatim in `origin/master:NEWS.md`, so it
+is pre-existing, and the paragraph at `NEWS.md:501-508` already carves out
+`convert_audio()`/`convert_audio_batch()` as the deliberate exception.
+
+**Gate finding G1 (from the consistency gate, not a lens).** `NEWS.md:318` writes
+"corner or centre `position`"; the accepted value is `"center"`
+(`R/ffmpeg.R:7133,7529`). Branch-introduced, and it is what makes the
+`devtools::check()` NOTE unjustifiable as it stands. `Relatedly`
+(`NEWS.md:1008`) is the same NOTE's other word and is a wordlist gap, not a
+wrong claim.
+
+**Triage position taken to the gate.** Ten of the twelve [O] findings are
+branch-introduced defects in shipped release-note prose, and none of them is a
+style nitpick, a linter's job, or a complaint about an unmodified line. Two
+(O1, O2) send a reader to build a jobs table the verb rejects; two (O6, O8) are
+user-visible guarantees the collapse lost, one of them with no replacement
+anywhere; three (O3, O5, O7) are claims that read as measured and are not; one
+(O9) is the milestone's own new rule not applied to a bullet it governs. No
+acceptance criterion covers any of them — AC1-AC5 measure headings, exports,
+removed formals and the test suite, and all five pass. So this is not a
+criterion failure; it is the return floor's other arm, a load-bearing defect in
+what the deliverable does for its readers, which is the maintainer's judgment to
+make at the gate. O12 and the `NEWS.md:481` observation are pre-existing and
+rejected as out of scope. My recommendation to the maintainer is to return the
+milestone to `in-progress` rather than fix ten prose defects inside the review
+phase.

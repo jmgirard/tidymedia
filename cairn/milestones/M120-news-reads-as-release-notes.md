@@ -27,17 +27,17 @@ already has no repeated heading.
 
 ## Acceptance criteria
 
-- [ ] AC1: `NEWS.md` opens with a single development-version `#` heading, and the
+- [x] AC1: `NEWS.md` opens with a single development-version `#` heading, and the
       development section names no release version number.
-- [ ] AC2: A sweep over every `#` section of `NEWS.md` finds no `##` heading repeated
+- [x] AC2: A sweep over every `#` section of `NEWS.md` finds no `##` heading repeated
       within any one section. Today the development section carries `## New features`
       at lines 3, 267 and 1402, `## Breaking changes` at 48, 523 and 1943, `## Bug
       fixes` at 868, 1845 and 1961, and `## Documentation` at 20 and 1666.
-- [ ] AC3: The development section names every export in the symmetric difference
+- [x] AC3: The development section names every export in the symmetric difference
       between `NAMESPACE` at head and `NAMESPACE` at commit `4b04fad9`, the commit
       that introduced the `# tidymedia 0.1.0` heading — 40 added and 14 removed as
       measured 2026-09-07.
-- [ ] AC4: It names every rename recorded in `cairn/DECISIONS.md` D014, D077 and D078
+- [x] AC4: It names every rename recorded in `cairn/DECISIONS.md` D014, D077 and D078
       since that commit which is not itself a `NAMESPACE` entry — the argument and
       option renames.
 - [ ] AC5: The `verify` slot of `cairn/PROFILE.md` is clean.
@@ -58,9 +58,9 @@ already has no repeated heading.
       `convert_fractions`, `enquo`, `enquos`, `ffm`, `get_codecs`, `get_encoders`,
       `get_framerate`, `get_samplingrate`, `mediainfo_summary`, `pad_integers` —
       breaking changes for any 0.1.0 caller.
-- [ ] T2: Collapse the development section: one occurrence of each `##` heading,
+- [x] T2: Collapse the development section: one occurrence of each `##` heading,
       entries merged under it in reader order rather than milestone order.
-- [ ] T3: Check the collapsed section against T1's two lists and fill what is missing.
+- [x] T3: Check the collapsed section against T1's two lists and fill what is missing.
 - [ ] T4: Confirm the four released sections below are untouched; run the profile's
       `verify` slot.
 
@@ -98,3 +98,40 @@ already has no repeated heading.
   sweep finding no `##` heading repeated within any one `#` section -- is unaffected, and
   the counts it asserts (three, three, three and two occurrences) are correct as measured
   today, so the wording is left alone rather than amended.
+- 2026-09-09: T2+T3 (minor amendment: run as one editing pass rather than two, since
+  the collapse rewrites the very bullets the fill lands in; task order and wording
+  otherwise unchanged). The development section went from 1,982 lines under 27 `##`
+  headings to 1,362 under six -- Breaking changes, New features, Bug fixes,
+  Performance, Documentation, Requirements. The 13 one-off announcement headings and
+  the Configuration, Standardized function and argument names, Verification &
+  provenance, Multi-input verbs and Safe execution headings all dissolved into those
+  six. Same-feature bullets merged: the four loudnorm headings became one two-pass
+  entry, the twelve "reported against the function you called" bullets became one
+  entry with a checks list and an ordering paragraph, and the eleven scattered
+  `audio_stream` bullets became one Breaking entry for the behavior change plus one
+  New-features entry for the argument. Intra-cycle renames were dropped rather than
+  reported as breaking changes: `has_nvenc`/`nvenc_encoder`, `normalize_audios` and
+  the other four plural batch names, and `convert_audio()`'s `format` argument all
+  arrived and were renamed inside this cycle, so a 0.1.0 reader never saw them; the
+  `_batch` verbs and the hardware helpers are now announced as the new exports they
+  are. T3's fill added `strip_metadata()`, `strip_metadata_batch()` and
+  `concatenate_videos_batch()`, whose prose was derived from their roxygen at
+  `R/ffmpeg.R:1630-1668`, `:4888-4926` and `:7215-7250`, not composed.
+- 2026-09-09: the eight stale function names the gate dispositioned are gone (sweep
+  over the section for `\bname\b` returns zero for each). The eighth,
+  `write_mediainfo_template()`, turned out to name no function anywhere in the
+  package: `NAMESPACE` exports it not and `R/` defines it not, and the real caller of
+  `check_file_exists()` is `mediainfo_template()` (`R/mediainfo.R:214`). The release
+  note now names that. `R/utils.R:165-172`'s comment carries the same dead name and
+  is where the note had copied it from; comment-only and outside this milestone's
+  scope, so it was folded into the existing [high] `find_program()` candidate row
+  rather than fixed here or given a row of its own (ROADMAP is at 59 of 60 lines).
+- 2026-09-09: two tests assert on `NEWS.md`'s own wording and both failed on the
+  first `verify` run -- a real regression this milestone introduced, not a
+  pre-existing failure. `test-check-tracks-docs.R:126` matches the literal
+  `defaults to TRUE`, which the rewrite had marked up as `` `TRUE` ``;
+  `test-front-door-ordering.R:435` matches an ordering sentence the merge had
+  dropped, one the two `_batch` verbs' help pages also carry. Both restored, the
+  ordering sentence back in the Bug-fixes ordering paragraph where the merge should
+  have put it. This is the guard the criteria could not supply: AC1-AC4 measure
+  headings, exports and renames, and neither would have caught either loss.

@@ -374,8 +374,13 @@
   `_cropped`, `_web.mp4`, and a restarting `<basename>_<n>` for the
   frame-writing verbs), keeping the source extension where that makes sense.
   Every one of them rejects two rows that resolve to the same output path, so
-  one file cannot silently overwrite another. The audio verbs and the fan-in
-  verbs require `output` and derive nothing.
+  one file cannot silently overwrite another. The two audio verbs, the fan-in
+  verbs and `picture_in_picture_batch()` require an `output` column and derive
+  nothing: an audio destination's extension picks the output format, and a row
+  naming many inputs has no single basename to build from.
+  `separate_audio_video_batch()` requires two destination columns, `audiofile`
+  and `videofile`, and derives neither, because a copied stream's container
+  extension has to match the codec it carries.
 
 * **Checking a result, and recording how it was made.** `verify_media()` is a
   probe-backed checker that confirms an output really has the properties you

@@ -74,7 +74,7 @@ already has no repeated heading.
 - [x] T5: `NEWS.md:365-368` — drop `picture_in_picture_batch()` from the
       `inputs` list-column group; it takes fixed `main`/`overlay`/`output`
       columns (`R/ffmpeg.R:7510-7518`, D015).
-- [ ] T6: `NEWS.md:375-376` — the `output`-required sentence leaves
+- [x] T6: `NEWS.md:375-376` — the `output`-required sentence leaves
       `separate_audio_video_batch()` described as auto-deriving; it requires
       `audiofile` and `videofile` and derives neither (`R/ffmpeg.R:6610-6620`).
 - [ ] T7: `NEWS.md:30-35` — remove both "already" claims and the
@@ -310,6 +310,16 @@ already has no repeated heading.
   `concatenate_videos_batch()` and `compare_videos_batch()` were each checked against
   their own `@param jobs` (`R/ffmpeg.R:7226-7229`, `:7290-7291`) and do carry the
   list-column, so the group is correct once it is the only two.
+- 2026-09-10: T6. The closing sentence of the batch entry named the classes that
+  require a destination as "the audio verbs and the fan-in verbs", which left
+  `separate_audio_video_batch()` -- listed above under single-input transforms, whose
+  `output` the same paragraph calls optional -- reading as auto-deriving. It requires
+  `audiofile` and `videofile` and derives neither (`R/ffmpeg.R:6470-6473`,
+  `:6609-6618`), so it now has its own clause. `picture_in_picture_batch()` joined the
+  requiring list for the same reason T5 split it out of the fan-in group: it derives
+  no output either. `extract_audio_batch()` and `convert_audio_batch()` re-checked
+  against their own `@param jobs`, both **required**, and the reason each gives -- the
+  destination extension picks the format -- is what the sentence now states.
 
 ## Review
 

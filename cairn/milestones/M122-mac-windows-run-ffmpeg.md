@@ -42,14 +42,15 @@ changing the matrix → the six legs stay six. Re-running the dependency floor h
 
 ## Tasks
 
-- [ ] T1: Add a macOS install step (`brew install ffmpeg media-info`) and a Windows
+- [x] T1: Add a macOS install step (`brew install ffmpeg media-info`) and a Windows
       one (Chocolatey or winget), replacing the Linux-only gate at `:39-43`.
 - [ ] T2: Push and read what reddens. The expected surface is Windows `system2()`
       quoting, `.exe` suffixes and path separators — M113 was the second arc reddened
       by this gap, and `R/program_management.R:416` is the `system2(location, …)` site.
 - [ ] T3: Fix what the legs find, or, for anything that turns out to be a real
       platform defect rather than a CI defect, split it to its own milestone and
-      record the split here rather than growing this one.
+      record the split here rather than growing this one. Last, remove the
+      temporary branch entry from the workflow's `push:` list.
 
 ## Work log
 
@@ -57,3 +58,5 @@ changing the matrix → the six legs stay six. Re-running the dependency floor h
 - 2026-09-07: plan-gate criteria audit ran in REDUCED mode (declared tier internal), fresh-context [O] reader, asking only the bounded-promise, instrument and proportionality questions. It returned no findings: all three criteria passed every question asked of them.
 - 2026-09-07: plan gate chose installing the binaries on the existing two legs over adding dedicated execution-only legs, because the matrix already runs macOS and Windows and the gap is the install step rather than the coverage; falsified by the two legs becoming so slow or flaky that the check matrix stops being usable.
 - 2026-09-10: /milestone-implement started; branch `m122-mac-windows-run-ffmpeg` cut from `master` at 46f1b0a (in sync with origin).
+- 2026-09-10: implement gate chose a temporary `push:` trigger for this branch (removed in T3's last step; the review PR run is the head-commit evidence) over an early draft PR, and Chocolatey over winget for Windows. T3 wording extended with the trigger removal (minor amendment).
+- 2026-09-10: T1 done — `brew install ffmpeg media-info` (macOS) and `choco install ffmpeg mediainfo-cli` (Windows) steps added beside the Linux one; no R code changed, so the verify slot's test run was not owed for this task.

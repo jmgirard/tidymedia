@@ -2,7 +2,7 @@
 # Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, m122-mac-windows-run-ffmpeg]
   pull_request:
 
 name: R-CMD-check.yaml
@@ -41,6 +41,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg mediainfo
+
+      - name: Install ffmpeg and mediainfo (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg media-info
+
+      - name: Install ffmpeg and mediainfo (Windows)
+        if: runner.os == 'Windows'
+        run: choco install ffmpeg mediainfo-cli --no-progress -y
 
       - uses: r-lib/actions/setup-pandoc@v2
 

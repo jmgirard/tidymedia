@@ -154,14 +154,18 @@
   these four left the audio codec unset, so whatever encoder your FFmpeg build
   defaults to for the output container silently re-encoded the audio — a quality
   loss, and a result that depended on the machine. Their compiled commands
-  therefore gain `-codec:a copy`. The new `audio_codec` argument controls this:
-  `"copy"` is the default, an encoder name (`audio_codec = "aac"`) transcodes
-  instead, and `audio_codec = NULL` restores the old behavior of leaving the
-  codec unset. Note that a stream copy fails if the output container cannot hold
-  the source audio codec (FLAC in `.mp4`, say) — name an encoder in that case.
-  Cutting with `segment_video(reencode = FALSE)` copies every stream by
-  definition, so any `audio_codec` other than `"copy"` is an error there, as is
-  naming an audio encoder on a composite that carries no audio at all.
+  therefore gain `-codec:a copy` wherever they map audio at all — on
+  `crop_video()` and `segment_video()` always, and on `compare_videos()` and
+  `picture_in_picture()` once `audio_input` names an input to take it from,
+  since those two map no audio at their default `audio_input = NULL`. The new
+  `audio_codec` argument controls this: `"copy"` is the default, an encoder name
+  (`audio_codec = "aac"`) transcodes instead, and `audio_codec = NULL` restores
+  the old behavior of leaving the codec unset. Note that a stream copy fails if
+  the output container cannot hold the source audio codec (FLAC in `.mp4`, say)
+  — name an encoder in that case. Cutting with `segment_video(reencode = FALSE)`
+  stream-copies the video and audio it carries, so any `audio_codec` other than
+  `"copy"` is an error there, as is naming an audio encoder on a composite that
+  carries no audio at all.
 
 * `separate_audio_video()` and `separate_audio_video_batch()` now stream-copy by
   default, and name an encoder per output file. Separation is lossless and fast
@@ -189,21 +193,26 @@
   **calls that pass later arguments by position rather than by name must be
   updated**. Naming your arguments avoids the problem entirely.
 
-  - `audio_stream` sits before `run` on `extract_audio()`, `convert_audio()`,
-    `separate_audio_video()`, `format_for_web()`, `normalize_audio()`,
-    `crop_video()`, `segment_video()` and every `_batch` sibling of those, so
-    `run` (and `parallel` on the batch verbs) shifts one position.
-    `extract_audio(video, "audio.aac", "copy", FALSE)` now reads `FALSE` as the
-    audio-stream index rather than as `run` — an error rather than a silent
-    misread, since the index must be a whole number.
-  - `audio_codec` sits beside `video_codec` on `standardize_video()` and
-    `anonymize_video()` (and their `_batch` siblings), so `pixel_format`,
-    `hardware`, `fallback` and `run` all shift one position.
-    `standardize_video(f, out, 1280, 720, 30, "libx264", "yuv420p")` now reads
-    `"yuv420p"` as the audio codec, not the pixel format.
-  - On `normalize_audio()` and `normalize_audio_batch()`, abbreviating
-    `audio_codec` to `audio` no longer works: with `audio_stream` beside it, any
-    prefix shorter than `audio_c` is ambiguous. Spell `audio_codec` out.
+  The inserted arguments are drawn from `video_codec`, `audio_codec`,
+  `hardware`, `fallback` and `audio_stream`, each placed beside the argument it
+  belongs with. `run` has moved on all five verbs that carried it before, and by
+  more than one position on four of them:
+
+  | verb | `run` was at position | `run` is now at position |
+  |---|---|---|
+  | `extract_audio()` | 4 | 5 |
+  | `format_for_web()` | 3 | 6 |
+  | `separate_audio_video()` | 4 | 9 |
+  | `segment_video()` | 6 | 11 |
+  | `crop_video()` | 7 | 12 |
+
+  `segment_video()`'s `parallel` moves with it, from position 7 to position 12.
+  `extract_audio(video, "audio.aac", "copy", FALSE)` now reads `FALSE` as the
+  audio-stream index rather than as `run` — an error rather than a silent
+  misread, since the index must be a whole number. On `crop_video()` and
+  `segment_video()` the old `run` slot now holds `video_codec`, so a positional
+  `TRUE` there stops with `` `video_codec` must be a single string or `NULL`,
+  not `TRUE`. `` rather than being misread.
 
 * `ffm_map()` appends instead of overwriting. Calling it twice on the same
   pipeline used to discard the first mapping; it now keeps both, emitting one
@@ -743,19 +752,22 @@
   meant the error arrived as ``Error in `purrr::pmap(jobs, .f, ...)` `` with an
   `In index: 1` line beneath it — a dependency's name and an internal row number
   in place of the function you typed — or, under `parallel = TRUE`, against a
-  `furrr` closure. Others named an internal builder (`ffm_crop()`, `ffm_scale()`,
-  `ffm_fps()`, `ffm_pixel_format()`, `ffm_drawbox()`, `ffm_overlay()`,
-  `ffm_loudnorm()`, `ffm_files()`) or an internal variable the caller had never
-  heard of. These now refuse at the verb's own front door and name it:
+  `furrr` closure. Others named the Layer 1 builder the verb had
+  called on its way down (`ffm_crop()`, `ffm_scale()`, `ffm_fps()`,
+  `ffm_pixel_format()`, `ffm_drawbox()`, `ffm_overlay()`, `ffm_loudnorm()`,
+  `ffm_files()`) — public functions, but not the one you typed — or an internal
+  variable the caller had never heard of. These now refuse at the verb's own
+  front door and name it:
 
   - an input file that does not exist, or exists and cannot be opened for
     reading, on every verb — including `concatenate_videos()` and
     `compare_videos()`, which had no check of their own at all;
   - a malformed `video_codec` or `audio_codec` token — a string carrying
     whitespace or shell characters, such as `"aac -evil"`;
-  - a `width`, `height`, `x`, `y`, `fps` or `pixel_format` that is neither a
-    positive number nor an FFmpeg expression, on `crop_video()`,
-    `standardize_video()` and `sample_frames_batch()`'s per-row rate;
+  - a dimension, position or format value that is neither a positive number
+    nor an FFmpeg expression — `width`, `height`, `x` and `y` on
+    `crop_video()`, `width`, `height`, `fps` and `pixel_format` on
+    `standardize_video()`, and `sample_frames_batch()`'s per-row rate;
   - `anonymize_video()`'s per-region `x`, `y`, `width` and `height` values,
     `picture_in_picture()`'s out-of-range `scale`, a negative `margin`, and
     `normalize_audio()`'s `target_loudness`, `true_peak` and `loudness_range`;

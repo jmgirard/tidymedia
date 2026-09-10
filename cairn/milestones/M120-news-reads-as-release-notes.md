@@ -1087,3 +1087,79 @@ reader could not be reached; the re-read went to a second fresh-context [O]
 reader instead. It met the freshness requirement and not the same-reader
 wording, and it is what caught T17's wrong partition. Recorded rather than
 treated as equivalent, per that log line's own request.
+
+**PR-conversation read (PR #124, 2026-09-10, before the gate).** No reviews at
+all (`pulls/124/reviews` empty), so no `CHANGES_REQUESTED` and the blocking rule
+does not fire. No unresolved review threads (`reviewThreads` filtered to
+`isResolved: false` returns none; `hasNextPage` false). One conversation comment.
+- conversation: codecov[bot] PR — noted (reports all modified lines covered and
+  project coverage 98.43% against base `50d1995`; requests nothing, author type
+  `Bot`).
+
+**Triage and dispositions (second pass).** Taken to the user at the 2026-09-10
+gate with the recommendation to fix all seven confirmed findings on the branch
+rather than return; the user chose that option. Dispositions:
+
+- **P1 — fixed on the branch.** The bullet group is rebuilt from the measured
+  formals rather than patched. The one-position claim is replaced by a table
+  giving `run`'s position at `4b04fad9` and at head for the five verbs that
+  carried it before (4->5, 3->6, 4->9, 6->11, 7->12), with `segment_video()`'s
+  `parallel` (7->12) named beside it. The four verbs that had no released form
+  are gone from the list, as is the `_batch` half. A second migration fact was
+  added because the same measurement produced it: on `crop_video()` and
+  `segment_video()` the old `run` slot now holds `video_codec`, so a positional
+  `TRUE` there stops with `` `video_codec` must be a single string or `NULL`,
+  not `TRUE`. `` — run for real on both verbs, and that is the message
+  verbatim, not a composed one.
+- **P2 — fixed on the branch.** "an internal builder" becomes "the Layer 1
+  builder the verb had called on its way down ... public functions, but not the
+  one you typed", which is the distinction the sentence was reaching for and is
+  true of all eight.
+- **P3 — fixed on the branch.** The crossed list is split by verb: `width`,
+  `height`, `x`, `y` on `crop_video()`; `width`, `height`, `fps`,
+  `pixel_format` on `standardize_video()`; `sample_frames_batch()`'s per-row
+  rate unchanged.
+- **P4 — fixed on the branch.** "copies every stream by definition" becomes
+  "stream-copies the video and audio it carries", which is what `-codec:v copy
+  -codec:a copy -map "0:v?" -map "0:a?"` does and no longer contradicts the
+  subtitle paragraph 55 lines above.
+- **P5 — fixed on the branch.** The unconditional "therefore gain `-codec:a
+  copy`" is bounded to where audio is mapped: always on `crop_video()` and
+  `segment_video()`, and on `compare_videos()`/`picture_in_picture()` only once
+  `audio_input` names an input. All four re-measured under `run = FALSE` after
+  the edit.
+- **P6, P7 — fixed on the branch, by deletion.** Both bullets are the class
+  D091 says to drop: `standardize_video()`, `anonymize_video()` and
+  `normalize_audio()` are added exports with no definition at `4b04fad9`, so
+  neither the positional break nor the partial-matching change was reachable by
+  a caller of the last release. Same disposition as first-pass O9 -> T13.
+- **P8 — rejected, out of scope.** Pre-existing verbatim in `origin/master`,
+  and a scope judgment about what belongs in a changelog rather than a false
+  claim. The out-of-scope taxonomy's "pre-existing issue the diff did not
+  introduce" member covers it.
+- **P9 — rejected, out of scope.** Pre-existing entries, and D091 as written
+  governs how a name is announced, not whether a development-cycle fix on a
+  development-cycle function may be recorded at all. Reading it the wider way
+  would delete most of the Bug fixes heading, which is neither what the entry
+  says nor what Scope In names.
+- **P10 — rejected, refuted against the implementation.** See above; FFmpeg
+  prints the quoted string verbatim.
+- **Deviation (D-136 same-reader re-read) — accepted and recorded.** The
+  freshness requirement it exists for was met by a second reader that had
+  authored none of the corrected claims, and the substitution is what caught
+  T17's wrong partition. No action; logged here so the wording gap is on record
+  rather than silently equated.
+
+**Re-verification after the fix-now edits.** AC1: five `#` headings, one
+development-version heading at line 1, the released ones now at 1391, 1451,
+1495 and 1536; the same 14 version-like strings in the section, none a
+tidymedia release. AC2: zero repeated `##` headings in any section. AC3: 0 of
+the 40 added and 0 of the 14 removed missing — P6's and P7's deletions cost no
+export mention. AC4: `acodec`, `ts_start` and `ts_stop` all still named above
+the `# tidymedia 0.1.0` heading, at the untouched `NEWS.md:30-33`. AC5: the two
+tests that assert on `NEWS.md`'s own wording re-run green (FAIL 0 | PASS 45 and
+FAIL 0 | PASS 245). `spelling::spell_check_package(".")` returns no errors —
+the ordinal forms `4th`/`5th` in the first draft of the table did add a `th`,
+so the table gives plain position numbers instead of a wordlist entry.
+`devtools::check()` re-run after every fix-now edit: **0 errors, 0 warnings, 0
+notes** (6m 43s).

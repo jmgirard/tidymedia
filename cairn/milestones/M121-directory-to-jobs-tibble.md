@@ -1,6 +1,6 @@
 # M121: A directory becomes a jobs tibble
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -81,3 +81,4 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 - 2026-09-10: T5 — `vignettes/workflow.Rmd:40` and `vignettes/metadata.Rmd:121` now call `ffm_jobs()`; `grep -rn "list.files" vignettes/` returns nothing. The workflow vignette's downstream jobs-table block dropped its hand-built `tibble::tibble()` and adds `output` to the returned table instead.
 - 2026-09-10: T6 — `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 13348; `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes (6m 3s, R CMD check on tidymedia 0.1.0.9000, vignettes re-built clean); `pkgdown::check_pkgdown()` "No problems found". AC5 met.
 - 2026-09-10: claim audit: 55 claims read, 2 corrected — vignettes/workflow.Rmd, R/ffm_jobs.R. Fresh-context [O] reader, authored none of the diff's added lines; it ran `ffm_jobs()` over a fixture directory for all three types, both recursion settings, the dotted/undotted/upper-case `extension` forms and all eleven refusal paths, read `R/ffm_batch.R`'s column hand-off, and read D079/D087/D001/GP1 against the lines citing them. The two corrections: the workflow vignette's new paragraph said "Everything below" adds an `output` column and calls a `*_batch()` verb, true of one of the eleven chunks below it (narrowed to "The next section"); and `tm_ffm_jobs()`'s comment gave a false reason for siting the `type` presence check in the wrapper — the reader reproduced the alternative and got an identical refusal, so the causal clause was dropped for a statement of the site. Both corrections re-read once and returned TRUE-AS-WRITTEN. Deviation: the re-read was by a second fresh [O] reader rather than the first one, because this harness exposes no way to continue a finished subagent; a fresh reader is at least as independent, and the one-pass stopping rule was honored.
+- 2026-09-10: `devtools::check()` re-run on the final tree (9487adb, the two claim-audit corrections included): Status OK, 0 errors / 0 warnings / 0 notes, 6m 23s. Status -> review.

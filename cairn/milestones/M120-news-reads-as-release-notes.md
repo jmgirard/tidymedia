@@ -80,7 +80,7 @@ already has no repeated heading.
 - [x] T7: `NEWS.md:30-35` — remove both "already" claims and the
       rename-the-columns instruction; neither `audio_codec`/`video_codec` nor
       `segment_video_batch`'s `start`/`end` columns existed at `4b04fad9`.
-- [ ] T8: `NEWS.md:370-373` — add `_anonymized` (`R/ffmpeg.R:2194,2434`) to the
+- [x] T8: `NEWS.md:370-373` — add `_anonymized` (`R/ffmpeg.R:2194,2434`) to the
       auto-naming list and give the restarting `<basename>_<n>` to
       `segment_video_batch()` as well as the frame-writing verbs
       (`R/ffmpeg.R:3911,4134`).
@@ -331,6 +331,20 @@ already has no repeated heading.
   `formals()` at head: `extract_audio()` takes `infile`, `outfile`, `audio_codec`,
   `audio_stream`, `run` and `segment_video()` twelve names, neither carrying `...`, so
   an old name raises an unused-argument error rather than being swallowed.
+- 2026-09-10: T8. The auto-naming claim is rebuilt from the derivation sites rather
+  than patched. Every `jobs$output <- derive_*_names(...)` assignment in `R/ffmpeg.R`
+  was enumerated: `_anonymized` (`:2434`), `_standardized` (`:4800`), `_stripped`
+  (`:4957`), `_normalized` (`:5246`), `_cropped` (`:6264`), `_web` (`:6417`), and the
+  restarting `<basename>_<n>` at `:4134` (`derive_segment_names()`, source extension)
+  and `:4326` (`derive_frame_names()`, image `format`). So the list was missing
+  `_anonymized` as the review found, and the restarting name belongs to
+  `segment_video_batch()` as well as `extract_frame_batch()`. A third error the review
+  did not name fell out of the same enumeration: "the frame-writing verbs" also
+  covered `sample_frames_batch()`, which assigns no `output` at all -- it resolves an
+  `outdir` (`derive_frames_dir()`, `:4364`) and an FFmpeg pattern
+  (`derive_frame_pattern()`, `:224`), so it gets its own clause. `_web.mp4`'s fixed
+  extension is from the comment at `:6128-6129`; `formals(sample_frames_batch)`
+  confirms the scalar `outdir` the new sentence mentions.
 
 ## Review
 

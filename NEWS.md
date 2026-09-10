@@ -369,10 +369,16 @@
     carries fixed `main` and `overlay` columns rather than a list-column, plus a
     required `output` column.
 
-  The `output` column is optional on the verbs that can derive a name — outputs
-  are auto-named per input (`_standardized`, `_normalized`, `_stripped`,
-  `_cropped`, `_web.mp4`, and a restarting `<basename>_<n>` for the
-  frame-writing verbs), keeping the source extension where that makes sense.
+  The `output` column is optional on the verbs that can derive a name. Six
+  auto-name one output per input by suffixing its basename — `_standardized`,
+  `_normalized`, `_anonymized`, `_stripped`, `_cropped` and `_web.mp4` — keeping
+  the source extension, except the web re-encode, which always writes `.mp4`.
+  `segment_video_batch()` and `extract_frame_batch()` write many files per input
+  instead, so each appends a zero-padded `<basename>_<n>` that restarts at every
+  input file: the source extension for a segment, the image `format` for a
+  frame. `sample_frames_batch()` names a directory rather than a file — given
+  neither an `outdir` column nor the argument, it writes each input's numbered
+  sequence into a `<basename>_frames` directory beside that input.
   Every one of them rejects two rows that resolve to the same output path, so
   one file cannot silently overwrite another. The two audio verbs, the fan-in
   verbs and `picture_in_picture_batch()` require an `output` column and derive

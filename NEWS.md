@@ -528,11 +528,15 @@
   and hevc. The encoder is named from the family and the backend, so
   `video_codec = "libx264"` resolves to `h264_nvenc` under one and
   `h264_videotoolbox` under the other. Asking a backend for a family it has no
-  encoder for — av1 under videotoolbox — is an error naming the backend and the
-  family. `hardware = "none"` is the default, so a call that does not ask for
-  hardware is unchanged; by default an unavailable backend is an error, so
-  output stays reproducible, and `fallback = TRUE` re-encodes in software with a
-  message instead, saying which backend it fell back from.
+  encoder for — nvenc has no `prores`, videotoolbox has neither `prores` nor
+  `av1` — is an error naming the backend and the family, and is refused whatever
+  `fallback` is set to: no build of FFmpeg grows a videotoolbox AV1 encoder, so
+  there is nothing for a fallback to be a way around. `hardware = "none"` is the
+  default, so a call that does not ask for hardware is unchanged. The separate
+  case `fallback` does cover is an encoder this backend has but *your* FFmpeg
+  build does not list: by default that is an error too, so output stays
+  reproducible, and `fallback = TRUE` re-encodes in software with a message
+  instead, saying which backend it fell back from.
 
   `has_hardware_encoder()` reports whether a backend's encoder for a codec
   family is available in your FFmpeg build, and `hardware_encoder()` names it;

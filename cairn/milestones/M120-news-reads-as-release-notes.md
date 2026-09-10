@@ -86,7 +86,7 @@ already has no repeated heading.
       (`R/ffmpeg.R:3911,4134`).
 - [x] T9: `NEWS.md:1217` — two vignettes are new, not three; the reordered one
       is the third, not the fourth.
-- [ ] T10: `NEWS.md:517-523` — restore a qualifier separating the family-not-
+- [x] T10: `NEWS.md:517-523` — restore a qualifier separating the family-not-
       encodable refusal from the backend-unavailable one; the former is refused
       whatever `fallback` is set to (`R/ffmpeg.R:3273-3276`, comment `:3325-3340`).
 - [ ] T11: `NEWS.md:96-99` — the second-track fixture is the standardize /
@@ -350,6 +350,17 @@ already has no repeated heading.
   `verification.Rmd` and `workflow.Rmd`, which are exactly the two the bullet's own
   body then describes, the reordered one being "Get started" (`tidymedia.Rmd`). Count
   and ordinal both corrected in the opening sentence; the body needed no change.
+- 2026-09-10: T10. The hardware paragraph now keeps the two refusals apart and says
+  which one `fallback` is for. The distinction is stated outright in
+  `tm_hardware_encoder()` (`R/ffmpeg.R:3143-3151`): the (family, backend)-not-in-table
+  refusal "fires under `fallback = TRUE` too -- a pair no backend can encode is a
+  wrong argument, not a machine that lacks something", and the front-door comment at
+  `:3325-3342` gives the same reading plus what the `fallback` early return DOES
+  guard, an encoder the table holds and this build does not list. The families named
+  are read off `hardware_backend_families()` (`:3028-3033`) against
+  `hardware_codec_families()` (`:3049-3051`) rather than copied from
+  `origin/master`'s prose: nvenc covers h264/hevc/av1 and so has no `prores`,
+  videotoolbox covers h264/hevc and so has neither `prores` nor `av1`.
 
 ## Review
 

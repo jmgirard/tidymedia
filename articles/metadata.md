@@ -158,11 +158,14 @@ get_height(video)
 ## Batching over many files
 
 Because every reader accepts a vector of files and keys its output by
-`file`, describing a whole directory is a one-liner:
+`file`, describing a whole directory is a one-liner.
+[`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
+lists the folder’s video files across the containers it knows, not one
+in particular; pass `extension = "mp4"` to narrow it:
 
 ``` r
 
-files <- list.files("my/videos", pattern = "\\.mp4$", full.names = TRUE)
+files <- ffm_jobs("my/videos", type = "video")$input
 probe_all(files)$container
 ```
 

@@ -52,6 +52,7 @@ Other builder functions:
 [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md),
 [`ffm_fps()`](https://jmgirard.github.io/tidymedia/reference/ffm_fps.md),
 [`ffm_hstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md),
+[`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md),
 [`ffm_loudnorm()`](https://jmgirard.github.io/tidymedia/reference/ffm_loudnorm.md),
 [`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md),
 [`ffm_output_options()`](https://jmgirard.github.io/tidymedia/reference/ffm_output_options.md),
@@ -72,5 +73,5 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ffm_files(c(video, video), "output.mp4") |>
   ffm_concat() |>
   ffm_compile()
-#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpmOys1g/ffm-concat1e4b43d8a7a4.txt\" -codec:v copy -codec:a copy -map \"0\" \"output.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpxRRApb/ffm-concat1ef21b403c69.txt\" -codec:v copy -codec:a copy -map \"0\" \"output.mp4\""
 ```

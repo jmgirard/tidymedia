@@ -86,6 +86,8 @@ it.
   : Run the FFmpeg Pipeline
 - [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
   : Run an FFmpeg Pipeline Over Many Files
+- [`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
+  : Build a Jobs Table From a Directory
 - [`print(`*`<tidymedia_ffm>`*`)`](https://jmgirard.github.io/tidymedia/reference/print.tidymedia_ffm.md)
   : Print an FFmpeg pipeline
 

@@ -576,6 +576,15 @@ already has no repeated heading.
   additionally run after each task. `devtools::check()` separately at 0/0/0 above.
   Status -> review.
 - 2026-09-10: step-7 approval: PR #124 approved for merge.
+- 2026-09-10: merge marker written and PR #124 marked ready; the CI watch hit the
+  harness ceiling with five of eight legs green (macos-latest release,
+  pkgdown, ubuntu devel, ubuntu 4.1.0, windows-latest release) and three still
+  pending (ubuntu oldrel-1, ubuntu release, test-coverage). Watcher stopped
+  rather than backgrounded, `cairn/.merge-approved` removed so no approval sits
+  armed across the break, and the session stops here. Nothing merged. Re-enter
+  with `/milestone-review M120`; the resume route reads PR state OPEN with every
+  criterion ticked against recorded evidence and a step-7 approval line, so it
+  re-poses the merge chip and continues from the marker write.
 
 ## Review
 

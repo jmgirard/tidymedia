@@ -28,11 +28,11 @@
     `convert_fractions()`, are internal again.
 
 * Two families of argument have been renamed, along with the jobs-table columns
-  of the same names. The codec arguments `acodec` and `vcodec` are now
-  `audio_codec` and `video_codec`, so every codec argument in the package is
-  spelled the same way; `segment_video()`'s time bounds `ts_start` and `ts_stop`
-  are now `start` and `end`, matching the batch columns that already used those
-  names. Rename the arguments and the columns.
+  of the same names. `extract_audio()`'s codec argument `acodec` is now
+  `audio_codec`, matching the `audio_codec` and `video_codec` arguments the
+  re-encode verbs already take; `segment_video()`'s time bounds `ts_start` and
+  `ts_stop` are now `start` and `end`, matching the batch columns that already
+  used those names. Rename the arguments and the columns.
 
 * `set_program()` and its wrappers `set_ffmpeg()`, `set_ffprobe()`,
   `set_ffplay()` and `set_mediainfo()` now ask before they write. Each takes a

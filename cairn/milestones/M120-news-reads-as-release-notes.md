@@ -1,6 +1,6 @@
 # M120: NEWS.md reads as release notes
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -27,20 +27,27 @@ already has no repeated heading.
 
 ## Acceptance criteria
 
-- [x] AC1: `NEWS.md` opens with a single development-version `#` heading, and the
+- [ ] AC1: `NEWS.md` opens with a single development-version `#` heading, and the
       development section names no release version number.
-- [x] AC2: A sweep over every `#` section of `NEWS.md` finds no `##` heading repeated
+- [ ] AC2: A sweep over every `#` section of `NEWS.md` finds no `##` heading repeated
       within any one section. Today the development section carries `## New features`
       at lines 3, 267 and 1402, `## Breaking changes` at 48, 523 and 1943, `## Bug
       fixes` at 868, 1845 and 1961, and `## Documentation` at 20 and 1666.
-- [x] AC3: The development section names every export in the symmetric difference
+- [ ] AC3: The development section names every export in the symmetric difference
       between `NAMESPACE` at head and `NAMESPACE` at commit `4b04fad9`, the commit
       that introduced the `# tidymedia 0.1.0` heading — 40 added and 14 removed as
       measured 2026-09-07.
-- [ ] AC4: It names every rename recorded in `cairn/DECISIONS.md` D014, D077 and D078
-      since that commit which is not itself a `NAMESPACE` entry — the argument and
-      option renames.
-- [x] AC5: The `verify` slot of `cairn/PROFILE.md` is clean.
+- [ ] AC4: Parse every top-level `name <- function(...)` definition in `R/` at commit
+      `4b04fad9` and at the branch head, take the names `export()`ed in both
+      `NAMESPACE`s, and enumerate the formal argument names present at `4b04fad9` and
+      absent at head. For each, the content above the `# tidymedia 0.1.0` heading names
+      that argument together with the argument that replaced it, or states it was
+      removed with nothing in its place. Measured 2026-09-09 at branch head `1df6e23`:
+      49 names are exported in both `NAMESPACE`s, 48 of them parse as such a definition
+      at both (`.data` is a reexported rlang pronoun, not a function), and the
+      enumeration returns `extract_audio()`'s `acodec` and `segment_video()`'s
+      `ts_start` and `ts_stop`.
+- [ ] AC5: The `verify` slot of `cairn/PROFILE.md` is clean.
 
 ## Coverage
 
@@ -169,6 +176,61 @@ already has no repeated heading.
   rather than announced; the option is that class (`git grep nvenc_encoders 4b04fad9 -- R/` is
   empty). Status -> in-progress for this amendment alone. First amendment return on AC4; zero
   defect returns on this milestone.
+- 2026-09-09: amendment gate 1. The user chose narrowing over adding the option rename to
+  the notes, fixing AC4 as: "...which is not itself a `NAMESPACE` entry and whose old name
+  was present at commit `4b04fad9` -- the argument and option renames a 0.1.0 caller could
+  have written."
+- 2026-09-09: re-audit: AC4 (full) -- eight findings, the first three bearing on whether the
+  criterion can be checked the same way twice: the domain is fixed by three hand-picked
+  decision entries rather than by a procedure (D062 and D064 record public renames the list
+  never looked at); the em-dash gloss promises an option rename the new clause admits zero
+  of; "present at `4b04fad9`" does not say present where, and the readings disagree about
+  `audio` -> `audio_input`. Also: the criterion never requires the old name to appear, cites
+  no probe, D078 is a null member of the citation list, and `NEWS.md:31` announces `vcodec`,
+  which `git grep vcodec 4b04fad9` shows never existed at 0.1.0.
+- 2026-09-09: amendment gate 2. Two choices, both taken at the recommendation. (1) AC4's
+  domain rebased onto a formals diff over the functions exported at both commits, built and
+  run here: 49 exported at both, 48 parsed at both (`.data` is a reexported pronoun), and the
+  removed-argument set is `extract_audio()`'s `acodec` and `segment_video()`'s `ts_start` and
+  `ts_stop` -- the same three names, settled by command rather than by recall. (2) The
+  `vcodec` mention corrected in `NEWS.md` rather than deferred. Rejected without asking: the
+  reader's request that AC4 cite a discriminating control, which would bind a property of the
+  verifying instrument rather than of the release notes -- review runs the control, as it did
+  for AC3.
+- 2026-09-09: re-audit: AC4 (full) -- eleven findings; the second on this criterion, so no
+  further reader is spawned and the disposition went to the user. Fixed here, each with one
+  clear answer: the prose claimed a completeness the diff lacks (narrowed to what the diff
+  computes); "together with the argument that replaced it" was unsatisfiable for an argument
+  removed with no successor (alternative added); the check was unbounded over the file, and
+  `acodec` occurs at `NEWS.md:1452` inside the RELEASED 0.1.0 section, so a whole-file grep
+  would have passed on released text alone (bounded to the content above the `# tidymedia
+  0.1.0` heading); the parse rule lived only in a scratch script (stated inline); the figures
+  were pinned to a moving `head` (pinned to `1df6e23`). Put to the user: the breaking-change
+  tightening, declined as a widening after a return; the two record gaps, both accepted.
+- 2026-09-09: no second `amendment return: AC4` line is written here -- `/milestone-review`
+  already logged this return in that shape, and a second naming the same criterion would read
+  as the second-occurrence stop. This milestone carries one amendment return and zero defect
+  returns.
+- 2026-09-09: `NEWS.md:30-35` corrected. It announced `acodec` and `vcodec` as renamed to
+  `audio_codec`/`video_codec`; `git grep vcodec 4b04fad9` is empty across that whole tree, so
+  no 0.1.0 caller could have written `vcodec` -- the class D091 now says to drop. The same
+  sentence claimed "every codec argument in the package is spelled the same way", which a
+  formals sweep over the current exports falsifies: `hardware_encoder(codec, hardware)` and
+  `has_hardware_encoder(codec, hardware)` both take a bare `codec`. Both replaced by claims
+  derived from the two trees.
+- 2026-09-09: D091 written -- the changelog announces only what a caller of the last release
+  could have written. It is the rule this milestone turned on, which until now existed only in
+  the question-gate line above; the second reader flagged that a later reader could not tell
+  it from an arbitrary cutoff.
+- 2026-09-09: the four surfaces no criterion covers -- jobs-table columns, session options,
+  condition-class names, argument reordering -- absorbed as (n) into the shipped-docs
+  candidate row rather than added as a new row (search-first; `ROADMAP.md` is at 59 of its 60
+  lines). All four checked by hand at review and none is wrong today. `ROADMAP.md` is now
+  36,719 bytes against its 24,000 budget, worse by 845; `/cairn-triage` remains the remedy and
+  is now overdue by five passes.
+- 2026-09-09: all five acceptance boxes unticked. AC4's wording changed and `NEWS.md` changed
+  under AC1-AC3, so the review evidence recorded for them is stale; re-review measures all
+  five fresh.
 
 ## Review
 
@@ -246,3 +308,6 @@ or top-level file, so nothing those checks cover was modified.
 
 **Steps 5-9 not run.** The three review lenses, the approval gate and the merge
 were not reached. PR #124 stays a draft.
+- 2026-09-09: `verify` slot re-run after the `NEWS.md` correction: `devtools::test()` at
+  FAIL 0 | WARN 12 | SKIP 5 | PASS 13,266, same five hardware-encoder skips. No roxygen
+  changed, so `document()` was not run. Status -> review.

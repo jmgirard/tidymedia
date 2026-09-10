@@ -1,6 +1,6 @@
 # M121: A directory becomes a jobs tibble
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -27,7 +27,7 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 
 ## Acceptance criteria
 
-- [x] AC1: A newly exported function returns a tibble carrying an `input` column of
+- [ ] AC1: A newly exported function returns a tibble carrying an `input` column of
       full paths to the media files in a named directory, selected by a type or
       extension argument, and a demonstrated `ffm_batch()` call consumes that
       tibble's `input` column together with an `output` column derived from it,
@@ -126,6 +126,7 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 - 2026-09-10: third review pass — all five criteria pass against fresh evidence (AC1 verified against both returned defects' own cases plus a live symlink and a relative `directory`; 19 refusal branches all blaming `ffm_jobs`; `check()` 0/0/0, `test()` PASS 13406, `document()` no diff). Consistency gate clean, `cairn_validate` exit 0 with one `sizing` advisory at 16 tasks. Three-lens fan-out: blame-history and prior-review each zero findings, [O] 11 findings, none floor-qualifying. Awaiting triage and the merge gate.
 - 2026-09-10: triage at the merge gate — [O]1-[O]4 filed as follow-ups by extending the existing `ffm_jobs()` candidate row (search-first: no new row; (a) extended, (d)/(e) added); [O]5-[O]11 rejected with reasons recorded in the Review section. PR conversation read: no reviews, no unresolved threads, one Codecov bot comment noted. **step-7 approval: PR #125 approved for merge.**
 - 2026-09-10: merge marker written (`cairn/.merge-approved`, PR #125); PR marked ready. CI wait hit the harness ceiling — the foreground `gh pr checks 125 --watch --fail-fast` was moved to the background and stopped with `TaskStop`. Fresh `gh pr checks 125` at the stop: `pkgdown` pass (2m46s); `test-coverage` and the seven `R CMD check` legs (macOS release, Windows release, ubuntu devel/release/oldrel-1/4.1.0) all pending. Not merged. Re-run `/milestone-review M121` to re-derive the state and wait again.
+- 2026-09-10: **defect return #3 from /milestone-review — red CI.** Merge was approved and the marker written; `gh pr checks 125` came back red before any merge attempt, and the marker was deleted unused. `windows-latest (release)` fails `R CMD check` with `Status: 1 ERROR`, `checking tests`, `FAIL 4 | WARN 0 | SKIP 314 | PASS 11755`; the other nine legs pass. AC1 fails on Windows by defect return #2's own mechanism: `file.symlink()` succeeds on the runner so T13's `skip_if_not()` guard never fires, and `file.exists()` is TRUE for a dangling symbolic link there, so `files[file.exists(files) & !dir.exists(files)]` (`R/ffm_jobs.R:110`) keeps `broken.mp4` as a row and the all-dangling-link directory returns a tibble where the zero-match refusal was asserted (`test-ffm-jobs.R:216,217,234,235`). `test-ffm-jobs.R:218` passing is the direct evidence for the `file.exists()` premise. **Defect-return count: 3**; thrash trigger (a) fires at its threshold and trigger (b) fires again, the recorded alternative already spent at return #2's gate. Status -> in-progress; PR #125 stays open.
 
 ## Review
 
@@ -717,3 +718,49 @@ returned one comment.
   blocking rule does not apply.
 
 No `CHANGES_REQUESTED` review, so merge stayed the recommended option.
+
+#### Defect return #3 — red CI on `windows-latest (release)`
+
+The merge was approved and the marker written, but `gh pr checks 125` came back
+red: nine legs pass (`macos-latest release`, `ubuntu-latest` release/devel/
+oldrel-1/4.1.0, `pkgdown`, `test-coverage`, both codecov contexts) and
+`windows-latest (release)` fails after 16m4s with `Status: 1 ERROR`,
+`checking tests`, `FAIL 4 | WARN 0 | SKIP 314 | PASS 11755`. The marker was
+deleted unused; no merge was attempted.
+
+**AC1 fails on Windows, by the mechanism defect return #2 was meant to close.**
+T13's guard `skip_if_not(isTRUE(linked))` does not fire on the runner —
+`file.symlink()` succeeds there — and `file.exists()` returns TRUE for a
+dangling symbolic link on Windows, so `files[file.exists(files) &
+!dir.exists(files)]` (`R/ffm_jobs.R:110`) keeps it. The four failures:
+
+- `test-ffm-jobs.R:216` — `"broken.mp4" %in% basename(jobs$input)` is TRUE where
+  FALSE was asserted.
+- `test-ffm-jobs.R:217` — `basename(jobs$input)` is
+  `"a.mp4", "b.MOV", "broken.mp4"` against an expected `"a.mp4", "b.MOV"`.
+- `test-ffm-jobs.R:234` — the all-dangling-link directory returns a `tbl_df`
+  where an `error` was asserted, so the zero-match refusal never fires.
+- `test-ffm-jobs.R:235` — the consequent error, `conditionCall()` applied to
+  that tibble.
+
+`test-ffm-jobs.R:218` (`all(file.exists(jobs$input))`) **passed**, which is the
+direct evidence that `file.exists()` is TRUE on the dead link there — the
+predicate is not wrong about its own premise, the premise is not portable.
+
+AC1 names no platform, so it quantifies over the platforms the package's own CI
+matrix checks, Windows among them. The failure is inside that domain: a returned
+`input` row that is not a readable media file. Floor-qualifying. Status returns
+to `in-progress`; AC1's box is unticked, AC2-AC5 keep the ticks this pass's
+evidence earned. PR #125 stays open.
+
+**Defect-return count for M121: 3.** **Thrash trigger (a) fires** — the third
+return, a threshold that now holds: no further retry under the current plan is
+queued, and descope-or-park is the disposition. **Trigger (b) fires again** —
+AC1 has now failed three times, each a path that is not a readable media file
+returned as an `input` row (an extension-named subdirectory, a dangling symlink
+on POSIX, the same dangling symlink on Windows). The alternative the plan gate
+recorded against — refusing the feature under GP1 — was already reconsidered and
+declined at return #2's gate, so what remains of (b) is the `/milestone-brief`
+escalation offer, carried into the composed disposition. No re-plan or split has
+been spent on this milestone, so a same-objective re-cut stays a present option,
+never the recommended one.

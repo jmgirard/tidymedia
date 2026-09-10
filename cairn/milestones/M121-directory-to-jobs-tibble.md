@@ -28,10 +28,15 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 ## Acceptance criteria
 
 - [ ] AC1: A newly exported function returns a tibble carrying an `input` column of
-      full paths to the media files in a named directory, selected by a type or
-      extension argument, and a demonstrated `ffm_batch()` call consumes that
+      full paths to the non-hidden files in a named directory whose extension is one
+      the `type` and `extension` arguments select from the closed vocabulary
+      `media_extensions()` holds, and a demonstrated `ffm_batch()` call consumes that
       tibble's `input` column together with an `output` column derived from it,
-      without reshaping the returned object.
+      without reshaping the returned object. Every returned row is a path that exists
+      and is not a directory — on macOS, Linux and Windows alike, with one disclosed
+      exception: Windows reports a symbolic link whose target is absent as existing,
+      so such a link may be a row there. That case exits to the `ffm_jobs()`
+      candidate row as item (f).
 - [x] AC2: These three refusals — a directory that does not exist, a type outside the
       accepted set, and a call matching no file — are each raised with the frame of
       the verb the caller typed, per D074 and D087.
@@ -46,11 +51,11 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 
 ## Coverage
 
-- AC1 → T1, T2, T7, T9, T13, T15
+- AC1 → T1, T2, T7, T9, T13, T15, T17
 - AC2 → T3, T8, T9, T15
 - AC3 → T4, T14
 - AC4 → T5, T10
-- AC5 → T6, T12, T16
+- AC5 → T6, T12, T16, T18
 
 ## Tasks
 
@@ -94,6 +99,13 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
       now states.
 - [x] T16: Re-run `devtools::check()`, `pkgdown::check_pkgdown()`, the `verify`
       slot, and the claim audit over the branch's added lines.
+- [x] T17: Land the descope. Guard the two dangling-symbolic-link test blocks
+      with `skip_on_os("windows")` naming the candidate row that now holds the
+      case, qualify `@return` and the `NEWS.md` entry so neither promises on
+      Windows what the amended AC1 no longer promises, and extend the
+      `ffm_jobs()` candidate row with item (f).
+- [ ] T18: Re-run `devtools::check()`, `pkgdown::check_pkgdown()`, the `verify`
+      slot, and the claim audit over the branch's added lines.
 
 ## Work log
 
@@ -128,6 +140,12 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 - 2026-09-10: merge marker written (`cairn/.merge-approved`, PR #125); PR marked ready. CI wait hit the harness ceiling — the foreground `gh pr checks 125 --watch --fail-fast` was moved to the background and stopped with `TaskStop`. Fresh `gh pr checks 125` at the stop: `pkgdown` pass (2m46s); `test-coverage` and the seven `R CMD check` legs (macOS release, Windows release, ubuntu devel/release/oldrel-1/4.1.0) all pending. Not merged. Re-run `/milestone-review M121` to re-derive the state and wait again.
 - 2026-09-10: **defect return #3 from /milestone-review — red CI.** Merge was approved and the marker written; `gh pr checks 125` came back red before any merge attempt, and the marker was deleted unused. `windows-latest (release)` fails `R CMD check` with `Status: 1 ERROR`, `checking tests`, `FAIL 4 | WARN 0 | SKIP 314 | PASS 11755`; the other nine legs pass. AC1 fails on Windows by defect return #2's own mechanism: `file.symlink()` succeeds on the runner so T13's `skip_if_not()` guard never fires, and `file.exists()` is TRUE for a dangling symbolic link there, so `files[file.exists(files) & !dir.exists(files)]` (`R/ffm_jobs.R:110`) keeps `broken.mp4` as a row and the all-dangling-link directory returns a tibble where the zero-match refusal was asserted (`test-ffm-jobs.R:216,217,234,235`). `test-ffm-jobs.R:218` passing is the direct evidence for the `file.exists()` premise. **Defect-return count: 3**; thrash trigger (a) fires at its threshold and trigger (b) fires again, the recorded alternative already spent at return #2's gate. Status -> in-progress; PR #125 stays open.
 - 2026-09-10: **thrash trigger (a) gate** — presented with descope-or-park, the `/milestone-brief` escalation that is what remains of trigger (b), and a never-recommended same-objective re-cut. The user chose **descope**: a gated AC1 amendment (`/milestone-implement` step 6) bounding the criterion's platform domain to the CI legs that pass, with the Windows dangling-symlink case exiting to M122 (planned, `macOS and Windows run the package's FFmpeg code`) or to a candidate row, then a re-review of the narrowed set. The ground: the repair `file.exists()` needs on Windows is a platform-semantics question M122 already owns, and three returns on one criterion are what the threshold exists to stop. Falsified by the narrowed AC1 failing on a passing leg, which would be a fourth return with the descope already spent.
+
+- 2026-09-10: **substantive plan amendment — AC1 narrowed, executing the trigger (a) descope.** Two clauses narrow and nothing widens. The contents clause goes from "the media files" to the non-hidden files whose extension the `type`/`extension` arguments select from the closed vocabulary `media_extensions()` holds — which is what decision M121-1 actually decided, and what makes the deferred candidate items (b) (hidden files) and (c) (`ts`/`ogv`) scope lines rather than standing falsifiers of AC1 on the legs that pass. The platform clause states the exists-and-not-a-directory promise on macOS, Linux and Windows alike with one disclosed carve-out — Windows reports a symbolic link whose target is absent as existing, so such a link may be a row there — and names the `ffm_jobs()` candidate row item (f) as that case's exit. Mini gate: the third wording was chosen over a minimal carve-out-only fix and over `/milestone-brief` escalation. The audits' Q1(b) — that nothing in the amended criterion forces the four Windows assertions to stop failing — is closed by T17's `skip_on_os("windows")` guard and by `/milestone-review`'s merge step reading `gh pr checks 125`, not by a sixth criterion: D-118 makes widening the criteria set on a thrice-returned milestone the non-recommended direction, and a test-harness property is an instrument property.
+- 2026-09-10: re-audit: AC1 (full) — four findings and a widening flag on the first amended wording. The binding clause was written as a `file.exists()` condition, which is the deliverable's own predicate at `R/ffm_jobs.R:117`, so no state of the world could falsify the dangling-link half; the domain "platforms" was enumerated by no procedure the criterion named; the clause stated a property of an instrument (`file.exists()`, which is also the evidence instrument return #3's diagnosis rested on) rather than of the returned tibble; the unconditional `@return` and `NEWS.md` promises about dead symbolic links would be false on Windows with no criterion requiring the limit be disclosed; and the wording was not a pure narrowing, since it asserted over every platform with POSIX `file.exists()` semantics while exempting by behavior rather than by leg. "This repo's ten CI legs" was also wrong for the axis it was counting: `.github/workflows/R-CMD-check.yaml` has six `R CMD check` legs, one of them Windows. All fixed before any text reached this file.
+- 2026-09-10: re-audit: AC1 (full) — four findings on the second wording, the once re-entry, by its own fresh reader. Load-bearing: the second sentence removed Windows from the whole "media files" clause rather than from the one `file.exists()` case, so a Windows regression returning an extension-named subdirectory would also have satisfied AC1; "the media files" still quantified over a file set no named procedure enumerates and which candidate items (b)/(c) record as already false on the passing legs; `gh pr checks 125` inside the criterion made satisfaction a property of one PR's mutable dashboard, unreadable once the branch is deleted; and the descope's exit was recorded only in the work log, so the archived criterion would not carry the open edge. All four are folded into the wording above. Two `re-audit: AC1` lines now stand, so the once re-entry is spent and further churn on this criterion goes to the user.
+
+- 2026-09-10: T17 — the two dangling-symbolic-link test blocks take `skip_on_os("windows")` above their existing `skip_if_not(isTRUE(linked))`, which never fires on the runner because `file.symlink()` succeeds there; each guard's comment names AC1's carve-out and candidate item (f). The first block's relative-directory absoluteness assertion was split out into its own unguarded test — AC1 still promises "full paths" on Windows, so guarding the whole block would have dropped the only test of that clause on the one platform it was measured failing others on. `@return` and the `NEWS.md` entry both stop promising unconditionally that a dead symbolic link is never a row: each now says so for macOS and Linux and states that Windows reports such a link as existing. `devtools::document()` rewrote `man/ffm_jobs.Rd`. The `ffm_jobs()` candidate row gains item (f) with the mechanism, the measurement, the descope, the repair shape and its own promotion condition; search-first found no other row or archive summary naming a Windows symlink. `ROADMAP.md` is now 59 lines / 40,926 bytes against its 60-line, 24,000-byte budget — the byte overrun M120's hygiene stamp records, worsened again by this item; `/cairn-triage` remains the only remedy. `testthat::test_local(filter = "ffm-jobs")` passes 143 assertions with no failures and no skips on macOS.
 
 ## Review
 

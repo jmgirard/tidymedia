@@ -201,7 +201,28 @@ test_that("a subdirectory matching the extension pattern is not a row", {
   expect_true("deep.mp4" %in% basename(deep$input))
 })
 
-test_that("a dangling symbolic link is not a row, and rows stay absolute", {
+test_that("a relative `directory` still yields absolute paths", {
+  # AC1's "full paths" clause is promised on every platform, Windows included,
+  # so it is tested outside the symbolic-link block that Windows skips.
+  dir <- local_media_dir()
+
+  withr::with_dir(dirname(dir), {
+    jobs <- ffm_jobs(basename(dir), type = "video")
+
+    expect_setequal(basename(jobs$input), c("a.mp4", "b.MOV"))
+    expect_true(all(startsWith(jobs$input, "/") | grepl("^[A-Za-z]:", jobs$input)))
+    expect_true(all(file.exists(jobs$input)))
+  })
+})
+
+test_that("a dangling symbolic link is not a row", {
+  # Windows reports a dangling link as existing, so the predicate keeps it
+  # there and these expectations are about a platform this package no longer
+  # promises them on -- AC1's disclosed carve-out, held by the `ffm_jobs()`
+  # candidate row as item (f). file.symlink() succeeds on the runner, so
+  # skip_if_not() below never fires and this guard is what keeps the leg green.
+  skip_on_os("windows")
+
   dir <- local_media_dir()
   linked <- file.symlink("../gone.mp4", file.path(dir, "broken.mp4"))
   skip_if_not(isTRUE(linked), "this filesystem does not support symbolic links")
@@ -224,6 +245,13 @@ test_that("a dangling symbolic link is not a row, and rows stay absolute", {
 })
 
 test_that("a directory holding only a dangling link reports no files", {
+  # Windows reports a dangling link as existing, so the predicate keeps it
+  # there and these expectations are about a platform this package no longer
+  # promises them on -- AC1's disclosed carve-out, held by the `ffm_jobs()`
+  # candidate row as item (f). file.symlink() succeeds on the runner, so
+  # skip_if_not() below never fires and this guard is what keeps the leg green.
+  skip_on_os("windows")
+
   dir <- withr::local_tempdir()
   linked <- file.symlink("../gone.mp4", file.path(dir, "broken.mp4"))
   skip_if_not(isTRUE(linked), "this filesystem does not support symbolic links")

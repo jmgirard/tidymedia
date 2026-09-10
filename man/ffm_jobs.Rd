@@ -27,9 +27,10 @@ A \link[tibble:tibble-package]{tibble} with one row per matching file
 and a single character column, \code{input}, holding each file's full
 path. Rows are in the order \code{\link[base]{list.files}} returns them.
 Every row is a path that exists and is not a directory: a subdirectory
-whose own name ends in a listed extension is never a row, nor is a
-symbolic link whose target is gone. The call aborts rather than returning
-zero rows when nothing matches.
+whose own name ends in a listed extension is never a row, nor — on macOS
+and Linux — is a symbolic link whose target is gone. Windows reports such
+a link as existing, so there it can still be a row. The call aborts rather
+than returning zero rows when nothing matches.
 }
 \description{
 List the media files in a directory and return them as the jobs table

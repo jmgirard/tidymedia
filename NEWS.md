@@ -263,7 +263,9 @@
   files in a directory and returns them as the tibble `ffm_batch()` takes: one
   row per file, with the file's full path in an `input` column, and every row a
   path that exists and is not a directory — neither a subdirectory whose name
-  ends in a matching extension nor a symbolic link whose target is gone.
+  ends in a matching extension nor, on macOS and Linux, a symbolic link whose
+  target is gone (Windows reports such a link as existing, so there it can
+  still be a row).
   `type` names the category to list — `"video"`, `"audio"` or `"image"` — and
   has no default. `extension` narrows within that type (`"mp4"` and `".mp4"`
   both work, matched case-insensitively), and

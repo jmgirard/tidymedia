@@ -27,7 +27,7 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 
 ## Acceptance criteria
 
-- [ ] AC1: A newly exported function returns a tibble carrying an `input` column of
+- [x] AC1: A newly exported function returns a tibble carrying an `input` column of
       full paths to the non-hidden files in a named directory whose extension is one
       the `type` and `extension` arguments select from the closed vocabulary
       `media_extensions()` holds, and a demonstrated `ffm_batch()` call consumes that
@@ -786,3 +786,114 @@ declined at return #2's gate, so what remains of (b) is the `/milestone-brief`
 escalation offer, carried into the composed disposition. No re-plan or split has
 been spent on this milestone, so a same-objective re-cut stays a present option,
 never the recommended one.
+
+### Fourth pass — 2026-09-10 (the descoped tree)
+
+Reviewed on branch `m121-directory-to-jobs-tibble` at be2acff, 19 commits ahead of
+`origin/master` and **0 behind** (`git rev-list --left-right --count
+origin/master...HEAD` → `0 19`), so the default branch had not moved and no merge
+was needed. Two commits (T17, T18) are unpushed; PR #125 stays open, so step 8
+pushes without a `gh pr create`. This is the first pass over the **amended AC1**,
+whose platform clause now discloses the Windows dangling-symbolic-link carve-out.
+
+**Fencing note.** All five boxes were unticked before this pass — AC2-AC5 carried
+the third pass's ticks, but T17/T18 changed the tree under them (test guards,
+`@return`, `NEWS.md`, `man/ffm_jobs.Rd`), so that evidence was stale. Each box
+below was re-ticked as its own fresh evidence landed.
+
+- **AC1 — pass on the passing legs; the Windows leg is step 8's CI gate.** Fresh
+  fixture: `a.mp4`, `b.MOV`, `c.wav`, `d.png`, `e.txt`, `.hidden.mp4`, `g.ogv`,
+  `target.mp4`, a subdirectory `takes.mp4/` holding `inner.mp4`, `sub/f.mkv`, a
+  live link `live.mp4 → target.mp4`, and a dangling link `broken.mp4` whose target
+  was removed after linking (`file.symlink()` returned TRUE for both, so no guard
+  silently skipped the case). `ffm_jobs(d, type = "video")` returns a `tbl_df`
+  whose only column is `input`, 4 rows (`a.mp4`, `b.MOV`, `target.mp4`,
+  `target.mp4`), **every path absolute, `all(file.exists())` TRUE,
+  `any(dir.exists())` FALSE**. Each clause of the amended contents wording checked
+  against its own control: the hidden `.hidden.mp4` is **not** a row; the
+  extension-named subdirectory `takes.mp4` is **not** a row; the dangling
+  `broken.mp4` is **not** a row; `g.ogv` — a video file whose extension the closed
+  vocabulary omits — is **not** a row; and every returned extension (`mp4`, `mov`)
+  is in `media_extensions("video")`. Selection: `extension = ".mp4"` narrows to 3
+  rows, `recursive = FALSE` ⊂ `recursive = TRUE` (`all(FALSE_set %in% TRUE_set)`
+  TRUE; `TRUE` adds `f.mkv` and `inner.mp4`), `type = "audio"` returns `c.wav` and
+  `type = "image"` `d.png`, neither returning `e.txt`. The two `target.mp4` rows
+  are the link-and-its-target duplicate that candidate item (a) already holds —
+  both are full paths to existing non-directory files, so AC1 as written is not
+  falsified by them. Hand-off: `jobs$output` derived from `input`, then
+  `ffm_batch(jobs, run = FALSE, .f = function(input, output, ...))` over the
+  **unreshaped** table returns `input, output, command`, its `input` column
+  `identical()` to the one passed in, and each row's `command` names that row's own
+  input and its own output — **4 of 4**. **Discriminating control:** an `.f` that
+  ignores its arguments and always builds row 1 matches **1 of 4** — the criterion
+  separates the two cases. Measured on macOS. The Linux and Windows halves of the
+  platform clause are established by the six `R CMD check` legs of
+  `.github/workflows/R-CMD-check.yaml`, which step 8's `gh pr checks 125 --watch`
+  gates on: the tree under review guards the two dangling-link blocks with
+  `skip_on_os("windows")`, which is what defect return #3's four failing assertions
+  required, and no merge happens on a red Windows leg.
+- **AC2 — pass.** Seventeen refusal paths fired with `rlang::catch_cnd()` and each
+  condition's `conditionCall()` read; **every one blames `ffm_jobs`.** The three
+  AC2 names: a directory that does not exist (`` `directory` does not name an
+  existing directory ``), a type outside the accepted set (`` `type` must be one of
+  "video", "audio", or "image", not "sound" ``), and a call matching no file
+  (`No video files were found in …`, with an `i` bullet listing the twelve video
+  extensions). The further branches T3/T8/T15 require, all likewise blaming
+  `ffm_jobs`: a path that exists but is not a directory, `directory` non-string,
+  `directory = ""`, `type` missing, `type` non-string, `type = NA_character_`,
+  `type` multi-valued in both orders (`c("video","audio","image")` and
+  `c("audio","video")` → `` `type` must be a single string, not a character
+  vector ``), `recursive` non-logical, `extension` non-character, `extension` as a
+  factor, `extension` zero-length, and `extension` outside its type. The extension
+  refusal's number agreement holds in both directions: one unknown →
+  `"wav" is not one of them.`, two → `"wav" and "png" are not among them.` D087
+  holds: `names(formals(ffm_jobs))` is `directory, type, extension, recursive` —
+  no published `call` formal.
+- **AC3 — pass.** `_pkgdown.yml:57` carries the `ffm_jobs` reference row;
+  `man/ffm_jobs.Rd` (91 lines after T17's `@return` rewrite) has `\value{}` at :25
+  and `\examples{}` at :51; `NAMESPACE:30` is `export(ffm_jobs)`. All four files'
+  first branch commit is the same one — `git log origin/master..HEAD --reverse --
+  <file>` gives fc007d3 for `R/ffm_jobs.R`, `NAMESPACE`, `man/ffm_jobs.Rd` and
+  `_pkgdown.yml` alike. The example is runnable: `devtools::run_examples()`
+  executed it verbatim, returning the one-row `inst/extdata/sample.mp4` table and
+  compiling a command through `ffm_batch(run = FALSE)`; `R CMD check`'s
+  `checking examples ... OK` is the second reading.
+- **AC4 — pass.** The criterion's line numbers are dated addresses ("as measured
+  2026-09-07"), and at `origin/master` they are exactly the two `list.files()`
+  sites: `git grep -n 'list\.files' origin/master -- vignettes/` returns
+  `metadata.Rmd:121` and `workflow.Rmd:40`, and nothing else. Both are now
+  `ffm_jobs()` calls: `workflow.Rmd:40` is
+  `jobs <- ffm_jobs("study/raw", type = "video")` and the metadata call is
+  `files <- ffm_jobs("my/videos", type = "video")$input`, which T10's two added
+  prose lines moved from :121 to :123. `grep -rn "list\.files" vignettes/` returns
+  nothing (exit 1), so no third hand-rolled listing remains.
+- **AC5 — pass.** `devtools::check(document = FALSE)` on the branch head:
+  `Status: OK`, `0 errors ✔ | 0 warnings ✔ | 0 notes ✔`, 5m 38.5s, R CMD check on
+  tidymedia 0.1.0.9000, with `checking examples ... OK`, `checking tests ... OK`
+  (252s) and `checking re-building of vignette outputs ... OK`. `verify` slot
+  clean: `devtools::test()` `FAIL 0 | WARN 12 | SKIP 5 | PASS 13409`;
+  `devtools::document()` re-run leaves `git status --porcelain` empty, so no diff.
+
+#### Consistency gate — pass
+
+- `cairn_validate.py` exit 0. All 16 PASS checks pass — including
+  `coverage complete`, `binding criteria` (on the amended AC1), `scaffold present`
+  and `profile valid` — with one advisory warning, `sizing (split tripwires)`:
+  M121 carries 18 tasks against the 10-task tripwire. Advisory, not a gate
+  failure. The `release window` advisory did **not** fire.
+- `cairn_impact.py` skipped: no `DESIGN.md` principle changed
+  (`git diff --name-only origin/master..HEAD` lists no `cairn/DESIGN.md`).
+- Toolchain checks from `cairn/PROFILE.md`'s `consistency-gate` slot:
+  `devtools::document()` no diff (`git status --porcelain` empty) ✔ · generated
+  files not hand-edited — the 22 other `man/*.Rd` touches are roxygen `@family`
+  index regeneration, and `man/ffm_jobs.Rd` regenerated from T17's `@return`
+  rewrite ✔ · `README.Rmd`/`README.md` untouched by this branch and both last
+  written by 0df9835, so in sync ✔ · `pkgdown::check_pkgdown()` "No problems
+  found" ✔ · `NEWS.md` carries the user-visible entry at :260-278 and
+  `grep -nE '\bM[0-9]{2,3}\b' NEWS.md` finds no milestone numbers ✔ · no new
+  top-level files, so no `.Rbuildignore` entry needed ✔ ·
+  `devtools::check()` 0 errors / 0 warnings / 0 notes ✔.
+
+_Checkpoint, mid-pass: AC1-AC5 evidence and the consistency gate are recorded; the
+three-lens fan-out is still running and its findings, triage and the merge gate
+follow._

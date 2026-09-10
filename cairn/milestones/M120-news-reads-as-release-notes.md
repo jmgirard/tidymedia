@@ -511,6 +511,30 @@ already has no repeated heading.
   copy/`audio_stream` divergence, both D039, both promoting on a report of the
   divergence confusing a caller. `ROADMAP.md` holds at 59 lines, under the 60 cap;
   nothing was dropped and both merged rows keep their content and citations.
+- 2026-09-10: deviation on the claim audit's re-read. D-136 allows one re-read of a
+  corrected claim "by the same reader". `SendMessage` is disabled in this session, in
+  subagents as well, so the reader that ran the pass cannot be reached. The re-read of
+  the 25 replacement lines went instead to a SECOND fresh-context [O] reader, which
+  authored none of them -- meeting the freshness requirement but not the same-reader
+  wording. Recorded as a deviation for review to disposition rather than treated as
+  equivalent.
+- 2026-09-10: acceptance re-measured after T13's and T20's deletions, since both
+  removed whole bullets. AC1: one `# tidymedia (development version)` heading, and a
+  sweep of lines 1-1377 for a tidymedia release version finds none (the `# tidymedia
+  0.1.0` heading is at 1378, outside the section). AC2: a walk over every `#` section
+  accumulating its `##` headings finds no repeat in any of them. AC3: the symmetric
+  difference of the two `NAMESPACE`s is 40 added and 14 removed, unchanged from
+  2026-09-07, and every one of the 54 is named in the section on a word boundary --
+  the deletions cost nothing, `hardware_encoder()` and `set_program()` surviving six
+  and seven times over. AC4: 49 names exported in both, 48 parsing as top-level
+  definitions at both, and the enumeration returns `extract_audio()`'s `acodec` and
+  `segment_video()`'s `ts_start`/`ts_stop` -- the same three as 2026-09-09, each named
+  with its replacement in the bullet T7 rewrote. AC5 below.
+- 2026-09-10: `devtools::check()` at 0 errors, 0 warnings, **0 notes** (5m 45s),
+  closing T16's requirement -- the spelling test's saved output compares OK, so
+  `centre` and `Relatedly` were the NOTE's only two words and no third took their
+  place. `document()` not run: no roxygen changed on this branch, whose whole diff
+  outside `cairn/` is `NEWS.md`.
 
 ## Review
 

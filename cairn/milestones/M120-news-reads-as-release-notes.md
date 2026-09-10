@@ -1,6 +1,6 @@
 # M120: NEWS.md reads as release notes
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -40,7 +40,7 @@ already has no repeated heading.
 - [x] AC4: It names every rename recorded in `cairn/DECISIONS.md` D014, D077 and D078
       since that commit which is not itself a `NAMESPACE` entry — the argument and
       option renames.
-- [ ] AC5: The `verify` slot of `cairn/PROFILE.md` is clean.
+- [x] AC5: The `verify` slot of `cairn/PROFILE.md` is clean.
 
 ## Coverage
 
@@ -61,7 +61,7 @@ already has no repeated heading.
 - [x] T2: Collapse the development section: one occurrence of each `##` heading,
       entries merged under it in reader order rather than milestone order.
 - [x] T3: Check the collapsed section against T1's two lists and fill what is missing.
-- [ ] T4: Confirm the four released sections below are untouched; run the profile's
+- [x] T4: Confirm the four released sections below are untouched; run the profile's
       `verify` slot.
 
 ## Work log
@@ -135,3 +135,23 @@ already has no repeated heading.
   ordering sentence back in the Bug-fixes ordering paragraph where the merge should
   have put it. This is the guard the criteria could not supply: AC1-AC4 measure
   headings, exports and renames, and neither would have caught either loss.
+- 2026-09-09: T4. The four released sections below the development heading are
+  byte-for-byte identical to `HEAD:NEWS.md` from `# tidymedia 0.1.0` down (diff of
+  the two tails is empty), so nothing below the line moved. `verify` slot clean:
+  `devtools::test()` at FAIL 0 | WARN 12 | SKIP 5 | PASS 13,266. The five skips are
+  all hardware-encoder probes (`test-nvenc.R:435,446,458`,
+  `test-video-codec.R:480,489`); none reads `NEWS.md`. No roxygen changed, so
+  `document()` was not run.
+- 2026-09-09: acceptance measured. AC1: one `# tidymedia (development version)`
+  heading and no tidymedia release version number in the section -- the lone `0.2.0`
+  it carried ("a version of tidymedia before 0.2.0") is reworded to "an earlier
+  version", which is also what Scope Out reserves for the release walk; the version
+  numbers that remain are dependency and FFmpeg versions (1.1.0, 1.2.0, 2.5.0,
+  3.0.3, 4.1.0, 4.5.0, 6.1.1, 9.0.1). AC2: a sweep over every `#` section finds no
+  `##` heading repeated within any one of them, the four released sections included.
+  AC3: all 40 added and all 14 removed exports named, matched on word boundaries.
+  AC4: `audio_codec`/`video_codec` (from `acodec`/`vcodec`), `start`/`end` (from
+  `ts_start`/`ts_stop`), `audio_input` (from `audio`) and
+  `tidymedia.hardware_encoders` (from `tidymedia.nvenc_encoders`, now at zero
+  occurrences) each named as renames; `hardware =` named. AC5 as above.
+- 2026-09-09: status -> review.

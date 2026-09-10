@@ -77,7 +77,7 @@ already has no repeated heading.
 - [x] T6: `NEWS.md:375-376` — the `output`-required sentence leaves
       `separate_audio_video_batch()` described as auto-deriving; it requires
       `audiofile` and `videofile` and derives neither (`R/ffmpeg.R:6610-6620`).
-- [ ] T7: `NEWS.md:30-35` — remove both "already" claims and the
+- [x] T7: `NEWS.md:30-35` — remove both "already" claims and the
       rename-the-columns instruction; neither `audio_codec`/`video_codec` nor
       `segment_video_batch`'s `start`/`end` columns existed at `4b04fad9`.
 - [ ] T8: `NEWS.md:370-373` — add `_anonymized` (`R/ffmpeg.R:2194,2434`) to the
@@ -320,6 +320,17 @@ already has no repeated heading.
   no output either. `extract_audio_batch()` and `convert_audio_batch()` re-checked
   against their own `@param jobs`, both **required**, and the reason each gives -- the
   destination extension picks the format -- is what the sentence now states.
+- 2026-09-10: T7. Both "already" claims and the columns instruction are gone. What the
+  0.1.0 tree actually holds, measured at `4b04fad9`: `git grep audio_codec -- R/` is
+  empty and so is `git grep vcodec -- R/`, and the only `_batch` name in that
+  `NAMESPACE` is `ffm_batch` (Layer 1) -- no task-verb batch sibling existed, so a
+  0.1.0 caller had no jobs table to rename a column in, and `vcodec` was never
+  reachable either. The rename that IS reachable is three scalar arguments, which is
+  what the bullet now says. The naming rationale is kept but re-tensed to the present
+  package rather than asserted of the old tree. The no-alias sentence is derived from
+  `formals()` at head: `extract_audio()` takes `infile`, `outfile`, `audio_codec`,
+  `audio_stream`, `run` and `segment_video()` twelve names, neither carrying `...`, so
+  an old name raises an unused-argument error rather than being swallowed.
 
 ## Review
 

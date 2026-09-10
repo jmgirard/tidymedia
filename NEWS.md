@@ -27,12 +27,12 @@
     internal helpers that were exported by accident, `pad_integers()` and
     `convert_fractions()`, are internal again.
 
-* Two families of argument have been renamed, along with the jobs-table columns
-  of the same names. `extract_audio()`'s codec argument `acodec` is now
-  `audio_codec`, matching the `audio_codec` and `video_codec` arguments the
-  re-encode verbs already take; `segment_video()`'s time bounds `ts_start` and
-  `ts_stop` are now `start` and `end`, matching the batch columns that already
-  used those names. Rename the arguments and the columns.
+* Three arguments have been renamed. `extract_audio()`'s codec argument
+  `acodec` is now `audio_codec`, and `segment_video()`'s time bounds `ts_start`
+  and `ts_stop` are now `start` and `end` — in each case the name the rest of
+  the package uses for the same thing. Rename them at your call sites: no alias
+  is kept, and neither verb takes `...`, so an old name is an unused-argument
+  error rather than a silently ignored one.
 
 * `set_program()` and its wrappers `set_ffmpeg()`, `set_ffprobe()`,
   `set_ffplay()` and `set_mediainfo()` now ask before they write. Each takes a

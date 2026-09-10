@@ -1,6 +1,6 @@
 # M121: A directory becomes a jobs tibble
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -104,8 +104,11 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 - 2026-09-10: T11 — one ROADMAP candidate row records the three deferred findings (symlink resolution collapsing two `basename()`s, hidden files reported as no files, `ts`/`ogv` missing beside their own siblings), each with its own promotion condition. Search-first: no existing candidate row or archive summary mentions `ffm_jobs()`, symlinks or hidden files. `ROADMAP.md` is now 59 lines / 38,389 bytes against its 60-line, 24,000-byte budget — the over-budget condition M120's hygiene stamp already records, worsened by this row; `/cairn-triage` remains the only remedy.
 - 2026-09-10: claim audit: 40 claims read, 5 corrected — R/ffm_jobs.R, NEWS.md, vignettes/workflow.Rmd, tests/testthat/test-ffm-jobs.R. Fresh-context [O] reader, authored none of the diff's added lines. The corrections: the new `arg_match()` comment (and the test comment repeating it) named `identical()` as the gate where rlang's body reads `setequal()`, so both understated the hole — any permutation of the full set was reduced to its own first element, not only the identical spelling; the same test comment called a two-element vector an "order" and implied it used to pass, when it always aborted, from `arg_match()` rather than with the "single string" message the test now asserts; `NEWS.md`'s "an `output` column above all" reversed the distribution — of the eleven verbs that refuse the bare table, three name `output` and eight name a task-specific column (`start`/`end`, `regions`, `inputs`, `width`, `timestamp`/`frame`, `fps`/`interval`, `audiofile`/`videofile`); the workflow vignette's unqualified "absolute however you spell the folder" has a counterexample, since `normalizePath(mustWork = FALSE)` returns a broken symlink's path unchanged; and the test file's header still said "the one ffm_batch() call" where the file now makes four batch calls. All five re-read once and returned TRUE-AS-WRITTEN, each verified by execution. Deviation, as at the first audit: the re-read was by a second fresh [O] reader rather than the first, because this session has no tool for continuing a finished subagent; a fresh reader is at least as independent, and the one-pass stopping rule was honored.
 - 2026-09-10: T12 — `devtools::check()` on the corrected tree: Status OK, 0 errors / 0 warnings / 0 notes, 5m 51.4s, `checking tests` and `re-building of vignette outputs` both OK. `pkgdown::check_pkgdown()` "No problems found". `verify` slot clean: `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 13373 (13348 at the return, +25); `devtools::document()` re-run produces no diff. AC5 met on the returned tree. Status -> review.
+- 2026-09-10: **defect return #2 from /milestone-review.** AC1 fails again, by a new mechanism of the same shape: `ffm_jobs()` returns a *dangling symlink* as an `input` row, and from a relative `directory` that row is not even an absolute path. `files[!dir.exists(files)]` (`R/ffm_jobs.R:110`) drops directories but not broken symlinks, which `list.files()` also yields, and `normalizePath(mustWork = FALSE)` returns an unresolvable path unchanged — so a folder holding `real.mp4` beside `broken.mp4 -> ../gone.mp4`, called as `ffm_jobs("raw", type = "video")` from the parent, returns `raw/broken.mp4` with `file.exists()` FALSE, against AC1's "full paths to the media files" and `@return`'s "one row per matching file". Not the deferred candidate row's symlink item, which is about links that *do* resolve, into colliding `basename()`s. The complete predicate is `file.exists(files) & !dir.exists(files)`. AC2-AC5 each passed against fresh evidence this pass (16 refusal branches all blaming `ffm_jobs`; `check()` 0/0/0; `test()` PASS 13373; `document()` no diff) and the consistency gate was clean (`cairn_validate` exit 0, one `sizing` advisory at 12 tasks). Four further [O] findings are logged unactioned in the Review section for triage at the next review. **Defect-return count: 2**; thrash trigger (b) fires — same criterion, same shape, new mechanism — and the alternative the plan gate recorded against was refusing the feature under GP1. Status -> in-progress; PR #125 stays open in draft.
 
 ## Review
+
+### First pass — 2026-09-10 (defect return #1)
 
 Reviewed 2026-09-10 on branch `m121-directory-to-jobs-tibble` (3 commits ahead of
 `origin/master`, 0 behind — the default branch had not moved, so no merge was needed).
@@ -270,3 +273,184 @@ the milestone returns to `in-progress` rather than reaching the merge gate. Find
 2-11 are carried into that return unactioned; their triage (fix now / follow-up /
 reject) is the maintainer's at the next review. **Defect-return count for M121: 1.**
 No amendment return. PR #125 stays open in draft.
+
+### Second pass — 2026-09-10
+
+Reviewed on branch `m121-directory-to-jobs-tibble` at 6bd9fe4, 7 commits ahead of
+`origin/master` and **0 behind** — the default branch had not moved since the cut, so
+no merge was needed and the first pass's evidence base is the same tree plus T7-T12.
+Branch pushed; PR #125 was already open in draft, so no `gh pr create`.
+
+**Fencing note.** All five boxes were unticked before this pass: AC2-AC5 carried the
+first pass's ticks, but the tree changed under them (T7-T12), so that evidence was
+stale. Each box below was re-ticked as its own fresh evidence landed.
+
+- **AC1 — pass (the returned defect is closed).** Fresh fixture (`a.mp4`, `b.MOV`,
+  `c.wav`, `d.png`, `e.txt`, `sub/f.mkv`) **plus the returned defect's own case**: a
+  subdirectory named `takes.mp4` holding `takes.mp4/g.mp4`.
+  `ffm_jobs(d, type = "video")` returns a `tbl_df` whose only column is `input`,
+  2 rows (`a.mp4`, `b.MOV`), every path absolute, `file.exists()` TRUE on all,
+  and `any(dir.exists(input))` **FALSE** — `takes.mp4` is no longer a row.
+  `recursive = FALSE` → {`a.mp4`, `b.MOV`}; `recursive = TRUE` → {`a.mp4`, `b.MOV`,
+  `f.mkv`, `g.mp4`}; `all(FALSE_set %in% TRUE_set)` is TRUE, so `TRUE` is a superset
+  (first-pass finding 2 closed with 1). `extension = ".mp4"` narrows to 1 row;
+  `type = "audio"` returns `c.wav` and `type = "image"` `d.png`, neither returning
+  `e.txt`. Hand-off: `jobs$output` derived from `input`, then
+  `ffm_batch(jobs, run = FALSE, .f = function(input, output, ...))` over the
+  unreshaped table returns `input, output, command` with `input` `identical()` to the
+  column passed in, and each row's `command` names that row's own input and output
+  (2 of 2). **Discriminating control:** an `.f` ignoring its arguments and always
+  building row 1 matches 1 of 2 — the criterion separates the cases.
+- **AC2 — pass.** Sixteen refusal paths fired and each condition's
+  `conditionCall()` read; **every one blames `ffm_jobs`.** The three AC2 names:
+  a directory that does not exist (`` `directory` does not name an existing
+  directory ``), a type outside the set (`` `type` must be one of "video", "audio",
+  or "image", not "sound" ``), and a call matching no file (`No video files were
+  found in …` with an `i` bullet listing the twelve extensions). The further branches
+  T3/T8 require: a path that exists but is not a directory, `directory` non-string,
+  `directory = ""`, `type` missing, `type` non-string, **`type` multi-valued in both
+  orders — `c("video","audio","image")` and `c("audio","video")` now both abort with
+  `` `type` must be a single string, not a character vector `` (first-pass finding 3
+  closed; the full-set permutation that `arg_match()` used to reduce silently is
+  caught by the `check_string()` placed above it)**, `recursive` non-logical,
+  `extension` non-character, `extension` as a **factor**, `extension` zero-length,
+  and `extension` outside its type. The extension refusal's grammar now agrees:
+  one unknown → `"wav" is not one of them.`, two → `"wav" and "png" are not among
+  them.` (first-pass finding 11 closed). D087 holds:
+  `names(formals(ffm_jobs))` is `directory, type, extension, recursive`.
+- **AC3 — pass.** `_pkgdown.yml:57` carries the `ffm_jobs` reference row;
+  `man/ffm_jobs.Rd` (86 lines) has `\value{}` at :25 and `\examples{}` at :46;
+  `NAMESPACE:30` is `export(ffm_jobs)`. All four files' first branch commit is the
+  same one — `git log origin/master..HEAD -- <file>` gives fc007d3 for `R/ffm_jobs.R`,
+  `NAMESPACE`, `man/ffm_jobs.Rd` and `_pkgdown.yml` alike. `R CMD check`'s
+  `checking examples ... OK` is the runnable reading.
+- **AC4 — pass.** The criterion's line numbers are dated addresses ("as measured
+  2026-09-07"), and at `origin/master` they are exactly the two `list.files()` sites:
+  `git grep -n 'list\.files' origin/master -- vignettes/` returns
+  `metadata.Rmd:121` and `workflow.Rmd:40`, and nothing else. Both are now
+  `ffm_jobs()` calls: `workflow.Rmd:40` is
+  `jobs <- ffm_jobs("study/raw", type = "video")` and the metadata call is
+  `files <- ffm_jobs("my/videos", type = "video")$input`, which T10's two added prose
+  lines moved from :121 to :123. `grep -rn "list\.files" vignettes/` returns nothing
+  (exit 1), so no third hand-rolled listing remains.
+- **AC5 — pass.** `devtools::check()` on the branch head: `Status: OK`,
+  `0 errors ✔ | 0 warnings ✔ | 0 notes ✔`, 6m 17.2s, R CMD check on
+  tidymedia 0.1.0.9000, `checking examples ... OK` and `checking tests ... OK`.
+  `verify` slot clean: `devtools::test()` `FAIL 0 | WARN 12 | SKIP 5 | PASS 13373`;
+  `devtools::document()` re-run produces no diff (`git status --porcelain` shows only
+  this milestone file).
+
+#### Consistency gate — pass
+
+- `cairn_validate.py` exit 0. All 16 PASS checks pass — including `coverage complete`,
+  `binding criteria`, `scaffold present` and `profile valid` — with one advisory
+  warning, `sizing (split tripwires)`: M121 now carries 12 tasks against the 10-task
+  tripwire. Advisory, not a gate failure. The `release window` advisory did **not**
+  fire.
+- `cairn_impact.py` skipped: no `DESIGN.md` principle changed
+  (`git diff --name-only origin/master..HEAD` lists no `cairn/DESIGN.md`).
+- Toolchain checks from `cairn/PROFILE.md`'s `consistency-gate` slot:
+  `document()` no diff ✔ · generated files not hand-edited (the 22 other `man/*.Rd`
+  touches are roxygen `@family` index regeneration) ✔ · `README.Rmd`/`README.md`
+  untouched by this branch and both last written by 0df9835, so in sync ✔ ·
+  `pkgdown::check_pkgdown()` "No problems found" ✔ · `NEWS.md` carries the
+  user-visible entry under the development heading at :260-274 and
+  `grep -nE '\bM[0-9]{2,3}\b' NEWS.md` finds no milestone numbers (exit 1) ✔ ·
+  no new top-level files, so no `.Rbuildignore` entry needed ✔ ·
+  `devtools::check()` 0/0/0 ✔.
+
+#### Independent review — full three-lens fan-out (surface tier: user-facing)
+
+**[S] blame-history — no regression.** Every commit fc007d3 → 6bd9fe4 traced against
+the history of the code it touches. The branch's own later commits correct real
+defects rather than undoing deliberate earlier work: `df0ea93`'s `!dir.exists()`
+filter and `check_string(type)` guard repair the two behaviors the first pass found,
+and `6bd9fe4`'s comment correction (`identical()` → `setequal()`) was verified against
+`arg_match()`'s body. D079, D087, D014 (via the recorded M121-1 gate) and GP1/D001 all
+hold; the three deferred findings are on a candidate row rather than silently dropped.
+Zero regressions.
+
+**[S] prior-review record — no prior-review evidence, zero findings.** No archived
+`## Review` section and no `LESSONS.md` line names `R/ffm_jobs.R` or this pattern —
+`ffm_jobs()` is new in M121, so the only precedent is this milestone's own first pass,
+whose eight actioned findings were each verified present and unreverted at HEAD. The
+GitHub probe (`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1`) returned
+`[]`, so the per-PR walk was skipped per the recipe's probe gate.
+
+**[O] diff-bug — 5 findings, ranked.** The T7-T12 fixes themselves were re-verified by
+execution and are correct: the `!dir.exists()` filter, the `recursive` superset
+property, the multi-value `type` refusal in both orders, the pluralized refusal, the
+corrected `setequal()` comment, and a binary-free test file (111 assertions, passing
+with `ffmpeg` off `PATH`).
+
+1. **CONFIRMED · floor-qualifying — a dangling symlink is still returned as an `input`
+   row, and with a relative `directory` its path is not absolute**
+   (`R/ffm_jobs.R:110`). `!dir.exists(files)` removes directories but not broken
+   symlinks, which `list.files()` also yields, and `normalizePath(mustWork = FALSE)`
+   returns an unresolvable path unchanged. Reproduced independently at review: a
+   folder `raw/` holding `real.mp4` and a symlink `broken.mp4 → ../gone.mp4`, called
+   as `ffm_jobs("raw", type = "video")` from the parent, returns
+   `raw/broken.mp4` and `/private/.../raw/real.mp4` — `file.exists()` is FALSE and
+   `startsWith("/")` is FALSE on row 1. Falsifies AC1's "full paths to the media
+   files" twice over, and `@return`'s "one row per matching file … holding each
+   file's full path" (`R/ffm_jobs.R:27-29`) and `NEWS.md`'s "the file's full path in
+   an `input` column". **Not covered by the deferred candidate row**, whose symlink
+   item is about `normalizePath()` *resolving* two links into colliding
+   `basename()`s — the opposite case from a link that resolves to nothing. The
+   branch's own T12 claim audit found this counterexample and hedged the workflow
+   vignette's prose around it rather than repairing the function. The complete
+   predicate is `file.exists(files) & !dir.exists(files)`.
+2. **CONFIRMED — `NEWS.md:271-274`'s "the others refuse it until you add the columns
+   they name" overstates two of the eleven refusing task verbs.** Measured over all
+   15 `*_batch()` task verbs on a bare two-row `ffm_jobs()` table: 4 accept
+   (`standardize_video_batch`, `normalize_audio_batch`, `format_for_web_batch`,
+   `strip_metadata_batch`) and 11 refuse — but `crop_video_batch(j, width=, height=,
+   x=, y=, run = FALSE)` and `sample_frames_batch(j, fps = 1, run = FALSE)` both
+   accept the *unaltered* table once an argument is supplied, and their own messages
+   say so (`` Pass `width` (applied to every row) or add a width column ``;
+   `` exactly one of `fps` or `interval` (argument or column) ``). T10 narrowed the
+   sentence's first half and left the second half overstating.
+3. **CONFIRMED — the "an `output` column above all" claim T12's audit corrected in
+   `NEWS.md` is still in the roxygen** (`R/ffm_jobs.R:13`, shipped at
+   `man/ffm_jobs.Rd:43`). Of the 11 task verbs that refuse the bare table, 3 name
+   `output` (`extract_audio_batch`, `convert_audio_batch`,
+   `picture_in_picture_batch`) and 8 name a task-specific column. The release note
+   and the reference page now say different things about the same behavior, and the
+   reference page is the one users read first.
+4. **PLAUSIBLE — test gaps the T9 sweep left open.** `type = NA_character_` fires a
+   `check_string()` branch no test covers, though the profile's test-doctrine names
+   `NA` explicitly and the sibling `directory` `NA` case *is* tested
+   (`tests/testthat/test-ffm-jobs.R:166`). Separately, the new test at `:249-262`
+   pins 2 of the 4 accepting verbs and 1 of the 11 refusing ones, so the `NEWS.md`
+   clause finding 2 falsifies has no test standing behind it — which is what T10 said
+   that test was for.
+5. **PLAUSIBLE, low — `cairn/DESIGN.md:22-26`'s Layer-1 enumeration does not gain
+   `ffm_jobs`.** M121-1 justified the `ffm_*` prefix by that section already holding
+   `ffm_batch()` and `ffm_manifest()`, and the section names every Layer-1 export by
+   hand. Pre-existing pattern rather than a regression: `ffm_manifest` (exported at
+   `NAMESPACE:32`) is already absent from the same list.
+
+Clean categories the [O] lens checked and cleared: the dir filter on `character(0)`
+and on symlinked *directories*; the extension-refusal pluralization and the `{scope}`
+interpolation; no cross-category extension overlap in the closed vocabulary; the
+`_pkgdown.yml:57` row and the `man/` regeneration; the workflow vignette's faked
+output against a real four-row tibble print, and its `sub("/raw/", "/std/", …)` on
+absolute paths; the metadata vignette's prose against what the call now selects.
+
+#### Disposition — defect return #2 under the step-5 return floor
+
+Finding 1 demonstrates AC1 failing inside its own domain — a returned row that is not
+a media file and, from a relative `directory`, not a full path — so it is
+floor-qualifying and the milestone returns to `in-progress` rather than reaching the
+merge gate. AC1's box is unticked; AC2-AC5 keep the ticks this pass's evidence earned.
+Findings 2-5 are carried into the return unactioned; their triage (fix now /
+follow-up / reject) is the maintainer's at the next review.
+
+**Defect-return count for M121: 2.** No amendment return. **Thrash trigger (b) fires:**
+AC1 has now failed twice, each by a new mechanism of the same shape — a path that is
+not a media file returned as an `input` row (first a subdirectory matching the
+extension pattern, now a dangling symlink). The remedy the rule names is to reconsider
+the alternative the plan gate recorded against; the 2026-09-07 work-log entry records
+it as **refusing the feature under GP1** — no directory-listing export, callers keep
+`list.files()`. Trigger (a) has not fired: this is the second return, not the third.
+PR #125 stays open in draft.

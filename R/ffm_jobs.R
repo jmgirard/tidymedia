@@ -55,8 +55,8 @@ ffm_jobs <- function(directory, type, extension = NULL, recursive = FALSE) {
 
 # The body, blamed on whichever front door called it. D087: `call` is threaded
 # through an internal implementation and never published as an exported formal.
-# `type` is checked for presence in the wrapper, because check_required() has to
-# see the caller's own missing argument, not this function's forwarded one.
+# `type` is checked for presence in the wrapper, at the front door whose frame
+# the refusal names.
 tm_ffm_jobs <- function(directory, type, extension, recursive, call) {
   rlang::check_string(directory, arg = "directory", call = call)
   rlang::check_bool(recursive, arg = "recursive", call = call)

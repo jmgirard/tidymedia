@@ -41,7 +41,7 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 - [x] AC4: `vignettes/workflow.Rmd:40` and `vignettes/metadata.Rmd:121` call the new
       export in place of their hand-rolled `list.files()`; those are the only two
       such calls in `vignettes/` as measured 2026-09-07.
-- [ ] AC5: `devtools::check()` reports 0 errors and 0 warnings, and the `verify` slot
+- [x] AC5: `devtools::check()` reports 0 errors and 0 warnings, and the `verify` slot
       of `cairn/PROFILE.md` is clean.
 
 ## Coverage
@@ -66,7 +66,7 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
       AC2 names.
 - [x] T4: Roxygen, `devtools::document()`, `_pkgdown.yml` row.
 - [x] T5: Rewrite the two vignette lines; rebuild.
-- [ ] T6: `devtools::test()`, `devtools::check()`, `pkgdown::check_pkgdown()`.
+- [x] T6: `devtools::test()`, `devtools::check()`, `pkgdown::check_pkgdown()`.
 
 ## Work log
 
@@ -79,3 +79,5 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 - 2026-09-10: T2/T3 — `R/ffm_jobs.R` implements `ffm_jobs()` as a wrapper over the internal `tm_ffm_jobs(..., call)` per D087, plus the closed vocabulary in `media_types()` / `media_extensions()`. Eight `cli_abort()`/rlang branches, every one fired by `tests/testthat/test-ffm-jobs.R` (82 assertions): AC2's three named refusals, a path that exists but is not a directory, the argument-form refusals on `directory`, `type` (missing and non-string), `recursive` and `extension`, and an `extension` outside its type. Blame is read with `blamed_verb()` on each and is `ffm_jobs` throughout. AC1's hand-off is tested by an `ffm_batch(run = FALSE)` call over the unreshaped table plus a derived `output`, asserting each compiled command names its own row's input and output — an `.f` ignoring its arguments fails it.
 - 2026-09-10: T4 — roxygen written, `devtools::document()` run (`NAMESPACE` gains `ffm_jobs`, `man/ffm_jobs.Rd` written with `\value{}` and a runnable example), `_pkgdown.yml` gains the reference row next to `ffm_batch`. `NEWS.md` gains the New-features entry the consistency gate requires.
 - 2026-09-10: T5 — `vignettes/workflow.Rmd:40` and `vignettes/metadata.Rmd:121` now call `ffm_jobs()`; `grep -rn "list.files" vignettes/` returns nothing. The workflow vignette's downstream jobs-table block dropped its hand-built `tibble::tibble()` and adds `output` to the returned table instead.
+- 2026-09-10: T6 — `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 13348; `devtools::check()` Status OK, 0 errors / 0 warnings / 0 notes (6m 3s, R CMD check on tidymedia 0.1.0.9000, vignettes re-built clean); `pkgdown::check_pkgdown()` "No problems found". AC5 met.
+- 2026-09-10: claim audit: 55 claims read, 2 corrected — vignettes/workflow.Rmd, R/ffm_jobs.R. Fresh-context [O] reader, authored none of the diff's added lines; it ran `ffm_jobs()` over a fixture directory for all three types, both recursion settings, the dotted/undotted/upper-case `extension` forms and all eleven refusal paths, read `R/ffm_batch.R`'s column hand-off, and read D079/D087/D001/GP1 against the lines citing them. The two corrections: the workflow vignette's new paragraph said "Everything below" adds an `output` column and calls a `*_batch()` verb, true of one of the eleven chunks below it (narrowed to "The next section"); and `tm_ffm_jobs()`'s comment gave a false reason for siting the `type` presence check in the wrapper — the reader reproduced the alternative and got an identical refusal, so the causal clause was dropped for a statement of the site. Both corrections re-read once and returned TRUE-AS-WRITTEN. Deviation: the re-read was by a second fresh [O] reader rather than the first one, because this harness exposes no way to continue a finished subagent; a fresh reader is at least as independent, and the one-pass stopping rule was honored.

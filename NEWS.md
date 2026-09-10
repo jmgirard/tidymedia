@@ -65,13 +65,6 @@
   have. This breaks unattended scripts: pass the new `confirm = FALSE` to
   install without being asked.
 
-* `set_program()` and `hardware_encoder()` no longer take a `call` argument, and
-  no exported function in tidymedia does. It named the environment an error is
-  reported from, so that a refusal could blame the function you typed rather
-  than the shared code underneath it — a value only tidymedia's own code has any
-  use for, sitting in two help-page usage lines that a reader copies from. Code
-  that passed `call =` to either function must drop it.
-
 * **Every verb that carries audio now states which audio tracks it takes,
   instead of leaving the choice to FFmpeg.** A verb that emitted no stream
   mapping got FFmpeg's own rules — one stream of each type, preferring whichever
@@ -376,8 +369,12 @@
   frame. `sample_frames_batch()` names a directory rather than a file — given
   neither an `outdir` column nor the argument, it writes each input's numbered
   sequence into a `<basename>_frames` directory beside that input.
-  Every one of them rejects two rows that resolve to the same output path, so
-  one file cannot silently overwrite another. The two audio verbs, the fan-in
+  Nine of them reject two rows that resolve to the same output path, so one file
+  cannot silently overwrite another. On `standardize_video_batch()`,
+  `normalize_audio_batch()`, `anonymize_video_batch()`, `segment_video_batch()`
+  and `extract_frame_batch()` that guard covers derived names only: two rows
+  naming the same input with no `output` column are refused, but an `output`
+  column that repeats a path is not. The two audio verbs, the fan-in
   verbs and `picture_in_picture_batch()` require an `output` column and derive
   nothing: an audio destination's extension picks the output format, and a row
   naming many inputs has no single basename to build from.
@@ -407,8 +404,8 @@
   `ffm_batch(progress = TRUE)` shows a `cli` progress bar as the jobs run,
   following the `future` plan on the parallel path.
 
-* **`audio_stream`: naming which audio track to work on.** Every verb that
-  touches audio now takes this argument — a 0-based index counted among the
+* **`audio_stream`: naming which audio track to work on.** Nine scalar verbs and
+  their `_batch` siblings take this argument — a 0-based index counted among the
   input's audio streams, so `audio_stream = 1` is the second audio track
   whatever its position among the file's streams. In a jobs table it may be a
   per-row column, where `NA` in a cell is the per-row form of leaving the
@@ -527,8 +524,9 @@
   `h264_videotoolbox` under the other. Asking a backend for a family it has no
   encoder for — nvenc has no `prores`, videotoolbox has neither `prores` nor
   `av1` — is an error naming the backend and the family, and is refused whatever
-  `fallback` is set to: no build of FFmpeg grows a videotoolbox AV1 encoder, so
-  there is nothing for a fallback to be a way around. `hardware = "none"` is the
+  `fallback` is set to. That is a wrong argument rather than a machine missing
+  something, which is what `fallback` is about, so no setting of it opens a path
+  the table does not hold. `hardware = "none"` is the
   default, so a call that does not ask for hardware is unchanged. The separate
   case `fallback` does cover is an encoder this backend has but *your* FFmpeg
   build does not list: by default that is an error too, so output stays

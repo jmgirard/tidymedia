@@ -108,6 +108,14 @@ already has no repeated heading.
       (`R/ffmpeg.R:7133,7529`); reword `Relatedly` (`NEWS.md:1008`) or add it to
       `inst/WORDLIST`. `devtools::check()` must return to 0 NOTEs, or the NOTE
       must be justifiable.
+- [x] T17: `NEWS.md:379` — the collision claim holds for nine of the fourteen
+      batch verbs, not all of them; five guard derived names only.
+- [x] T18: `NEWS.md:410` — "every verb that touches audio" takes `audio_stream`
+      is false; four audio-carrying verbs do not have it.
+- [x] T19: `NEWS.md:530` — the prores half of the refusal is a container guard
+      the package lacks, not an encoder FFmpeg lacks (`R/ffmpeg.R:3021-3026`).
+- [x] T20: `NEWS.md:68` — D091 drops the `call`-argument bullet: `set_program()`
+      never took `call` at `4b04fad9` and `hardware_encoder()` did not exist.
 
 ## Work log
 
@@ -412,6 +420,62 @@ already has no repeated heading.
   `Relatedly` reworded to "In the same vein" per the gate, `inst/WORDLIST` unchanged.
   `spelling::spell_check_package(".")` returns no spelling errors, so the NOTE's two
   words are both gone; `devtools::check()` at completion is what confirms 0 NOTEs.
+- 2026-09-10: claim audit (step 7, D-136). Owed: `Surface tier:` is user-facing and
+  `git diff origin/master...HEAD -- . ':!cairn/'` adds 1,249 lines, all in `NEWS.md`.
+  One fresh-context [O] reader, authored none of them, one pass, running the package
+  where a claim was executable. `claim audit: 300 claims read, 8 corrected --
+  NEWS.md`. Every finding re-verified here before acting on it; none was taken on the
+  reader's word.
+  Three are branch-introduced and one is the milestone's own decision unapplied ->
+  T17-T20 (minor amendment: four discovered sub-tasks appended; no criterion, task
+  wording or scope changed). Four are pre-existing claims the collapse carried through
+  unchanged, of the class review rejected as out of scope at O12 -> held for the user
+  at the gate below.
+  T19 is the one that matters most for the method: it corrects a clause **T10 added
+  this morning**. Taking the front-door comment's videotoolbox-AV1 reasoning
+  (`R/ffmpeg.R:3325-3342`) and offering it as the reason for all three excluded pairs
+  made a claim about prores the code contradicts at `:3021-3026` --
+  `prores_videotoolbox` exists and runs, but cannot mux into `.mp4`, so its exclusion
+  is a container guard the package does not have, not an encoder that cannot exist. A
+  fix for a review finding introducing its own finding is exactly the loop D-136 was
+  written to close, and this is the pass that closed it before review rather than
+  after.
+- 2026-09-10: T17. Measured rather than narrowed to the reader's two: all fourteen
+  batch verbs were called with two rows resolving to one output path under
+  `run = FALSE`. Nine reject (`strip_metadata_batch`, `crop_video_batch`,
+  `extract_audio_batch`, `convert_audio_batch`, `format_for_web_batch`,
+  `concatenate_videos_batch`, `compare_videos_batch`, `picture_in_picture_batch`,
+  `separate_audio_video_batch`); five accept (`standardize_video_batch`,
+  `normalize_audio_batch`, `anonymize_video_batch`, `segment_video_batch`,
+  `extract_frame_batch`). The cause is two guards, not one:
+  `reject_duplicate_outputs()` (`R/ffmpeg.R:5568`) has nine call sites, while the
+  five above carry only the derived-name guard, which refuses duplicate `input` rows
+  when no `output` column is given -- confirmed firing on all three deriving verbs
+  tested. **This is a documentation defect, not a code one:** `standardize_video_batch`'s
+  roxygen promises exactly the derived case and the other four promise nothing, so no
+  shipped help page over-promises. The sentence now states the nine and names the five
+  and what they do cover. The underlying gap -- an explicit `output` column can
+  silently overwrite on those five -- is raised with the user below rather than fixed
+  here.
+- 2026-09-10: T18. `audio_stream` is a formal of 18 exports (nine scalar verbs and
+  their `_batch` siblings), enumerated over `getNamespaceExports()`.
+  `strip_metadata()` and `concatenate_videos()` carry every audio stream and take no
+  such argument; `compare_videos()` and `picture_in_picture()` carry audio by
+  `audio_input` and take none either. The total quantifier is replaced by the count,
+  which is what the paragraph two below it already described correctly.
+- 2026-09-10: T19. The justification clause T10 added is replaced by the reason the
+  code itself gives (`R/ffmpeg.R:3143-3151`): a (family, backend) pair the table lacks
+  is a wrong argument rather than a machine missing something, which is what
+  `fallback` is about. The FFmpeg-cannot-have-it claim is gone entirely, since it is
+  false for the two prores pairs the same sentence names. What T10 got right and this
+  keeps: the refusal fires whatever `fallback` is set to, and the case `fallback` does
+  cover is a different one.
+- 2026-09-10: T20. Same class as T13 and settled the same way. `git show
+  4b04fad9:R/program_management.R` defines `set_program(program, location)` with no
+  `call`, and `hardware_encoder` appears nowhere in that `NAMESPACE` -- the argument
+  was added and removed inside this cycle (removed at `5f171d9`), so the bullet's
+  instruction to "drop it" addresses no one. Dropped. `hardware_encoder()` is still
+  named six times and `set_program()` seven, so AC3 is unaffected.
 
 ## Review
 

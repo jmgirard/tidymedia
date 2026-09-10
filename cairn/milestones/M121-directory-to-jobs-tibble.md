@@ -41,7 +41,7 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 - [x] AC4: `vignettes/workflow.Rmd:40` and `vignettes/metadata.Rmd:121` call the new
       export in place of their hand-rolled `list.files()`; those are the only two
       such calls in `vignettes/` as measured 2026-09-07.
-- [ ] AC5: `devtools::check()` reports 0 errors and 0 warnings, and the `verify` slot
+- [x] AC5: `devtools::check()` reports 0 errors and 0 warnings, and the `verify` slot
       of `cairn/PROFILE.md` is clean.
 
 ## Coverage
@@ -123,6 +123,7 @@ candidate row. Anything that grows toward FFmpeg feature coverage → GP1, D001.
 - 2026-09-10: T13/T14/T15 — `R/ffm_jobs.R:110` becomes `files[file.exists(files) & !dir.exists(files)]`, and `@return` now promises every row is a path that exists and is not a directory, naming both the extension-named subdirectory and the dead symbolic link. Three new tests: the dangling link is not a row and every row is absolute from a relative `directory`; a directory holding only a dangling link refuses with `No video files were found` rather than returning zero rows; and a link that *does* resolve is still a row, which discriminates against a predicate that drops every link. Discrimination checked: with the predicate reverted to `!dir.exists(files)` the file reports 6 failures, with it 0. T14's measurement over all fifteen `*_batch()` task verbs on a bare two-row `ffm_jobs()` table: four accept with no argument (`standardize_video_batch`, `normalize_audio_batch`, `format_for_web_batch`, `strip_metadata_batch`), two more accept the table unaltered once their argument is supplied (`crop_video_batch` with `width`/`height`/`x`/`y`, `sample_frames_batch` with `fps`), and nine refuse it — three naming `output` (`convert_audio_batch`, `extract_audio_batch`, `picture_in_picture_batch`) and six naming a task-specific column (`regions`, `inputs` twice, `timestamp`/`frame`, `start`/`end`, `audiofile`/`videofile`). `NEWS.md` and the roxygen both now state that split, and T15's rewritten test pins all fifteen verbs, so no clause of the entry stands without a test. `type = NA_character_` joins the argument-form refusal table. `devtools::document()` rewrote `man/ffm_jobs.Rd`; `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 13406 (13373 at the return, +33).
 - 2026-09-10: claim audit: 38 claims read, 1 corrected — NEWS.md. Fresh-context [O] reader, authored none of the diff's added lines; it ran the new predicate against a `takes.mp4` directory, a dangling link, a live link and both `recursive` settings, called all fifteen `*_batch()` verbs and read each condition, ran the roxygen example against `inst/extdata`, and ran the test file with `ffmpeg` and `mediainfo` off `PATH` (140 assertions, zero skips). The one correction: the entry's "add a column" was singular where two of the nine refusers name more than one — `picture_in_picture_batch()` wants `main`, `overlay` and `output` together, and `separate_audio_video_batch()` `audiofile` and `videofile` — so the clause now names those two by hand. Re-read once and returned TRUE-AS-WRITTEN; verified again here by firing all three refusals. The reader also noted, as a fact rather than a false claim, that `normalizePath()` gives a live symlink's row its target's path; nothing in the diff says otherwise.
 - 2026-09-10: T16 — `devtools::check()` on the corrected tree: Status OK, 0 errors / 0 warnings / 0 notes, 8m 44.8s, `checking examples ... OK`, `checking tests ... OK` (417s), `re-building of vignette outputs ... OK`. `pkgdown::check_pkgdown()` "No problems found". `verify` slot clean: `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 13406; `devtools::document()` re-run produces no diff. AC5 met on the returned tree. Status -> review.
+- 2026-09-10: third review pass — all five criteria pass against fresh evidence (AC1 verified against both returned defects' own cases plus a live symlink and a relative `directory`; 19 refusal branches all blaming `ffm_jobs`; `check()` 0/0/0, `test()` PASS 13406, `document()` no diff). Consistency gate clean, `cairn_validate` exit 0 with one `sizing` advisory at 16 tasks. Three-lens fan-out: blame-history and prior-review each zero findings, [O] 11 findings, none floor-qualifying. Awaiting triage and the merge gate.
 
 ## Review
 
@@ -534,3 +535,136 @@ this pass and re-ticked one at a time as each criterion's own fresh evidence lan
   metadata call is `files <- ffm_jobs("my/videos", type = "video")$input`, which T10's
   two added prose lines moved from :121 to :123. `grep -rn "list\.files" vignettes/`
   returns nothing (exit 1), so no third hand-rolled listing remains.
+- **AC5 — pass.** `devtools::check()` on the branch head: `Status: OK`,
+  `0 errors ✔ | 0 warnings ✔ | 0 notes ✔`, 7m 47.3s, R CMD check on
+  tidymedia 0.1.0.9000, `checking examples ... OK`, `checking tests ... OK`
+  (373s), `checking re-building of vignette outputs ... OK`. `verify` slot clean:
+  `devtools::test()` `FAIL 0 | WARN 12 | SKIP 5 | PASS 13406`;
+  `devtools::document()` re-run produces no diff (`git status --porcelain` empty).
+
+#### Consistency gate — pass
+
+- `cairn_validate.py` exit 0. All 16 PASS checks pass — including `coverage
+  complete`, `binding criteria`, `scaffold present` and `profile valid` — with one
+  advisory warning, `sizing (split tripwires)`: M121 carries 16 tasks against the
+  10-task tripwire, the accumulation of two defect returns. Advisory, not a gate
+  failure. The `release window` advisory did **not** fire.
+- `cairn_impact.py` skipped: no `DESIGN.md` principle changed
+  (`git diff --name-only origin/master..HEAD` lists no `cairn/DESIGN.md`).
+- Toolchain checks from `cairn/PROFILE.md`'s `consistency-gate` slot:
+  `document()` no diff ✔ · generated files not hand-edited (the 22 other `man/*.Rd`
+  touches are roxygen `@family` index regeneration) ✔ · `README.Rmd`/`README.md`
+  untouched by this branch and both last written by 0df9835, so in sync ✔ ·
+  `pkgdown::check_pkgdown()` "No problems found" ✔ · `NEWS.md` carries the
+  user-visible entry under the development heading and
+  `grep -nE '\bM[0-9]{2,3}\b' NEWS.md` finds no milestone numbers (exit 1) ✔ ·
+  no new top-level files, so no `.Rbuildignore` entry needed ✔ ·
+  `devtools::check()` 0/0/0 ✔.
+
+#### Independent review — full three-lens fan-out (surface tier: user-facing)
+
+**[S] blame-history — no regression.** `R/ffm_jobs.R` is a new file, so the only
+history to judge against is the branch's own: `df0ea93` added `!dir.exists(files)`
+for return #1 and `73fdc1a` widened it to `file.exists(files) & !dir.exists(files)`
+for return #2 — each strictly additive to the predicate, neither reverting the
+other or the T1-T5 baseline. `media_types()`/`media_extensions()` collide with no
+existing internal. D079 and D087 are real entries and the code complies with both.
+No `LESSONS.md` line names this file or pattern. Zero findings.
+
+**[S] prior-review record — no prior-review evidence, zero findings.** No archived
+`## Review` section names `ffm_jobs`, `R/ffm_jobs.R` or the directory-listing
+pattern; the function is new in M121. The two nearest LESSONS lines were checked
+and are not violated (M103's `list.files(recursive = TRUE)` symlink-descent lesson
+is about deletion, which this export never does; M109's shared-derived-output
+fixture trap does not recur — the tests derive `output` from distinct basenames).
+The GitHub probe (`gh api repos/jmgirard/tidymedia/pulls/comments?per_page=1`)
+returned `[]`, so the per-PR walk was skipped per the recipe's probe gate. The
+lens also re-verified all five of pass 2's findings: 1-4 fixed at HEAD, 5 still
+open as the pre-existing item pass 2 deferred.
+
+**[O] diff-bug — 11 findings, ranked.** The T13-T16 fixes were re-verified by
+execution and are correct. Each finding below was reproduced by the reviewer and
+re-reproduced here at the gate.
+
+1. **CONFIRMED — under `recursive = TRUE`, the `output` derivation the reference
+   page and the workflow vignette both teach collapses two jobs onto one path.**
+   `R/ffm_jobs.R:104-107` with the example at `:43-46` (`man/ffm_jobs.Rd:52-56`).
+   Two same-named files in different subdirectories are two rows whose
+   `basename()`-derived outputs are identical; nothing downstream refuses it and
+   FFmpeg's `-y` makes the second overwrite the first. Reproduced at the gate:
+   `s1/a.mp4` + `s2/a.mp4` → 2 rows, `length(unique(derived_output))` is 1 of 2.
+   Not the deferred candidate row's symlink item — no symlink is involved and the
+   trigger is the advertised `recursive` argument.
+2. **CONFIRMED — a resolving symlink under `recursive = TRUE` returns the same
+   path twice.** `R/ffm_jobs.R:117`: `normalizePath()` resolves the link, so link
+   and target survive the predicate as identical strings. Reproduced at the gate:
+   `sub/deep.mp4` plus `live.mp4 -> sub/deep.mp4`, `recursive = TRUE` → 2 rows,
+   1 unique; `recursive = FALSE` → 1 row. The same job runs twice, against
+   `@return`'s "one row per matching file". The branch's live-symlink test pins
+   only `recursive = FALSE`.
+3. **CONFIRMED — the `@details` rationale for the one-column tibble contradicts
+   `ffm_batch()`'s own documented remedy.** `R/ffm_jobs.R:12` (shipped at
+   `man/ffm_jobs.Rd:44`) says an extra column "would become an argument every
+   `.f` has to accept"; `R/ffm_batch.R:14` and `vignettes/batch.Rmd:51` both say
+   the remedy is a `...` argument, not a named one. The conclusion may stand; the
+   reason as written does not.
+4. **CONFIRMED — `vignettes/batch.Rmd`, the batch story, never cites the new
+   export.** `:39` and `:64` still build the jobs tibble with
+   `tibble::tibble(input = …, output = …)` and the file names `ffm_jobs()`
+   nowhere (`grep -c` → 0), while `vignettes/workflow.Rmd:73` sends the reader
+   there "for the batch model". AC4 is scoped to the two `list.files()` sites, so
+   no criterion fails; but the Goal is that the batch story not start hand-rolled,
+   and the plan gate's recorded falsifier is "the export going uncited in the
+   vignettes and README a release later".
+5. **CONFIRMED — `cairn/DESIGN.md:22-29`'s Layer-1 enumeration does not gain
+   `ffm_jobs`** (`grep -n ffm_jobs cairn/DESIGN.md` → no hits). Decision M121-1
+   justified the `ffm_*` prefix by that section's contents, and that argument
+   lives only in the milestone file, which is archived at merge. Pass 2 raised
+   this as its finding 5 and it was deferred as pre-existing (`ffm_manifest` is
+   likewise absent).
+6. **CONFIRMED — two internal helpers break the file's `tm_` naming convention
+   and add a fourth hand-written container list.** `R/ffm_jobs.R:138,140`:
+   `media_types()` / `media_extensions()` sit beside `tm_ffm_jobs()` unprefixed,
+   and `cairn/DESIGN.md`'s Known-issues entry already tracks container names
+   written by hand in three places outside the generated enumeration. Nothing
+   cross-checks the new list against it.
+7. **CONFIRMED — a user-facing help page cites an internal decision id.**
+   `R/ffm_jobs.R:21` → `man/ffm_jobs.Rd:14`: "since any default would be one of
+   the three (D079)". Pre-existing precedent (`R/program_management.R:293`,
+   `man/concatenate_videos_batch.Rd:39`), so a convention question rather than a
+   regression.
+8. **CONFIRMED — `_pkgdown.yml:32-34`'s Layer-1 section description no longer
+   covers its members:** "Assemble a reproducible FFmpeg command step by step"
+   where `ffm_jobs` (like `ffm_batch` before it) assembles no command. Cosmetic,
+   pre-existing for `ffm_batch`.
+9. **CONFIRMED — `extension = "."` refuses by naming an empty string.**
+   `R/ffm_jobs.R:88-92`: the `nzchar()` form check runs before the leading dot is
+   stripped, so `"."` passes it and then fails the vocabulary check as
+   `✖ "" is not one of them.` Cosmetic.
+10. **CONFIRMED — `type` is case-sensitive while `extension` is
+    case-insensitive.** `R/ffm_jobs.R:76` vs `:93`: `type = "Video"` is refused
+    (with a "Did you mean" hint), `extension = "MP4"` accepted. Defensible, but
+    the two selector arguments answer the same user slip differently and the docs
+    say so for neither.
+11. **Disclosed, not new — `cairn/ROADMAP.md` is further past its byte budget.**
+    T11's ~1.9 KB candidate row on a file already at 38,389 bytes against 24,000.
+    The milestone's own work log records it; `/cairn-triage` is the remedy.
+
+Clean categories the [O] lens checked and cleared: all sixteen-plus refusal
+branches blaming `ffm_jobs`, `directory` absent included; the roxygen example
+running clean against `inst/extdata`; `list.files` gone from `vignettes/` and
+`README.Rmd`; the new test file at 144 assertions with 0 failures, alongside
+`test-exported-call-formal` and `test-ffm-batch*`.
+
+#### Return-floor assessment
+
+No finding is floor-qualifying. Findings 1 and 2 are the closest: neither
+falsifies AC1 as written. AC1 promises an `input` column of full paths to the
+media files plus a demonstrated unreshaped `ffm_batch()` hand-off — finding 1's
+collision is in the *derived* `output`, and an output-column convention or
+path-deriving helper is explicitly out of this milestone's scope; finding 2's
+duplicate row is still a full path to a media file, contradicting `@return`'s
+"one row per matching file" rather than the criterion. Both are real
+user-visible hazards (a silent overwrite; a job run twice), so the load-bearing
+half of the floor is the maintainer's judgment at the gate. No amendment return:
+no finding shows a criterion itself to be wrong.

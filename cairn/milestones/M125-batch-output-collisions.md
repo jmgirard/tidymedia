@@ -48,7 +48,7 @@ A call that fans jobs out through `ffm_batch()`, or a direct `ffm_batch()` call,
 - [x] T4: In `R/ffm_batch.R`, refuse repeated pipeline outputs after `.f` builds them and before any run, naming the path only, with the exemption rule from AC3; tests for refusal under both `run` values, the all-exempt table (execution cell `skip_if` FFmpeg is absent), and the mixed table.
 - [x] T5: Re-run the ordering and blame suites (`test-input-path-front-door.R`, `test-nvenc-front-door.R`, `test-hardware-out-of-table-blame.R`, `test-builder-blame-front-door.R`); where a new refusal moves a pinned precedence, log it in Decisions.
 - [x] T6: Roxygen on the 16 exports and `ffm_batch()` (and a line beside `ffm_jobs()`'s output-derivation example), `devtools::document()`, the `NEWS.md` entry and the rewrite of its existing collision sentences (`NEWS.md:409-417`); at review, read each of the 17 pages against AC4.
-- [ ] T7: `devtools::test()` then `devtools::check()`, each run with no other R session working (LESSONS 2026-09-11).
+- [x] T7: `devtools::test()` then `devtools::check()`, each run with no other R session working (LESSONS 2026-09-11).
 
 ## Work log
 
@@ -66,6 +66,7 @@ A call that fans jobs out through `ffm_batch()`, or a direct `ffm_batch()` call,
 - 2026-09-11: T4 — `ffm_batch()` refuses repeated pipeline outputs below its `verify`-spec check and above the first job, on both `run` values, leaving out `-`, `pipe:` URLs and a `null` after the last `-f` (`writes_no_file()`); `check_distinct_outputs()` moved to `R/ffm_batch.R` beside it. 9 tests added, 8 red before the code (the ninth pins the `verify` refusal first), including an FFmpeg run of two `-f null` jobs to `-`. Found in passing: `ffm_batch()`'s not-a-pipeline and `verify`-spec refusals crash inside cli when two or more jobs are at fault — candidate row added. Full `devtools::test()`: 1737 tests, 0 failures, 5 skips.
 - 2026-09-11: T5 — `test-input-path-front-door.R`, `test-nvenc-front-door.R`, `test-hardware-out-of-table-blame.R` and `test-builder-blame-front-door.R` passed in both full runs (after T3, after T4): no pinned precedence moved, so no Decisions entry is owed. The unpinned change is the gate's choice: on the six verbs given a new check, a repeated output now reports ahead of any program they start before the hand-off.
 - 2026-09-11: T6 — refusal stated on 15 help pages in each page's own destination terms (`strip_metadata_batch()`'s already did) and in `ffm_batch()`'s details with the no-file exemptions; a comment beside `ffm_jobs()`'s output-derivation example. `devtools::document()` rewrote those 17 Rd files and nothing else (installed roxygen2 8.0.0 against `RoxygenNote` 8.1.0). NEWS: one Bug fixes entry naming the six newly refusing exports plus `ffm_batch()`, and the existing collision sentences rewritten. Two draft sentences were cut before commit as untrue: a repeated input "named by its derived path on the others" (the numbering verbs don't refuse it) and "before anything runs" (`ffm_batch()` runs `.f` first). The per-page AC4 read is review's.
+- 2026-09-11: T7 — on the T6 tree, with no other R session working: `devtools::test()` 1737 tests, 0 failures, 5 skips; `devtools::check()` 0 errors, 0 warnings, 0 notes. `cairn_validate` all checks pass.
 
 ## Decisions
 

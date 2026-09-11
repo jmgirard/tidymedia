@@ -21,8 +21,8 @@ the version the binary reported or `NA`.
 A program that was never configured and is not installed gets `NA` in
 both columns rather than a warning, so the answer for four programs
 arrives as one table instead of a pile of messages. The lookup is
-[`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)'s:
-the `PATH` first, then a location remembered by
+[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
+and its siblings': the `PATH` first, then a location remembered by
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md),
 and finally a location a version of tidymedia before 0.2.0 remembered
 under `rappdirs::user_config_dir("tidymedia", "R")`.
@@ -48,15 +48,15 @@ version.
 
 ## See also
 
-[`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
-for one program at a time,
+[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
+and its siblings for one program at a time,
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
 to point tidymedia at a binary in a non-standard location, and
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
 to forget one it remembered.
 
 Other program management functions:
-[`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md),
+[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md),
 [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md),
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md),
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)

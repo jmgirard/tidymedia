@@ -3,10 +3,10 @@
 The location is remembered across sessions in a file named
 `<program>_location.txt` under
 `tools::R_user_dir("tidymedia", "config")`, which
-[`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
-reads whenever the program is not on the `PATH`. Once this file exists,
-a location remembered by a version of tidymedia before 0.2.0 is no
-longer read.
+[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
+and its siblings read whenever the program is not on the `PATH`. Once
+this file exists, a location remembered by a version of tidymedia before
+0.2.0 is no longer read.
 
 ## Usage
 
@@ -59,13 +59,13 @@ without being asked, which is what an unattended script wants.
 
 ## See also
 
-[`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
-to locate a configured binary, and
+[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
+and its siblings to locate a configured binary, and
 [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
 to download FFmpeg on Windows.
 
 Other program management functions:
-[`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md),
+[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md),
 [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md),
 [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md),
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)

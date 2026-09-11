@@ -1477,7 +1477,7 @@
 - **A configuration file that holds nothing, holds more than one line,
   or holds one empty line no longer stops the call, or answers about the
   wrong thing.** The first two made
-  [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+  [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
   – and every call above it – fail with an R error naming neither the
   program nor the file; the third warned instead that the binary had
   gone missing, which was not what was wrong with it. All three now warn
@@ -1503,7 +1503,7 @@
   on the same terms the not-found warning does; it carries the class
   `tidymedia_location_gone`, with the program and the location. The
   warning
-  [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+  [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
   and its siblings give when they cannot find a program at all advised
   `set_<program>()` and nothing else; on Windows it now also offers
   [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md),
@@ -1823,17 +1823,17 @@
   that program is installed, and the help-page example for finding a
   program no longer warns on a machine with no binaries.
 
-- The reference page for finding a program documents only the four
-  functions you can call —
-  [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_program.md),
-  [`find_ffprobe()`](https://jmgirard.github.io/tidymedia/reference/find_program.md),
-  [`find_ffplay()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+- The reference page for finding a program is
+  [`?find_ffmpeg`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md),
+  and it documents only the four functions you can call —
+  [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md),
+  [`find_ffprobe()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md),
+  [`find_ffplay()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
   and
-  [`find_mediainfo()`](https://jmgirard.github.io/tidymedia/reference/find_program.md).
-  The internal
-  [`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
-  behind them is no longer shown as though it were part of the
-  interface.
+  [`find_mediainfo()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md).
+  The internal `find_program()` behind them is no longer shown as though
+  it were part of the interface, and `?find_program` no longer opens the
+  page.
 
 - `citation("tidymedia")` returns a citation written for the package,
   carrying the package website, instead of the entry R generates

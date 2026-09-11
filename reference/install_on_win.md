@@ -138,11 +138,11 @@ error says so instead.
 
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
 to register an existing binary, and
-[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_program.md)
+[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
 to check what is currently configured.
 
 Other program management functions:
-[`find_program()`](https://jmgirard.github.io/tidymedia/reference/find_program.md),
+[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md),
 [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md),
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md),
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)

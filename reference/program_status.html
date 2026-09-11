@@ -66,9 +66,9 @@ version the binary reported or <code>NA</code>.</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>A program that was never configured and is not installed gets <code>NA</code> in both
 columns rather than a warning, so the answer for four programs arrives as one
-table instead of a pile of messages. The lookup is <code><a href="find_program.html">find_program()</a></code>'s: the
-<code>PATH</code> first, then a location remembered by <code><a href="set_program.html">set_program()</a></code>, and finally a
-location a version of tidymedia before 0.2.0 remembered under
+table instead of a pile of messages. The lookup is <code><a href="find_ffmpeg.html">find_ffmpeg()</a></code> and its
+siblings': the <code>PATH</code> first, then a location remembered by <code><a href="set_program.html">set_program()</a></code>,
+and finally a location a version of tidymedia before 0.2.0 remembered under
 <code>rappdirs::user_config_dir("tidymedia", "R")</code>.</p>
 <p>A remembered location that cannot be used still warns, because there the
 <code>NA</code> would look exactly like a program you never had. Both cases name a file
@@ -88,11 +88,12 @@ version.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="find_program.html">find_program()</a></code> for one program at a time, <code><a href="set_program.html">set_program()</a></code> to
-point tidymedia at a binary in a non-standard location, and
+    <div class="dont-index"><p><code><a href="find_ffmpeg.html">find_ffmpeg()</a></code> and its siblings for one program at a time,
+<code><a href="set_program.html">set_program()</a></code> to point tidymedia at a binary in a non-standard location,
+and
 <code><a href="unset_program.html">unset_program()</a></code> to forget one it remembered.</p>
 <p>Other program management functions:
-<code><a href="find_program.html">find_program()</a></code>,
+<code><a href="find_ffmpeg.html">find_ffmpeg()</a></code>,
 <code><a href="install_on_win.html">install_on_win()</a></code>,
 <code><a href="set_program.html">set_program()</a></code>,
 <code><a href="unset_program.html">unset_program()</a></code></p></div>

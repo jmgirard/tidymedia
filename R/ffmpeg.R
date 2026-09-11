@@ -2219,8 +2219,9 @@ derive_anonymized_names <- function(input) {
 #'   \code{output} column names the destination; when absent, one is derived per
 #'   row by appending \code{_anonymized} to each input's basename, keeping the
 #'   input's extension (e.g. \code{clip.mkv} becomes \code{clip_anonymized.mkv}).
-#'   Because anonymization is one-input-to-one-output, a duplicated \code{input}
-#'   with no \code{output} column would collide and is rejected. Each of the
+#'   Two rows naming the same output path are refused before any row runs:
+#'   a path repeated in the \code{output} column, or a repeated \code{input}
+#'   when there is no \code{output} column. Each of the
 #'   four encode knobs — \code{color}, \code{video_codec}, \code{audio_codec},
 #'   \code{pixel_format} — may
 #'   also appear as a column to override the corresponding argument on a per-row
@@ -2455,6 +2456,11 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
     # locator is unconditional here (M66).
     check_batch_cell(i, check_region_values(jobs$regions[[i]]))
   }
+
+  # Two rows resolving to one output path (M125); placed as in
+  # standardize_video_batch(), after every machine-free check and above the
+  # nvenc probe.
+  reject_duplicate_outputs(jobs)
 
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
@@ -3712,7 +3718,8 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #'   length as \code{start}, and each element must be a single string -- so a
 #'   list of strings is accepted as well as a character vector, and a missing
 #'   value or a number in any position is refused by this function rather than
-#'   by the per-segment fan-out below it.
+#'   by the per-segment fan-out below it. Two segments given the same path
+#'   are refused before any segment is cut.
 #' @param reencode A logical passed to \code{\link{ffm_seek}}: cut each segment
 #'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 #'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
@@ -3858,6 +3865,24 @@ segment_video <- function(infile,
   # columns to sweep -- so one call each covers every segment.
   check_codec_needs_reencode(reencode, video_codec, hardware)
   check_audio_codec_needs_reencode(reencode, audio_codec)
+
+  # If no names are provided, derive per-segment names from the input file.
+  # Above the nvenc probe below rather than beside the fan-out, so the
+  # collision check can read the names this call will write before any program
+  # starts (M125).
+  if (is.null(outfiles)) {
+    outfiles <- derive_segment_names(rep(infile, length(start)))
+  }
+  # Two segments written to one path (M125). A derived set cannot repeat --
+  # numbering is per segment -- so only a supplied `outfiles` can reach the
+  # abort. After every machine-free check above, so each still reports first.
+  check_distinct_outputs(
+    unlist(outfiles, use.names = FALSE),
+    "{.arg outfiles} names the same path for more than one segment.",
+    "Give each segment its own output file.",
+    call = rlang::current_env()
+  )
+
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035). Last in the front-door block, so
   # every check above still reports first (M41).
@@ -3870,11 +3895,6 @@ segment_video <- function(infile,
   # `reencode = FALSE` call naming nvenc has already been refused above. The
   # gate is dead code, not a live protection (M58 T2).
   check_hardware_available(video_codec, hardware, fallback)
-
-  # If no names are provided, derive per-segment names from the input file.
-  if (is.null(outfiles)) {
-    outfiles <- derive_segment_names(rep(infile, length(start)))
-  }
 
   # Fan-out (one input -> many outputs) is a Layer 2 concern: build one
   # single-output seek pipeline per segment and run them through ffm_batch
@@ -3992,7 +4012,8 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   \code{output} is absent, one is derived per row by appending
 #'   \code{_<n>.<ext>} to each input's basename, with the segment number
 #'   restarting at 1 for each input file (the same rule as
-#'   \code{\link{segment_video}}). A \code{video_codec} or \code{audio_codec}
+#'   \code{\link{segment_video}}). Two rows given the same \code{output} path
+#'   are refused before any row runs. A \code{video_codec} or \code{audio_codec}
 #'   column overrides that argument per row, with \code{NA} meaning "leave the
 #'   codec unset" (the column's way of writing the argument's \code{NULL}). An
 #'   \code{audio_stream} column likewise overrides that argument per row, with
@@ -4167,6 +4188,12 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
       check_audio_codec_needs_reencode(reencode_rows[[i]], acodec_rows[[i]])
     )
   }
+  # Two rows resolving to one output path (M125), after the row sweep above and
+  # above the nvenc probe below. A derived column cannot repeat -- numbering
+  # restarts per input and counts that input's rows, and each derived name keeps
+  # its input's stem and extension -- so only a supplied `output` can reach the
+  # abort.
+  reject_duplicate_outputs(jobs)
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035), immediately before ffm_batch() so
   # every check above still reports first (M41).
@@ -4222,8 +4249,11 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
 #'   timestamp via the input's frame rate, as \code{\link{extract_frame}} does).
 #'   An optional \code{output} column names the destination image; when absent,
 #'   one is derived per row by appending \code{_<n>.<format>} to each input's
-#'   basename, with the frame number restarting at 1 for each input file. Any
-#'   other columns are ignored.
+#'   basename, with the frame number restarting at 1 for each input file. Two
+#'   rows whose destination is the same path are refused before any row runs:
+#'   a repeated \code{output}, or two derived names that match, as
+#'   \code{clip.mp4} and \code{clip.mkv} both give \code{clip_1.png}. Any other
+#'   columns are ignored.
 #' @param format A string giving the image file extension used when \code{output}
 #'   is derived (ignored when \code{jobs} carries an \code{output} column).
 #'   (default = \code{"png"})
@@ -4331,6 +4361,13 @@ extract_frame_batch <- function(jobs, format = "png", run = TRUE,
   # purrr::pmap() (M62).
   check_batch_inputs(jobs)
 
+  # Two rows resolving to one output path (M125), last in the front door. Both
+  # forms reach it: a supplied `output` column, and a derived one, whose
+  # extension is the image `format` rather than the source's, so two inputs
+  # sharing a stem under different containers (`a.mp4`, `a.mkv`) derive the
+  # same `a_1.png`.
+  reject_duplicate_outputs(jobs)
+
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-frame pipeline per
   # row, sharing frame_pipeline() with extract_frame(). frame->timestamp
   # resolution happens per row (via the input's frame rate); `...` forwards
@@ -4390,6 +4427,10 @@ derive_frames_dir <- function(input) {
 #'   output directory for that row's sequence; when absent, one is derived as
 #'   \code{<input-base>_frames} beside each input), and \code{fps} /
 #'   \code{interval} (per-row rate overrides). Any other columns are ignored.
+#'   Two rows whose image sequences would share a file-name pattern are refused
+#'   before any row runs: the same output directory path (from the column, the
+#'   \code{outdir} argument, or derived) and the same input file name without
+#'   its extension.
 #' @param fps,interval The sampling rate applied to every row, as in
 #'   [sample_frames()]; a per-row column of the same name overrides it. Supply
 #'   exactly one of the two (as an argument or a column). (default = \code{NULL})
@@ -4588,8 +4629,9 @@ derive_standardized_names <- function(input) {
 #'   the destination; when absent, one is derived per row by appending
 #'   \code{_standardized} to each input's basename, keeping the input's
 #'   extension (e.g. \code{clip.mkv} becomes \code{clip_standardized.mkv}).
-#'   Because standardization is one-input-to-one-output, a duplicated
-#'   \code{input} with no \code{output} column would collide and is rejected.
+#'   Two rows naming the same output path are refused before any row runs:
+#'   a path repeated in the \code{output} column, or a repeated \code{input}
+#'   when there is no \code{output} column.
 #'   Each of the six standardization knobs — \code{width}, \code{height},
 #'   \code{fps}, \code{video_codec}, \code{audio_codec}, \code{pixel_format} —
 #'   may also appear as a
@@ -4828,6 +4870,14 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
                      check_token(pixfmt_rows[[i]], arg = "pixel_format"))
   }
 
+  # Two rows resolving to one output path (M125), on the resolved column: a
+  # supplied `output` is compared as given, and a derived one cannot repeat once
+  # reject_duplicate_inputs() above has passed, since each keeps its input's
+  # stem and extension. Last among the machine-free
+  # checks, so every refusal above still reports first, and above the nvenc
+  # probe below, so a colliding table starts no program.
+  reject_duplicate_outputs(jobs)
+
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output re-encode
   # pipeline per row, sharing standardize_pipeline() with standardize_video().
   # A per-row knob column (arriving via `...` from pmap) overrides the scalar
@@ -4961,14 +5011,7 @@ strip_metadata_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
       cli::cli_abort("The {.field output} column of {.arg jobs} must not contain {.val {NA}}.")
     }
   }
-  dupes <- unique(jobs$output[duplicated(jobs$output)])
-  if (length(dupes) > 0) {
-    cli::cli_abort(c(
-      "{.arg jobs} has rows that resolve to the same output path.",
-      "x" = "Colliding output{?s}: {.val {dupes}}.",
-      "i" = "Give each row a distinct {.field output}, or de-duplicate the inputs."
-    ))
-  }
+  reject_duplicate_outputs(jobs)
 
   # Sweep jobs$input here, below the shape/type/collision guards above and
   # immediately before the fan-out, so a missing input blames this verb
@@ -5047,9 +5090,10 @@ derive_normalized_names <- function(input) {
 #'   (e.g. \code{clip.mkv} becomes \code{clip_normalized.mkv}) — note that the
 #'   derived name keeps a \emph{video} extension while the file itself holds
 #'   audio only, so name an \code{output} column explicitly when that matters.
-#'   Because
-#'   normalization is one-input-to-one-output, a duplicated \code{input} with no
-#'   \code{output} column would collide and is rejected. Each of the five
+#'   Two rows naming the same output path are refused before any row runs
+#'   (with \code{two_pass = TRUE}, before the analysis pass): a path repeated in
+#'   the \code{output} column, or a repeated \code{input} when there is no
+#'   \code{output} column. Each of the five
 #'   loudness knobs — \code{target_loudness}, \code{true_peak},
 #'   \code{loudness_range}, \code{channels}, \code{sample_rate} — may also appear
 #'   as a column to override the corresponding argument on a per-row basis; rows
@@ -5264,6 +5308,13 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
       check_loudnorm_targets(target_rows[[i]], peak_rows[[i]], range_rows[[i]])
     )
   }
+
+  # Two rows resolving to one output path (M125), after the per-row value sweeps
+  # above and above both programs this verb can start before its fan-out: the
+  # dropped-track probe below and, on the two-pass path, the Phase 1 analysis.
+  # The two-pass knob checks and the single-pass `audio_codec` token check below
+  # still report after it.
+  reject_duplicate_outputs(jobs)
 
   # D024's diagnostic probe, above the two_pass block so it lands before Phase 1
   # analyzes anything and before the fan-out encodes -- the placement the scalar
@@ -5566,14 +5617,12 @@ reject_duplicate_inputs <- function(jobs, call = rlang::caller_env()) {
 # inputs — so an explicit `output` repeated across rows can't silently overwrite
 # either (M26). Assumes `jobs$output` is resolved (present or derived).
 reject_duplicate_outputs <- function(jobs, call = rlang::caller_env()) {
-  dupes <- unique(jobs$output[duplicated(jobs$output)])
-  if (length(dupes) > 0) {
-    cli::cli_abort(c(
-      "{.arg jobs} has rows that resolve to the same output path.",
-      "x" = "Colliding output{?s}: {.val {dupes}}.",
-      "i" = "Give each row a distinct {.field output}, or de-duplicate the inputs."
-    ), call = call)
-  }
+  check_distinct_outputs(
+    jobs$output,
+    "{.arg jobs} has rows that resolve to the same output path.",
+    "Give each row a distinct {.field output}, or de-duplicate the inputs.",
+    call = call
+  )
   jobs
 }
 
@@ -5875,7 +5924,8 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #'   (the column form of \code{audio_codec = NULL}). An optional
 #'   \code{audio_stream} column likewise overrides the \code{audio_stream}
 #'   argument per row, where \code{NA} keeps that row on the first audio track.
-#'   Any other columns are ignored.
+#'   Two rows given the same \code{output} path are refused before any row
+#'   runs. Any other columns are ignored.
 #' @param audio_codec The audio codec applied to every row unless \code{jobs}
 #'   carries an \code{audio_codec} column, in which case \code{NA} in a cell
 #'   leaves that row's codec unset. \code{"copy"} (default) stream-copies the
@@ -6008,7 +6058,8 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
 #'   default"; rows omitting it fall back to the argument. An optional
 #'   \code{audio_stream} column likewise overrides the \code{audio_stream}
 #'   argument per row, where \code{NA} keeps that row on the first audio track.
-#'   Any other columns are
+#'   Two rows given the same \code{output} path are refused before any row
+#'   runs. Any other columns are
 #'   ignored — except a \code{format} column, retired with the argument of the
 #'   same name, which is an error rather than a silent no-op.
 #' @param audio_codec The output audio codec applied to every row unless
@@ -6163,9 +6214,10 @@ derive_web_names <- function(input) {
 #'   unset" (the column's way of writing the argument's \code{NULL}); an
 #'   \code{audio_codec} column works the same way. An \code{audio_stream} column
 #'   overrides that argument per row, with \code{NA} meaning "keep every audio
-#'   track" (the column's way of writing that argument's \code{NULL}). Any two
-#'   rows that resolve to the same output path are rejected. Any other columns
-#'   are ignored.
+#'   track" (the column's way of writing that argument's \code{NULL}). Two rows
+#'   whose destination is the same path are refused before any row runs: a
+#'   repeated \code{output}, or a repeated \code{input} when there is no
+#'   \code{output} column. Any other columns are ignored.
 #' @param width,height The output crop size in pixels, applied to every row
 #'   unless \code{jobs} carries a column of the same name. Required: pass each as
 #'   an argument or supply the column (there is no default crop size).
@@ -6347,8 +6399,10 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   the destination; when absent, one is derived per row by appending
 #'   \code{_web} to each input's basename with an \code{.mp4} extension (the web
 #'   re-encode always writes H.264/mp4), e.g. \code{clip.mkv} becomes
-#'   \code{clip_web.mp4}. Any two rows that resolve to the same output path are
-#'   rejected. An optional numeric \code{audio_stream} column (\code{NA} to keep
+#'   \code{clip_web.mp4}. Two rows whose destination is the same path are
+#'   refused before any row runs: a repeated \code{output}, or two derived
+#'   names that match, as \code{clip.mov} and \code{clip.mkv} both give
+#'   \code{clip_web.mp4}. An optional numeric \code{audio_stream} column (\code{NA} to keep
 #'   every audio track in that row) overrides the \code{audio_stream} argument
 #'   per row. Any other columns are ignored — including \code{video_codec} and
 #'   \code{audio_codec}, which the sibling batch verbs read as per-row overrides
@@ -6472,7 +6526,10 @@ format_for_web_batch <- function(jobs,
 #'   columns naming the two destinations. All three are **required** — like
 #'   \code{\link{separate_audio_video}}, this verb derives no output paths,
 #'   because a copied stream's container extension is the instruction (it must
-#'   match the source codec). Optional \code{audio_codec} and \code{video_codec}
+#'   match the source codec). No two of a table's destinations may be the same
+#'   path -- an \code{audiofile} and a \code{videofile} in one row, or any two
+#'   across rows; such a table is refused before any row runs. Optional
+#'   \code{audio_codec} and \code{video_codec}
 #'   columns (character; \code{NA} to emit no codec option for that stream)
 #'   override the arguments of the same name per row; rows omitting a column fall
 #'   back to that argument. An optional numeric \code{audio_stream} column
@@ -7226,9 +7283,9 @@ picture_in_picture <- function(main, overlay, outfile,
 #' @param jobs A data frame with one row per output and (at least) an
 #'   \code{inputs} list-column — each cell a character vector of the source
 #'   paths to join, in order — and an \code{output} column (destination path).
-#'   An \code{output} column is required; this verb derives no destination. Any
-#'   two rows resolving to the same output path are rejected. Any other columns
-#'   are ignored.
+#'   An \code{output} column is required; this verb derives no destination. Two
+#'   rows given the same \code{output} path are refused before any row runs.
+#'   Any other columns are ignored.
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
@@ -7294,8 +7351,9 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   like-named arguments per row (a row omitting one falls back to the
 #'   argument). In an \code{audio_input} column, \code{NA} means "drop audio" (the
 #'   column's way of writing the scalar's \code{NULL}); in a \code{video_codec}
-#'   or \code{audio_codec} column it means "leave the codec unset". Any two rows
-#'   resolving to the same output path are rejected; other columns are ignored.
+#'   or \code{audio_codec} column it means "leave the codec unset". Two rows
+#'   given the same \code{output} path are refused before any row runs; other
+#'   columns are ignored.
 #' @param direction,resize Defaults applied to every row lacking the
 #'   corresponding column. \code{direction} is \code{"horizontal"} (the default)
 #'   or \code{"vertical"}; a \code{direction} column is held to the same two
@@ -7521,8 +7579,8 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   per row (a row omitting one falls back to the argument). In an \code{audio_input}
 #'   column, \code{NA} means "drop audio" (the column's way of writing the
 #'   scalar's \code{NULL}); in a \code{video_codec} or \code{audio_codec} column
-#'   it means "leave the codec unset". Any two rows resolving to the same output
-#'   path are rejected; other columns are ignored.
+#'   it means "leave the codec unset". Two rows given the same \code{output}
+#'   path are refused before any row runs; other columns are ignored.
 #' @param position,scale,margin Defaults applied to every row lacking the
 #'   corresponding column. \code{position} is one of \code{"topright"} (the
 #'   default), \code{"topleft"}, \code{"bottomright"}, \code{"bottomleft"} or

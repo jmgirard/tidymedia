@@ -25,7 +25,8 @@ back to the argument, and \code{NA} in a cell leaves that row's codec unset
 (the column form of \code{audio_codec = NULL}). An optional
 \code{audio_stream} column likewise overrides the \code{audio_stream}
 argument per row, where \code{NA} keeps that row on the first audio track.
-Any other columns are ignored.}
+Two rows given the same \code{output} path are refused before any row
+runs. Any other columns are ignored.}
 
 \item{audio_codec}{The audio codec applied to every row unless \code{jobs}
 carries an \code{audio_codec} column, in which case \code{NA} in a cell

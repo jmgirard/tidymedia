@@ -406,14 +406,12 @@
   frame. `sample_frames_batch()` names a directory rather than a file — given
   neither an `outdir` column nor the argument, it writes each input's numbered
   sequence into a `<basename>_frames` directory beside that input.
-  Ten of them reject two rows that resolve to the same output path, so one file
-  cannot silently overwrite another. Three — `standardize_video_batch()`,
-  `normalize_audio_batch()` and `anonymize_video_batch()` — instead refuse two
-  rows naming the same input when no `output` column is given, and do not check
-  an `output` column that repeats a path. `segment_video_batch()` and
-  `extract_frame_batch()` check neither: they number their outputs per input, so
-  derived names cannot collide, but a repeated `output` column is accepted and
-  the second row overwrites the first. The two audio verbs, the fan-in
+  Every batch verb refuses, before any row runs, a table in which two rows
+  name the same output path, whether through a repeated `output` column or two
+  derived names that match. With no `output` column,
+  `standardize_video_batch()`, `normalize_audio_batch()` and
+  `anonymize_video_batch()` report a repeated input by naming that input. The
+  two audio verbs, the fan-in
   verbs and `picture_in_picture_batch()` require an `output` column and derive
   nothing: an audio destination's extension picks the output format, and a row
   naming many inputs has no single basename to build from.
@@ -773,6 +771,19 @@
   to resize the overlay to a fraction of the main video's width.
 
 ## Bug fixes
+
+* **Two jobs can no longer be given the same output path.** Every batch verb,
+  `segment_video()` and `ffm_batch()` now refuse a call in which two jobs would
+  write one output path, before any job runs and under `run = FALSE` as well
+  as `run = TRUE`. Six let some such calls through. `standardize_video_batch()`,
+  `normalize_audio_batch()`, `anonymize_video_batch()`,
+  `segment_video_batch()` and `extract_frame_batch()` accepted an `output`
+  column repeating a path; `extract_frame_batch()` also accepted two inputs,
+  such as `clip.mp4` and `clip.mkv`, that derive the same `clip_1.png`; and
+  `segment_video()` accepted `outfiles` repeating a name. `ffm_batch()` checks
+  the `output` of the pipelines `.f` returns, and lets an output that writes no
+  file repeat: `-`, a `pipe:` URL, or an output whose last `-f` option is
+  `-f null`.
 
 * **A wrong argument is now reported against the function you called, before any
   row runs.** Most of the package's checks used to be reached only while a

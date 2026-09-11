@@ -78,6 +78,13 @@ and \code{start} calls \code{.f(input = ..., output = ..., start = ...)}.
 \code{.f} must return an ffm pipeline (see \code{\link{ffm_files}}). Give
 \code{.f} a \code{...} argument if \code{jobs} carries columns it does not
 use.
+
+Two jobs whose pipelines write to the same \code{output} path are refused
+before any job runs, under \code{run = FALSE} as well as \code{run = TRUE}.
+Paths are compared exactly as written. An output that writes no file may
+repeat: \code{-} (standard output), a \code{pipe:} URL, or an output whose
+last \code{-f} option is \code{-f null}, as
+\code{ffm_output_options("-f null")} gives.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

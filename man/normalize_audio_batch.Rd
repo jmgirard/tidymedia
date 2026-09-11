@@ -27,9 +27,10 @@ the destination; when absent, one is derived per row by appending
 (e.g. \code{clip.mkv} becomes \code{clip_normalized.mkv}) — note that the
 derived name keeps a \emph{video} extension while the file itself holds
 audio only, so name an \code{output} column explicitly when that matters.
-Because
-normalization is one-input-to-one-output, a duplicated \code{input} with no
-\code{output} column would collide and is rejected. Each of the five
+Two rows naming the same output path are refused before any row runs
+(with \code{two_pass = TRUE}, before the analysis pass): a path repeated in
+the \code{output} column, or a repeated \code{input} when there is no
+\code{output} column. Each of the five
 loudness knobs — \code{target_loudness}, \code{true_peak},
 \code{loudness_range}, \code{channels}, \code{sample_rate} — may also appear
 as a column to override the corresponding argument on a per-row basis; rows

@@ -23,7 +23,8 @@ argument per row, where \code{NA} spells "use the highest-VBR-quality
 default"; rows omitting it fall back to the argument. An optional
 \code{audio_stream} column likewise overrides the \code{audio_stream}
 argument per row, where \code{NA} keeps that row on the first audio track.
-Any other columns are
+Two rows given the same \code{output} path are refused before any row
+runs. Any other columns are
 ignored — except a \code{format} column, retired with the argument of the
 same name, which is an error rather than a silent no-op.}
 

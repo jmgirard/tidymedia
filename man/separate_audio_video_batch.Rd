@@ -22,7 +22,10 @@ separate_audio_video_batch(
 columns naming the two destinations. All three are \strong{required} — like
 \code{\link{separate_audio_video}}, this verb derives no output paths,
 because a copied stream's container extension is the instruction (it must
-match the source codec). Optional \code{audio_codec} and \code{video_codec}
+match the source codec). No two of a table's destinations may be the same
+path -- an \code{audiofile} and a \code{videofile} in one row, or any two
+across rows; such a table is refused before any row runs. Optional
+\code{audio_codec} and \code{video_codec}
 columns (character; \code{NA} to emit no codec option for that stream)
 override the arguments of the same name per row; rows omitting a column fall
 back to that argument. An optional numeric \code{audio_stream} column

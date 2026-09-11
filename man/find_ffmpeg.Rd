@@ -30,7 +30,8 @@ location remembered by \code{\link[=set_program]{set_program()}} is read from
 \code{tools::R_user_dir("tidymedia", "config")}; a location remembered by a
 version of tidymedia before 0.2.0 was written to
 \code{rappdirs::user_config_dir("tidymedia", "R")}, and that file is read only
-when no file exists in the current directory.
+when no file for the program exists under
+\code{tools::R_user_dir("tidymedia", "config")}.
 
 A remembered location that no longer works warns and returns \code{NULL} rather
 than failing, under a condition class you can catch:

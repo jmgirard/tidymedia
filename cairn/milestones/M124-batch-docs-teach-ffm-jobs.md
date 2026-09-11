@@ -91,21 +91,21 @@ vignettes stop stating things that are false or machine-specific today.
 
 ## Tasks
 
-- [ ] T1: `?ffm_jobs` details. Run `ffm_batch()` on a table with an extra column, `.f` with and
+- [x] T1: `?ffm_jobs` details. Run `ffm_batch()` on a table with an extra column, `.f` with and
       without `...`, and the chosen `*_batch()` verbs (`crop_video_batch()` and
       `extract_audio_batch()`) on an unread extra column and on an argument-named one; write the
       sentence from those outputs (`R/ffm_jobs.R:10-16`); add the tests (C locale is set by
       testthat; `test-ffmpeg.R:200` already matches "unused argument"); `devtools::document()`.
-- [ ] T2: `?find_ffmpeg`. Rewrite `R/program_management.R:133-134` against `:49-55`, confirmed by
+- [x] T2: `?find_ffmpeg`. Rewrite `R/program_management.R:133-134` against `:49-55`, confirmed by
       running the two precedence tests; `devtools::document()`.
-- [ ] T3: `vignettes/batch.Rmd`. Build both tables with
+- [x] T3: `vignettes/batch.Rmd`. Build both tables with
       `ffm_jobs(system.file("extdata", package = "tidymedia"), type = "video")` (one row:
       `sample.mp4`), adding `output` by assignment where a verb needs it; name `ffm_jobs()` in
       "The batch runner"; add the no-match sentence. Render in place from `vignettes/`
       (LESSONS: `build_vignettes()` knits in a copy and cannot see a chunk writing files).
-- [ ] T4: `vignettes/workflow.Rmd:40` and `vignettes/metadata.Rmd:123`: the no-match sentence
+- [x] T4: `vignettes/workflow.Rmd:40` and `vignettes/metadata.Rmd:123`: the no-match sentence
       beside each call, and drop "a one-liner" where it hides that stop.
-- [ ] T5: `README.Rmd`. Add the batch example under `## Examples`; make it, the `ffm_compile()`
+- [x] T5: `README.Rmd`. Add the batch example under `## Examples`; make it, the `ffm_compile()`
       and `extract_audio()` chunks, and `probe_all()`'s `file` column print no absolute path;
       update the setup comment (`:14-20`); add the no-match sentence. Run `build_readme()` twice
       with `cmp` and the grep, then both `tools/` chunk scripts with all three binaries present.
@@ -123,6 +123,12 @@ vignettes stop stating things that are false or machine-specific today.
 - 2026-09-10: implement started on branch `m124-batch-docs-teach-ffm-jobs`; question gate chose building the README examples in a scratch folder holding a copy of the sample clip, with the batch example cutting `ffm_jobs()`'s `input` to the file name on a visible commented line, over printing only the output column or a hidden path-stripping output hook.
 - 2026-09-10: T1 verb pair changed from `strip_metadata_batch()`/`crop_video_batch()` to `crop_video_batch()`/`extract_audio_batch()` (minor task edit): measured, `strip_metadata_batch()` has no per-row argument, so it cannot back the argument-named half of AC3.
 - 2026-09-10: checkpoint, half-done — T1-T5 edits written, none ticked: `ffm-jobs` tests 157 pass; batch.Rmd rendered in place; two `build_readme()` runs `cmp`-identical with the path grep empty; both `tools/` chunk sweeps exit 0; an AC2 section check passes here and fails on master. Pending: full `devtools::test()` (running), T2 `document()`, T6.
+- 2026-09-10: full `devtools::test()` over the checkpoint: FAIL 0, WARN 12 (all in four untouched files), SKIP 5, PASS 13423.
+- 2026-09-10: T1 done: `?ffm_jobs` sentence written from executed `ffm_batch()`, `crop_video_batch()`, `extract_audio_batch()` calls; three tests added to `test-ffm-jobs.R`; "has to accept" grep empty.
+- 2026-09-10: T2 done: `?find_ffmpeg` names `tools::R_user_dir("tidymedia", "config")`, read against `find_program()`; `document()` rewrote only that sentence; the two precedence test files pass (402).
+- 2026-09-10: T3 done: batch.Rmd builds both tables with `ffm_jobs()` over the sample folder (one row, `sample.mp4`), rendered in place from `vignettes/`; no-match stop confirmed by an executed call on a folder holding only a `.wav`.
+- 2026-09-10: T4 done: no-match sentence beside workflow.Rmd's and metadata.Rmd's calls; "a one-liner" replaced.
+- 2026-09-10: T5 done: README examples knit in a scratch folder holding a copy of the clip; batch example via `crop_video_batch()`; setup comment counts the five unguarded chunks the guard sweep lists besides setup.
 
 ## Decisions
 

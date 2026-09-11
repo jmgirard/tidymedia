@@ -70,16 +70,17 @@ column. `ffm_jobs()` again stops with an error rather than returning an empty
 table when the folder holds no file of the type:
 
 ```{r}
-crop_video_batch(
-  ffm_jobs(folder, type = "video"),
-  width = 160, height = 120, run = FALSE
-)
+jobs <- ffm_jobs(folder, type = "video")
+jobs$output <- paste0(tools::file_path_sans_ext(basename(jobs$input)), "_cropped.mp4")
+
+crop_video_batch(jobs, width = 160, height = 120, run = FALSE)
 ```
 
-That table has no `output` column, so `crop_video_batch()` auto-names each
-output from its input (here `_cropped`); add an `output` column to choose the names
-yourself. Either way `crop_video_batch()` rejects two rows that would resolve to
-the same output path. `vignette("workflow")` chains several of
+Without an `output` column, `crop_video_batch()` names each output after its
+input, adding `_cropped`, in the input's own folder. Here that folder is inside
+the installed package, so the example adds an `output` column that puts the
+files in the working directory instead. Either way `crop_video_batch()` rejects
+two rows that would resolve to the same output path. `vignette("workflow")` chains several of
 these across a study folder.
 
 ## Fan-out verbs

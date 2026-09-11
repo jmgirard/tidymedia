@@ -135,6 +135,8 @@ vignettes stop stating things that are false or machine-specific today.
 - 2026-09-10: re-read of the 4 corrected claims: 2 held (README, batch.Rmd bare-table sentence); 2 still overstated and fixed without a further pass (stopping rule): `?ffm_jobs` now claims replacement only for `command` (only `command` is replaced on every call; `success`/`verified` only when `run`/`verify` write them), test renamed to match; batch.Rmd's auto-naming sentence names `crop_video_batch()` only (five verbs auto-name, `extract_audio_batch()` refuses). Second `devtools::check()` stopped unfinished for the same reason as the first.
 - 2026-09-10: T6 done on `24d1810`: `document()` no diff, `ffm-jobs` tests 161 pass, `devtools::check()` 0 errors / 0 warnings / 0 notes (7m30s, tests included); README.Rmd unchanged since its last `cmp`-identical rebuild pair. Status → review.
 - 2026-09-10: review: AC1-AC7 verified with fresh evidence and ticked; consistency gate clean; three fresh reviewers returned 6 findings (all from the diff lens), none showing a criterion failing; triage pending at the merge gate.
+- 2026-09-10: merge gate: O1 and O4 fixed on the branch and re-checked; O2, O3, O5, O6 rejected with reasons in Review.
+- step-7 approval: m124-batch-docs-teach-ffm-jobs approved for merge
 
 ## Decisions
 
@@ -161,3 +163,11 @@ Independent review (three fresh reviewers). Prior-review lens: no regressions; n
 - O4: `tests/testthat/test-ffm-jobs.R:3` — header comment still says "the one ffm_batch() call"; there are now three. Confirmed.
 - O5: `R/ffm_jobs.R:13-21` — the new details sentence runs about 85 words with a dash aside holding a colon clause; "per-row" sits alone on a roxygen line.
 - O6: `README.Rmd:18` — one setup-comment line runs to about 100 characters where its neighbours wrap at 80.
+
+Triage at the merge gate (2026-09-10), no finding showing a criterion failing, so no status change:
+- O1 fix now: the crop example builds `jobs` with `ffm_jobs()` and adds an `output` column of bare file names; the prose says outputs are otherwise named after the input in its own folder, confirmed by an executed `crop_video_batch()` call whose output shares the input's directory. Re-checked after the fix: AC1 grep empty, AC2 script passes at batch.Rmd's chunk lines, scratch knit prints a relative output (`sample_cropp…`, truncated by tibble), `test-ffm-jobs.R` passes (27 tests, 161 expectations).
+- O4 fix now: header comment reads "the ffm_batch() calls".
+- O2 reject: an edge of R's own partial argument matching, not tidymedia behaviour; the `...` advice holds either way.
+- O3 reject: the scratch-folder README approach was chosen at the implement question gate, and the example runs with `run = FALSE`.
+- O5 reject: readability only, and the sentence's claims passed two audits; rewording risks reopening them.
+- O6 reject: cosmetic line length in a comment that does not render.

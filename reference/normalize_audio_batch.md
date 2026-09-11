@@ -41,13 +41,14 @@ normalize_audio_batch(
   input's basename, keeping the input's extension (e.g. `clip.mkv`
   becomes `clip_normalized.mkv`) — note that the derived name keeps a
   *video* extension while the file itself holds audio only, so name an
-  `output` column explicitly when that matters. Because normalization is
-  one-input-to-one-output, a duplicated `input` with no `output` column
-  would collide and is rejected. Each of the five loudness knobs —
-  `target_loudness`, `true_peak`, `loudness_range`, `channels`,
-  `sample_rate` — may also appear as a column to override the
-  corresponding argument on a per-row basis; rows (or knobs) that omit
-  the column fall back to the argument's value. An optional
+  `output` column explicitly when that matters. Two rows naming the same
+  output path are refused before any row runs (with `two_pass = TRUE`,
+  before the analysis pass): a path repeated in the `output` column, or
+  a repeated `input` when there is no `output` column. Each of the five
+  loudness knobs — `target_loudness`, `true_peak`, `loudness_range`,
+  `channels`, `sample_rate` — may also appear as a column to override
+  the corresponding argument on a per-row basis; rows (or knobs) that
+  omit the column fall back to the argument's value. An optional
   `audio_codec` column (character) names each row's output audio
   encoder, with `NA` meaning "leave the encoder unset"; rows omitting it
   fall back to the `audio_codec` argument. An optional numeric

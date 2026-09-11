@@ -39,6 +39,7 @@ segment_video_batch(
   input's basename, with the segment number restarting at 1 for each
   input file (the same rule as
   [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)).
+  Two rows given the same `output` path are refused before any row runs.
   A `video_codec` or `audio_codec` column overrides that argument per
   row, with `NA` meaning "leave the codec unset" (the column's way of
   writing the argument's `NULL`). An `audio_stream` column likewise

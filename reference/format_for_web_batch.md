@@ -31,8 +31,10 @@ format_for_web_batch(
   (source path). An optional `output` column names the destination; when
   absent, one is derived per row by appending `_web` to each input's
   basename with an `.mp4` extension (the web re-encode always writes
-  H.264/mp4), e.g. `clip.mkv` becomes `clip_web.mp4`. Any two rows that
-  resolve to the same output path are rejected. An optional numeric
+  H.264/mp4), e.g. `clip.mkv` becomes `clip_web.mp4`. Two rows whose
+  destination is the same path are refused before any row runs: a
+  repeated `output`, or two derived names that match, as `clip.mov` and
+  `clip.mkv` both give `clip_web.mp4`. An optional numeric
   `audio_stream` column (`NA` to keep every audio track in that row)
   overrides the `audio_stream` argument per row. Any other columns are
   ignored — including `video_codec` and `audio_codec`, which the sibling

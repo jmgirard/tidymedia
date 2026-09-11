@@ -31,7 +31,11 @@ sample_frames_batch(
   (source path). Optional columns: `outdir` (the output directory for
   that row's sequence; when absent, one is derived as
   `<input-base>_frames` beside each input), and `fps` / `interval`
-  (per-row rate overrides). Any other columns are ignored.
+  (per-row rate overrides). Any other columns are ignored. Two rows
+  whose image sequences would share a file-name pattern are refused
+  before any row runs: the same output directory path (from the column,
+  the `outdir` argument, or derived) and the same input file name
+  without its extension.
 
 - fps, interval:
 

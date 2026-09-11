@@ -47,8 +47,10 @@ crop_video_batch(
   argument's `NULL`); an `audio_codec` column works the same way. An
   `audio_stream` column overrides that argument per row, with `NA`
   meaning "keep every audio track" (the column's way of writing that
-  argument's `NULL`). Any two rows that resolve to the same output path
-  are rejected. Any other columns are ignored.
+  argument's `NULL`). Two rows whose destination is the same path are
+  refused before any row runs: a repeated `output`, or a repeated
+  `input` when there is no `output` column. Any other columns are
+  ignored.
 
 - width, height:
 

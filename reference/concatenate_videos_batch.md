@@ -24,9 +24,9 @@ concatenate_videos_batch(jobs, run = TRUE, parallel = FALSE, ...)
   A data frame with one row per output and (at least) an `inputs`
   list-column — each cell a character vector of the source paths to
   join, in order — and an `output` column (destination path). An
-  `output` column is required; this verb derives no destination. Any two
-  rows resolving to the same output path are rejected. Any other columns
-  are ignored.
+  `output` column is required; this verb derives no destination. Two
+  rows given the same `output` path are refused before any row runs. Any
+  other columns are ignored.
 
 - run:
 
@@ -104,5 +104,5 @@ concatenate_videos_batch(jobs, run = FALSE)
 #> # A tibble: 1 × 3
 #>   inputs    output     command                                                  
 #>   <list>    <chr>      <chr>                                                    
-#> 1 <chr [2]> joined.mp4 "-y -f concat -safe 0 -i \"/tmp/Rtmpn1LBlO/ffm-concat1ef…
+#> 1 <chr [2]> joined.mp4 "-y -f concat -safe 0 -i \"/tmp/RtmpS1CdTz/ffm-concat1ec…
 ```

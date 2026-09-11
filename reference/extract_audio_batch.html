@@ -88,7 +88,8 @@ back to the argument, and <code>NA</code> in a cell leaves that row's codec unse
 (the column form of <code>audio_codec = NULL</code>). An optional
 <code>audio_stream</code> column likewise overrides the <code>audio_stream</code>
 argument per row, where <code>NA</code> keeps that row on the first audio track.
-Any other columns are ignored.</p></dd>
+Two rows given the same <code>output</code> path are refused before any row
+runs. Any other columns are ignored.</p></dd>
 
 
 <dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>

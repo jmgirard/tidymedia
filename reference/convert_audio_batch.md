@@ -34,9 +34,10 @@ convert_audio_batch(
   where `NA` spells "use the highest-VBR-quality default"; rows omitting
   it fall back to the argument. An optional `audio_stream` column
   likewise overrides the `audio_stream` argument per row, where `NA`
-  keeps that row on the first audio track. Any other columns are ignored
-  — except a `format` column, retired with the argument of the same
-  name, which is an error rather than a silent no-op.
+  keeps that row on the first audio track. Two rows given the same
+  `output` path are refused before any row runs. Any other columns are
+  ignored — except a `format` column, retired with the argument of the
+  same name, which is an error rather than a silent no-op.
 
 - audio_codec:
 

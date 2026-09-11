@@ -99,9 +99,10 @@ overrides that argument per row, with <code>NA</code> meaning "leave the codec
 unset" (the column's way of writing the argument's <code>NULL</code>); an
 <code>audio_codec</code> column works the same way. An <code>audio_stream</code> column
 overrides that argument per row, with <code>NA</code> meaning "keep every audio
-track" (the column's way of writing that argument's <code>NULL</code>). Any two
-rows that resolve to the same output path are rejected. Any other columns
-are ignored.</p></dd>
+track" (the column's way of writing that argument's <code>NULL</code>). Two rows
+whose destination is the same path are refused before any row runs: a
+repeated <code>output</code>, or a repeated <code>input</code> when there is no
+<code>output</code> column. Any other columns are ignored.</p></dd>
 
 
 <dt id="arg-width-height">width, height<a class="anchor" aria-label="anchor" href="#arg-width-height"></a></dt>

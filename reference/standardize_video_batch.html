@@ -89,8 +89,9 @@ one reproducible compiled command per input.</p>
 the destination; when absent, one is derived per row by appending
 <code>_standardized</code> to each input's basename, keeping the input's
 extension (e.g. <code>clip.mkv</code> becomes <code>clip_standardized.mkv</code>).
-Because standardization is one-input-to-one-output, a duplicated
-<code>input</code> with no <code>output</code> column would collide and is rejected.
+Two rows naming the same output path are refused before any row runs:
+a path repeated in the <code>output</code> column, or a repeated <code>input</code>
+when there is no <code>output</code> column.
 Each of the six standardization knobs — <code>width</code>, <code>height</code>,
 <code>fps</code>, <code>video_codec</code>, <code>audio_codec</code>, <code>pixel_format</code> —
 may also appear as a

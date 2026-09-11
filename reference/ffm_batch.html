@@ -148,6 +148,12 @@ and <code>start</code> calls <code>.f(input = ..., output = ..., start = ...)</c
 <code>.f</code> must return an ffm pipeline (see <code><a href="ffm_files.html">ffm_files</a></code>). Give
 <code>.f</code> a <code>...</code> argument if <code>jobs</code> carries columns it does not
 use.</p>
+<p>Two jobs whose pipelines write to the same <code>output</code> path are refused
+before any job runs, under <code>run = FALSE</code> as well as <code>run = TRUE</code>.
+Paths are compared exactly as written. An output that writes no file may
+repeat: <code>-</code> (standard output), a <code>pipe:</code> URL, or an output whose
+last <code>-f</code> option is <code>-f null</code>, as
+<code>ffm_output_options("-f null")</code> gives.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

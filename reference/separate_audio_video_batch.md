@@ -37,15 +37,18 @@ separate_audio_video_batch(
   destinations. All three are **required** — like
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
   this verb derives no output paths, because a copied stream's container
-  extension is the instruction (it must match the source codec).
-  Optional `audio_codec` and `video_codec` columns (character; `NA` to
-  emit no codec option for that stream) override the arguments of the
-  same name per row; rows omitting a column fall back to that argument.
-  An optional numeric `audio_stream` column (`NA` to keep every audio
-  track in that row's `audiofile`) likewise overrides the `audio_stream`
-  argument per row. Any other columns are ignored — except a `reencode`
-  column, retired with the argument of the same name, which is an error
-  rather than a silent no-op.
+  extension is the instruction (it must match the source codec). No two
+  of a table's destinations may be the same path – an `audiofile` and a
+  `videofile` in one row, or any two across rows; such a table is
+  refused before any row runs. Optional `audio_codec` and `video_codec`
+  columns (character; `NA` to emit no codec option for that stream)
+  override the arguments of the same name per row; rows omitting a
+  column fall back to that argument. An optional numeric `audio_stream`
+  column (`NA` to keep every audio track in that row's `audiofile`)
+  likewise overrides the `audio_stream` argument per row. Any other
+  columns are ignored — except a `reencode` column, retired with the
+  argument of the same name, which is an error rather than a silent
+  no-op.
 
 - audio_codec:
 

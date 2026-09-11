@@ -90,8 +90,9 @@ video paths — and an <code>output</code> column (destination path). Optional
 like-named arguments per row (a row omitting one falls back to the
 argument). In an <code>audio_input</code> column, <code>NA</code> means "drop audio" (the
 column's way of writing the scalar's <code>NULL</code>); in a <code>video_codec</code>
-or <code>audio_codec</code> column it means "leave the codec unset". Any two rows
-resolving to the same output path are rejected; other columns are ignored.</p></dd>
+or <code>audio_codec</code> column it means "leave the codec unset". Two rows
+given the same <code>output</code> path are refused before any row runs; other
+columns are ignored.</p></dd>
 
 
 <dt id="arg-direction-resize">direction, resize<a class="anchor" aria-label="anchor" href="#arg-direction-resize"></a></dt>

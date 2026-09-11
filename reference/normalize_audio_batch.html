@@ -96,9 +96,10 @@ the destination; when absent, one is derived per row by appending
 (e.g. <code>clip.mkv</code> becomes <code>clip_normalized.mkv</code>) — note that the
 derived name keeps a <em>video</em> extension while the file itself holds
 audio only, so name an <code>output</code> column explicitly when that matters.
-Because
-normalization is one-input-to-one-output, a duplicated <code>input</code> with no
-<code>output</code> column would collide and is rejected. Each of the five
+Two rows naming the same output path are refused before any row runs
+(with <code>two_pass = TRUE</code>, before the analysis pass): a path repeated in
+the <code>output</code> column, or a repeated <code>input</code> when there is no
+<code>output</code> column. Each of the five
 loudness knobs — <code>target_loudness</code>, <code>true_peak</code>,
 <code>loudness_range</code>, <code>channels</code>, <code>sample_rate</code> — may also appear
 as a column to override the corresponding argument on a per-row basis; rows

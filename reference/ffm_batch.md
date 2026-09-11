@@ -106,6 +106,12 @@ pipeline (see
 [`ffm_files`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md)).
 Give `.f` a `...` argument if `jobs` carries columns it does not use.
 
+Two jobs whose pipelines write to the same `output` path are refused
+before any job runs, under `run = FALSE` as well as `run = TRUE`. Paths
+are compared exactly as written. An output that writes no file may
+repeat: `-` (standard output), a `pipe:` URL, or an output whose last
+`-f` option is `-f null`, as `ffm_output_options("-f null")` gives.
+
 ## See also
 
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),

@@ -37,20 +37,21 @@ standardize_video_batch(
   (source path). An optional `output` column names the destination; when
   absent, one is derived per row by appending `_standardized` to each
   input's basename, keeping the input's extension (e.g. `clip.mkv`
-  becomes `clip_standardized.mkv`). Because standardization is
-  one-input-to-one-output, a duplicated `input` with no `output` column
-  would collide and is rejected. Each of the six standardization knobs —
-  `width`, `height`, `fps`, `video_codec`, `audio_codec`, `pixel_format`
-  — may also appear as a column to override the corresponding argument
-  on a per-row basis; rows (or knobs) that omit the column fall back to
-  the argument's value. In either codec column, `NA` leaves that row's
-  codec unset (the column form of `video_codec = NULL` /
-  `audio_codec = NULL`); in a `width`, `height`, `fps` or `pixel_format`
-  column it is an error. `pixel_format` has no unset state to express;
-  `width`, `height` and `fps` do accept `NULL` as arguments, but their
-  columns have no `NA` spelling for it. An `audio_stream` column
-  overrides the `audio_stream` argument per row, where `NA` keeps that
-  row on every audio track. Any other columns are ignored.
+  becomes `clip_standardized.mkv`). Two rows naming the same output path
+  are refused before any row runs: a path repeated in the `output`
+  column, or a repeated `input` when there is no `output` column. Each
+  of the six standardization knobs — `width`, `height`, `fps`,
+  `video_codec`, `audio_codec`, `pixel_format` — may also appear as a
+  column to override the corresponding argument on a per-row basis; rows
+  (or knobs) that omit the column fall back to the argument's value. In
+  either codec column, `NA` leaves that row's codec unset (the column
+  form of `video_codec = NULL` / `audio_codec = NULL`); in a `width`,
+  `height`, `fps` or `pixel_format` column it is an error.
+  `pixel_format` has no unset state to express; `width`, `height` and
+  `fps` do accept `NULL` as arguments, but their columns have no `NA`
+  spelling for it. An `audio_stream` column overrides the `audio_stream`
+  argument per row, where `NA` keeps that row on every audio track. Any
+  other columns are ignored.
 
 - width, height:
 

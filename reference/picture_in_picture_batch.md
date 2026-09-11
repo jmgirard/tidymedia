@@ -40,8 +40,9 @@ picture_in_picture_batch(
   arguments per row (a row omitting one falls back to the argument). In
   an `audio_input` column, `NA` means "drop audio" (the column's way of
   writing the scalar's `NULL`); in a `video_codec` or `audio_codec`
-  column it means "leave the codec unset". Any two rows resolving to the
-  same output path are rejected; other columns are ignored.
+  column it means "leave the codec unset". Two rows given the same
+  `output` path are refused before any row runs; other columns are
+  ignored.
 
 - position, scale, margin:
 

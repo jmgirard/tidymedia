@@ -41,18 +41,19 @@ anonymize_video_batch(
   takes. An optional `output` column names the destination; when absent,
   one is derived per row by appending `_anonymized` to each input's
   basename, keeping the input's extension (e.g. `clip.mkv` becomes
-  `clip_anonymized.mkv`). Because anonymization is
-  one-input-to-one-output, a duplicated `input` with no `output` column
-  would collide and is rejected. Each of the four encode knobs —
-  `color`, `video_codec`, `audio_codec`, `pixel_format` — may also
-  appear as a column to override the corresponding argument on a per-row
-  basis; rows (or knobs) that omit the column fall back to the
-  argument's value. In either codec column, `NA` leaves that row's codec
-  unset (the column form of `video_codec = NULL` /
-  `audio_codec = NULL`); in a `color` or `pixel_format` column it is an
-  error, because those have no unset state. An `audio_stream` column
-  overrides the `audio_stream` argument per row, where `NA` keeps that
-  row on every audio track. Any other columns are ignored.
+  `clip_anonymized.mkv`). Two rows naming the same output path are
+  refused before any row runs: a path repeated in the `output` column,
+  or a repeated `input` when there is no `output` column. Each of the
+  four encode knobs — `color`, `video_codec`, `audio_codec`,
+  `pixel_format` — may also appear as a column to override the
+  corresponding argument on a per-row basis; rows (or knobs) that omit
+  the column fall back to the argument's value. In either codec column,
+  `NA` leaves that row's codec unset (the column form of
+  `video_codec = NULL` / `audio_codec = NULL`); in a `color` or
+  `pixel_format` column it is an error, because those have no unset
+  state. An `audio_stream` column overrides the `audio_stream` argument
+  per row, where `NA` keeps that row on every audio track. Any other
+  columns are ignored.
 
 - color:
 

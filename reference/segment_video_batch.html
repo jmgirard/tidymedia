@@ -86,7 +86,8 @@ Two optional columns are recognized: <code>output</code> (destination path) and
 <code>output</code> is absent, one is derived per row by appending
 <code>_&lt;n&gt;.&lt;ext&gt;</code> to each input's basename, with the segment number
 restarting at 1 for each input file (the same rule as
-<code><a href="segment_video.html">segment_video</a></code>). A <code>video_codec</code> or <code>audio_codec</code>
+<code><a href="segment_video.html">segment_video</a></code>). Two rows given the same <code>output</code> path
+are refused before any row runs. A <code>video_codec</code> or <code>audio_codec</code>
 column overrides that argument per row, with <code>NA</code> meaning "leave the
 codec unset" (the column's way of writing the argument's <code>NULL</code>). An
 <code>audio_stream</code> column likewise overrides that argument per row, with

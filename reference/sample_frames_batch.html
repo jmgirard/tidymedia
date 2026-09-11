@@ -80,7 +80,11 @@ per input.</p>
 <code>input</code> column (source path). Optional columns: <code>outdir</code> (the
 output directory for that row's sequence; when absent, one is derived as
 <code>&lt;input-base&gt;_frames</code> beside each input), and <code>fps</code> /
-<code>interval</code> (per-row rate overrides). Any other columns are ignored.</p></dd>
+<code>interval</code> (per-row rate overrides). Any other columns are ignored.
+Two rows whose image sequences would share a file-name pattern are refused
+before any row runs: the same output directory path (from the column, the
+<code>outdir</code> argument, or derived) and the same input file name without
+its extension.</p></dd>
 
 
 <dt id="arg-fps-interval">fps, interval<a class="anchor" aria-label="anchor" href="#arg-fps-interval"></a></dt>

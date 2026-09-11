@@ -118,6 +118,8 @@ jobs
 #> 1 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4
 
 # Derive an output column, then hand the whole table to ffm_batch().
+# Two inputs sharing a name (a.mp4 and a.mkv) would derive one output here;
+# ffm_batch() refuses jobs that share an output before any of them runs.
 jobs$output <- file.path(tempdir(), paste0(
   tools::file_path_sans_ext(basename(jobs$input)), ".mp3"
 ))

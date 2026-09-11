@@ -77,8 +77,11 @@ a <code>frame</code> column (whole frame numbers, converted per row to a
 timestamp via the input's frame rate, as <code><a href="extract_frame.html">extract_frame</a></code> does).
 An optional <code>output</code> column names the destination image; when absent,
 one is derived per row by appending <code>_&lt;n&gt;.&lt;format&gt;</code> to each input's
-basename, with the frame number restarting at 1 for each input file. Any
-other columns are ignored.</p></dd>
+basename, with the frame number restarting at 1 for each input file. Two
+rows whose destination is the same path are refused before any row runs:
+a repeated <code>output</code>, or two derived names that match, as
+<code>clip.mp4</code> and <code>clip.mkv</code> both give <code>clip_1.png</code>. Any other
+columns are ignored.</p></dd>
 
 
 <dt id="arg-format">format<a class="anchor" aria-label="anchor" href="#arg-format"></a></dt>

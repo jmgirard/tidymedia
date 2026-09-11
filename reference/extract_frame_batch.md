@@ -28,7 +28,10 @@ extract_frame_batch(jobs, format = "png", run = TRUE, parallel = FALSE, ...)
   does). An optional `output` column names the destination image; when
   absent, one is derived per row by appending `_<n>.<format>` to each
   input's basename, with the frame number restarting at 1 for each input
-  file. Any other columns are ignored.
+  file. Two rows whose destination is the same path are refused before
+  any row runs: a repeated `output`, or two derived names that match, as
+  `clip.mp4` and `clip.mkv` both give `clip_1.png`. Any other columns
+  are ignored.
 
 - format:
 

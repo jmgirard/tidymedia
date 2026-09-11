@@ -83,8 +83,10 @@ pipeline as the scalar verb (no per-row knobs).</p>
 the destination; when absent, one is derived per row by appending
 <code>_web</code> to each input's basename with an <code>.mp4</code> extension (the web
 re-encode always writes H.264/mp4), e.g. <code>clip.mkv</code> becomes
-<code>clip_web.mp4</code>. Any two rows that resolve to the same output path are
-rejected. An optional numeric <code>audio_stream</code> column (<code>NA</code> to keep
+<code>clip_web.mp4</code>. Two rows whose destination is the same path are
+refused before any row runs: a repeated <code>output</code>, or two derived
+names that match, as <code>clip.mov</code> and <code>clip.mkv</code> both give
+<code>clip_web.mp4</code>. An optional numeric <code>audio_stream</code> column (<code>NA</code> to keep
 every audio track in that row) overrides the <code>audio_stream</code> argument
 per row. Any other columns are ignored — including <code>video_codec</code> and
 <code>audio_codec</code>, which the sibling batch verbs read as per-row overrides

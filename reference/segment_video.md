@@ -54,7 +54,8 @@ segment_video(
   length as `start`, and each element must be a single string – so a
   list of strings is accepted as well as a character vector, and a
   missing value or a number in any position is refused by this function
-  rather than by the per-segment fan-out below it.
+  rather than by the per-segment fan-out below it. Two segments given
+  the same path are refused before any segment is cut.
 
 - reencode:
 

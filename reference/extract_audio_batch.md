@@ -36,7 +36,8 @@ extract_audio_batch(
   back to the argument, and `NA` in a cell leaves that row's codec unset
   (the column form of `audio_codec = NULL`). An optional `audio_stream`
   column likewise overrides the `audio_stream` argument per row, where
-  `NA` keeps that row on the first audio track. Any other columns are
+  `NA` keeps that row on the first audio track. Two rows given the same
+  `output` path are refused before any row runs. Any other columns are
   ignored.
 
 - audio_codec:

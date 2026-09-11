@@ -21,7 +21,7 @@ test_that("the one-path rendering is pinned byte-for-byte", {
 
 test_that("the existence spelling keeps its own wording for its two callers", {
   # check_file_exists() is NOT the input front door and did not move: its two
-  # callers (verify_media()'s `file`, write_mediainfo_template()'s
+  # callers (verify_media()'s `file`, mediainfo_template()'s
   # `templatefile`) have no downstream refusal to agree with, so they keep
   # M62's exact string. This is the byte-for-byte pin captured from merged
   # master before the shared checker landed.

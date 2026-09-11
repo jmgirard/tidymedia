@@ -165,7 +165,7 @@ check_file_readable <- function(x, arg = rlang::caller_arg(x),
 
 # Existence, not readability, and deliberately so: this spelling is left for the
 # two callers whose file is NOT a pipeline input -- verify_media()'s `file` and
-# write_mediainfo_template()'s `templatefile`. Neither has a downstream
+# mediainfo_template()'s `templatefile`. Neither has a downstream
 # counterpart that would refuse an unreadable file, so widening them here would
 # be a front-door abort refusing a call nothing else refuses, which is the shape
 # D040 says needs its own decision entry rather than a sweep (M63 Scope Out).

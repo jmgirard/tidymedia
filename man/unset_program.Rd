@@ -49,7 +49,7 @@ unset_program("mediainfo")
 see what tidymedia currently finds.
 
 Other program management functions:
-\code{\link[=find_program]{find_program()}},
+\code{\link[=find_ffmpeg]{find_ffmpeg()}},
 \code{\link[=install_on_win]{install_on_win()}},
 \code{\link[=program_status]{program_status()}},
 \code{\link[=set_program]{set_program()}}

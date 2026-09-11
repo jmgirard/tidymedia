@@ -53,7 +53,7 @@ point tidymedia at a binary in a non-standard location, and
 \code{\link[=unset_program]{unset_program()}} to forget one it remembered.
 
 Other program management functions:
-\code{\link[=find_program]{find_program()}},
+\code{\link[=find_ffmpeg]{find_ffmpeg()}},
 \code{\link[=install_on_win]{install_on_win()}},
 \code{\link[=set_program]{set_program()}},
 \code{\link[=unset_program]{unset_program()}}

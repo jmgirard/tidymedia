@@ -4,14 +4,14 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M123: Help pages stop naming the internal find_program()
 
-- **Status:** planned   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate; RR<NN> whose Binding criteria bind this milestone's ACs (binding-criteria check), or — -->
 - **Principles touched:** —   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
 - **Resolves:** —   <!-- owner: plan · create/amend-via-gate; comma-separated GitHub issues the scope absorbs, each `#N closes` (the PR closes it at merge) or `#N partial` (the remainder gets a candidate row), or — ; skill conduct only — no validate check parses it -->
 - **Surface tier:** user-facing — the installed help pages and the pkgdown reference site   <!-- owner: plan · create/amend-via-gate; user-facing | internal — <one-clause reason>; skill conduct only — no validate check parses it -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m123-help-pages-drop-find-program   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 <!-- owner: plan · create; a wrong goal returns to plan, never edited in place -->
@@ -56,7 +56,7 @@ The shipped help pages send readers to `find_ffmpeg()` and its siblings wherever
 <!-- owner: plan (create) / implement (check-off, minor edits); substantive
      change is amend-via-gate. -->
 
-- [ ] T1: Move the roxygen block (`R/program_management.R:38-75`) off `find_program()` onto `find_ffmpeg()`, dropping `@usage NULL`; place the `find_ffmpeg()` section first among the four wrappers; point the other three `@rdname` tags at `find_ffmpeg`; run `devtools::document()` and confirm `man/find_program.Rd` is gone and `man/find_ffmpeg.Rd` carries no `find_program` alias. T1 alone leaves seven dangling `find_program` links, which `R CMD check` reports as a WARNING, so run no `devtools::check()` until T2 lands.
+- [x] T1: Move the roxygen block (`R/program_management.R:38-75`) off `find_program()` onto `find_ffmpeg()`, dropping `@usage NULL`; place the `find_ffmpeg()` section first among the four wrappers; point the other three `@rdname` tags at `find_ffmpeg`; run `devtools::document()` and confirm `man/find_program.Rd` is gone and `man/find_ffmpeg.Rd` carries no `find_program` alias. T1 alone leaves seven dangling `find_program` links, which `R CMD check` reports as a WARNING, so run no `devtools::check()` until T2 lands.
 - [ ] T2: Reword the six `[find_program()]` links and the example comment (`R/program_management.R:193, 218, 274, 283, 303, 431, 451`) as AC4 states; run `devtools::document()`.
 - [ ] T3: Edit the `NEWS.md:1332-1335` bullet as AC5 states.
 - [ ] T4: Run the AC1 grep, the AC2 expressions on an installed copy, the AC3 check, `devtools::check()` and `pkgdown::check_pkgdown()`; fix what they report.
@@ -71,6 +71,8 @@ The shipped help pages send readers to `find_ffmpeg()` and its siblings wherever
 - 2026-09-10: plan gate chose no pkgdown redirect over a `redirects:` entry for `reference/find_program.html` (user choice); falsified by a report of a broken outside link to that page.
 - 2026-09-10: plan gate chose fixing the links with one-time greps over a standing test failing on any help-page link to an unexported function (user choice); falsified by another link to an unexported function reaching a shipped help page.
 - 2026-09-10: plan chose moving the roxygen block onto `find_ffmpeg()`, placed first, over `@name find_ffmpeg` plus `@aliases NULL` on `find_program()`'s block, because the latter renders the family links as `find_mediainfo()` (scratch-copy measurement, roxygen2 8.1.0); falsified by the chosen route's roxygen output naming any other topic.
+- 2026-09-10: implement started on branch `m123-help-pages-drop-find-program`; no open implementation choices, so no question gate.
+- 2026-09-10: T1 done — doc block moved onto `find_ffmpeg()`, placed first; `document()` deleted `man/find_program.Rd`, wrote `man/find_ffmpeg.Rd` (`\name{find_ffmpeg}`, aliases ffmpeg/mediainfo/ffprobe/ffplay) and `\link[=find_ffmpeg]{find_ffmpeg()}` into all four family lists; roxygen and comments only, so `devtools::test()` deferred to T2's code-free checkpoint and T4.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

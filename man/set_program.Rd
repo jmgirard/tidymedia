@@ -65,7 +65,7 @@ set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe", confirm = FALSE)
 \code{\link[=install_on_win]{install_on_win()}} to download FFmpeg on Windows.
 
 Other program management functions:
-\code{\link[=find_program]{find_program()}},
+\code{\link[=find_ffmpeg]{find_ffmpeg()}},
 \code{\link[=install_on_win]{install_on_win()}},
 \code{\link[=program_status]{program_status()}},
 \code{\link[=unset_program]{unset_program()}}

@@ -35,44 +35,9 @@ tm_install_dir <- function() {
 
 # find_program() ----------------------------------------------------------
 
-#' Find the location of a dependency program
-#'
-#' Returns the location of one of the programs tidymedia drives as a string:
-#' [find_ffmpeg()], [find_ffprobe()], [find_ffplay()] and [find_mediainfo()],
-#' one per program.
-#'
-#' The program is looked up on the `PATH` first. When it is not there, the
-#' location remembered by [set_program()] is read from
-#' `tools::R_user_dir("tidymedia", "config")`; a location remembered by a
-#' version of tidymedia before 0.2.0 was written to
-#' `rappdirs::user_config_dir("tidymedia", "R")`, and that file is read only
-#' when no file exists in the current directory.
-#'
-#' A remembered location that no longer works warns and returns `NULL` rather
-#' than failing, under a condition class you can catch:
-#'
-#' * `tidymedia_location_gone` -- the location was read, but there is no
-#'   binary there any more. The condition carries the program in `tm_program`
-#'   and the location in `tm_location`.
-#' * `tidymedia_location_unreadable` -- the file holding the location does not
-#'   hold one location to try: it is empty, holds more than one line, or holds
-#'   one empty line. A line holding only spaces is read as a location, and
-#'   raises `tidymedia_location_gone` instead. The condition carries the program in
-#'   `tm_program` and the file in `tm_file`.
-#'
-#' Either is repaired with [unset_program()], which forgets the location, or
-#' [set_program()], which replaces it.
-#'
-#' @usage NULL
-#' @return The location of the program as a string, or `NULL` when it could
-#'   not be found.
-#' @seealso [set_program()] to point tidymedia at a binary in a non-standard
-#'   location, and [install_on_win()] to download FFmpeg on Windows.
-#' @family program management functions
-#' @examplesIf nzchar(Sys.which("ffmpeg")) && nzchar(Sys.which("mediainfo"))
-#' # Returns the path to the binary, or NULL with a warning if it is not found
-#' find_ffmpeg()
-#' find_mediainfo()
+# The internal lookup behind find_ffmpeg() and its three siblings. It is not
+# exported, so its behavior is documented on their help page (?find_ffmpeg),
+# whose roxygen block sits on find_ffmpeg() below.
 find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")) {
   
   # Validate arguments
@@ -148,25 +113,66 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
   location
 }
 
-# find_mediainfo() --------------------------------------------------------
-
-#' @rdname find_program
-#' @export
-find_mediainfo <- function() {
-  find_program("mediainfo")
-}
-
 # find_ffmpeg() -----------------------------------------------------------
 
-#' @rdname find_program
+# First of the four wrappers on purpose: roxygen names a merged topic, and the
+# "Other program management functions" links that point at it, after the
+# first block it reads, so this page is ?find_ffmpeg rather than
+# ?find_mediainfo.
+
+#' Find the location of a dependency program
+#'
+#' Returns the location of one of the programs tidymedia drives as a string:
+#' [find_ffmpeg()], [find_ffprobe()], [find_ffplay()] and [find_mediainfo()],
+#' one per program.
+#'
+#' The program is looked up on the `PATH` first. When it is not there, the
+#' location remembered by [set_program()] is read from
+#' `tools::R_user_dir("tidymedia", "config")`; a location remembered by a
+#' version of tidymedia before 0.2.0 was written to
+#' `rappdirs::user_config_dir("tidymedia", "R")`, and that file is read only
+#' when no file exists in the current directory.
+#'
+#' A remembered location that no longer works warns and returns `NULL` rather
+#' than failing, under a condition class you can catch:
+#'
+#' * `tidymedia_location_gone` -- the location was read, but there is no
+#'   binary there any more. The condition carries the program in `tm_program`
+#'   and the location in `tm_location`.
+#' * `tidymedia_location_unreadable` -- the file holding the location does not
+#'   hold one location to try: it is empty, holds more than one line, or holds
+#'   one empty line. A line holding only spaces is read as a location, and
+#'   raises `tidymedia_location_gone` instead. The condition carries the program in
+#'   `tm_program` and the file in `tm_file`.
+#'
+#' Either is repaired with [unset_program()], which forgets the location, or
+#' [set_program()], which replaces it.
+#'
+#' @return The location of the program as a string, or `NULL` when it could
+#'   not be found.
+#' @seealso [set_program()] to point tidymedia at a binary in a non-standard
+#'   location, and [install_on_win()] to download FFmpeg on Windows.
+#' @family program management functions
+#' @examplesIf nzchar(Sys.which("ffmpeg")) && nzchar(Sys.which("mediainfo"))
+#' # Returns the path to the binary, or NULL with a warning if it is not found
+#' find_ffmpeg()
+#' find_mediainfo()
 #' @export
 find_ffmpeg <- function() {
   find_program("ffmpeg")
 }
 
+# find_mediainfo() --------------------------------------------------------
+
+#' @rdname find_ffmpeg
+#' @export
+find_mediainfo <- function() {
+  find_program("mediainfo")
+}
+
 # find_ffprobe() -----------------------------------------------------------
 
-#' @rdname find_program
+#' @rdname find_ffmpeg
 #' @export
 find_ffprobe <- function() {
   find_program("ffprobe")
@@ -174,7 +180,7 @@ find_ffprobe <- function() {
 
 # find_ffplay() -----------------------------------------------------------
 
-#' @rdname find_program
+#' @rdname find_ffmpeg
 #' @export
 find_ffplay <- function() {
   find_program("ffplay")

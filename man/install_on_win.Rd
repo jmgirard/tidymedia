@@ -129,7 +129,7 @@ install_on_win()
 to check what is currently configured.
 
 Other program management functions:
-\code{\link[=find_program]{find_program()}},
+\code{\link[=find_ffmpeg]{find_ffmpeg()}},
 \code{\link[=program_status]{program_status()}},
 \code{\link[=set_program]{set_program()}},
 \code{\link[=unset_program]{unset_program()}}

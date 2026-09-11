@@ -38,9 +38,9 @@ Invisibly, \code{TRUE} where the location was written and
 \description{
 The location is remembered across sessions in a file named
 \verb{<program>_location.txt} under \code{tools::R_user_dir("tidymedia", "config")},
-which \code{\link[=find_program]{find_program()}} reads whenever the program is not on the \code{PATH}.
-Once this file exists, a location remembered by a version of tidymedia
-before 0.2.0 is no longer read.
+which \code{\link[=find_ffmpeg]{find_ffmpeg()}} and its siblings read whenever the program is not on
+the \code{PATH}. Once this file exists, a location remembered by a version of
+tidymedia before 0.2.0 is no longer read.
 }
 \details{
 Because the call writes a file that outlives the session, it asks for
@@ -61,11 +61,11 @@ set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe", confirm = FALSE)
 }
 }
 \seealso{
-\code{\link[=find_program]{find_program()}} to locate a configured binary, and
+\code{\link[=find_ffmpeg]{find_ffmpeg()}} and its siblings to locate a configured binary, and
 \code{\link[=install_on_win]{install_on_win()}} to download FFmpeg on Windows.
 
 Other program management functions:
-\code{\link[=find_program]{find_program()}},
+\code{\link[=find_ffmpeg]{find_ffmpeg()}},
 \code{\link[=install_on_win]{install_on_win()}},
 \code{\link[=program_status]{program_status()}},
 \code{\link[=unset_program]{unset_program()}}

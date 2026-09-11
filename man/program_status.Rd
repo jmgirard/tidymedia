@@ -19,9 +19,9 @@ installed, written, or changed by the call.
 \details{
 A program that was never configured and is not installed gets \code{NA} in both
 columns rather than a warning, so the answer for four programs arrives as one
-table instead of a pile of messages. The lookup is \code{\link[=find_program]{find_program()}}'s: the
-\code{PATH} first, then a location remembered by \code{\link[=set_program]{set_program()}}, and finally a
-location a version of tidymedia before 0.2.0 remembered under
+table instead of a pile of messages. The lookup is \code{\link[=find_ffmpeg]{find_ffmpeg()}} and its
+siblings': the \code{PATH} first, then a location remembered by \code{\link[=set_program]{set_program()}},
+and finally a location a version of tidymedia before 0.2.0 remembered under
 \code{rappdirs::user_config_dir("tidymedia", "R")}.
 
 A remembered location that cannot be used still warns, because there the
@@ -48,12 +48,13 @@ program_status()
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=find_program]{find_program()}} for one program at a time, \code{\link[=set_program]{set_program()}} to
-point tidymedia at a binary in a non-standard location, and
+\code{\link[=find_ffmpeg]{find_ffmpeg()}} and its siblings for one program at a time,
+\code{\link[=set_program]{set_program()}} to point tidymedia at a binary in a non-standard location,
+and
 \code{\link[=unset_program]{unset_program()}} to forget one it remembered.
 
 Other program management functions:
-\code{\link[=find_program]{find_program()}},
+\code{\link[=find_ffmpeg]{find_ffmpeg()}},
 \code{\link[=install_on_win]{install_on_win()}},
 \code{\link[=set_program]{set_program()}},
 \code{\link[=unset_program]{unset_program()}}

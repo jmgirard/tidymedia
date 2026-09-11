@@ -11,7 +11,7 @@ _Last hygiene check: 2026-09-10 (M122 done and archived; PR #126 squash-merged, 
 | M120 | NEWS.md reads as release notes | done | — | normal | milestones/archive/M120-news-reads-as-release-notes.md |
 | M121 | A directory becomes a jobs tibble | done | — | normal | milestones/archive/M121-directory-to-jobs-tibble.md |
 | M122 | macOS and Windows run the package's FFmpeg code | done | M118 | normal | milestones/archive/M122-mac-windows-run-ffmpeg.md |
-| M123 | Help pages stop naming the internal find_program() | planned | — | high | milestones/M123-help-pages-drop-find-program.md |
+| M123 | Help pages stop naming the internal find_program() | review | — | high | milestones/M123-help-pages-drop-find-program.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

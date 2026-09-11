@@ -196,9 +196,9 @@ find_ffplay <- function() {
 #'
 #' A program that was never configured and is not installed gets `NA` in both
 #' columns rather than a warning, so the answer for four programs arrives as one
-#' table instead of a pile of messages. The lookup is [find_program()]'s: the
-#' `PATH` first, then a location remembered by [set_program()], and finally a
-#' location a version of tidymedia before 0.2.0 remembered under
+#' table instead of a pile of messages. The lookup is [find_ffmpeg()] and its
+#' siblings': the `PATH` first, then a location remembered by [set_program()],
+#' and finally a location a version of tidymedia before 0.2.0 remembered under
 #' `rappdirs::user_config_dir("tidymedia", "R")`.
 #'
 #' A remembered location that cannot be used still warns, because there the
@@ -221,8 +221,9 @@ find_ffplay <- function() {
 #' @return A tibble with one row per program and three columns: `program`, the
 #'   program's name; `location`, the resolved path or `NA`; and `version`, the
 #'   version the binary reported or `NA`.
-#' @seealso [find_program()] for one program at a time, [set_program()] to
-#'   point tidymedia at a binary in a non-standard location, and
+#' @seealso [find_ffmpeg()] and its siblings for one program at a time,
+#'   [set_program()] to point tidymedia at a binary in a non-standard location,
+#'   and
 #'   [unset_program()] to forget one it remembered.
 #' @family program management functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
@@ -277,8 +278,8 @@ tm_na_string <- function(x) {
 #' Forget the location of a dependency program
 #'
 #' Removes the location [set_program()] remembered for a program, so that
-#' [find_program()] goes back to answering from the `PATH`. Both places a
-#' location can live are cleared: the file under
+#' [find_ffmpeg()] and its siblings go back to answering from the `PATH`. Both
+#' places a location can live are cleared: the file under
 #' `tools::R_user_dir("tidymedia", "config")` and, where one is still there, the
 #' file a version of tidymedia before 0.2.0 wrote under
 #' `rappdirs::user_config_dir("tidymedia", "R")`.
@@ -286,8 +287,8 @@ tm_na_string <- function(x) {
 #' Forgetting a location does not remove the program itself, and it does not
 #' change what is on the `PATH`. A program tidymedia found on the `PATH` is
 #' still found afterwards. A location remembered by a version before 0.2.0 is
-#' cleared as well, so it is not left behind for [find_program()] to answer
-#' with once the current file is gone.
+#' cleared as well, so it is not left behind for [find_ffmpeg()] and its
+#' siblings to answer with once the current file is gone.
 #'
 #' There is nothing to confirm: deleting the remembered location is the whole of
 #' what the call does. Calling it for a program with nothing remembered warns
@@ -306,7 +307,7 @@ tm_na_string <- function(x) {
 #' @family program management functions
 #' @examples
 #' \dontrun{
-#' # Forget a location set_program() remembered, so that find_program() goes
+#' # Forget a location set_program() remembered, so that find_mediainfo() goes
 #' # back to answering from the PATH
 #' unset_program("mediainfo")
 #' }
@@ -434,9 +435,9 @@ run_program <- function(location, args, program = "the program",
 #'
 #' The location is remembered across sessions in a file named
 #' `<program>_location.txt` under `tools::R_user_dir("tidymedia", "config")`,
-#' which [find_program()] reads whenever the program is not on the `PATH`.
-#' Once this file exists, a location remembered by a version of tidymedia
-#' before 0.2.0 is no longer read.
+#' which [find_ffmpeg()] and its siblings read whenever the program is not on
+#' the `PATH`. Once this file exists, a location remembered by a version of
+#' tidymedia before 0.2.0 is no longer read.
 #'
 #' Because the call writes a file that outlives the session, it asks for
 #' confirmation first and writes nothing until it has it. The prompt names the
@@ -454,7 +455,7 @@ run_program <- function(location, args, program = "the program",
 #' @return Invisibly, \code{TRUE} where the location was written and
 #'   \code{FALSE} where the caller declined to write it.
 #'
-#' @seealso [find_program()] to locate a configured binary, and
+#' @seealso [find_ffmpeg()] and its siblings to locate a configured binary, and
 #'   [install_on_win()] to download FFmpeg on Windows.
 #' @family program management functions
 #' @examples

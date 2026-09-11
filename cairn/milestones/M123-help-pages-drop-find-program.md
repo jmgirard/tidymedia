@@ -73,6 +73,7 @@ The shipped help pages send readers to `find_ffmpeg()` and its siblings wherever
 - 2026-09-10: plan chose moving the roxygen block onto `find_ffmpeg()`, placed first, over `@name find_ffmpeg` plus `@aliases NULL` on `find_program()`'s block, because the latter renders the family links as `find_mediainfo()` (scratch-copy measurement, roxygen2 8.1.0); falsified by the chosen route's roxygen output naming any other topic.
 - 2026-09-10: implement started on branch `m123-help-pages-drop-find-program`; no open implementation choices, so no question gate.
 - 2026-09-10: T1 done — doc block moved onto `find_ffmpeg()`, placed first; `document()` deleted `man/find_program.Rd`, wrote `man/find_ffmpeg.Rd` (`\name{find_ffmpeg}`, aliases ffmpeg/mediainfo/ffprobe/ffplay) and `\link[=find_ffmpeg]{find_ffmpeg()}` into all four family lists; roxygen and comments only, so `devtools::test()` deferred to T2's code-free checkpoint and T4.
+- 2026-09-10: T2/T3 edits in; early checks on the working tree — AC1 grep empty; AC4 word-diff changes only the seven references plus agreeing words; AC3 one `find_ffmpeg()` family link in each of the four Rd files; `pkgdown::check_pkgdown()` "No problems found"; AC2 on a scratch-library install: `help("find_program")` length 0, `help("find_ffmpeg")` length 1, usage lists the four calls. A first AC2 run was discarded: `LIB` went in as an argument, not an environment variable, so it read the stale user-library install.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

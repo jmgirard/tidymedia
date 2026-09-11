@@ -74,6 +74,7 @@ A call that fans jobs out through `ffm_batch()`, or a direct `ffm_batch()` call,
 - 2026-09-11: gate triage — O4 and O5 fixed on the branch, O1/O3/O11 filed as candidate rows, the rest rejected with reasons (Review section).
 - 2026-09-11: checkpoint — O4/O5 fixes committed; full `devtools::test()` and `devtools::check()` rerun on this tree still running, merge question not yet posed.
 - 2026-09-11: rerun on `f2c7d47` clean (test 0 failures, check 0/0/0); checkpoint closed.
+- 2026-09-11: step-7 approval: m125-batch-output-collisions approved for merge
 
 ## Decisions
 

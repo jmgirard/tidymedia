@@ -5611,25 +5611,6 @@ reject_duplicate_outputs <- function(jobs, call = rlang::caller_env()) {
   jobs
 }
 
-# The one abort behind every output-collision refusal (M125). The paths are
-# compared as exact strings, as they always have been. `problem` and `hint` are
-# the two lines that differ by caller -- a jobs table, `segment_video()`'s
-# `outfiles`, and the pipelines `ffm_batch()` was handed -- so each names the
-# destination the caller actually wrote; they are constant cli templates, and
-# the paths themselves only ever reach the message through `{.val}`.
-check_distinct_outputs <- function(paths, problem, hint,
-                                   call = rlang::caller_env()) {
-  dupes <- unique(paths[duplicated(paths)])
-  if (length(dupes) > 0) {
-    cli::cli_abort(c(
-      problem,
-      "x" = "Colliding output{?s}: {.val {dupes}}.",
-      "i" = hint
-    ), call = call)
-  }
-  invisible(paths)
-}
-
 # Guard an optional per-row video_codec column (M34/D016). Unlike
 # check_batch_string_col(), NA is legal: it is the column form of
 # video_codec = NULL, the "leave the codec alone" sentinel. An all-NA column is

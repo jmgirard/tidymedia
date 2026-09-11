@@ -126,10 +126,26 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
   commands <- vapply(pipelines, ffm_compile, character(1))
   out$command <- commands
 
+  # Resolve the per-job verify specs up front (before any encode runs) so an
+  # invalid or empty spec fails fast rather than after wasting the batch. Only a
+  # run verifies, so a dry run resolves none.
+  specs <- if (run && !is.null(verify)) resolve_batch_verify(verify, jobs, ...)
+
+  # Two jobs writing one file (M125). Not gated on `run`: the table a dry run
+  # accepts is the table the caller will run. Below every refusal above, so each
+  # still reports first, and above the first job. A task verb reaching this line
+  # has already refused the same table at its own front door; this is the check
+  # for a caller whose own `.f` builds the pipelines. Outputs that write no file
+  # are left out (writes_no_file()), and the rest are compared as exact strings.
+  outputs <- vapply(pipelines, `[[`, character(1), "output")
+  check_distinct_outputs(
+    outputs[!vapply(pipelines, writes_no_file, logical(1))],
+    "Two or more pipelines returned by {.arg .f} write to the same output path.",
+    "Give each job its own {.field output}. An output that writes no file \\
+     ({.code -}, a {.code pipe:} URL, or one after {.code -f null}) may repeat."
+  )
+
   if (run) {
-    # Resolve the per-job verify specs up front (before any encode runs) so an
-    # invalid or empty spec fails fast rather than after wasting the batch.
-    specs <- if (!is.null(verify)) resolve_batch_verify(verify, jobs, ...)
     # Execute each pipeline's argument vector (shell-free, hostile-path-safe;
     # M06) rather than the display string. ffm_run()'s result carries a
     # "status" attribute on a non-zero exit; a hard failure throws.
@@ -209,6 +225,47 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
   }
 
   out
+}
+
+# check_distinct_outputs() ------------------------------------------------
+
+# The one abort behind every output-collision refusal (M125): ffm_batch()'s own,
+# and the task verbs' front-door checks, which reach it through
+# reject_duplicate_outputs() or directly. The paths are compared as exact
+# strings. `problem` and `hint` are the two lines that differ by caller -- a
+# jobs table, `segment_video()`'s `outfiles`, the pipelines `.f` returned -- so
+# each names the destination the caller actually wrote. They are constant cli
+# templates; the paths reach the message only through `{.val}`.
+check_distinct_outputs <- function(paths, problem, hint,
+                                   call = rlang::caller_env()) {
+  dupes <- unique(paths[duplicated(paths)])
+  if (length(dupes) > 0) {
+    cli::cli_abort(c(
+      problem,
+      "x" = "Colliding output{?s}: {.val {dupes}}.",
+      "i" = hint
+    ), call = call)
+  }
+  invisible(paths)
+}
+
+# writes_no_file() --------------------------------------------------------
+
+# Whether a pipeline's output is somewhere no file is written, so two jobs
+# sharing it overwrite nothing (M125). Three shapes: FFmpeg's standard output
+# (`-`), a `pipe:` URL, and the null muxer -- `null` as the token after the LAST
+# `-f` among the output options. The options are read as the whitespace tokens
+# ffm_groups() splits them into, so `-f null` counts whether it arrived as one
+# string or two, and a later `-f mp4` overrides it.
+writes_no_file <- function(pipeline) {
+  output <- pipeline$output
+  if (identical(output, "-") || startsWith(output, "pipe:")) return(TRUE)
+  tokens <- unlist(strsplit(trimws(pipeline$output_opts), "[[:space:]]+"),
+                   use.names = FALSE)
+  f <- which(tokens == "-f")
+  if (length(f) == 0) return(FALSE)
+  last <- f[[length(f)]]
+  last < length(tokens) && identical(tokens[[last + 1L]], "null")
 }
 
 # warn_if_sequential_plan() -----------------------------------------------

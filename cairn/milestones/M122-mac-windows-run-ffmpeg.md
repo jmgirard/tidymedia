@@ -65,6 +65,7 @@ changing the matrix → the six legs stay six. Re-running the dependency floor h
 - 2026-09-10: claim audit: not owed — internal tier.
 - 2026-09-10: status → review. AC2/AC3 still need the review PR's run at the head commit, since the branch run above predates the trigger removal.
 - 2026-09-10: /milestone-review started; no PR for the branch (route d); `master` unmoved since the cut (46f1b0a = origin/master), so no merge or re-test owed before evidence.
+- 2026-09-10: step-7 approval: m122-mac-windows-run-ffmpeg approved for merge, conditional on AC2 and AC3 holding on the PR run; findings accepted as proposed. AC2/AC3 evidence and ticks will land in an unpushed commit, so the PR head stays the commit that run tested.
 
 ## Review
 
@@ -74,15 +75,15 @@ changing the matrix → the six legs stay six. Re-running the dependency floor h
 
 ### Findings (independent review, 2026-09-10)
 
-Lenses: [O] diff-bug, [S] blame-history (no findings: `on:` identical to master, D072/D086 and the 4.1.0 leg untouched), [S] prior-review (no prior-review evidence). [O] findings, reviewer's rank, with proposed disposition:
+Lenses: [O] diff-bug, [S] blame-history (no findings: `on:` identical to master, D072/D086 and the 4.1.0 leg untouched), [S] prior-review (no prior-review evidence). [O] findings, reviewer's rank, with the disposition the maintainer accepted as proposed at the 2026-09-10 gate:
 
-1. Windows `choco install` has no retry or pin; a Chocolatey feed or download failure reddens the leg with no code change. Proposed: reject — a network red shows at the PR run's CI wait and is rerun; revisit if it recurs.
-2. Binary versions unpinned (brew/choco FFmpeg 9.0.1, MediaInfo 26.05; apt older); a new upstream release could change test outcomes. Proposed: reject — the legs are meant to test what users install today; a break from a new release is a real signal.
-3. A `pull_request` run tests `refs/pull/N/merge`, not the head commit; if `master` moves the tested tree differs. Proposed: fix now in the record — AC2/AC3 evidence records the run's head SHA and merge SHA; `master` is unmoved, so the trees match.
-4. AC2 counts only the three missing-binary reasons; a fixture-generation skip ("test video could not be generated") would pass it. Proposed: fix now in the record — AC2 evidence also reports those counts.
-5. The Windows MediaInfo shim is `MediaInfo.exe`; exact-case name comparisons would fail on Windows only. Proposed: reject — no such comparison exists; hypothetical.
-6. Choco installs gyan.dev's "essentials" FFmpeg build, a different encoder set from brew's. Proposed: noted.
-7. The brew step sets no `HOMEBREW_NO_AUTO_UPDATE`/`HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK`; a future image could hit a link conflict. Proposed: reject — no conflict seen (8 s, 14 formulae); fix if it happens.
-8. Nothing is cached; Windows pays about 2 min per run. Proposed: noted — inside the plan gate's stated tolerance.
-9. `Branch/PR` has no PR yet and AC boxes unticked. Proposed: noted — filled at step 8 and from the PR run.
-10. Windows warnings print a path with mixed separators (`Temp\Rtmp…/working_dir\Rtmp…\file.mkv`). Proposed: reject — it is the intended dropped-audio warning echoing the test-built path; Windows accepts mixed separators and FFmpeg opened the file.
+1. Windows `choco install` has no retry or pin; a Chocolatey feed or download failure reddens the leg with no code change. Disposition: reject — a network red shows at the PR run's CI wait and is rerun; revisit if it recurs.
+2. Binary versions unpinned (brew/choco FFmpeg 9.0.1, MediaInfo 26.05; apt older); a new upstream release could change test outcomes. Disposition: reject — the legs are meant to test what users install today; a break from a new release is a real signal.
+3. A `pull_request` run tests `refs/pull/N/merge`, not the head commit; if `master` moves the tested tree differs. Disposition: fix now in the record — AC2/AC3 evidence records the run's head SHA and merge SHA; `master` is unmoved, so the trees match.
+4. AC2 counts only the three missing-binary reasons; a fixture-generation skip ("test video could not be generated") would pass it. Disposition: fix now in the record — AC2 evidence also reports those counts.
+5. The Windows MediaInfo shim is `MediaInfo.exe`; exact-case name comparisons would fail on Windows only. Disposition: reject — no such comparison exists; hypothetical.
+6. Choco installs gyan.dev's "essentials" FFmpeg build, a different encoder set from brew's. Disposition: noted.
+7. The brew step sets no `HOMEBREW_NO_AUTO_UPDATE`/`HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK`; a future image could hit a link conflict. Disposition: reject — no conflict seen (8 s, 14 formulae); fix if it happens.
+8. Nothing is cached; Windows pays about 2 min per run. Disposition: noted — inside the plan gate's stated tolerance.
+9. `Branch/PR` has no PR yet and AC boxes unticked. Disposition: noted — filled at step 8 and from the PR run.
+10. Windows warnings print a path with mixed separators (`Temp\Rtmp…/working_dir\Rtmp…\file.mkv`). Disposition: reject — it is the intended dropped-audio warning echoing the test-built path; Windows accepts mixed separators and FFmpeg opened the file.

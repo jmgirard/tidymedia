@@ -2,16 +2,15 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-09-11 (M124 done and archived; PR #128 squash-merged, all ten CI checks green, no returns. No new candidate rows; its three "→ M124" pointers removed from their rows. LESSONS: README temp-path clause trimmed as fixed, one line added (36 lines, 19,954/20,000); `false-greens.md` 25,996/26,000 and `guard-ordering.md` 5,451/11,000 unchanged. **`ROADMAP.md` 39,450 bytes before this pass, against its 24,000-byte budget**; `/cairn-triage` remains the only remedy. M121's terminal row pruned. `cairn_validate` clean.)_
+_Last hygiene check: 2026-09-11 (M125 done and archived; PR #129 squash-merged, CI 10/10 green, no returns. Candidates: guard-ordering row gained item (c), the path-text row became the three-item output-collision limits row, the `ffm_batch()` cli-crash row added during implement. LESSONS unchanged (36 lines, 19,954/20,000); `false-greens.md` 25,996/26,000 and `guard-ordering.md` 5,451/11,000 unchanged. **`ROADMAP.md` 40,104 bytes before this pass, against its 24,000-byte budget**; `/cairn-triage` remains the only remedy. M122's terminal row pruned. `cairn_validate` clean.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M122 | macOS and Windows run the package's FFmpeg code | done | M118 | normal | milestones/archive/M122-mac-windows-run-ffmpeg.md |
 | M123 | Help pages stop naming the internal find_program() | done | — | high | milestones/archive/M123-help-pages-drop-find-program.md |
 | M124 | The batch docs teach ffm_jobs(), and four wrong doc statements are corrected | done | — | normal | milestones/archive/M124-batch-docs-teach-ffm-jobs.md |
-| M125 | Batch runs refuse two jobs writing one output | review | — | normal | milestones/M125-batch-output-collisions.md |
+| M125 | Batch runs refuse two jobs writing one output | done | — | normal | milestones/archive/M125-batch-output-collisions.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

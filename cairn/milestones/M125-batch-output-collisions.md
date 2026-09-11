@@ -1,13 +1,13 @@
 # M125: Batch runs refuse two jobs writing one output
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** IP1
 - **Resolves:** —
 - **Surface tier:** user-facing — changes which tables the exported batch verbs, `segment_video()` and `ffm_batch()` accept
-- **Branch/PR:** —
+- **Branch/PR:** `m125-batch-output-collisions`
 
 ## Goal
 
@@ -59,6 +59,8 @@ A call that fans jobs out through `ffm_batch()`, or a direct `ffm_batch()` call,
 - 2026-09-11: plan gate chose sweeping every collision form over caller-supplied repeats only, because derived-name and two-file forms reach the same overwrite; falsified by the form cells catching no collision the caller-supplied cells miss.
 - 2026-09-11: checkpoint — plan committed while the full-mode re-audit of the gate-changed criteria is still running; its findings land as a follow-up plan commit before implementation.
 - 2026-09-11: re-audit (full mode, fresh [O] reader) of the gate-changed criteria returned 7 findings, each with one fix, applied: AC5 rewrites NEWS's existing collision sentences and names only newly refusing exports; AC1 cells set the arguments that start a program, derived-name cells only where derivation can collide, repeats defined by the resolved output path rather than the help page; AC3's `-f null` rule defined over whitespace tokens and the last `-f`, bound before any job runs; AC4 names `ffm_batch()`'s destination; T3 moves `segment_video()`'s `outfiles` derivation above the hardware check. The instrument finding on "a test runs each cell" needed no change. The checkpoint is closed.
+- 2026-09-11: implement started on `m125-batch-output-collisions`. Question gate chose placing each new check last in its verb's front door, just above the first program start, over near-the-top parity with the ten existing checks, so no refusal that reports first today reports later.
+- 2026-09-11: T1 — `test-batch-output-collision.R` + `helper-batch-output-collision.R`: 30 cells over the 16 exports, each under both `run` values, 121 tests. On the unchanged code 16 fail, the 8 cells planned to lack a check: the output column of `standardize_video_batch()`, `anonymize_video_batch()`, `segment_video_batch()`, `extract_frame_batch()` and `normalize_audio_batch()` (both `two_pass` values), `extract_frame_batch()`'s shared-stem derived name, and `segment_video()`'s `outfiles`. All 60 controls pass, including the per-cell record of which ones start a program before the hand-off. Tick waits for T2/T3 to turn it green.
 
 ## Decisions
 

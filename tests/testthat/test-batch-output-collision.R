@@ -57,6 +57,39 @@ for (cell in tm_collision_cells()) {
   }
 }
 
+# An output column that is not text, or repeats NA, is not a collision: it is
+# left to ffm_files()'s own "must be a single string" refusal, as before M125,
+# rather than read as a repeated path (M125 review O4).
+test_that("a non-text or NA output column is refused for its type, not as a collision (M125)", {
+  local_collision_files()
+  testthat::local_mocked_bindings(
+    find_program = function(program = "ffmpeg", ...) {
+      file.path("/nonexistent", program[[1]])
+    },
+    guard_timeout = function(program, limit, expr, ...) {
+      cli::cli_abort("M125 stub: {program} would start here.",
+                     class = "tm_m125_spawn")
+    },
+    .package = "tidymedia"
+  )
+  outputs <- list(numeric = c(1, 2, 1, 2), missing = c(NA, NA, NA, NA))
+  for (nm in names(outputs)) {
+    jobs <- tibble::tibble(input = c("a.mp4", "b.mp4", "a.mp4", "b.mp4"),
+                           output = outputs[[nm]])
+    cnd <- tryCatch(standardize_video_batch(jobs, run = FALSE),
+                    error = function(e) e)
+    expect_s3_class(cnd, "error")
+    msgs <- character()
+    while (inherits(cnd, "condition")) {
+      msgs <- c(msgs, cli::ansi_strip(conditionMessage(cnd)))
+      cnd <- cnd$parent
+    }
+    expect_false(any(grepl("same output path", msgs, fixed = TRUE)), label = nm)
+    expect_true(any(grepl("`output` must be a single string", msgs,
+                          fixed = TRUE)), label = nm)
+  }
+})
+
 # M125 AC3: ffm_batch() called directly -----------------------------------------
 
 # One pipeline per row: `output` as given, and each `opts` cell handed to

@@ -243,10 +243,13 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
 # strings. `problem` and `hint` are the two lines that differ by caller -- a
 # jobs table, `segment_video()`'s `outfiles`, the pipelines `.f` returned -- so
 # each names the destination the caller actually wrote. They are constant cli
-# templates; the paths reach the message only through `{.val}`.
+# templates; the paths reach the message only through `{.val}`. Only text,
+# non-NA paths are compared: an output that is not a string is left to the
+# builder's own type refusal (ffm_files()) rather than reported as a collision.
 check_distinct_outputs <- function(paths, problem, hint,
                                    call = rlang::caller_env()) {
-  dupes <- unique(paths[duplicated(paths)])
+  if (!is.character(paths)) return(invisible(paths))
+  dupes <- unique(paths[duplicated(paths) & !is.na(paths)])
   if (length(dupes) > 0) {
     cli::cli_abort(c(
       problem,

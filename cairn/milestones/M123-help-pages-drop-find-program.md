@@ -4,7 +4,7 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M123: Help pages stop naming the internal find_program()
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** high   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate; RR<NN> whose Binding criteria bind this milestone's ACs (binding-criteria check), or — -->
@@ -59,7 +59,7 @@ The shipped help pages send readers to `find_ffmpeg()` and its siblings wherever
 - [x] T1: Move the roxygen block (`R/program_management.R:38-75`) off `find_program()` onto `find_ffmpeg()`, dropping `@usage NULL`; place the `find_ffmpeg()` section first among the four wrappers; point the other three `@rdname` tags at `find_ffmpeg`; run `devtools::document()` and confirm `man/find_program.Rd` is gone and `man/find_ffmpeg.Rd` carries no `find_program` alias. T1 alone leaves seven dangling `find_program` links, which `R CMD check` reports as a WARNING, so run no `devtools::check()` until T2 lands.
 - [x] T2: Reword the six `[find_program()]` links and the example comment (`R/program_management.R:193, 218, 274, 283, 303, 431, 451`) as AC4 states; run `devtools::document()`.
 - [x] T3: Edit the `NEWS.md:1332-1335` bullet as AC5 states.
-- [ ] T4: Run the AC1 grep, the AC2 expressions on an installed copy, the AC3 check, `devtools::check()` and `pkgdown::check_pkgdown()`; fix what they report.
+- [x] T4: Run the AC1 grep, the AC2 expressions on an installed copy, the AC3 check, `devtools::check()` and `pkgdown::check_pkgdown()`; fix what they report.
 
 ## Work log
 <!-- owner: any skill · append-only; one line per entry; absolute dates. -->
@@ -76,6 +76,7 @@ The shipped help pages send readers to `find_ffmpeg()` and its siblings wherever
 - 2026-09-10: T2/T3 edits in; early checks on the working tree — AC1 grep empty; AC4 word-diff changes only the seven references plus agreeing words; AC3 one `find_ffmpeg()` family link in each of the four Rd files; `pkgdown::check_pkgdown()` "No problems found"; AC2 on a scratch-library install: `help("find_program")` length 0, `help("find_ffmpeg")` length 1, usage lists the four calls. A first AC2 run was discarded: `LIB` went in as an argument, not an environment variable, so it read the stale user-library install.
 - 2026-09-10: T2, T3 done — `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 13409; all 12 warnings are `warn_dropped_audio()` from `test-audio-stream*.R`/`test-ffmpeg.R`, and the branch's only executable R change swaps the order of the `find_ffmpeg()`/`find_mediainfo()` definitions (identical bodies), so none comes from this milestone.
 - 2026-09-10: claim audit: 32 claims read, 0 corrected — R/program_management.R, man/find_ffmpeg.Rd, man/install_on_win.Rd, man/program_status.Rd, man/set_program.Rd, man/unset_program.Rd, NEWS.md (reader's caveat on the `find_ffmpeg()` block-order comment: "?find_ffmpeg rather than ?find_mediainfo" holds for `\name` and the family links, while `?find_mediainfo` opens the page under either order as an alias).
+- 2026-09-10: T4 done — `devtools::check()` 0 errors | 0 warnings | 0 notes (7m 38.7s) on the tree of `2accfa1`, which holds every R/man/NEWS change on the branch (later commits touch only `cairn/`); AC1-AC3 and `check_pkgdown()` results as logged above; status set to review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

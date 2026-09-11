@@ -11,7 +11,7 @@ _Last hygiene check: 2026-09-10 (M123 done and archived; PR #127 squash-merged, 
 | M121 | A directory becomes a jobs tibble | done | — | normal | milestones/archive/M121-directory-to-jobs-tibble.md |
 | M122 | macOS and Windows run the package's FFmpeg code | done | M118 | normal | milestones/archive/M122-mac-windows-run-ffmpeg.md |
 | M123 | Help pages stop naming the internal find_program() | done | — | high | milestones/archive/M123-help-pages-drop-find-program.md |
-| M124 | The batch docs teach ffm_jobs(), and four wrong doc statements are corrected | in-progress | — | normal | milestones/M124-batch-docs-teach-ffm-jobs.md |
+| M124 | The batch docs teach ffm_jobs(), and four wrong doc statements are corrected | review | — | normal | milestones/M124-batch-docs-teach-ffm-jobs.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

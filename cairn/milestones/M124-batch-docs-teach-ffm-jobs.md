@@ -1,6 +1,6 @@
 # M124: The batch docs teach ffm_jobs(), and four wrong doc statements are corrected
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -109,7 +109,7 @@ vignettes stop stating things that are false or machine-specific today.
       and `extract_audio()` chunks, and `probe_all()`'s `file` column print no absolute path;
       update the setup comment (`:14-20`); add the no-match sentence. Run `build_readme()` twice
       with `cmp` and the grep, then both `tools/` chunk scripts with all three binaries present.
-- [ ] T6: `devtools::document()`, `devtools::test()`, `devtools::check()`.
+- [x] T6: `devtools::document()`, `devtools::test()`, `devtools::check()`.
 
 ## Work log
 
@@ -133,6 +133,7 @@ vignettes stop stating things that are false or machine-specific today.
 - claim audit: 27 claims read, 4 corrected — R/ffm_jobs.R (a column sharing a name with one `ffm_batch()` returns is replaced; test added), vignettes/batch.Rmd (only `crop_video_batch()` named as taking the bare table and as rejecting colliding outputs), README.Rmd (some `*_batch()` verbs take the table as it is, others need a column first).
 - 2026-09-10: the corrected claims' re-read went to a second fresh [O] reader rather than the first, because this session has no way to message a finished subagent.
 - 2026-09-10: re-read of the 4 corrected claims: 2 held (README, batch.Rmd bare-table sentence); 2 still overstated and fixed without a further pass (stopping rule): `?ffm_jobs` now claims replacement only for `command` (only `command` is replaced on every call; `success`/`verified` only when `run`/`verify` write them), test renamed to match; batch.Rmd's auto-naming sentence names `crop_video_batch()` only (five verbs auto-name, `extract_audio_batch()` refuses). Second `devtools::check()` stopped unfinished for the same reason as the first.
+- 2026-09-10: T6 done on `24d1810`: `document()` no diff, `ffm-jobs` tests 161 pass, `devtools::check()` 0 errors / 0 warnings / 0 notes (7m30s, tests included); README.Rmd unchanged since its last `cmp`-identical rebuild pair. Status → review.
 
 ## Decisions
 

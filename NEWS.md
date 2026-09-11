@@ -1329,7 +1329,7 @@
   installed, and the help-page example for finding a program no longer warns on
   a machine with no binaries.
 
-* The reference page for finding a program is now `?find_ffmpeg`, and it
+* The reference page for finding a program is `?find_ffmpeg`, and it
   documents only the four functions you can call — `find_ffmpeg()`,
   `find_ffprobe()`, `find_ffplay()` and `find_mediainfo()`. The internal
   `find_program()` behind them is no longer shown as though it were part of the

@@ -77,6 +77,8 @@ The shipped help pages send readers to `find_ffmpeg()` and its siblings wherever
 - 2026-09-10: T2, T3 done — `devtools::test()` FAIL 0 | WARN 12 | SKIP 5 | PASS 13409; all 12 warnings are `warn_dropped_audio()` from `test-audio-stream*.R`/`test-ffmpeg.R`, and the branch's only executable R change swaps the order of the `find_ffmpeg()`/`find_mediainfo()` definitions (identical bodies), so none comes from this milestone.
 - 2026-09-10: claim audit: 32 claims read, 0 corrected — R/program_management.R, man/find_ffmpeg.Rd, man/install_on_win.Rd, man/program_status.Rd, man/set_program.Rd, man/unset_program.Rd, NEWS.md (reader's caveat on the `find_ffmpeg()` block-order comment: "?find_ffmpeg rather than ?find_mediainfo" holds for `\name` and the family links, while `?find_mediainfo` opens the page under either order as an alias).
 - 2026-09-10: T4 done — `devtools::check()` 0 errors | 0 warnings | 0 notes (7m 38.7s) on the tree of `2accfa1`, which holds every R/man/NEWS change on the branch (later commits touch only `cairn/`); AC1-AC3 and `check_pkgdown()` results as logged above; status set to review.
+- 2026-09-10: review started; no PR for the branch, so resume route (d); branch already at `origin/master`; AC1-AC6 verified fresh; consistency gate clean; three lenses run, six [O] findings, none a criterion failure or load-bearing defect (0 returns).
+- 2026-09-10: step-7 approval: m123-help-pages-drop-find-program approved for merge; [O]3 fix-now (NEWS wording), [O]1 and [O]2 to candidate rows at hygiene.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->
@@ -105,3 +107,13 @@ Independent review: user-facing tier, so all three lenses ran fresh.
   - [O]4 `R/program_management.R:224-226`: the re-wrapped `@seealso` leaves "and" alone on a line.
   - [O]5 `R/program_management.R:199-200`: a possessive apostrophe after a linked name ("siblings': the") reads awkwardly.
   - [O]6 AC4's wording says "the four `@rdname find_program` tags" and then lists seven line numbers, which are the reworded lines. Evidence above names both sets explicitly.
+
+Triage at the approval gate (2026-09-10, user choices):
+- [O]1 → follow-up: new candidate row at hygiene (a check that the page stays named `find_ffmpeg`).
+- [O]2 → follow-up: folded into the "Two remembered-location paths `find_program()` still reads wrong" candidate row at hygiene. Pre-existing text; the merge stays the verified tree.
+- [O]3 → fix now: NEWS bullet reworded to say the page is named `?find_ffmpeg`; AC5 re-verified below.
+- [O]4 → rejected: style only, no rendered effect.
+- [O]5 → rejected: style only; the reviewer confirmed the sentence is true.
+- [O]6 → rejected: plan wording; the AC4 evidence line names the four tags and the seven lines separately, so the criterion was read without ambiguity.
+- No PR existed before the gate, so there was no PR conversation to read.
+- AC5 re-verified after the [O]3 fix: `git diff 0c4299c -- NEWS.md` is still one hunk at `:1332-1336`; the bullet opens "The reference page for finding a program is `?find_ffmpeg`" and still ends "and `?find_program` no longer opens the page". The fix touches NEWS.md only, so the AC1-AC4 and AC6 evidence stands for the merged tree.

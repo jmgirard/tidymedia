@@ -2,16 +2,15 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-09-10 (M121 done and archived; PR #125 squash-merged, all ten CI checks green. Three defect returns, no amendment return; AC1's Windows dangling-link case descoped to candidate item (f), and the fourth pass filed (g)/(h) and D092. LESSONS 35 lines, 19,991/20,000; `false-greens.md` 25,996/26,000 and `guard-ordering.md` 5,451/11,000 unchanged. **`ROADMAP.md` 41,080 bytes against its 24,000-byte budget**; `/cairn-triage` remains the only remedy. M118's terminal row pruned. `cairn_validate` clean.)_
+_Last hygiene check: 2026-09-10 (M122 done and archived; PR #126 squash-merged, all ten CI checks green, no returns. Three LESSONS lines corrected for binary-bearing macOS/Windows legs; LESSONS 35 lines, 19,996/20,000; `false-greens.md` 25,996/26,000 and `guard-ordering.md` 5,451/11,000 unchanged. **`ROADMAP.md` 40,934 bytes before this stamp, against its 24,000-byte budget**; `/cairn-triage` remains the only remedy. M119's terminal row pruned. `cairn_validate` clean.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M119 | The documentation defects the pre-CRAN audit measured are corrected | done | — | normal | milestones/archive/M119-shipped-docs-defects.md |
 | M120 | NEWS.md reads as release notes | done | — | normal | milestones/archive/M120-news-reads-as-release-notes.md |
 | M121 | A directory becomes a jobs tibble | done | — | normal | milestones/archive/M121-directory-to-jobs-tibble.md |
-| M122 | macOS and Windows run the package's FFmpeg code | review | M118 | normal | milestones/M122-mac-windows-run-ffmpeg.md |
+| M122 | macOS and Windows run the package's FFmpeg code | done | M118 | normal | milestones/archive/M122-mac-windows-run-ffmpeg.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

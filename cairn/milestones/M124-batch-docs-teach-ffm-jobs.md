@@ -76,7 +76,7 @@ vignettes stop stating things that are false or machine-specific today.
       `devtools::build_readme()` runs write byte-identical `README.md` files (`cmp` of a copy
       saved after the first run against the file after the second exits 0), and
       `grep -nE 'Rtmp|temp_libpath|/var/folders|/tmp/|/Users/|/home/' README.md` finds no line.
-- [ ] AC7: `devtools::document()` leaves no diff, `devtools::test()` is clean, and
+- [x] AC7: `devtools::document()` leaves no diff, `devtools::test()` is clean, and
       `devtools::check()` reports 0 errors and 0 warnings.
 
 ## Coverage
@@ -134,6 +134,7 @@ vignettes stop stating things that are false or machine-specific today.
 - 2026-09-10: the corrected claims' re-read went to a second fresh [O] reader rather than the first, because this session has no way to message a finished subagent.
 - 2026-09-10: re-read of the 4 corrected claims: 2 held (README, batch.Rmd bare-table sentence); 2 still overstated and fixed without a further pass (stopping rule): `?ffm_jobs` now claims replacement only for `command` (only `command` is replaced on every call; `success`/`verified` only when `run`/`verify` write them), test renamed to match; batch.Rmd's auto-naming sentence names `crop_video_batch()` only (five verbs auto-name, `extract_audio_batch()` refuses). Second `devtools::check()` stopped unfinished for the same reason as the first.
 - 2026-09-10: T6 done on `24d1810`: `document()` no diff, `ffm-jobs` tests 161 pass, `devtools::check()` 0 errors / 0 warnings / 0 notes (7m30s, tests included); README.Rmd unchanged since its last `cmp`-identical rebuild pair. Status → review.
+- 2026-09-10: review: AC1-AC7 verified with fresh evidence and ticked; consistency gate clean; three fresh reviewers returned 6 findings (all from the diff lens), none showing a criterion failing; triage pending at the merge gate.
 
 ## Decisions
 
@@ -148,6 +149,7 @@ Evidence gathered 2026-09-10 on `edeab25` (branch contains `origin/master`; no s
 - AC4: `grep -n 'current directory' R/program_management.R man/find_ffmpeg.Rd` exits 1. `?find_ffmpeg` (R/program_management.R:133-135, man/find_ffmpeg.Rd:32-34) says the pre-0.2.0 file is read only when no file for the program exists under `tools::R_user_dir("tidymedia", "config")`. `test-program-status-and-unset.R`: 17 tests, 201 expectations, 0 failed, 1 skipped (the all-four-programs `program_status()` test, ffplay absent; outside :214-243, whose tests at :215 and :225 pass). `test-program-location-repair.R`: 13 tests, 195 expectations, 0 failed.
 - AC5: README.Rmd:215-221 is a plain `{r}` chunk calling `ffm_jobs(".", type = "video")` and passing the table to `crop_video_batch(..., run = FALSE)`; its printed output in README.md:221-224 is a 1 × 3 tibble with input `sample.mp4`, output `sample_cropped.mp4` and a relative command, no absolute path. The setup comment (README.Rmd:14-22) says five chunks besides setup carry no guard (library, clip copy, builder, `extract_audio()`, batch example); `tools/vignette_chunk_guards.R` lists README chunks 2-6 unguarded and 7-9 guarded by `has_ffprobe`/`has_mediainfo`/`has_ffmpeg`, exit 0, "unguarded spawning chunks: none". `tools/vignette_chunk_program_identity.R` exit 0, "chunks starting a program their guard does not name: none". ffmpeg, ffprobe, mediainfo all at `/opt/homebrew/bin`.
 - AC6: two consecutive `devtools::build_readme()` runs, both exit 0; `cmp` of a copy saved after the first against README.md after the second exits 0; `grep -nE 'Rtmp|temp_libpath|/var/folders|/tmp/|/Users/|/home/' README.md` exits 1; `git status --porcelain` empty afterwards (README.md also identical to the committed file).
+- AC7: `devtools::document()` exit 0, `git status --porcelain` empty. `devtools::check()`: 0 errors, 0 warnings, 0 notes (7m48s; tests OK, vignettes re-built OK). `devtools::test()` run alone: FAIL 0, WARN 12, SKIP 5, PASS 13427. A first `test()` run, made while the plant runs, a scratch knit and a reviewer's R sessions were running, had FAIL 5: three in `test-parallel-option-carry.R` (audio-track check "timed out ... after 1 second") and two in `test-runtime-timeout.R` (partial output file missing); neither file nor the code under them is in the diff.
 
 Consistency gate: `cairn_validate.py` all checks passed, exit 0 (no principle changed, so no impact report); `pkgdown::check_pkgdown()` "No problems found"; `git diff --diff-filter=A master...HEAD` adds no file, so no `.Rbuildignore` entry is owed; `document()` no diff and README.md in sync (AC6, AC7); no NEWS entry, per the plan gate and D091 — both the `ffm_jobs()` and config-directory entries sit under NEWS.md's development heading, so neither corrected sentence shipped in 0.1.0, and the `ffm_jobs()` entry does not repeat the replaced wording. `document()` ran under installed roxygen2 8.0.0 against `Config/roxygen2/version: 8.1.0`; it warns and still writes (a planted roxygen change in a scratch copy regenerated `man/find_ffmpeg.Rd`).
 

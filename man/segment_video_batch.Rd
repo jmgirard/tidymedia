@@ -26,7 +26,8 @@ Two optional columns are recognized: \code{output} (destination path) and
 \code{output} is absent, one is derived per row by appending
 \code{_<n>.<ext>} to each input's basename, with the segment number
 restarting at 1 for each input file (the same rule as
-\code{\link{segment_video}}). A \code{video_codec} or \code{audio_codec}
+\code{\link{segment_video}}). Two rows given the same \code{output} path
+are refused before any row runs. A \code{video_codec} or \code{audio_codec}
 column overrides that argument per row, with \code{NA} meaning "leave the
 codec unset" (the column's way of writing the argument's \code{NULL}). An
 \code{audio_stream} column likewise overrides that argument per row, with

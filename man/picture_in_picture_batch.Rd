@@ -29,8 +29,8 @@ like-named arguments
 per row (a row omitting one falls back to the argument). In an \code{audio_input}
 column, \code{NA} means "drop audio" (the column's way of writing the
 scalar's \code{NULL}); in a \code{video_codec} or \code{audio_codec} column
-it means "leave the codec unset". Any two rows resolving to the same output
-path are rejected; other columns are ignored.}
+it means "leave the codec unset". Two rows given the same \code{output}
+path are refused before any row runs; other columns are ignored.}
 
 \item{position, scale, margin}{Defaults applied to every row lacking the
 corresponding column. \code{position} is one of \code{"topright"} (the

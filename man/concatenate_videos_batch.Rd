@@ -10,9 +10,9 @@ concatenate_videos_batch(jobs, run = TRUE, parallel = FALSE, ...)
 \item{jobs}{A data frame with one row per output and (at least) an
 \code{inputs} list-column — each cell a character vector of the source
 paths to join, in order — and an \code{output} column (destination path).
-An \code{output} column is required; this verb derives no destination. Any
-two rows resolving to the same output path are rejected. Any other columns
-are ignored.}
+An \code{output} column is required; this verb derives no destination. Two
+rows given the same \code{output} path are refused before any row runs.
+Any other columns are ignored.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

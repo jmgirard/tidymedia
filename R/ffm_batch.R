@@ -14,6 +14,13 @@
 #' \code{.f} a \code{...} argument if \code{jobs} carries columns it does not
 #' use.
 #'
+#' Two jobs whose pipelines write to the same \code{output} path are refused
+#' before any job runs, under \code{run = FALSE} as well as \code{run = TRUE}.
+#' Paths are compared exactly as written. An output that writes no file may
+#' repeat: \code{-} (standard output), a \code{pipe:} URL, or an output whose
+#' last \code{-f} option is \code{-f null}, as
+#' \code{ffm_output_options("-f null")} gives.
+#'
 #' @param jobs A data frame with one row per job. Its column names are the
 #'   arguments passed to \code{.f}.
 #' @param .f A function that takes a job's columns (by name) and returns an ffm

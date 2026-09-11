@@ -20,7 +20,11 @@ sample_frames_batch(
 \code{input} column (source path). Optional columns: \code{outdir} (the
 output directory for that row's sequence; when absent, one is derived as
 \code{<input-base>_frames} beside each input), and \code{fps} /
-\code{interval} (per-row rate overrides). Any other columns are ignored.}
+\code{interval} (per-row rate overrides). Any other columns are ignored.
+Two rows whose image sequences would share file names are refused before
+any row runs: the same output directory (from the column, the
+\code{outdir} argument, or derived) and the same input file name without
+its extension.}
 
 \item{fps, interval}{The sampling rate applied to every row, as in
 \code{\link[=sample_frames]{sample_frames()}}; a per-row column of the same name overrides it. Supply

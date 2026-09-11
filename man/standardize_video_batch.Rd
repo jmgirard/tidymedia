@@ -26,8 +26,9 @@ standardize_video_batch(
 the destination; when absent, one is derived per row by appending
 \code{_standardized} to each input's basename, keeping the input's
 extension (e.g. \code{clip.mkv} becomes \code{clip_standardized.mkv}).
-Because standardization is one-input-to-one-output, a duplicated
-\code{input} with no \code{output} column would collide and is rejected.
+Two rows that would write the same file are refused before any row runs:
+a path repeated in the \code{output} column, or a repeated \code{input}
+when there is no \code{output} column.
 Each of the six standardization knobs — \code{width}, \code{height},
 \code{fps}, \code{video_codec}, \code{audio_codec}, \code{pixel_format} —
 may also appear as a

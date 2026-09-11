@@ -14,8 +14,11 @@ a \code{frame} column (whole frame numbers, converted per row to a
 timestamp via the input's frame rate, as \code{\link{extract_frame}} does).
 An optional \code{output} column names the destination image; when absent,
 one is derived per row by appending \code{_<n>.<format>} to each input's
-basename, with the frame number restarting at 1 for each input file. Any
-other columns are ignored.}
+basename, with the frame number restarting at 1 for each input file. Two
+rows whose destination is the same path are refused before any row runs:
+a repeated \code{output}, or two derived names that match, as
+\code{clip.mp4} and \code{clip.mkv} both give \code{clip_1.png}. Any other
+columns are ignored.}
 
 \item{format}{A string giving the image file extension used when \code{output}
 is derived (ignored when \code{jobs} carries an \code{output} column).

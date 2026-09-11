@@ -33,9 +33,10 @@ overrides that argument per row, with \code{NA} meaning "leave the codec
 unset" (the column's way of writing the argument's \code{NULL}); an
 \code{audio_codec} column works the same way. An \code{audio_stream} column
 overrides that argument per row, with \code{NA} meaning "keep every audio
-track" (the column's way of writing that argument's \code{NULL}). Any two
-rows that resolve to the same output path are rejected. Any other columns
-are ignored.}
+track" (the column's way of writing that argument's \code{NULL}). Two rows
+whose destination is the same path are refused before any row runs: a
+repeated \code{output}, or a repeated \code{input} when there is no
+\code{output} column. Any other columns are ignored.}
 
 \item{width, height}{The output crop size in pixels, applied to every row
 unless \code{jobs} carries a column of the same name. Required: pass each as

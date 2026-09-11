@@ -20,8 +20,10 @@ format_for_web_batch(
 the destination; when absent, one is derived per row by appending
 \code{_web} to each input's basename with an \code{.mp4} extension (the web
 re-encode always writes H.264/mp4), e.g. \code{clip.mkv} becomes
-\code{clip_web.mp4}. Any two rows that resolve to the same output path are
-rejected. An optional numeric \code{audio_stream} column (\code{NA} to keep
+\code{clip_web.mp4}. Two rows whose destination is the same path are
+refused before any row runs: a repeated \code{output}, or two derived
+names that match, as \code{clip.mov} and \code{clip.mkv} both give
+\code{clip_web.mp4}. An optional numeric \code{audio_stream} column (\code{NA} to keep
 every audio track in that row) overrides the \code{audio_stream} argument
 per row. Any other columns are ignored — including \code{video_codec} and
 \code{audio_codec}, which the sibling batch verbs read as per-row overrides

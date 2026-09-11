@@ -38,7 +38,7 @@ The shipped help pages send readers to `find_ffmpeg()` and its siblings wherever
 - [x] AC3: The "Other program management functions" list in each of `man/program_status.Rd`, `man/set_program.Rd`, `man/unset_program.Rd` and `man/install_on_win.Rd` contains `\link[=find_ffmpeg]{find_ffmpeg()}`.
 - [x] AC4: Of the lines `grep -n "#'.*find_program" R/program_management.R` returns at `0c4299c`, each one other than the four `@rdname find_program` tags (`:193`, `:218`, `:274`, `:283`, `:303`, `:431`, `:451`) has, in `git diff --word-diff 0c4299c -- R/program_management.R`, only its function reference replaced — by `find_ffmpeg()`, `find_ffmpeg()` and its siblings, or the `find_*()` function for the program the sentence's example names — plus the words that must agree with it and any re-wrapping.
 - [x] AC5: The `NEWS.md` bullet on the find-a-program reference page (`NEWS.md:1332-1335` at `0c4299c`) names that page `?find_ffmpeg` and says `?find_program` no longer opens it.
-- [ ] AC6: `devtools::check()` reports 0 errors and 0 warnings, and `pkgdown::check_pkgdown()` reports no problems.
+- [x] AC6: `devtools::check()` reports 0 errors and 0 warnings, and `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
 <!-- owner: plan · create/amend-via-gate; each acceptance criterion → the
@@ -91,3 +91,17 @@ Sync: branch merge-base equals `origin/master` (`5a4b7be`) on 2026-09-10; no mer
 - AC3: on HEAD `213df1f` after `document()`, the block from "Other program management functions:" to its closing `}` opens with `\code{\link[=find_ffmpeg]{find_ffmpeg()}}` in `program_status.Rd:57`, `set_program.Rd:68`, `unset_program.Rd:52` and `install_on_win.Rd:132`.
 - AC4: the grep at `0c4299c` returns 11 lines: four `@rdname find_program` (`:153, 161, 169, 177`) and the seven the criterion names. In the word diff against HEAD `213df1f`: `:193` `[find_program()]'s` → `[find_ffmpeg()] and its siblings'`; `:218` and `:451` `[find_program()]` → `[find_ffmpeg()] and its siblings`; `:274` `goes` → `go` and `:431` `reads` → `read` beside the same swap; `:283` the same swap; `:303` `find_program()` → `find_mediainfo()`, the example being `unset_program("mediainfo")`. The only other changes on those lines move words across `#'` line breaks.
 - AC5: `git diff 0c4299c -- NEWS.md` changes one hunk, the bullet at `:1332-1335`, now `:1332-1336`: it opens "The reference page for finding a program is now `?find_ffmpeg`" and ends "and `?find_program` no longer opens the page". The added lines hold no milestone id.
+- AC6: `devtools::check(error_on = "never")` on HEAD `213df1f`, run 2026-09-10: 0 errors, 0 warnings, 0 notes. Rd files, Rd cross-references, missing documentation entries, tests (`testthat.R`, 470 s elapsed) and vignettes all OK. `pkgdown::check_pkgdown()` on the same tree: "No problems found."
+
+Consistency gate (2026-09-10): `cairn_validate.py` exit 0, every check PASS/OK. No principle touched, so `cairn_impact` skipped. Toolchain slot: `document()` no diff; README.Rmd/README.md untouched by the branch; `check_pkgdown()` clean; NEWS.md carries the entry (AC5) with no milestone id; no new top-level files; `check()` 0/0/0 (AC6).
+
+Independent review: user-facing tier, so all three lenses ran fresh.
+- [S] blame-history: no conflicts. Dropping `@usage NULL` (added by M119 `0df9835`) cannot bring back the defect it hid, since the block now sits on an exported function. The definition reorder is the plan's recorded choice. Dropping the alias fits D014, and the NEWS wording fits D091.
+- [S] prior-review: no regressions. All eleven M119 [O]7 sites now point at `find_ffmpeg()`; `gh api pulls/comments` probe returned `[]`, so PR threads were skipped.
+- [O] diff-bug: no correctness defects, six ranked findings (dispositions logged at the approval gate):
+  - [O]1 `R/program_management.R:118-121`: the topic name depends on `find_ffmpeg()`'s block coming first, and only a comment guards it. The reviewer's scratch reorder produced `\name{find_mediainfo}` and family links to `find_mediainfo()`, with no check warning.
+  - [O]2 `R/program_management.R:133-134`: the help text says the pre-0.2.0 file "is read only when no file exists in the current directory". Code at `:54-55` reads it only when no file exists under `tools::R_user_dir()`. The wording was already there and moved verbatim; verified at review.
+  - [O]3 `NEWS.md:1332`: "is now `?find_ffmpeg`" reads as new, but 0.1.0's page (`4b04fad`) already carried the `find_ffmpeg` alias; verified at review.
+  - [O]4 `R/program_management.R:224-226`: the re-wrapped `@seealso` leaves "and" alone on a line.
+  - [O]5 `R/program_management.R:199-200`: a possessive apostrophe after a linked name ("siblings': the") reads awkwardly.
+  - [O]6 AC4's wording says "the four `@rdname find_program` tags" and then lists seven line numbers, which are the reworded lines. Evidence above names both sets explicitly.

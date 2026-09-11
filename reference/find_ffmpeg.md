@@ -29,7 +29,8 @@ location remembered by
 is read from `tools::R_user_dir("tidymedia", "config")`; a location
 remembered by a version of tidymedia before 0.2.0 was written to
 `rappdirs::user_config_dir("tidymedia", "R")`, and that file is read
-only when no file exists in the current directory.
+only when no file for the program exists under
+`tools::R_user_dir("tidymedia", "config")`.
 
 A remembered location that no longer works warns and returns `NULL`
 rather than failing, under a condition class you can catch:

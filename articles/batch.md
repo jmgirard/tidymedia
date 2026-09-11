@@ -12,6 +12,7 @@ that argument (or set `run = TRUE`) to actually process the files.
 
 ``` r
 
+folder <- system.file("extdata", package = "tidymedia")
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ```
 
@@ -25,28 +26,34 @@ passed to the function by name,
 and the runner returns your jobs tibble with a `command` column added
 (and a `success` column when `run = TRUE`).
 
+[`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
+builds that tibble from a folder: one row per file of the media type you
+ask for, with the file’s full path in an `input` column. When the folder
+holds no file of that type,
+[`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
+stops with an error rather than returning an empty table. Add any other
+columns your function needs, here an `output` for each input:
+
 ``` r
 
-jobs <- tibble::tibble(
-  input  = c(video, video),
-  output = c("clip1.mp3", "clip2.mp3")
-)
+jobs <- ffm_jobs(folder, type = "video")
+jobs$output <- paste0(tools::file_path_sans_ext(basename(jobs$input)), ".mp3")
 
 ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
   ffm_files(input, output) |>
     ffm_drop("video") |>
     ffm_codec(audio = "libmp3lame")
 })
-#> # A tibble: 2 × 3
+#> # A tibble: 1 × 3
 #>   input                                                        output    command
 #>   <chr>                                                        <chr>     <chr>  
-#> 1 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 clip1.mp3 "-y -i…
-#> 2 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 clip2.mp3 "-y -i…
+#> 1 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 sample.m… "-y -i…
 ```
 
 Because you build the pipeline yourself, any combination of builder
 verbs is available per job. Give `.f` a `...` argument so it tolerates
-extra job columns it does not use.
+extra job columns it does not use: without one, a column `.f` has no
+argument for stops the batch with R’s “unused argument” error.
 
 ## Per-verb batch siblings
 
@@ -58,26 +65,37 @@ verb ships a `*_batch()` companion —
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
 [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md),
 and the rest — that takes a jobs tibble directly and applies the verb to
-each row:
+each row.
+[`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)
+can take the table straight from
+[`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md);
+others, such as
+[`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md),
+refuse it until you add an `output` column.
+[`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
+again stops with an error rather than returning an empty table when the
+folder holds no file of the type:
 
 ``` r
 
-jobs <- tibble::tibble(
-  input  = c(video, video),
-  output = c("session01_cropped.mp4", "session02_cropped.mp4")
-)
+jobs <- ffm_jobs(folder, type = "video")
+jobs$output <- paste0(tools::file_path_sans_ext(basename(jobs$input)), "_cropped.mp4")
 
 crop_video_batch(jobs, width = 160, height = 120, run = FALSE)
-#> # A tibble: 2 × 3
+#> # A tibble: 1 × 3
 #>   input                                                        output    command
 #>   <chr>                                                        <chr>     <chr>  
-#> 1 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 session0… "-y -i…
-#> 2 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 session0… "-y -i…
+#> 1 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 sample_c… "-y -i…
 ```
 
-When the jobs tibble has no `output` column, the transform verbs
-auto-name each output from its input (e.g. `_cropped`); either way they
-reject two rows that would resolve to the same output path.
+Without an `output` column,
+[`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)
+names each output after its input, adding `_cropped`, in the input’s own
+folder. Here that folder is inside the installed package, so the example
+adds an `output` column that puts the files in the working directory
+instead. Either way
+[`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)
+rejects two rows that would resolve to the same output path.
 [`vignette("workflow")`](https://jmgirard.github.io/tidymedia/articles/workflow.md)
 chains several of these across a study folder.
 

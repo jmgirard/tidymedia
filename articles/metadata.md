@@ -158,10 +158,13 @@ get_height(video)
 ## Batching over many files
 
 Because every reader accepts a vector of files and keys its output by
-`file`, describing a whole directory is a one-liner.
+`file`, describing a whole directory needs no loop.
 [`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
 lists the folder’s video files across the containers it knows, not one
-in particular; pass `extension = "mp4"` to narrow it:
+in particular; pass `extension = "mp4"` to narrow it. When the folder
+holds no such file,
+[`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
+stops with an error rather than returning an empty table:
 
 ``` r
 

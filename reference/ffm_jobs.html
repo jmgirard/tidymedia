@@ -104,7 +104,16 @@ so a row can name a file outside <code>directory</code>.</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The returned tibble carries <code>input</code> and nothing else, deliberately:
 <code><a href="ffm_batch.html">ffm_batch()</a></code> passes every column of the jobs table to <code>.f</code> by name, so
-an extra column would become an argument every <code>.f</code> has to accept. Add
+a column <code>.f</code> has no argument for stops the batch with R's
+"unused argument" error unless <code>.f</code> takes <code>...</code>.
+<code><a href="crop_video_batch.html">crop_video_batch()</a></code> and <code><a href="extract_audio_batch.html">extract_audio_batch()</a></code> return a column they do
+not read unchanged — other than one named like a column <code><a href="ffm_batch.html">ffm_batch()</a></code>
+adds (see its Value section): a <code>command</code> column, for one, is replaced
+by the compiled command — and they read a column named like one of their
+per-row
+arguments (each help page lists which) in place of that argument, row by
+row: a <code>width</code> column in <code><a href="crop_video_batch.html">crop_video_batch()</a></code>, an <code>audio_codec</code>
+column in <code><a href="extract_audio_batch.html">extract_audio_batch()</a></code>. Add
 the columns your pipeline needs with the usual data-frame tools — some
 <code>*_batch()</code> verbs want an <code>output</code> column, others a
 task-specific one such as <code>start</code> and <code>end</code> — as the examples

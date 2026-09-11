@@ -44,8 +44,11 @@ returns the jobs tibble the batch runners take: one row per file, with
 the file’s full path in an `input` column. The paths come back absolute
 for every file that resolves, however you spell the folder, which is why
 the output above shows the study folder at its full location rather than
-as `study/raw`. The next section adds an `output` column to that table
-and hands it to a `*_batch()` verb.
+as `study/raw`. When the folder holds no video file,
+[`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
+stops with an error rather than returning an empty table. The next
+section adds an `output` column to that table and hands it to a
+`*_batch()` verb.
 
 ## 1. Standardize the recordings
 

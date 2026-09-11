@@ -56,11 +56,25 @@ directory, so a row can name a file outside `directory`.
 
 The returned tibble carries `input` and nothing else, deliberately:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-passes every column of the jobs table to `.f` by name, so an extra
-column would become an argument every `.f` has to accept. Add the
-columns your pipeline needs with the usual data-frame tools — some
-`*_batch()` verbs want an `output` column, others a task-specific one
-such as `start` and `end` — as the examples below derive an `output`
+passes every column of the jobs table to `.f` by name, so a column `.f`
+has no argument for stops the batch with R's "unused argument" error
+unless `.f` takes `...`.
+[`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)
+and
+[`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md)
+return a column they do not read unchanged — other than one named like a
+column
+[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+adds (see its Value section): a `command` column, for one, is replaced
+by the compiled command — and they read a column named like one of their
+per-row arguments (each help page lists which) in place of that
+argument, row by row: a `width` column in
+[`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md),
+an `audio_codec` column in
+[`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md).
+Add the columns your pipeline needs with the usual data-frame tools —
+some `*_batch()` verbs want an `output` column, others a task-specific
+one such as `start` and `end` — as the examples below derive an `output`
 from `input`.
 
 ## See also

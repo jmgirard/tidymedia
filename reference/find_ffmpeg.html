@@ -74,7 +74,8 @@ location remembered by <code><a href="set_program.html">set_program()</a></code>
 <code>tools::R_user_dir("tidymedia", "config")</code>; a location remembered by a
 version of tidymedia before 0.2.0 was written to
 <code>rappdirs::user_config_dir("tidymedia", "R")</code>, and that file is read only
-when no file exists in the current directory.</p>
+when no file for the program exists under
+<code>tools::R_user_dir("tidymedia", "config")</code>.</p>
 <p>A remembered location that no longer works warns and returns <code>NULL</code> rather
 than failing, under a condition class you can catch:</p><ul><li><p><code>tidymedia_location_gone</code> – the location was read, but there is no
 binary there any more. The condition carries the program in <code>tm_program</code>

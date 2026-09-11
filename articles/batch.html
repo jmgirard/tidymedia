@@ -77,7 +77,8 @@ examples below use <code>run = FALSE</code>, which
 you can inspect exactly what would run. Drop that argument (or set
 <code>run = TRUE</code>) to actually process the files.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">video</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">folder</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span>
+<span><span class="va">video</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="the-batch-runner">The batch runner<a class="anchor" aria-label="anchor" href="#the-batch-runner"></a>
 </h2>
@@ -87,25 +88,30 @@ turns a row into a pipeline. Each column is passed to the function by
 name, <code><a href="https://purrr.tidyverse.org/reference/pmap.html" class="external-link">purrr::pmap()</a></code>-style, and the runner returns your jobs
 tibble with a <code>command</code> column added (and a
 <code>success</code> column when <code>run = TRUE</code>).</p>
+<p><code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> builds that tibble from a folder: one row per
+file of the media type you ask for, with the file’s full path in an
+<code>input</code> column. When the folder holds no file of that type,
+<code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> stops with an error rather than returning an
+empty table. Add any other columns your function needs, here an
+<code>output</code> for each input:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">jobs</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
-<span>  input  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>,</span>
-<span>  output <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"clip1.mp3"</span>, <span class="st">"clip2.mp3"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">jobs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ffm_jobs.html">ffm_jobs</a></span><span class="op">(</span><span class="va">folder</span>, type <span class="op">=</span> <span class="st">"video"</span><span class="op">)</span></span>
+<span><span class="va">jobs</span><span class="op">$</span><span class="va">output</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="fu">tools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/tools/fileutils.html" class="external-link">file_path_sans_ext</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">jobs</span><span class="op">$</span><span class="va">input</span><span class="op">)</span><span class="op">)</span>, <span class="st">".mp3"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/ffm_batch.html">ffm_batch</a></span><span class="op">(</span><span class="va">jobs</span>, run <span class="op">=</span> <span class="cn">FALSE</span>, .f <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span>, <span class="va">...</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_files.html">ffm_files</a></span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="../reference/ffm_drop.html">ffm_drop</a></span><span class="op">(</span><span class="st">"video"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="../reference/ffm_codec.html">ffm_codec</a></span><span class="op">(</span>audio <span class="op">=</span> <span class="st">"libmp3lame"</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 3</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
 <span><span class="co">#&gt;   input                                                        output    command</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 clip1.mp3 <span style="color: #949494;">"</span>-y -i…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 clip2.mp3 <span style="color: #949494;">"</span>-y -i…</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 sample.m… <span style="color: #949494;">"</span>-y -i…</span></span></code></pre></div>
 <p>Because you build the pipeline yourself, any combination of builder
 verbs is available per job. Give <code>.f</code> a <code>...</code>
-argument so it tolerates extra job columns it does not use.</p>
+argument so it tolerates extra job columns it does not use: without one,
+a column <code>.f</code> has no argument for stops the batch with R’s
+“unused argument” error.</p>
 </div>
 <div class="section level2">
 <h2 id="per-verb-batch-siblings">Per-verb batch siblings<a class="anchor" aria-label="anchor" href="#per-verb-batch-siblings"></a>
@@ -115,24 +121,31 @@ Every task verb ships a <code>*_batch()</code> companion —
 <code><a href="../reference/extract_audio_batch.html">extract_audio_batch()</a></code>, <code><a href="../reference/convert_audio_batch.html">convert_audio_batch()</a></code>,
 <code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code>, <code><a href="../reference/standardize_video_batch.html">standardize_video_batch()</a></code>,
 <code><a href="../reference/normalize_audio_batch.html">normalize_audio_batch()</a></code>, and the rest — that takes a jobs
-tibble directly and applies the verb to each row:</p>
+tibble directly and applies the verb to each row.
+<code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code> can take the table straight from
+<code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code>; others, such as
+<code><a href="../reference/extract_audio_batch.html">extract_audio_batch()</a></code>, refuse it until you add an
+<code>output</code> column. <code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> again stops with an
+error rather than returning an empty table when the folder holds no file
+of the type:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">jobs</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
-<span>  input  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">video</span>, <span class="va">video</span><span class="op">)</span>,</span>
-<span>  output <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"session01_cropped.mp4"</span>, <span class="st">"session02_cropped.mp4"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">jobs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ffm_jobs.html">ffm_jobs</a></span><span class="op">(</span><span class="va">folder</span>, type <span class="op">=</span> <span class="st">"video"</span><span class="op">)</span></span>
+<span><span class="va">jobs</span><span class="op">$</span><span class="va">output</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="fu">tools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/tools/fileutils.html" class="external-link">file_path_sans_ext</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">jobs</span><span class="op">$</span><span class="va">input</span><span class="op">)</span><span class="op">)</span>, <span class="st">"_cropped.mp4"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/crop_video_batch.html">crop_video_batch</a></span><span class="op">(</span><span class="va">jobs</span>, width <span class="op">=</span> <span class="fl">160</span>, height <span class="op">=</span> <span class="fl">120</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 3</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
 <span><span class="co">#&gt;   input                                                        output    command</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 session0… <span style="color: #949494;">"</span>-y -i…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 session0… <span style="color: #949494;">"</span>-y -i…</span></span></code></pre></div>
-<p>When the jobs tibble has no <code>output</code> column, the transform
-verbs auto-name each output from its input (e.g. <code>_cropped</code>);
-either way they reject two rows that would resolve to the same output
-path. <code><a href="../articles/workflow.html">vignette("workflow")</a></code> chains several of these across a
-study folder.</p>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 sample_c… <span style="color: #949494;">"</span>-y -i…</span></span></code></pre></div>
+<p>Without an <code>output</code> column,
+<code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code> names each output after its input,
+adding <code>_cropped</code>, in the input’s own folder. Here that
+folder is inside the installed package, so the example adds an
+<code>output</code> column that puts the files in the working directory
+instead. Either way <code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code> rejects two rows
+that would resolve to the same output path.
+<code><a href="../articles/workflow.html">vignette("workflow")</a></code> chains several of these across a study
+folder.</p>
 </div>
 <div class="section level2">
 <h2 id="fan-out-verbs">Fan-out verbs<a class="anchor" aria-label="anchor" href="#fan-out-verbs"></a>

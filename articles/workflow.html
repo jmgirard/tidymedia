@@ -101,8 +101,10 @@ take: one row per file, with the file’s full path in an
 <code>input</code> column. The paths come back absolute for every file
 that resolves, however you spell the folder, which is why the output
 above shows the study folder at its full location rather than as
-<code>study/raw</code>. The next section adds an <code>output</code>
-column to that table and hands it to a <code>*_batch()</code> verb.</p>
+<code>study/raw</code>. When the folder holds no video file,
+<code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> stops with an error rather than returning an
+empty table. The next section adds an <code>output</code> column to that
+table and hands it to a <code>*_batch()</code> verb.</p>
 <div class="section level2">
 <h2 id="standardize-the-recordings">1. Standardize the recordings<a class="anchor" aria-label="anchor" href="#standardize-the-recordings"></a>
 </h2>

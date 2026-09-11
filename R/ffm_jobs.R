@@ -12,9 +12,10 @@
 #' a column \code{.f} has no argument for stops the batch with R's
 #' "unused argument" error unless \code{.f} takes \code{...}.
 #' [crop_video_batch()] and [extract_audio_batch()] return a column they do
-#' not read unchanged, unless it shares a name with a column [ffm_batch()]
-#' returns (see its Value section), which is replaced; and they read a column
-#' named like one of their per-row
+#' not read unchanged — other than one named like a column [ffm_batch()]
+#' adds (see its Value section): a \code{command} column, for one, is replaced
+#' by the compiled command — and they read a column named like one of their
+#' per-row
 #' arguments (each help page lists which) in place of that argument, row by
 #' row: a \code{width} column in [crop_video_batch()], an \code{audio_codec}
 #' column in [extract_audio_batch()]. Add

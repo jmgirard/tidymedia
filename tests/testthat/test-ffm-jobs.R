@@ -400,7 +400,7 @@ test_that("crop_video_batch() and extract_audio_batch() return an unread column 
   expect_identical(extracted$notes, jobs$notes)
 })
 
-test_that("a column named like one ffm_batch() returns is replaced, not kept", {
+test_that("a `command` column is replaced by the compiled command, not kept", {
   jobs <- ffm_jobs(local_media_dir(), type = "video")
   jobs$command <- c("stale", "stale")
 

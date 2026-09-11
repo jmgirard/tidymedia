@@ -132,6 +132,7 @@ vignettes stop stating things that are false or machine-specific today.
 - 2026-09-10: T6 started: `document()` no diff; two `build_readme()` runs `cmp`-identical, path grep empty; first `devtools::check()` stopped unfinished when the claim audit's corrections changed the tree.
 - claim audit: 27 claims read, 4 corrected — R/ffm_jobs.R (a column sharing a name with one `ffm_batch()` returns is replaced; test added), vignettes/batch.Rmd (only `crop_video_batch()` named as taking the bare table and as rejecting colliding outputs), README.Rmd (some `*_batch()` verbs take the table as it is, others need a column first).
 - 2026-09-10: the corrected claims' re-read went to a second fresh [O] reader rather than the first, because this session has no way to message a finished subagent.
+- 2026-09-10: re-read of the 4 corrected claims: 2 held (README, batch.Rmd bare-table sentence); 2 still overstated and fixed without a further pass (stopping rule): `?ffm_jobs` now claims replacement only for `command` (only `command` is replaced on every call; `success`/`verified` only when `run`/`verify` write them), test renamed to match; batch.Rmd's auto-naming sentence names `crop_video_batch()` only (five verbs auto-name, `extract_audio_batch()` refuses). Second `devtools::check()` stopped unfinished for the same reason as the first.
 
 ## Decisions
 

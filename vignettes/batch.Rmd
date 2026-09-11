@@ -76,8 +76,8 @@ crop_video_batch(
 )
 ```
 
-That table has no `output` column, so the transform verbs auto-name each output
-from its input (here `_cropped`); add an `output` column to choose the names
+That table has no `output` column, so `crop_video_batch()` auto-names each
+output from its input (here `_cropped`); add an `output` column to choose the names
 yourself. Either way `crop_video_batch()` rejects two rows that would resolve to
 the same output path. `vignette("workflow")` chains several of
 these across a study folder.

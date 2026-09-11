@@ -407,7 +407,7 @@
   neither an `outdir` column nor the argument, it writes each input's numbered
   sequence into a `<basename>_frames` directory beside that input.
   Every batch verb refuses, before any row runs, a table in which two rows
-  would write the same file, whether through a repeated `output` column or two
+  name the same output path, whether through a repeated `output` column or two
   derived names that match. With no `output` column,
   `standardize_video_batch()`, `normalize_audio_batch()` and
   `anonymize_video_batch()` report a repeated input by naming that input. The
@@ -772,7 +772,7 @@
 
 ## Bug fixes
 
-* **Two jobs can no longer be told to write the same file.** Every batch verb,
+* **Two jobs can no longer be given the same output path.** Every batch verb,
   `segment_video()` and `ffm_batch()` now refuse a call in which two jobs would
   write one output path, before any job runs and under `run = FALSE` as well
   as `run = TRUE`. Six let some such calls through. `standardize_video_batch()`,

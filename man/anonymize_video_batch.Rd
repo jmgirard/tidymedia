@@ -27,7 +27,7 @@ same \code{x}/\code{y}/\code{width}/\code{height} (and optional per-box
 \code{output} column names the destination; when absent, one is derived per
 row by appending \code{_anonymized} to each input's basename, keeping the
 input's extension (e.g. \code{clip.mkv} becomes \code{clip_anonymized.mkv}).
-Two rows that would write the same file are refused before any row runs:
+Two rows naming the same output path are refused before any row runs:
 a path repeated in the \code{output} column, or a repeated \code{input}
 when there is no \code{output} column. Each of the
 four encode knobs — \code{color}, \code{video_codec}, \code{audio_codec},

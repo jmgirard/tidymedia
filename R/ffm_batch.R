@@ -236,9 +236,10 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
 
 # check_distinct_outputs() ------------------------------------------------
 
-# The one abort behind every output-collision refusal (M125): ffm_batch()'s own,
-# and the task verbs' front-door checks, which reach it through
-# reject_duplicate_outputs() or directly. The paths are compared as exact
+# The abort behind ffm_batch()'s collision refusal and the task verbs'
+# repeated-output checks, which reach it through reject_duplicate_outputs() or
+# directly (M125). sample_frames_batch() keeps its own pattern-level abort, and
+# reject_duplicate_inputs() its own. The paths are compared as exact
 # strings. `problem` and `hint` are the two lines that differ by caller -- a
 # jobs table, `segment_video()`'s `outfiles`, the pipelines `.f` returned -- so
 # each names the destination the caller actually wrote. They are constant cli

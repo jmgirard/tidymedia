@@ -11,7 +11,7 @@ _Last hygiene check: 2026-09-11 (M124 done and archived; PR #128 squash-merged, 
 | M122 | macOS and Windows run the package's FFmpeg code | done | M118 | normal | milestones/archive/M122-mac-windows-run-ffmpeg.md |
 | M123 | Help pages stop naming the internal find_program() | done | — | high | milestones/archive/M123-help-pages-drop-find-program.md |
 | M124 | The batch docs teach ffm_jobs(), and four wrong doc statements are corrected | done | — | normal | milestones/archive/M124-batch-docs-teach-ffm-jobs.md |
-| M125 | Batch runs refuse two jobs writing one output | in-progress | — | normal | milestones/M125-batch-output-collisions.md |
+| M125 | Batch runs refuse two jobs writing one output | review | — | normal | milestones/M125-batch-output-collisions.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

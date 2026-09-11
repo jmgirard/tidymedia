@@ -21,8 +21,8 @@ sample_frames_batch(
 output directory for that row's sequence; when absent, one is derived as
 \code{<input-base>_frames} beside each input), and \code{fps} /
 \code{interval} (per-row rate overrides). Any other columns are ignored.
-Two rows whose image sequences would share file names are refused before
-any row runs: the same output directory (from the column, the
+Two rows whose image sequences would share a file-name pattern are refused
+before any row runs: the same output directory path (from the column, the
 \code{outdir} argument, or derived) and the same input file name without
 its extension.}
 

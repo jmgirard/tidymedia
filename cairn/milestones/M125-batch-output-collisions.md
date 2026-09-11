@@ -1,6 +1,6 @@
 # M125: Batch runs refuse two jobs writing one output
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -67,6 +67,8 @@ A call that fans jobs out through `ffm_batch()`, or a direct `ffm_batch()` call,
 - 2026-09-11: T5 — `test-input-path-front-door.R`, `test-nvenc-front-door.R`, `test-hardware-out-of-table-blame.R` and `test-builder-blame-front-door.R` passed in both full runs (after T3, after T4): no pinned precedence moved, so no Decisions entry is owed. The unpinned change is the gate's choice: on the six verbs given a new check, a repeated output now reports ahead of any program they start before the hand-off.
 - 2026-09-11: T6 — refusal stated on 15 help pages in each page's own destination terms (`strip_metadata_batch()`'s already did) and in `ffm_batch()`'s details with the no-file exemptions; a comment beside `ffm_jobs()`'s output-derivation example. `devtools::document()` rewrote those 17 Rd files and nothing else (installed roxygen2 8.0.0 against `RoxygenNote` 8.1.0). NEWS: one Bug fixes entry naming the six newly refusing exports plus `ffm_batch()`, and the existing collision sentences rewritten. Two draft sentences were cut before commit as untrue: a repeated input "named by its derived path on the others" (the numbering verbs don't refuse it) and "before anything runs" (`ffm_batch()` runs `.f` first). The per-page AC4 read is review's.
 - 2026-09-11: T7 — on the T6 tree, with no other R session working: `devtools::test()` 1737 tests, 0 failures, 5 skips; `devtools::check()` 0 errors, 0 warnings, 0 notes. `cairn_validate` all checks pass.
+- 2026-09-11: claim audit: 62 claims read, 8 corrected — R/ffm_batch.R, R/ffmpeg.R, NEWS.md. Six help/NEWS sentences said "the same file" where the checks compare path strings (now "the same output path"); `normalize_audio_batch()`'s comment claimed every machine-free check sits above the refusal; `check_distinct_outputs()`'s comment claimed to be the only collision abort. The reader's other two findings — that `a..mp4` and `a..mp4.mp4` derive one segment or standardized name — were refuted by executing both derivers (`a._1.mp4` vs `a..mp4_1.mp4`), so those "cannot repeat" comments stand, with the reason added. No behaviour changed. The same-reader re-read of the corrections did not run: the session has no tool to resume the reader.
+- 2026-09-11: status → review.
 
 ## Decisions
 

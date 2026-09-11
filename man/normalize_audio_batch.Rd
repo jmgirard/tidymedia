@@ -27,7 +27,7 @@ the destination; when absent, one is derived per row by appending
 (e.g. \code{clip.mkv} becomes \code{clip_normalized.mkv}) — note that the
 derived name keeps a \emph{video} extension while the file itself holds
 audio only, so name an \code{output} column explicitly when that matters.
-Two rows that would write the same file are refused before any row runs
+Two rows naming the same output path are refused before any row runs
 (with \code{two_pass = TRUE}, before the analysis pass): a path repeated in
 the \code{output} column, or a repeated \code{input} when there is no
 \code{output} column. Each of the five

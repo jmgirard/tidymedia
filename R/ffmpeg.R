@@ -2219,7 +2219,7 @@ derive_anonymized_names <- function(input) {
 #'   \code{output} column names the destination; when absent, one is derived per
 #'   row by appending \code{_anonymized} to each input's basename, keeping the
 #'   input's extension (e.g. \code{clip.mkv} becomes \code{clip_anonymized.mkv}).
-#'   Two rows that would write the same file are refused before any row runs:
+#'   Two rows naming the same output path are refused before any row runs:
 #'   a path repeated in the \code{output} column, or a repeated \code{input}
 #'   when there is no \code{output} column. Each of the
 #'   four encode knobs — \code{color}, \code{video_codec}, \code{audio_codec},
@@ -4190,8 +4190,9 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
   }
   # Two rows resolving to one output path (M125), after the row sweep above and
   # above the nvenc probe below. A derived column cannot repeat -- numbering
-  # restarts per input and counts that input's rows -- so only a supplied
-  # `output` can reach the abort.
+  # restarts per input and counts that input's rows, and each derived name keeps
+  # its input's stem and extension -- so only a supplied `output` can reach the
+  # abort.
   reject_duplicate_outputs(jobs)
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035), immediately before ffm_batch() so
@@ -4426,8 +4427,8 @@ derive_frames_dir <- function(input) {
 #'   output directory for that row's sequence; when absent, one is derived as
 #'   \code{<input-base>_frames} beside each input), and \code{fps} /
 #'   \code{interval} (per-row rate overrides). Any other columns are ignored.
-#'   Two rows whose image sequences would share file names are refused before
-#'   any row runs: the same output directory (from the column, the
+#'   Two rows whose image sequences would share a file-name pattern are refused
+#'   before any row runs: the same output directory path (from the column, the
 #'   \code{outdir} argument, or derived) and the same input file name without
 #'   its extension.
 #' @param fps,interval The sampling rate applied to every row, as in
@@ -4628,7 +4629,7 @@ derive_standardized_names <- function(input) {
 #'   the destination; when absent, one is derived per row by appending
 #'   \code{_standardized} to each input's basename, keeping the input's
 #'   extension (e.g. \code{clip.mkv} becomes \code{clip_standardized.mkv}).
-#'   Two rows that would write the same file are refused before any row runs:
+#'   Two rows naming the same output path are refused before any row runs:
 #'   a path repeated in the \code{output} column, or a repeated \code{input}
 #'   when there is no \code{output} column.
 #'   Each of the six standardization knobs — \code{width}, \code{height},
@@ -4871,7 +4872,8 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
 
   # Two rows resolving to one output path (M125), on the resolved column: a
   # supplied `output` is compared as given, and a derived one cannot repeat once
-  # reject_duplicate_inputs() above has passed. Last among the machine-free
+  # reject_duplicate_inputs() above has passed, since each keeps its input's
+  # stem and extension. Last among the machine-free
   # checks, so every refusal above still reports first, and above the nvenc
   # probe below, so a colliding table starts no program.
   reject_duplicate_outputs(jobs)
@@ -5088,7 +5090,7 @@ derive_normalized_names <- function(input) {
 #'   (e.g. \code{clip.mkv} becomes \code{clip_normalized.mkv}) — note that the
 #'   derived name keeps a \emph{video} extension while the file itself holds
 #'   audio only, so name an \code{output} column explicitly when that matters.
-#'   Two rows that would write the same file are refused before any row runs
+#'   Two rows naming the same output path are refused before any row runs
 #'   (with \code{two_pass = TRUE}, before the analysis pass): a path repeated in
 #'   the \code{output} column, or a repeated \code{input} when there is no
 #'   \code{output} column. Each of the five
@@ -5307,10 +5309,11 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
     )
   }
 
-  # Two rows resolving to one output path (M125); placed as in
-  # standardize_video_batch(), after every machine-free check and above both
-  # programs this verb can start before its fan-out: the dropped-track probe
-  # below and, on the two-pass path, the Phase 1 analysis.
+  # Two rows resolving to one output path (M125), after the per-row value sweeps
+  # above and above both programs this verb can start before its fan-out: the
+  # dropped-track probe below and, on the two-pass path, the Phase 1 analysis.
+  # The two-pass knob checks and the single-pass `audio_codec` token check below
+  # still report after it.
   reject_duplicate_outputs(jobs)
 
   # D024's diagnostic probe, above the two_pass block so it lands before Phase 1

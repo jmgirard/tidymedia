@@ -3863,6 +3863,24 @@ segment_video <- function(infile,
   # columns to sweep -- so one call each covers every segment.
   check_codec_needs_reencode(reencode, video_codec, hardware)
   check_audio_codec_needs_reencode(reencode, audio_codec)
+
+  # If no names are provided, derive per-segment names from the input file.
+  # Above the nvenc probe below rather than beside the fan-out, so the
+  # collision check can read the names this call will write before any program
+  # starts (M125).
+  if (is.null(outfiles)) {
+    outfiles <- derive_segment_names(rep(infile, length(start)))
+  }
+  # Two segments written to one path (M125). A derived set cannot repeat --
+  # numbering is per segment -- so only a supplied `outfiles` can reach the
+  # abort. After every machine-free check above, so each still reports first.
+  check_distinct_outputs(
+    unlist(outfiles, use.names = FALSE),
+    "{.arg outfiles} names the same path for more than one segment.",
+    "Give each segment its own output file.",
+    call = rlang::current_env()
+  )
+
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035). Last in the front-door block, so
   # every check above still reports first (M41).
@@ -3875,11 +3893,6 @@ segment_video <- function(infile,
   # `reencode = FALSE` call naming nvenc has already been refused above. The
   # gate is dead code, not a live protection (M58 T2).
   check_hardware_available(video_codec, hardware, fallback)
-
-  # If no names are provided, derive per-segment names from the input file.
-  if (is.null(outfiles)) {
-    outfiles <- derive_segment_names(rep(infile, length(start)))
-  }
 
   # Fan-out (one input -> many outputs) is a Layer 2 concern: build one
   # single-output seek pipeline per segment and run them through ffm_batch
@@ -4172,6 +4185,11 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
       check_audio_codec_needs_reencode(reencode_rows[[i]], acodec_rows[[i]])
     )
   }
+  # Two rows resolving to one output path (M125), after the row sweep above and
+  # above the nvenc probe below. A derived column cannot repeat -- numbering
+  # restarts per input and counts that input's rows -- so only a supplied
+  # `output` can reach the abort.
+  reject_duplicate_outputs(jobs)
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035), immediately before ffm_batch() so
   # every check above still reports first (M41).
@@ -4335,6 +4353,13 @@ extract_frame_batch <- function(jobs, format = "png", run = TRUE,
   # the fan-out, so a missing input blames this verb rather than
   # purrr::pmap() (M62).
   check_batch_inputs(jobs)
+
+  # Two rows resolving to one output path (M125), last in the front door. Both
+  # forms reach it: a supplied `output` column, and a derived one, whose
+  # extension is the image `format` rather than the source's, so two inputs
+  # sharing a stem under different containers (`a.mp4`, `a.mkv`) derive the
+  # same `a_1.png`.
+  reject_duplicate_outputs(jobs)
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-frame pipeline per
   # row, sharing frame_pipeline() with extract_frame(). frame->timestamp

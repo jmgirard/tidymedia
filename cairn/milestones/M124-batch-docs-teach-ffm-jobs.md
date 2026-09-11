@@ -46,14 +46,14 @@ vignettes stop stating things that are false or machine-specific today.
 
 ## Acceptance criteria
 
-- [ ] AC1: `grep -nE 'tibble\(|tribble\(|data\.frame\(' vignettes/batch.Rmd` returns no line,
+- [x] AC1: `grep -nE 'tibble\(|tribble\(|data\.frame\(' vignettes/batch.Rmd` returns no line,
       and `vignettes/batch.Rmd` calls `ffm_jobs()` in at least one code chunk that is evaluated
       when the vignette builds.
-- [ ] AC2: For each `ffm_jobs(` line that `grep -n 'ffm_jobs(' vignettes/*.Rmd README.Rmd`
+- [x] AC2: For each `ffm_jobs(` line that `grep -n 'ffm_jobs(' vignettes/*.Rmd README.Rmd`
       lists inside a code chunk, the text between the nearest heading of any level above that
       line and the next heading says the call stops with an error when no file matches rather
       than returning an empty table.
-- [ ] AC3: `grep -n 'has to accept' R/ffm_jobs.R man/ffm_jobs.Rd` returns nothing. The sentence
+- [x] AC3: `grep -n 'has to accept' R/ffm_jobs.R man/ffm_jobs.Rd` returns nothing. The sentence
       replacing it in `?ffm_jobs`'s details says what an extra jobs column does, naming
       `ffm_batch()` and only those `*_batch()` verbs a test covers, and says that a column named
       like one of a named verb's arguments is read per row. A test asserts that `ffm_batch()`
@@ -61,18 +61,18 @@ vignettes stop stating things that are false or machine-specific today.
       `...` argument and succeeds when it has one; that each `*_batch()` verb the sentence names
       returns an extra column it does not read identical to the one it was given; and that each
       reads a column named like one of its arguments per row.
-- [ ] AC4: `grep -n 'current directory' R/program_management.R man/find_ffmpeg.Rd` returns
+- [x] AC4: `grep -n 'current directory' R/program_management.R man/find_ffmpeg.Rd` returns
       nothing; `?find_ffmpeg` says the pre-0.2.0 file is read only when no file exists under
       `tools::R_user_dir("tidymedia", "config")`; and the precedence tests at
       `tests/testthat/test-program-status-and-unset.R:214-243` and
       `tests/testthat/test-program-location-repair.R:96` still pass.
-- [ ] AC5: `README.Rmd` has a batch example: an evaluated chunk calls `ffm_jobs()` and passes
+- [x] AC5: `README.Rmd` has a batch example: an evaluated chunk calls `ffm_jobs()` and passes
       its result to `ffm_batch()` or a `*_batch()` verb with `run = FALSE`, and that chunk's
       printed output shows no absolute path. `README.Rmd`'s setup comment describing its
       unguarded chunks agrees with the chunks the file carries. On a machine where ffmpeg,
       ffprobe and mediainfo are all on `PATH`, `Rscript tools/vignette_chunk_guards.R` and
       `Rscript tools/vignette_chunk_program_identity.R` both exit 0.
-- [ ] AC6: On a machine where ffmpeg, ffprobe and mediainfo are all on `PATH`, two consecutive
+- [x] AC6: On a machine where ffmpeg, ffprobe and mediainfo are all on `PATH`, two consecutive
       `devtools::build_readme()` runs write byte-identical `README.md` files (`cmp` of a copy
       saved after the first run against the file after the second exits 0), and
       `grep -nE 'Rtmp|temp_libpath|/var/folders|/tmp/|/Users/|/home/' README.md` finds no line.
@@ -138,3 +138,24 @@ vignettes stop stating things that are false or machine-specific today.
 ## Decisions
 
 ## Review
+
+Evidence gathered 2026-09-10 on `edeab25` (branch contains `origin/master`; no sync needed).
+
+- AC1: `grep -nE 'tibble\(|tribble\(|data\.frame\(' vignettes/batch.Rmd` exits 1. `ffm_jobs()` is called in the chunks at batch.Rmd:45 and :72, both plain `{r}` with no `eval` option, and the setup chunk sets only `collapse` and `comment`. Knitting batch.Rmd in a scratch folder against `load_all()` printed both chunks' results: a 1 × 3 tibble from `ffm_batch()` and a 1 × 3 tibble from `crop_video_batch()`, each with input `sample.mp4`.
+
+- AC2: a script over `git show <ref>:<file>` lists `ffm_jobs(` lines inside fenced chunks and searches the prose between the nearest heading above and the next heading for "stops with an error". HEAD: batch.Rmd:46 and :74, metadata.Rmd:124, workflow.Rmd:40, README.Rmd:216 and :217 all pass. master: metadata.Rmd:123 and workflow.Rmd:40 fail, so the script discriminates. workflow.Rmd has no markdown heading above :40 (its YAML title is the page heading); the sentence is at :55, before `## 1.`, so every start point above :40 includes it.
+- AC3: `grep -n 'has to accept' R/ffm_jobs.R man/ffm_jobs.Rd` exits 1. The new details sentence names `ffm_batch()`, `crop_video_batch()` and `extract_audio_batch()` (both verbs covered by the new tests) and says an argument-named column is read row by row. `test-ffm-jobs.R`: 27 tests, 161 expectations, 0 failed; the tests assert R's "unused argument (notes = " message without `...` and success with it, an unread factor column returned identical by both verbs, and per-row `width` / `audio_codec` in each command. Plants in a scratch copy each turned exactly its own test red: `ffm_batch()` filtering columns to `.f`'s arguments (unused-argument test), `crop_video_batch()` dropping a `width` column (per-row test), `crop_video_batch()` coercing factors (unchanged-column test).
+- AC4: `grep -n 'current directory' R/program_management.R man/find_ffmpeg.Rd` exits 1. `?find_ffmpeg` (R/program_management.R:133-135, man/find_ffmpeg.Rd:32-34) says the pre-0.2.0 file is read only when no file for the program exists under `tools::R_user_dir("tidymedia", "config")`. `test-program-status-and-unset.R`: 17 tests, 201 expectations, 0 failed, 1 skipped (the all-four-programs `program_status()` test, ffplay absent; outside :214-243, whose tests at :215 and :225 pass). `test-program-location-repair.R`: 13 tests, 195 expectations, 0 failed.
+- AC5: README.Rmd:215-221 is a plain `{r}` chunk calling `ffm_jobs(".", type = "video")` and passing the table to `crop_video_batch(..., run = FALSE)`; its printed output in README.md:221-224 is a 1 × 3 tibble with input `sample.mp4`, output `sample_cropped.mp4` and a relative command, no absolute path. The setup comment (README.Rmd:14-22) says five chunks besides setup carry no guard (library, clip copy, builder, `extract_audio()`, batch example); `tools/vignette_chunk_guards.R` lists README chunks 2-6 unguarded and 7-9 guarded by `has_ffprobe`/`has_mediainfo`/`has_ffmpeg`, exit 0, "unguarded spawning chunks: none". `tools/vignette_chunk_program_identity.R` exit 0, "chunks starting a program their guard does not name: none". ffmpeg, ffprobe, mediainfo all at `/opt/homebrew/bin`.
+- AC6: two consecutive `devtools::build_readme()` runs, both exit 0; `cmp` of a copy saved after the first against README.md after the second exits 0; `grep -nE 'Rtmp|temp_libpath|/var/folders|/tmp/|/Users/|/home/' README.md` exits 1; `git status --porcelain` empty afterwards (README.md also identical to the committed file).
+
+Consistency gate: `cairn_validate.py` all checks passed, exit 0 (no principle changed, so no impact report); `pkgdown::check_pkgdown()` "No problems found"; `git diff --diff-filter=A master...HEAD` adds no file, so no `.Rbuildignore` entry is owed; `document()` no diff and README.md in sync (AC6, AC7); no NEWS entry, per the plan gate and D091 — both the `ffm_jobs()` and config-directory entries sit under NEWS.md's development heading, so neither corrected sentence shipped in 0.1.0, and the `ffm_jobs()` entry does not repeat the replaced wording. `document()` ran under installed roxygen2 8.0.0 against `Config/roxygen2/version: 8.1.0`; it warns and still writes (a planted roxygen change in a scratch copy regenerated `man/find_ffmpeg.Rd`).
+
+Independent review (three fresh reviewers). Prior-review lens: no regressions; no GitHub review comments exist, and the archived items on these files (M115 O9, M121 O4, M123's `?find_ffmpeg` item) are ones this branch fixes. Blame-history lens: no findings. Diff-bug lens, ranked:
+
+- O1: `vignettes/batch.Rmd:72-80` — `crop_video_batch(ffm_jobs(folder, ...))` auto-names its output beside the input, in the package's `extdata` folder; a reader who drops `run = FALSE` as the page says writes `sample_cropped.mp4` into the R library, or fails where it is read-only. Confirmed: the scratch knit printed an `/Users/…` output; master's example gave relative output names.
+- O2: `R/ffm_jobs.R:12-13` — "a column `.f` has no argument for stops the batch" misses R's partial argument matching: a column `outp` binds to `output` with no error. Confirmed with `do.call()`.
+- O3: `README.Rmd:183-184, :216` — pasted by a reader, the example copies `sample.mp4` into their working folder, `ffm_jobs(".")` lists every video already there, and `file.copy()` (hidden by `invisible()`, `overwrite = FALSE`) silently keeps an existing `sample.mp4`.
+- O4: `tests/testthat/test-ffm-jobs.R:3` — header comment still says "the one ffm_batch() call"; there are now three. Confirmed.
+- O5: `R/ffm_jobs.R:13-21` — the new details sentence runs about 85 words with a dash aside holding a colon clause; "per-row" sits alone on a roxygen line.
+- O6: `README.Rmd:18` — one setup-comment line runs to about 100 characters where its neighbours wrap at 80.

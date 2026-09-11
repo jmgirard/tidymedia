@@ -129,6 +129,9 @@ vignettes stop stating things that are false or machine-specific today.
 - 2026-09-10: T3 done: batch.Rmd builds both tables with `ffm_jobs()` over the sample folder (one row, `sample.mp4`), rendered in place from `vignettes/`; no-match stop confirmed by an executed call on a folder holding only a `.wav`.
 - 2026-09-10: T4 done: no-match sentence beside workflow.Rmd's and metadata.Rmd's calls; "a one-liner" replaced.
 - 2026-09-10: T5 done: README examples knit in a scratch folder holding a copy of the clip; batch example via `crop_video_batch()`; setup comment counts the five unguarded chunks the guard sweep lists besides setup.
+- 2026-09-10: T6 started: `document()` no diff; two `build_readme()` runs `cmp`-identical, path grep empty; first `devtools::check()` stopped unfinished when the claim audit's corrections changed the tree.
+- claim audit: 27 claims read, 4 corrected — R/ffm_jobs.R (a column sharing a name with one `ffm_batch()` returns is replaced; test added), vignettes/batch.Rmd (only `crop_video_batch()` named as taking the bare table and as rejecting colliding outputs), README.Rmd (some `*_batch()` verbs take the table as it is, others need a column first).
+- 2026-09-10: the corrected claims' re-read went to a second fresh [O] reader rather than the first, because this session has no way to message a finished subagent.
 
 ## Decisions
 

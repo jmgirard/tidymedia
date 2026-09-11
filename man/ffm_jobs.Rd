@@ -47,7 +47,9 @@ The returned tibble carries \code{input} and nothing else, deliberately:
 a column \code{.f} has no argument for stops the batch with R's
 "unused argument" error unless \code{.f} takes \code{...}.
 \code{\link[=crop_video_batch]{crop_video_batch()}} and \code{\link[=extract_audio_batch]{extract_audio_batch()}} return a column they do
-not read unchanged, and read a column named like one of their per-row
+not read unchanged, unless it shares a name with a column \code{\link[=ffm_batch]{ffm_batch()}}
+returns (see its Value section), which is replaced; and they read a column
+named like one of their per-row
 arguments (each help page lists which) in place of that argument, row by
 row: a \code{width} column in \code{\link[=crop_video_batch]{crop_video_batch()}}, an \code{audio_codec}
 column in \code{\link[=extract_audio_batch]{extract_audio_batch()}}. Add

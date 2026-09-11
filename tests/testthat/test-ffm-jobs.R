@@ -400,6 +400,23 @@ test_that("crop_video_batch() and extract_audio_batch() return an unread column 
   expect_identical(extracted$notes, jobs$notes)
 })
 
+test_that("a column named like one ffm_batch() returns is replaced, not kept", {
+  jobs <- ffm_jobs(local_media_dir(), type = "video")
+  jobs$command <- c("stale", "stale")
+
+  cropped <- crop_video_batch(
+    transform(jobs, output = c("a.mp4", "b.mp4")),
+    width = 100, height = 50, run = FALSE
+  )
+  extracted <- extract_audio_batch(
+    transform(jobs, output = c("a.m4a", "b.m4a")), run = FALSE
+  )
+  for (res in list(cropped, extracted)) {
+    expect_false(any(res$command == "stale"))
+    expect_match(res$command, "-i ", fixed = TRUE)
+  }
+})
+
 test_that("crop_video_batch() and extract_audio_batch() read an argument-named column per row", {
   jobs <- ffm_jobs(local_media_dir(), type = "video")
 

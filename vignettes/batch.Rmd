@@ -64,9 +64,10 @@ You do not have to write `.f` by hand for the common jobs. Every task verb ships
 a `*_batch()` companion — `extract_audio_batch()`, `convert_audio_batch()`,
 `crop_video_batch()`, `standardize_video_batch()`, `normalize_audio_batch()`,
 and the rest — that takes a jobs tibble directly and applies the verb to each
-row. The table can come straight from `ffm_jobs()`, which again stops with an
-error rather than returning an empty table when the folder holds no file of the
-type:
+row. `crop_video_batch()` can take the table straight from `ffm_jobs()`;
+others, such as `extract_audio_batch()`, refuse it until you add an `output`
+column. `ffm_jobs()` again stops with an error rather than returning an empty
+table when the folder holds no file of the type:
 
 ```{r}
 crop_video_batch(
@@ -77,8 +78,8 @@ crop_video_batch(
 
 That table has no `output` column, so the transform verbs auto-name each output
 from its input (here `_cropped`); add an `output` column to choose the names
-yourself. Either way they reject two rows that would resolve to the same output
-path. `vignette("workflow")` chains several of
+yourself. Either way `crop_video_batch()` rejects two rows that would resolve to
+the same output path. `vignette("workflow")` chains several of
 these across a study folder.
 
 ## Fan-out verbs

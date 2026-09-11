@@ -206,8 +206,9 @@ extract_audio(video, "audio.aac", run = FALSE)
 
 ### Process a folder in batch
 
-`ffm_jobs()` turns a folder into a jobs table, one row per media file, and every
-`*_batch()` verb takes that table and builds one command per row. When the
+`ffm_jobs()` turns a folder into a jobs table, one row per media file. Some
+`*_batch()` verbs, such as `crop_video_batch()`, take that table as it is;
+others need a column added first, such as an `output`. When the
 folder holds no file of the type you ask for, `ffm_jobs()` stops with an error
 rather than returning an empty table. See `vignette("batch")` for more.
 

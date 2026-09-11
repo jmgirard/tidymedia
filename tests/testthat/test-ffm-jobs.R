@@ -1,6 +1,6 @@
 # Tests for ffm_jobs(), the directory -> jobs-table export (M121). Every branch
 # here is binary-free: the function lists files and builds a tibble, and every
-# batch call -- the one ffm_batch() call and the fifteen *_batch() verbs --
+# batch call -- the ffm_batch() calls and the fifteen *_batch() verbs --
 # runs with `run = FALSE`.
 
 # A directory with one file of each shape the selector has to tell apart.
@@ -359,6 +359,83 @@ test_that("the NEWS entry's six-and-nine split over the *_batch() verbs holds", 
     cnd <- catch(eval(refusers[[nm]][[1]]))
     expect_s3_class(cnd, "error")
     expect_match(conditionMessage(cnd), refusers[[nm]][[2]], info = nm)
+  }
+})
+
+# What an extra jobs column does (?ffm_jobs details) -----------------------
+
+test_that("an extra column stops ffm_batch() unless .f takes `...`", {
+  jobs <- ffm_jobs(local_media_dir(), type = "video")
+  jobs$output <- paste0("out", seq_len(nrow(jobs)), ".mp3")
+  jobs$notes <- c("camA", "camB")
+
+  # Which failure: R's own, naming the column that had no argument to land in.
+  cnd <- catch(ffm_batch(jobs, run = FALSE, .f = function(input, output) {
+    ffm_files(input, output) |> ffm_drop("video")
+  }))
+  expect_s3_class(cnd, "error")
+  expect_match(conditionMessage(cnd), "unused argument (notes = ", fixed = TRUE)
+
+  res <- ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
+    ffm_files(input, output) |> ffm_drop("video")
+  })
+  expect_identical(res$notes, jobs$notes)
+  expect_length(res$command, nrow(jobs))
+})
+
+test_that("crop_video_batch() and extract_audio_batch() return an unread column unchanged", {
+  jobs <- ffm_jobs(local_media_dir(), type = "video")
+  # A factor, so a verb coercing the column to character would show.
+  jobs$notes <- factor(c("camA", "camB"))
+
+  cropped <- crop_video_batch(
+    transform(jobs, output = c("a.mp4", "b.mp4")),
+    width = 100, height = 50, run = FALSE
+  )
+  expect_identical(cropped$notes, jobs$notes)
+
+  extracted <- extract_audio_batch(
+    transform(jobs, output = c("a.m4a", "b.m4a")), run = FALSE
+  )
+  expect_identical(extracted$notes, jobs$notes)
+})
+
+test_that("a `command` column is replaced by the compiled command, not kept", {
+  jobs <- ffm_jobs(local_media_dir(), type = "video")
+  jobs$command <- c("stale", "stale")
+
+  cropped <- crop_video_batch(
+    transform(jobs, output = c("a.mp4", "b.mp4")),
+    width = 100, height = 50, run = FALSE
+  )
+  extracted <- extract_audio_batch(
+    transform(jobs, output = c("a.m4a", "b.m4a")), run = FALSE
+  )
+  for (res in list(cropped, extracted)) {
+    expect_false(any(res$command == "stale"))
+    expect_match(res$command, "-i ", fixed = TRUE)
+  }
+})
+
+test_that("crop_video_batch() and extract_audio_batch() read an argument-named column per row", {
+  jobs <- ffm_jobs(local_media_dir(), type = "video")
+
+  # Each row's own value, and never the argument's, reaches its command.
+  crop_jobs <- transform(jobs, output = c("a.mp4", "b.mp4"), width = c(100, 80))
+  cropped <- crop_video_batch(crop_jobs, width = 60, height = 50, run = FALSE)
+  for (i in seq_len(nrow(crop_jobs))) {
+    expect_match(cropped$command[[i]], paste0("crop=w=", crop_jobs$width[[i]], ":"),
+                 fixed = TRUE)
+    expect_no_match(cropped$command[[i]], "crop=w=60:", fixed = TRUE)
+  }
+
+  audio_jobs <- transform(jobs, output = c("a.m4a", "b.mp3"),
+                          audio_codec = c("copy", "libmp3lame"))
+  extracted <- extract_audio_batch(audio_jobs, audio_codec = "aac", run = FALSE)
+  for (i in seq_len(nrow(audio_jobs))) {
+    expect_match(extracted$command[[i]],
+                 paste0("-codec:a ", audio_jobs$audio_codec[[i]], " "), fixed = TRUE)
+    expect_no_match(extracted$command[[i]], "-codec:a aac ", fixed = TRUE)
   }
 })
 

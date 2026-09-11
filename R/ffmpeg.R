@@ -2456,6 +2456,11 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
     check_batch_cell(i, check_region_values(jobs$regions[[i]]))
   }
 
+  # Two rows resolving to one output path (M125); placed as in
+  # standardize_video_batch(), after every machine-free check and above the
+  # nvenc probe.
+  reject_duplicate_outputs(jobs)
+
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035). Immediately before ffm_batch(),
   # which is where M41 puts a guard added for blame, so every check above still
@@ -4828,6 +4833,13 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
                      check_token(pixfmt_rows[[i]], arg = "pixel_format"))
   }
 
+  # Two rows resolving to one output path (M125), on the resolved column: a
+  # supplied `output` is compared as given, and a derived one cannot repeat once
+  # reject_duplicate_inputs() above has passed. Last among the machine-free
+  # checks, so every refusal above still reports first, and above the nvenc
+  # probe below, so a colliding table starts no program.
+  reject_duplicate_outputs(jobs)
+
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output re-encode
   # pipeline per row, sharing standardize_pipeline() with standardize_video().
   # A per-row knob column (arriving via `...` from pmap) overrides the scalar
@@ -4961,14 +4973,7 @@ strip_metadata_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
       cli::cli_abort("The {.field output} column of {.arg jobs} must not contain {.val {NA}}.")
     }
   }
-  dupes <- unique(jobs$output[duplicated(jobs$output)])
-  if (length(dupes) > 0) {
-    cli::cli_abort(c(
-      "{.arg jobs} has rows that resolve to the same output path.",
-      "x" = "Colliding output{?s}: {.val {dupes}}.",
-      "i" = "Give each row a distinct {.field output}, or de-duplicate the inputs."
-    ))
-  }
+  reject_duplicate_outputs(jobs)
 
   # Sweep jobs$input here, below the shape/type/collision guards above and
   # immediately before the fan-out, so a missing input blames this verb
@@ -5264,6 +5269,12 @@ normalize_audio_batch <- function(jobs, target_loudness = -23, true_peak = -1,
       check_loudnorm_targets(target_rows[[i]], peak_rows[[i]], range_rows[[i]])
     )
   }
+
+  # Two rows resolving to one output path (M125); placed as in
+  # standardize_video_batch(), after every machine-free check and above both
+  # programs this verb can start before its fan-out: the dropped-track probe
+  # below and, on the two-pass path, the Phase 1 analysis.
+  reject_duplicate_outputs(jobs)
 
   # D024's diagnostic probe, above the two_pass block so it lands before Phase 1
   # analyzes anything and before the fan-out encodes -- the placement the scalar
@@ -5566,15 +5577,32 @@ reject_duplicate_inputs <- function(jobs, call = rlang::caller_env()) {
 # inputs — so an explicit `output` repeated across rows can't silently overwrite
 # either (M26). Assumes `jobs$output` is resolved (present or derived).
 reject_duplicate_outputs <- function(jobs, call = rlang::caller_env()) {
-  dupes <- unique(jobs$output[duplicated(jobs$output)])
+  check_distinct_outputs(
+    jobs$output,
+    "{.arg jobs} has rows that resolve to the same output path.",
+    "Give each row a distinct {.field output}, or de-duplicate the inputs.",
+    call = call
+  )
+  jobs
+}
+
+# The one abort behind every output-collision refusal (M125). The paths are
+# compared as exact strings, as they always have been. `problem` and `hint` are
+# the two lines that differ by caller -- a jobs table, `segment_video()`'s
+# `outfiles`, and the pipelines `ffm_batch()` was handed -- so each names the
+# destination the caller actually wrote; they are constant cli templates, and
+# the paths themselves only ever reach the message through `{.val}`.
+check_distinct_outputs <- function(paths, problem, hint,
+                                   call = rlang::caller_env()) {
+  dupes <- unique(paths[duplicated(paths)])
   if (length(dupes) > 0) {
     cli::cli_abort(c(
-      "{.arg jobs} has rows that resolve to the same output path.",
+      problem,
       "x" = "Colliding output{?s}: {.val {dupes}}.",
-      "i" = "Give each row a distinct {.field output}, or de-duplicate the inputs."
+      "i" = hint
     ), call = call)
   }
-  jobs
+  invisible(paths)
 }
 
 # Guard an optional per-row video_codec column (M34/D016). Unlike

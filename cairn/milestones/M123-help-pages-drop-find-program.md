@@ -33,11 +33,11 @@ The shipped help pages send readers to `find_ffmpeg()` and its siblings wherever
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets. -->
 
-- [ ] AC1: `grep -rn 'find_program' man/ vignettes/*.Rmd README.Rmd README.md _pkgdown.yml` returns no line.
-- [ ] AC2: With the package installed, `length(help("find_program", package = "tidymedia")) == 0L`, `length(help("find_ffmpeg", package = "tidymedia")) == 1L`, and the usage section of `tools::Rd_db("tidymedia")[["find_ffmpeg.Rd"]]` lists `find_ffmpeg()`, `find_ffprobe()`, `find_ffplay()` and `find_mediainfo()`.
-- [ ] AC3: The "Other program management functions" list in each of `man/program_status.Rd`, `man/set_program.Rd`, `man/unset_program.Rd` and `man/install_on_win.Rd` contains `\link[=find_ffmpeg]{find_ffmpeg()}`.
-- [ ] AC4: Of the lines `grep -n "#'.*find_program" R/program_management.R` returns at `0c4299c`, each one other than the four `@rdname find_program` tags (`:193`, `:218`, `:274`, `:283`, `:303`, `:431`, `:451`) has, in `git diff --word-diff 0c4299c -- R/program_management.R`, only its function reference replaced — by `find_ffmpeg()`, `find_ffmpeg()` and its siblings, or the `find_*()` function for the program the sentence's example names — plus the words that must agree with it and any re-wrapping.
-- [ ] AC5: The `NEWS.md` bullet on the find-a-program reference page (`NEWS.md:1332-1335` at `0c4299c`) names that page `?find_ffmpeg` and says `?find_program` no longer opens it.
+- [x] AC1: `grep -rn 'find_program' man/ vignettes/*.Rmd README.Rmd README.md _pkgdown.yml` returns no line.
+- [x] AC2: With the package installed, `length(help("find_program", package = "tidymedia")) == 0L`, `length(help("find_ffmpeg", package = "tidymedia")) == 1L`, and the usage section of `tools::Rd_db("tidymedia")[["find_ffmpeg.Rd"]]` lists `find_ffmpeg()`, `find_ffprobe()`, `find_ffplay()` and `find_mediainfo()`.
+- [x] AC3: The "Other program management functions" list in each of `man/program_status.Rd`, `man/set_program.Rd`, `man/unset_program.Rd` and `man/install_on_win.Rd` contains `\link[=find_ffmpeg]{find_ffmpeg()}`.
+- [x] AC4: Of the lines `grep -n "#'.*find_program" R/program_management.R` returns at `0c4299c`, each one other than the four `@rdname find_program` tags (`:193`, `:218`, `:274`, `:283`, `:303`, `:431`, `:451`) has, in `git diff --word-diff 0c4299c -- R/program_management.R`, only its function reference replaced — by `find_ffmpeg()`, `find_ffmpeg()` and its siblings, or the `find_*()` function for the program the sentence's example names — plus the words that must agree with it and any re-wrapping.
+- [x] AC5: The `NEWS.md` bullet on the find-a-program reference page (`NEWS.md:1332-1335` at `0c4299c`) names that page `?find_ffmpeg` and says `?find_program` no longer opens it.
 - [ ] AC6: `devtools::check()` reports 0 errors and 0 warnings, and `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
@@ -83,3 +83,11 @@ The shipped help pages send readers to `find_ffmpeg()` and its siblings wherever
 
 ## Review
 <!-- owner: review · exclusive -->
+
+Sync: branch merge-base equals `origin/master` (`5a4b7be`) on 2026-09-10; no merge needed. `devtools::document()` on HEAD `213df1f` left `git status` clean.
+
+- AC1: the grep as written, run on HEAD `213df1f`, returned no line (exit 1) over 83 `man/` files plus 8 named files/globs, all present; the same grep over `master:man/program_status.Rd` returns two `find_program` lines, so it can fail.
+- AC2: `R CMD INSTALL` of HEAD `213df1f` into a scratch library, then `R_LIBS=<scratch>` Rscript with `find.package("tidymedia")` confirming the scratch copy loaded: `help("find_program")` length 0, `help("find_ffmpeg")` length 1, `Rd_db()` has `find_ffmpeg.Rd` and no `find_program.Rd`, and the `\usage` section holds `find_ffmpeg()`, `find_mediainfo()`, `find_ffprobe()`, `find_ffplay()`.
+- AC3: on HEAD `213df1f` after `document()`, the block from "Other program management functions:" to its closing `}` opens with `\code{\link[=find_ffmpeg]{find_ffmpeg()}}` in `program_status.Rd:57`, `set_program.Rd:68`, `unset_program.Rd:52` and `install_on_win.Rd:132`.
+- AC4: the grep at `0c4299c` returns 11 lines: four `@rdname find_program` (`:153, 161, 169, 177`) and the seven the criterion names. In the word diff against HEAD `213df1f`: `:193` `[find_program()]'s` → `[find_ffmpeg()] and its siblings'`; `:218` and `:451` `[find_program()]` → `[find_ffmpeg()] and its siblings`; `:274` `goes` → `go` and `:431` `reads` → `read` beside the same swap; `:283` the same swap; `:303` `find_program()` → `find_mediainfo()`, the example being `unset_program("mediainfo")`. The only other changes on those lines move words across `#'` line breaks.
+- AC5: `git diff 0c4299c -- NEWS.md` changes one hunk, the bullet at `:1332-1335`, now `:1332-1336`: it opens "The reference page for finding a program is now `?find_ffmpeg`" and ends "and `?find_program` no longer opens the page". The added lines hold no milestone id.

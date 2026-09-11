@@ -24,6 +24,7 @@ executing it — so you can inspect exactly what would run. Drop that argument (
 set `run = TRUE`) to actually process the files.
 
 ```{r}
+folder <- system.file("extdata", package = "tidymedia")
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ```
 
@@ -35,11 +36,15 @@ passed to the function by name, `purrr::pmap()`-style, and the runner returns
 your jobs tibble with a `command` column added (and a `success` column when
 `run = TRUE`).
 
+`ffm_jobs()` builds that tibble from a folder: one row per file of the media
+type you ask for, with the file's full path in an `input` column. When the
+folder holds no file of that type, `ffm_jobs()` stops with an error rather than
+returning an empty table. Add any other columns your function needs, here an
+`output` for each input:
+
 ```{r}
-jobs <- tibble::tibble(
-  input  = c(video, video),
-  output = c("clip1.mp3", "clip2.mp3")
-)
+jobs <- ffm_jobs(folder, type = "video")
+jobs$output <- paste0(tools::file_path_sans_ext(basename(jobs$input)), ".mp3")
 
 ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
   ffm_files(input, output) |>
@@ -50,7 +55,8 @@ ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
 
 Because you build the pipeline yourself, any combination of builder verbs is
 available per job. Give `.f` a `...` argument so it tolerates extra job columns
-it does not use.
+it does not use: without one, a column `.f` has no argument for stops the batch
+with R's "unused argument" error.
 
 ## Per-verb batch siblings
 
@@ -58,20 +64,21 @@ You do not have to write `.f` by hand for the common jobs. Every task verb ships
 a `*_batch()` companion — `extract_audio_batch()`, `convert_audio_batch()`,
 `crop_video_batch()`, `standardize_video_batch()`, `normalize_audio_batch()`,
 and the rest — that takes a jobs tibble directly and applies the verb to each
-row:
+row. The table can come straight from `ffm_jobs()`, which again stops with an
+error rather than returning an empty table when the folder holds no file of the
+type:
 
 ```{r}
-jobs <- tibble::tibble(
-  input  = c(video, video),
-  output = c("session01_cropped.mp4", "session02_cropped.mp4")
+crop_video_batch(
+  ffm_jobs(folder, type = "video"),
+  width = 160, height = 120, run = FALSE
 )
-
-crop_video_batch(jobs, width = 160, height = 120, run = FALSE)
 ```
 
-When the jobs tibble has no `output` column, the transform verbs auto-name each
-output from its input (e.g. `_cropped`); either way they reject two rows that
-would resolve to the same output path. `vignette("workflow")` chains several of
+That table has no `output` column, so the transform verbs auto-name each output
+from its input (here `_cropped`); add an `output` column to choose the names
+yourself. Either way they reject two rows that would resolve to the same output
+path. `vignette("workflow")` chains several of
 these across a study folder.
 
 ## Fan-out verbs

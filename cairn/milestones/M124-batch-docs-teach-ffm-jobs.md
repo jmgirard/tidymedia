@@ -1,13 +1,13 @@
 # M124: The batch docs teach ffm_jobs(), and four wrong doc statements are corrected
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — the vignettes, README and help pages are what readers of the package use
-- **Branch/PR:** —
+- **Branch/PR:** m124-batch-docs-teach-ffm-jobs
 
 ## Goal
 
@@ -92,8 +92,8 @@ vignettes stop stating things that are false or machine-specific today.
 ## Tasks
 
 - [ ] T1: `?ffm_jobs` details. Run `ffm_batch()` on a table with an extra column, `.f` with and
-      without `...`, and the chosen `*_batch()` verbs (at least `strip_metadata_batch()` and
-      `crop_video_batch()`) on an unread extra column and on an argument-named one; write the
+      without `...`, and the chosen `*_batch()` verbs (`crop_video_batch()` and
+      `extract_audio_batch()`) on an unread extra column and on an argument-named one; write the
       sentence from those outputs (`R/ffm_jobs.R:10-16`); add the tests (C locale is set by
       testthat; `test-ffmpeg.R:200` already matches "unused argument"); `devtools::document()`.
 - [ ] T2: `?find_ffmpeg`. Rewrite `R/program_management.R:133-134` against `:49-55`, confirmed by
@@ -120,6 +120,9 @@ vignettes stop stating things that are false or machine-specific today.
 - 2026-09-10: plan gate chose folding the README temp-path fix in over leaving the two lines, because the new batch example would add more of them; falsified by the fix leaving README examples that no longer show a command a reader can follow.
 - 2026-09-10: plan gate chose no NEWS entry over a one-line docs bullet, because no function changes behaviour and `ffm_jobs()` is new this cycle (D091); falsified by a 0.1.0 reader acting on the old `?find_ffmpeg` sentence.
 - 2026-09-10: plan chose naming only test-covered `*_batch()` verbs in `?ffm_jobs` over a test looping every `*_batch()` export, as proportionate to a docs milestone; falsified by an uncovered verb dropping or reshaping an extra column a reader expected kept.
+- 2026-09-10: implement started on branch `m124-batch-docs-teach-ffm-jobs`; question gate chose building the README examples in a scratch folder holding a copy of the sample clip, with the batch example cutting `ffm_jobs()`'s `input` to the file name on a visible commented line, over printing only the output column or a hidden path-stripping output hook.
+- 2026-09-10: T1 verb pair changed from `strip_metadata_batch()`/`crop_video_batch()` to `crop_video_batch()`/`extract_audio_batch()` (minor task edit): measured, `strip_metadata_batch()` has no per-row argument, so it cannot back the argument-named half of AC3.
+- 2026-09-10: checkpoint, half-done — T1-T5 edits written, none ticked: `ffm-jobs` tests 157 pass; batch.Rmd rendered in place; two `build_readme()` runs `cmp`-identical with the path grep empty; both `tools/` chunk sweeps exit 0; an AC2 section check passes here and fails on master. Pending: full `devtools::test()` (running), T2 `document()`, T6.
 
 ## Decisions
 

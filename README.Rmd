@@ -14,10 +14,20 @@ knitr::opts_chunk$set(
 # Some of the chunks below run real commands, which means starting FFmpeg,
 # FFprobe or MediaInfo. Each of those is evaluated only when the program it
 # needs is installed, so this README knits on a machine that has none of them --
-# the machine every reader of the install section above is on. The two chunks
-# that only COMPILE a command carry no guard: they start nothing, and a reader
-# without the binaries should still see what the builder produces.
+# the machine every reader of the install section above is on. Apart from this
+# one, five chunks carry no guard, because they start nothing: loading the package, copying the
+# sample clip, and the three that only COMPILE commands (the builder, the
+# `extract_audio()` call, and the batch example). A reader without the binaries
+# should still see what those produce.
 # `tools/vignette_chunk_guards.R` is what says which chunk is which.
+#
+# The examples run in a scratch folder that the sample clip is copied into, so
+# what they print names `sample.mp4` rather than the package's install path --
+# which `devtools::build_readme()` changes on every run, and which would ship a
+# local path in README.md.
+readme_dir <- tempfile("tidymedia-readme-")
+dir.create(readme_dir)
+knitr::opts_knit$set(root.dir = readme_dir)
 has_ffmpeg <- nzchar(Sys.which("ffmpeg"))
 has_ffprobe <- nzchar(Sys.which("ffprobe"))
 has_mediainfo <- nzchar(Sys.which("mediainfo"))
@@ -167,10 +177,12 @@ find it in the Applications folder and run the call again with that path.
 library(tidymedia)
 ```
 
-The examples below use a tiny sample clip that ships with the package:
+The examples below use a tiny sample clip that ships with the package, copied
+into the working folder so the paths they print stay short:
 
 ```{r}
-video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+invisible(file.copy(system.file("extdata", "sample.mp4", package = "tidymedia"), "."))
+video <- "sample.mp4"
 ```
 
 ### Build reproducible FFmpeg commands
@@ -190,6 +202,21 @@ Common tasks have their own verbs (Layer 2). Pass `run = FALSE` to see the comma
 
 ```{r}
 extract_audio(video, "audio.aac", run = FALSE)
+```
+
+### Process a folder in batch
+
+`ffm_jobs()` turns a folder into a jobs table, one row per media file, and every
+`*_batch()` verb takes that table and builds one command per row. When the
+folder holds no file of the type you ask for, `ffm_jobs()` stops with an error
+rather than returning an empty table. See `vignette("batch")` for more.
+
+```{r}
+jobs <- ffm_jobs(".", type = "video")
+# ffm_jobs() returns full paths; keep only the file name so this page stays
+# short. The clip is in the working folder, so the commands still find it.
+jobs$input <- basename(jobs$input)
+crop_video_batch(jobs, width = 160, height = 120, run = FALSE)
 ```
 
 ### Read metadata as tibbles

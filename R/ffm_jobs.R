@@ -9,7 +9,13 @@
 #'
 #' The returned tibble carries \code{input} and nothing else, deliberately:
 #' [ffm_batch()] passes every column of the jobs table to \code{.f} by name, so
-#' an extra column would become an argument every \code{.f} has to accept. Add
+#' a column \code{.f} has no argument for stops the batch with R's
+#' "unused argument" error unless \code{.f} takes \code{...}.
+#' [crop_video_batch()] and [extract_audio_batch()] return a column they do
+#' not read unchanged, and read a column named like one of their per-row
+#' arguments (each help page lists which) in place of that argument, row by
+#' row: a \code{width} column in [crop_video_batch()], an \code{audio_codec}
+#' column in [extract_audio_batch()]. Add
 #' the columns your pipeline needs with the usual data-frame tools — some
 #' \code{*_batch()} verbs want an \code{output} column, others a
 #' task-specific one such as \code{start} and \code{end} — as the examples

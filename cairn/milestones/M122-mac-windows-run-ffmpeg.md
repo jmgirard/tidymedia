@@ -26,7 +26,7 @@ changing the matrix → the six legs stay six. Re-running the dependency floor h
 
 ## Acceptance criteria
 
-- [ ] AC1: `.github/workflows/R-CMD-check.yaml` installs `ffmpeg`, `ffprobe` and
+- [x] AC1: `.github/workflows/R-CMD-check.yaml` installs `ffmpeg`, `ffprobe` and
       `mediainfo` on the macos-latest and windows-latest legs as well as the Linux
       ones. Today `:39-43` is gated `if: runner.os == 'Linux'`.
 - [ ] AC2: On the workflow run at this milestone's head commit, the macOS and Windows
@@ -64,3 +64,8 @@ changing the matrix → the six legs stay six. Re-running the dependency floor h
 - 2026-09-10: T3 done — nothing reddened, so no fix and no split; the temporary `push:` branch entry removed from the workflow. Local `devtools::test()` clean (no R code changed on the branch).
 - 2026-09-10: claim audit: not owed — internal tier.
 - 2026-09-10: status → review. AC2/AC3 still need the review PR's run at the head commit, since the branch run above predates the trigger removal.
+- 2026-09-10: /milestone-review started; no PR for the branch (route d); `master` unmoved since the cut (46f1b0a = origin/master), so no merge or re-test owed before evidence.
+
+## Review
+
+- AC1 (2026-09-10): read at head c3e6d68, `.github/workflows/R-CMD-check.yaml:39-51` has three install steps gated `runner.os == 'Linux'` (apt `ffmpeg mediainfo`), `'macOS'` (`brew install ffmpeg media-info`) and `'Windows'` (`choco install ffmpeg mediainfo-cli --no-progress -y`). At ec477dc (workflow differs from head only in the `push:` branch list) run 34544062828 shows the macOS step `success` on macos-latest and the Windows step `success` on windows-latest. That run's job logs contain 0 lines each for `ffmpeg`/`ffprobe`/`mediainfo binary not available` on both legs; the same grep over master run 34543833367's logs finds all three reasons on both legs (macOS 159/107/7, Windows 150/107/7), so a zero discriminates. Pass.

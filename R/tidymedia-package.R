@@ -23,17 +23,20 @@
 #'   [with_timeout()].
 #' * `options(tidymedia.check_tracks = FALSE)` turns off the dropped-track
 #'   warning of [extract_audio()], [convert_audio()], [normalize_audio()] and
-#'   their `_batch` forms. This skips one FFprobe call for each different
-#'   input that names no `audio_stream`.
+#'   their `_batch` forms. The check runs one FFprobe call for each different
+#'   input, when `run = TRUE` and the call or job row names no `audio_stream`.
+#'   Turning it off skips those calls. A value other than `TRUE` or `FALSE`
+#'   gives an error that names the option, when the check would run.
 #' * `options(tidymedia.hardware_encoders = "h264_nvenc")` names the hardware
 #'   video encoders of this computer, so the package does not ask FFmpeg.
 #'   `character(0)` means none.
 #'
 #' @section Errors when FFmpeg fails:
-#' * `tidymedia_ffmpeg_exit`: FFmpeg exited non-zero in [ffm_run()], in
-#'   [separate_audio_video()], or in the `loudnorm` analysis pass of
-#'   `normalize_audio(two_pass = TRUE)`. The `tm_status` field holds the exit
-#'   status.
+#' * `tidymedia_ffmpeg_exit`: FFmpeg exited non-zero in [ffm_run()], or in the
+#'   `loudnorm` analysis pass of `normalize_audio(two_pass = TRUE)`. The task
+#'   functions that run their command with [ffm_run()], such as
+#'   [extract_audio()] and [separate_audio_video()], give it too. The
+#'   `tm_status` field holds the exit status.
 #' * `tidymedia_loudnorm_no_measurement`: the two-pass analysis gave no
 #'   measurement. In the `_batch` form, `tm_rows` holds the rows, and
 #'   `tm_row_status` holds each exit status or `NA`.

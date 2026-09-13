@@ -43,7 +43,7 @@ ffprobe <- function(command) {
 #'
 #' Give several files in `infile` to read them all in one call. The function
 #' stacks the rows, and the first column, `file`, names the input file. So you
-#' can join and filter the results for a whole batch with dplyr.
+#' can join and filter the results for a whole batch with `dplyr`.
 #'
 #' The MediaInfo functions, `mediainfo_*()`, return tibbles or values. The
 #' `get_*()` functions return one value for each file.

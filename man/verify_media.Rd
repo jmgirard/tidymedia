@@ -59,8 +59,8 @@ then audio stream, and the first match wins.
 Numeric checks pass when \code{abs(actual - expected) <= tolerance}. With the
 default \code{tolerance} of \code{0.1}, whole-number properties (width, height, sample
 rate) must match exactly. The \code{duration} check allows a small difference, for
-example for cuts that snap to a keyframe. String checks (the codecs) must match
-exactly. A property whose stream or column is absent yields an \code{NA} actual
+example for cuts that snap to a keyframe. String checks (the codecs) must
+match exactly. A property whose stream or column is absent yields an \code{NA} actual
 value and a failing check.
 }
 \examples{

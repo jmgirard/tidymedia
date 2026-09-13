@@ -36,9 +36,16 @@ seconds, plus the delay in "How long the wait can be". The workers of a
 The limit is a whole number of seconds. The package does not round a
 fraction, because R would read a limit below one second as no limit.
 
-A limit set with \code{options(tidymedia.timeout = )} follows the same rule. The
-function you called gives the error, even when \code{run = FALSE}. \code{\link[=ffm_batch]{ffm_batch()}}
-gives the error before it starts any job.
+A limit set with \code{options(tidymedia.timeout = )} follows the same rule, with
+one difference. \code{options(tidymedia.timeout = NULL)} removes the option, so
+it means no limit. The function you called gives the error, even when
+\code{run = FALSE}. \code{\link[=ffm_batch]{ffm_batch()}} gives the error before it starts any job.
+
+Most functions check their own arguments before the limit. So a wrong
+argument gives its own error, even when the limit is also wrong. A few
+arguments of the \verb{_batch} functions are checked inside each job, after the
+limit. An example is the \code{pixel_format} of \code{\link[=anonymize_video_batch]{anonymize_video_batch()}}. When
+the limit is also wrong, the error is about the limit.
 }
 \section{How long the wait can be}{
 
@@ -59,8 +66,11 @@ A reached limit is never silent. The call gives an error or a warning.
 These functions give an error with the class \code{tidymedia_timeout}, which names
 the program and the limit:
 \itemize{
-\item the task functions whose names do not end in \verb{_batch}
+\item the task functions whose names do not end in \verb{_batch}, except
+\code{\link[=segment_video]{segment_video()}}
 \item \code{\link[=ffm_run]{ffm_run()}}, \code{\link[=ffmpeg]{ffmpeg()}}, \code{\link[=ffprobe]{ffprobe()}} and \code{\link[=mediainfo]{mediainfo()}}
+\item \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}}, \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}}, and \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} when
+it asks FFmpeg
 \item \code{\link[=verify_media]{verify_media()}}, because a check with no answer is not a "no"
 }
 
@@ -71,16 +81,16 @@ the rest of the work:
 \code{\link[=mediainfo_query]{mediainfo_query()}}, \code{\link[=mediainfo_template]{mediainfo_template()}} and the \verb{get_*()} functions
 give \code{NA} for that file. One warning at the end says how many files timed
 out.
-\item \code{\link[=ffm_batch]{ffm_batch()}} and the \verb{_batch} task functions set \code{success = FALSE} for
-that job. One warning at the end says how many jobs timed out. It has the
-class \code{tidymedia_batch_timeout}.
+\item \code{\link[=ffm_batch]{ffm_batch()}}, \code{\link[=segment_video]{segment_video()}} and the \verb{_batch} task functions set
+\code{success = FALSE} for that job. One warning at the end says how many jobs
+timed out. It has the class \code{tidymedia_batch_timeout}.
 \item The dropped-track check of \code{\link[=extract_audio]{extract_audio()}}, \code{\link[=convert_audio]{convert_audio()}},
 \code{\link[=normalize_audio]{normalize_audio()}} and their \verb{_batch} forms warns that it could not check.
 The track count that \code{\link[=separate_audio_video]{separate_audio_video()}} reads after a failed run
-warns the same way. A batch manifest, see \code{\link[=ffm_manifest]{ffm_manifest()}}, warns when it
-cannot read a program version. These warnings have the class
-\code{tidymedia_probe_timeout}, and the call goes on as it would for an
-unreadable input.
+warns the same way. A batch manifest, see \code{\link[=ffm_manifest]{ffm_manifest()}}, and
+\code{\link[=program_status]{program_status()}} warn when they cannot read a program version. These
+warnings have the class \code{tidymedia_probe_timeout}, and the call goes on as
+it would for an unreadable input.
 }
 
 \code{suppressWarnings(classes = "tidymedia_dropped_audio")} hides the

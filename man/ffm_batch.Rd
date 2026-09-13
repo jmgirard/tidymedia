@@ -63,9 +63,9 @@ checksums of each job's input(s) and output. Ignored unless
 \code{jobs} as a \link[tibble:tibble-package]{tibble} with an added
 \code{command} column, which holds the compiled FFmpeg command for each
 job. When \code{run = TRUE}, it also has a logical \code{success} column.
-When \code{verify} is supplied, it also has a \code{verified} column. When \code{manifest = TRUE} a
-provenance manifest is attached as an attribute; read it with
-\code{\link{ffm_manifest}}.
+When \code{verify} is supplied, it also has a \code{verified} column.
+When \code{manifest = TRUE}, a provenance manifest is attached as an
+attribute; read it with \code{\link{ffm_manifest}}.
 }
 \description{
 Apply a pipeline-building function to every row of a jobs table and compile
@@ -88,8 +88,8 @@ repeat. Such outputs are \code{-} (standard output), a \code{pipe:} URL, and
 an output whose last \code{-f} option is \code{-f null}, as
 \code{ffm_output_options("-f null")} gives.
 
-\code{\link[=with_timeout]{with_timeout()}} explains how to limit how long each program in a job can
-run, and what happens when a program reaches the limit.
+\code{\link[=with_timeout]{with_timeout()}} explains how to limit how long R waits for each program in
+a job, and what happens when a program reaches the limit.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

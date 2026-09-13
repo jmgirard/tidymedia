@@ -42,7 +42,7 @@ describes each stream in the files.
 \details{
 Give several files in \code{infile} to read them all in one call. The function
 stacks the rows, and the first column, \code{file}, names the input file. So you
-can join and filter the results for a whole batch with dplyr.
+can join and filter the results for a whole batch with \code{dplyr}.
 
 The MediaInfo functions, \verb{mediainfo_*()}, return tibbles or values. The
 \verb{get_*()} functions return one value for each file.

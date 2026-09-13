@@ -31,8 +31,10 @@ program the package starts. The default, \code{0}, means no limit. See
 \code{\link[=with_timeout]{with_timeout()}}.
 \item \code{options(tidymedia.check_tracks = FALSE)} turns off the dropped-track
 warning of \code{\link[=extract_audio]{extract_audio()}}, \code{\link[=convert_audio]{convert_audio()}}, \code{\link[=normalize_audio]{normalize_audio()}} and
-their \verb{_batch} forms. This skips one FFprobe call for each different
-input that names no \code{audio_stream}.
+their \verb{_batch} forms. The check runs one FFprobe call for each different
+input, when \code{run = TRUE} and the call or job row names no \code{audio_stream}.
+Turning it off skips those calls. A value other than \code{TRUE} or \code{FALSE}
+gives an error that names the option, when the check would run.
 \item \code{options(tidymedia.hardware_encoders = "h264_nvenc")} names the hardware
 video encoders of this computer, so the package does not ask FFmpeg.
 \code{character(0)} means none.
@@ -42,10 +44,11 @@ video encoders of this computer, so the package does not ask FFmpeg.
 \section{Errors when FFmpeg fails}{
 
 \itemize{
-\item \code{tidymedia_ffmpeg_exit}: FFmpeg exited non-zero in \code{\link[=ffm_run]{ffm_run()}}, in
-\code{\link[=separate_audio_video]{separate_audio_video()}}, or in the \code{loudnorm} analysis pass of
-\code{normalize_audio(two_pass = TRUE)}. The \code{tm_status} field holds the exit
-status.
+\item \code{tidymedia_ffmpeg_exit}: FFmpeg exited non-zero in \code{\link[=ffm_run]{ffm_run()}}, or in the
+\code{loudnorm} analysis pass of \code{normalize_audio(two_pass = TRUE)}. The task
+functions that run their command with \code{\link[=ffm_run]{ffm_run()}}, such as
+\code{\link[=extract_audio]{extract_audio()}} and \code{\link[=separate_audio_video]{separate_audio_video()}}, give it too. The
+\code{tm_status} field holds the exit status.
 \item \code{tidymedia_loudnorm_no_measurement}: the two-pass analysis gave no
 measurement. In the \verb{_batch} form, \code{tm_rows} holds the rows, and
 \code{tm_row_status} holds each exit status or \code{NA}.

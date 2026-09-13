@@ -1,6 +1,6 @@
 # M127: ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** M126
 - **Driving RR:** —
@@ -64,11 +64,18 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: T7 done. On `2e04a4be`: `devtools::check()` 0 errors, 0 warnings, 0 notes (tests included); `devtools::document()` leaves `man/` unchanged. Agent worktrees removed. Status set to review.
 - 2026-09-13: review checkpoint: AC1-AC5 evidence recorded and ticked. AC6 check and the three reviewers still running.
 - 2026-09-13: review return 1 (defect): AC6 fails, because `devtools::check()` on `ca35647a` ends "Status: 1 NOTE". The spelling test flags `dplyr` at `probe_all.Rd:45`. AC5 fails, because one fact left `?tidymedia` with no ledger row (reviewer O4). Status back to in-progress. See the Review section for the fixes to make.
+- 2026-09-13: return gate (user's choice): fix both defects and findings O1-O15 in this pass. O16 stays, because decision records are history.
+- 2026-09-13: S1 fixed: `dplyr` is a code span again in `R/ffprobe.R`. O4 fixed: `?tidymedia` Session options says when the track check runs, and that a bad value gives an error naming the option. Measured with `"yes"`: an error on a run with no `audio_stream`, none with `run = FALSE`. Ledger rows for `tidymedia-package` and `with_timeout` corrected in place.
+- 2026-09-13: O1, O2, O5, O9 on `?with_timeout`. `segment_video()` moved to the warning list, because it runs through `ffm_batch()`. The check-order paragraph is back, with `anonymize_video_batch()`'s `pixel_format` as its example (measured to lose to a 0.5 limit). The `output` column is not named, because it is checked first at head (measured). The `NULL` exception is stated. Four functions from `tm_timeout_reached_master()` were added to the lists. The comment above `resolve_timeout()` now names `?with_timeout`.
+- 2026-09-13: O6-O8, O12-O15. The `ffm_batch` text says how long R waits. The exit-class item names task functions. `?local_timeout` points its restore claim at the exceptions, and the `.local_envir` text is scoped. Measured: a returned function's environment and `new.env()` both leave the limit set with no condition. Two grammar slips and three roxygen lines over 80 characters fixed.
+- 2026-09-13: O3, O10, O11: three doc guards changed so they can fail. Each went red on a planted Rd defect, and the Rd files were then restored. The claim audit was not re-run. Each new claim was measured or read against the test census.
+- 2026-09-13: on the committed tree: the sweep over 28 pages exits 0, and `?tidymedia` renders 78 lines. `devtools::check()` gives 0 errors, 0 warnings, 0 notes, with the spelling comparison OK and tests included. `devtools::document()` leaves `man/` unchanged. `pkgdown::check_pkgdown()` finds no problems. Status set to review.
 
 ## Decisions
 
 - Implement gate (user's choice): the timeout condition classes go to `?with_timeout` with the other timeout detail. `?tidymedia` keeps one short end section with one line for each FFmpeg-exit class and its fields.
 - Implement gate (user's choice): only `?find_ffmpeg` explains the settings file that version 0.1.0 used, in a short end section. `?program_status` and `?unset_program` link to it.
+- Review return 1: D074 names `?tidymedia` as where the per-row check order is disclosed. M127 moved that text to `?with_timeout` with the other timeout detail. The code comment now names the new page. D074 stays as written, because it is history.
 - Implement gate (user's choice): M127 does not fix the six prose-sweep parse gaps (shipped-docs candidate row, item (o)). The rewrite avoids the text shapes that the gaps misread.
 
 ## Review

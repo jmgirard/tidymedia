@@ -146,9 +146,9 @@ audio_stream_extras <- list(
     "A container that holds several audio streams (\\code{.mka}, ",
     "\\code{.m4a}) gets them all. A container for one stream only ",
     "(\\code{.aac}, \\code{.mp3}, \\code{.wav}) makes FFmpeg fail, so name a ",
-    "track to write one of those. Count among the input's \\emph{audio} ",
-    "streams, not by the \\code{index} column of \\code{\\link{probe_audio}}, ",
-    "which counts every stream. An input with no audio at all is an FFmpeg ",
+    "track to write one of those. Count only the input's \\emph{audio} ",
+    "streams. Do not use the \\code{index} column of ",
+    "\\code{\\link{probe_audio}}, which counts every stream.An input with no audio at all is an FFmpeg ",
     "error here, because the product of this function is the audio file. ",
     "The functions that pass video through do not fail in that case. ",
     "\\code{videofile} is never affected."
@@ -196,8 +196,8 @@ audio_stream_extras <- list(
 #'
 #' # What `NULL` means
 #'
-#' `audio_stream = NULL` still selects audio. It does not mean "no audio". The
-#' functions differ in how much audio it selects.
+#' `audio_stream = NULL` still selects audio. It does not mean "no audio". How
+#' much audio it selects depends on the function.
 #'
 #' * `r audio_stream_family_sentence("first")`
 #' * The two readings have a reason. A function that writes one audio stream

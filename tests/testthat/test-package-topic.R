@@ -81,7 +81,11 @@ test_that("the landing topic qualifies the loudnorm pass's exit class", {
   expect_length(exit_item, 1L)
   expect_match(exit_item, "loudnorm} analysis pass", fixed = TRUE)
   expect_match(exit_item, "exited non-zero", fixed = TRUE)
-  # And the qualifier really scopes the pass: it comes before the pass is named.
-  expect_lt(regexpr("exited non-zero", exit_item, fixed = TRUE),
-            regexpr("loudnorm} analysis pass", exit_item, fixed = TRUE))
+  # And the qualifier really scopes the pass: the two sit in one sentence, so
+  # no full stop falls between them. Comparing positions could not fail,
+  # because "exited non-zero" opens the item (M127 review O11).
+  from <- regexpr("exited non-zero", exit_item, fixed = TRUE)
+  to <- regexpr("loudnorm} analysis pass", exit_item, fixed = TRUE)
+  expect_lt(from, to)
+  expect_no_match(substr(exit_item, from, to), "\\.\\s")
 })

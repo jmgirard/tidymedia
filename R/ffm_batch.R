@@ -21,8 +21,8 @@
 #' an output whose last \code{-f} option is \code{-f null}, as
 #' \code{ffm_output_options("-f null")} gives.
 #'
-#' [with_timeout()] explains how to limit how long each program in a job can
-#' run, and what happens when a program reaches the limit.
+#' [with_timeout()] explains how to limit how long R waits for each program in
+#' a job, and what happens when a program reaches the limit.
 #'
 #' @param jobs A data frame with one row per job. Its column names are the
 #'   arguments passed to \code{.f}.
@@ -60,9 +60,9 @@
 #' @return \code{jobs} as a [tibble][tibble::tibble-package] with an added
 #'   \code{command} column, which holds the compiled FFmpeg command for each
 #'   job. When \code{run = TRUE}, it also has a logical \code{success} column.
-#'   When \code{verify} is supplied, it also has a \code{verified} column. When \code{manifest = TRUE} a
-#'   provenance manifest is attached as an attribute; read it with
-#'   \code{\link{ffm_manifest}}.
+#'   When \code{verify} is supplied, it also has a \code{verified} column.
+#'   When \code{manifest = TRUE}, a provenance manifest is attached as an
+#'   attribute; read it with \code{\link{ffm_manifest}}.
 #' @seealso [segment_video()], which is built on \code{ffm_batch()};
 #'   [verify_media()] for the verification spec and [ffm_manifest()] for the
 #'   provenance manifest.

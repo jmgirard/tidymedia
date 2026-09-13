@@ -32,8 +32,8 @@ function takes.
 }
 
 \section{What \code{NULL} means}{
-\code{audio_stream = NULL} still selects audio. It does not mean "no audio". The
-functions differ in how much audio it selects.
+\code{audio_stream = NULL} still selects audio. It does not mean "no audio". How
+much audio it selects depends on the function.
 \itemize{
 \item The first-track family reads \code{NULL} as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The every-track family reads it as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms.
 \item The two readings have a reason. A function that writes one audio stream

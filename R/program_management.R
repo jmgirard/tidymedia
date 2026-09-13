@@ -149,8 +149,8 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
 #' any other source, give the checksum in `archive_checksum`.
 #'
 #' The published checksum comes from the same site as the archive, over the
-#' same connection. So the check finds a damaged or incomplete download. It does not
-#' find a source that someone has tampered with.
+#' same connection. So the check finds a damaged or incomplete download. It
+#' does not find a source that someone has tampered with.
 #'
 #' After the unpack, the call checks each program before it saves any location.
 #' The path must be one that R finds as a program. It must be a file, not a

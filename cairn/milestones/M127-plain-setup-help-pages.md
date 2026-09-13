@@ -1,6 +1,6 @@
 # M127: ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** M126
 - **Driving RR:** —
@@ -70,6 +70,9 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: O6-O8, O12-O15. The `ffm_batch` text says how long R waits. The exit-class item names task functions. `?local_timeout` points its restore claim at the exceptions, and the `.local_envir` text is scoped. Measured: a returned function's environment and `new.env()` both leave the limit set with no condition. Two grammar slips and three roxygen lines over 80 characters fixed.
 - 2026-09-13: O3, O10, O11: three doc guards changed so they can fail. Each went red on a planted Rd defect, and the Rd files were then restored. The claim audit was not re-run. Each new claim was measured or read against the test census.
 - 2026-09-13: on the committed tree: the sweep over 28 pages exits 0, and `?tidymedia` renders 78 lines. `devtools::check()` gives 0 errors, 0 warnings, 0 notes, with the spelling comparison OK and tests included. `devtools::document()` leaves `man/` unchanged. `pkgdown::check_pkgdown()` finds no problems. Status set to review.
+- 2026-09-13: review round 2 on `629d68a4`: AC1-AC4 and AC6 pass with fresh evidence. AC5 fails a second time, on reviewer finding R2-7. The widening test applies, because adding rows widens a list that the author wrote from memory, so this is an amendment return and not a defect return.
+- 2026-09-13: amendment return: AC5 — "Each page in the domain has a ledger row. Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the domain at the base commit is still found in some `man/*.Rd` file at head, or has a ledger row."
+- 2026-09-13: gate (user's choice): narrow AC5 as above, through the amendment protocol with a fresh re-audit reader. Rows for the three items in R2-7 are still to be added. Fix now R2-1 to R2-6 and R2-8 to R2-12 on the branch. Status back to in-progress.
 
 ## Decisions
 
@@ -142,3 +145,4 @@ Three new-context reviewers ran on `629d68a4`. The prior-review reviewer found n
 - R2-10: the `ffprobe()` and `mediainfo()` Value sections say that standard error is not returned. A command ending in `2>&1` does return it.
 - R2-11: in `test-timeout-silence.R:692`, the new `skip_if()` for the landing topic also skips the `rd` and `news` assertions.
 - R2-12: the `?with_timeout` Description says "the session's own limit is back". Inside a function that called `local_timeout()`, it is the limit that was in force.
+- Dispositions (gate, 2026-09-13): R2-7 is an amendment return on AC5. The narrowed wording is in the work log, and the three rows are added as well. R2-1 to R2-6 and R2-8 to R2-12 are fix now. None is rejected or deferred.

@@ -43,7 +43,7 @@ The README, the five vignettes and the pkgdown reference index use plain English
 
 - [x] T1: Write `tools/doc_prose_report.R` to the definition in `cairn/references/plain-docs.md`. Before trusting a clean result, plant a maintainer term and a 26-word sentence in a temporary `.Rmd` and `.Rd`. Put the term in body text, in an argument or list item, and across a line wrap. Put a ` -- ` aside in the `.Rd` source. See each one reported. Show that the sweep reads a non-empty set of sentences from each real file.
 - [x] T2: Record the base-commit inventory in a new M126 ledger section: the `##` and `###` headings of the six files, and the names and identifiers that AC5 lists.
-- [ ] T3: Rewrite `vignettes/tidymedia.Rmd`. Add the glossary. Replace the layer and escape-hatch wording with the names in rule 5. Add the four pipeline functions to the tour. Write each new claim from a run's output.
+- [x] T3: Rewrite `vignettes/tidymedia.Rmd`. Add the glossary. Replace the layer and escape-hatch wording with the names in rule 5. Add the four pipeline functions to the tour. Write each new claim from a run's output.
 - [ ] T4: Rewrite `vignettes/verification.Rmd`. Put the basic check first. Move the timeout measurements and ordering detail out, and record where they went.
 - [ ] T5: Rewrite `vignettes/workflow.Rmd`, `batch.Rmd` and `metadata.Rmd`. Add a guarded chunk that calls the three capability functions, in the hardware section of `workflow.Rmd`.
 - [ ] T6: Rewrite the prose of `README.Rmd` and the `title:` and `desc:` text in `_pkgdown.yml`, including "three layers" at `_pkgdown.yml:9`. Run `devtools::build_readme()`.
@@ -61,6 +61,7 @@ The README, the five vignettes and the pkgdown reference index use plain English
 - 2026-09-13: implement started on `m126-plain-vignettes-readme`. Question gate: the glossary is one `## Glossary` section with a bulleted list and one anchor (recommended). The README links to it by full website address (recommended). The README install section keeps one install route and one check per platform and leaves the rest to the help pages. The user chose this over the recommended keep-all rewrite.
 - 2026-09-13: T1 done. In a scratch `.Rmd` and `.Rd`, `tools/doc_prose_report.R` reported each planted term (body text, list item, argument item, across a line wrap), each 26-word sentence and the ` -- ` in the `.Rd` source. It stayed silent on terms in a chunk, an HTML comment, the YAML title, an `.Rd` family list, `\usage` and `\examples`, and on a 25-word sentence. At the base commit it reads 116, 54, 62, 36, 56 and 75 sentences from the six files and reports 135 lines. The plant run found two parse bugs, now fixed: abbreviations split sentences, and `**` stayed in the text.
 - 2026-09-13: T2 done. The M126 ledger in `cairn/references/plain-docs.md` lists 39 headings, 66 exports and 4 identifiers from `d5c53674`.
+- 2026-09-13: T3 done. `vignettes/tidymedia.Rmd` has a Glossary section, the rule 5 names and a "More pipeline steps" section with the four missing pipeline functions. The sweep is clean on it and it renders. Each new command output was read from a run first. One draft claim was wrong and was fixed before commit: one-input pipeline functions do not keep every audio track, but task functions such as `crop_video()` do.
 
 ## Decisions
 

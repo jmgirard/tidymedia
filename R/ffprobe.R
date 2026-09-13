@@ -16,7 +16,7 @@
 #'   each line.
 #' @seealso [probe_all()] and the other `probe_*()` functions, which return
 #'   tibbles.
-#' @family escape hatch functions
+#' @family direct command functions
 #' @examplesIf nzchar(Sys.which("ffprobe"))
 #' ffprobe("-version")
 #' @export

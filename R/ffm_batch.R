@@ -66,7 +66,7 @@
 #' @seealso [segment_video()], which is built on \code{ffm_batch()};
 #'   [verify_media()] for the verification spec and [ffm_manifest()] for the
 #'   provenance manifest.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(

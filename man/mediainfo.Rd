@@ -33,8 +33,8 @@ mediainfo("--Version")
 \code{\link[=mediainfo_parameter]{mediainfo_parameter()}} for a tibble or a value. \code{\link[=get_duration]{get_duration()}} and the
 other \verb{get_*()} functions for common single values.
 
-Other escape hatch functions:
+Other direct command functions:
 \code{\link[=ffmpeg]{ffmpeg()}},
 \code{\link[=ffprobe]{ffprobe()}}
 }
-\concept{escape hatch functions}
+\concept{direct command functions}

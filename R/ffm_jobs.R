@@ -53,7 +53,7 @@
 #'   The call gives an error, instead of zero rows, when nothing matches. With
 #'   \code{recursive = TRUE} the search follows a symbolic link to a directory,
 #'   so a row can name a file outside \code{directory}.
-#' @family builder functions
+#' @family pipeline functions
 #' @seealso [ffm_batch()], which consumes the returned table.
 #' @examples
 #' folder <- system.file("extdata", package = "tidymedia")

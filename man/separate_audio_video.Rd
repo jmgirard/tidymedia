@@ -196,7 +196,7 @@ separate_audio_video(video, "audio.aac", "video.mp4",
 \code{\link[=extract_audio]{extract_audio()}} to pull out just the audio;
 \code{\link[=probe_audio]{probe_audio()}} to list an input's audio tracks.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -252,4 +252,4 @@ Other audio selection functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{audio selection functions}
-\concept{task verb functions}
+\concept{task functions}

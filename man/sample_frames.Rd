@@ -67,7 +67,7 @@ sample_frames(video, tempdir(), fps = 2, run = FALSE)
 \code{\link[=extract_frame]{extract_frame()}} for a single frame and \code{\link[=extract_frame_batch]{extract_frame_batch()}} for a
 caller-enumerated set; \code{\link[=sample_frames_batch]{sample_frames_batch()}} for the many-file form.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -98,4 +98,4 @@ Other task verb functions:
 \code{\link[=strip_metadata]{strip_metadata()}},
 \code{\link[=strip_metadata_batch]{strip_metadata_batch()}}
 }
-\concept{task verb functions}
+\concept{task functions}

@@ -62,7 +62,7 @@ extract_audio(video, "audio.aac", audio_stream = 1, run = FALSE)
 \code{\link[=convert_audio]{convert_audio()}} to re-encode the extracted audio;
 \code{\link[=extract_audio_batch]{extract_audio_batch()}} for the many-file form.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -118,4 +118,4 @@ Other audio selection functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{audio selection functions}
-\concept{task verb functions}
+\concept{task functions}

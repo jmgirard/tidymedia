@@ -155,33 +155,33 @@ The base commit is `264afff4`. The domain grep returned 28 pages. At that commit
 
 | Page | Source | Found | Result |
 |---|---|---|---|
-| audio_stream | R/audio-stream-doc.R | 13 | |
-| ffm_batch | R/ffm_batch.R | 5 | |
-| ffm_jobs | R/ffm_jobs.R | 12 | |
-| ffm_manifest | R/ffm_manifest.R | 2 | |
-| find_ffmpeg | R/program_management.R | 4 | |
-| ffprobe | R/ffprobe.R | 3 | |
-| get_sample_rate | R/mediainfo.R | 0 | |
-| get_height | R/mediainfo.R | 0 | |
-| get_frame_rate | R/mediainfo.R | 0 | |
-| get_duration | R/mediainfo.R | 0 | |
+| audio_stream | R/audio-stream-doc.R | 13 | Deleted: how the every-track map is written, because it is internal. The outcome stays: no audio in gives no audio out. The generated `audio_stream` and `audio_input` argument text is rewritten, and it lands on 25 task function pages (M129 and M130 domains). Nothing else left. |
+| ffm_batch | R/ffm_batch.R | 5 | Nothing left. Gained a link to `?with_timeout` for job time limits. |
+| ffm_jobs | R/ffm_jobs.R | 12 | Moved: the decision id behind `type` having no default, to the comment on `rlang::check_required(type)` in `R/ffm_jobs.R`. Deleted: "hand-rolled" and "deliberately", which are tone and not facts. The 70-word column sentence became a list of three items that keeps every fact. |
+| ffm_manifest | R/ffm_manifest.R | 2 | Nothing left. |
+| find_ffmpeg | R/program_management.R | 4 | Nothing left. Received the section "Locations saved by earlier versions" from `?program_status`, `?set_program` and `?unset_program`. |
+| ffprobe | R/ffprobe.R | 3 | Nothing left. |
+| get_sample_rate | R/mediainfo.R | 0 | Deleted: "quickly", as filler. |
+| get_height | R/mediainfo.R | 0 | Deleted: "quickly", as filler. |
+| get_frame_rate | R/mediainfo.R | 0 | Deleted: "quickly", as filler. |
+| get_duration | R/mediainfo.R | 0 | Deleted: "quickly", as filler. |
 | local_timeout | R/timeout.R | 23 | Moved: the 42.0 s timing, to the comment at the top of `R/timeout.R`. The 40 s bound links to `?with_timeout`. Moved: the withr measurement dates for the `local_timeout()` inside `with_timeout()` case, to the comment above `withr::defer()` in `local_timeout()`. The `on.exit()` dates were already in that comment. Deleted: that the undo step is set before the limit, and why `NULL` is refused. Reason: internal order, and the comments in the two function bodies keep both. |
-| install_on_win | R/program_management.R | 24 | |
-| get_width | R/mediainfo.R | 0 | |
-| mediainfo_template | R/mediainfo.R | 0 | |
-| mediainfo_parameter | R/mediainfo.R | 1 | |
-| mediainfo_query | R/mediainfo.R | 0 | |
-| mediainfo | R/mediainfo.R | 3 | |
-| probe_container | R/ffprobe.R | 1 | |
-| probe_all | R/ffprobe.R | 4 | |
-| program_status | R/program_management.R | 8 | |
-| print.tidymedia_ffm | R/ffm_oop.R | 0 | |
-| set_program | R/program_management.R | 3 | |
-| refresh_ffmpeg_capabilities | R/cache.R | 11 | |
-| verify_media | R/verify.R | 2 | |
-| unset_program | R/program_management.R | 6 | |
+| install_on_win | R/program_management.R | 24 | Moved: the class list in the Value section, to a new "Errors" section with one item for each class. Deleted: the cleanup rules repeated in the Value section, because the new section "What a failed install leaves behind" has them. |
+| get_width | R/mediainfo.R | 0 | Deleted: "quickly", as filler. |
+| mediainfo_template | R/mediainfo.R | 0 | Nothing left. |
+| mediainfo_parameter | R/mediainfo.R | 1 | Nothing left. |
+| mediainfo_query | R/mediainfo.R | 0 | Nothing left. |
+| mediainfo | R/mediainfo.R | 3 | Nothing left. |
+| probe_container | R/ffprobe.R | 1 | Nothing left. |
+| probe_all | R/ffprobe.R | 4 | Nothing left. |
+| program_status | R/program_management.R | 8 | Moved: the folder that versions before 0.2.0 used, and which file an unreadable-location warning names, to the section "Locations saved by earlier versions" of `?find_ffmpeg`. Users of 0.1.0 find it there. |
+| print.tidymedia_ffm | R/ffm_oop.R | 0 | Nothing left. |
+| set_program | R/program_management.R | 3 | Moved: that the old folder is no longer read once the new file exists, to the section "Locations saved by earlier versions" of `?find_ffmpeg`. |
+| refresh_ffmpeg_capabilities | R/cache.R | 11 | Nothing left. The parallel-worker text is now a section "Parallel workers". |
+| verify_media | R/verify.R | 2 | Nothing left. |
+| unset_program | R/program_management.R | 6 | Moved: the old-folder text, to the section "Locations saved by earlier versions" of `?find_ffmpeg`. Moved: the decision id behind `program` having no default, to the comment above `unset_program <- function(program)`. |
 | tidymedia-package | R/tidymedia-package.R | 47 | Moved: the section "Bounding a run that hangs", to `?with_timeout` (Details and two sections). Moved: the FFmpeg 6.1.1 and 9.0.1 timings, to the comment at the top of `R/timeout.R`. Deleted: the note that a test derives the lists from the call graph (a test note, kept in `NEWS.md` and `helper-timeout-sweep.R`). Deleted: which error is reported first, and the two calls that read no limit (internal order, kept in the comment above `resolve_timeout()`). Deleted from Session options: the check cost details and the `audio_stream` exemption (on the task function pages), that the encoder answer is kept for the session (on `?refresh_ffmpeg_capabilities`), and the withr sentence (general R). The error-class section keeps one item for each class. Deleted: the zero-exit case with no fields and the batch warning with no exit status (on `?normalize_audio_batch` and `?separate_audio_video_batch`). |
-| tidyeval | R/utils-tidy-eval.R | 1 | |
+| tidyeval | R/utils-tidy-eval.R | 1 | Nothing left. |
 | with_timeout | R/timeout.R | 12 | Moved: the 42.0 s timing, to the comment at the top of `R/timeout.R`. Received the reached-limit detail from `?tidymedia`. |
 
 #### Identifiers at the base commit (AC5)

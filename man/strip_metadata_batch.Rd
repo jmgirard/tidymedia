@@ -57,7 +57,7 @@ batch runner and the arguments forwarded through \code{...};
 \code{\link[=standardize_video_batch]{standardize_video_batch()}} and \code{\link[=anonymize_video_batch]{anonymize_video_batch()}} for the other
 table-driven siblings.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -88,4 +88,4 @@ Other task verb functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}},
 \code{\link[=strip_metadata]{strip_metadata()}}
 }
-\concept{task verb functions}
+\concept{task functions}

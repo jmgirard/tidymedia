@@ -36,7 +36,7 @@ concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
 \seealso{
 \code{\link[=ffm_concat]{ffm_concat()}}, the builder it wraps.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -67,4 +67,4 @@ Other task verb functions:
 \code{\link[=strip_metadata]{strip_metadata()}},
 \code{\link[=strip_metadata_batch]{strip_metadata_batch()}}
 }
-\concept{task verb functions}
+\concept{task functions}

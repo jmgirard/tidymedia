@@ -32,8 +32,8 @@ ffprobe("-version")
 \code{\link[=probe_all]{probe_all()}} and the other \verb{probe_*()} functions, which return
 tibbles.
 
-Other escape hatch functions:
+Other direct command functions:
 \code{\link[=ffmpeg]{ffmpeg()}},
 \code{\link[=mediainfo]{mediainfo()}}
 }
-\concept{escape hatch functions}
+\concept{direct command functions}

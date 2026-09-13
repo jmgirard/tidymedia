@@ -18,7 +18,7 @@
 #' @seealso [mediainfo_template()], [mediainfo_query()] and
 #'   [mediainfo_parameter()] for a tibble or a value. [get_duration()] and the
 #'   other `get_*()` functions for common single values.
-#' @family escape hatch functions
+#' @family direct command functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' mediainfo("--Version")
 #' @export

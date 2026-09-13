@@ -51,7 +51,7 @@ visual de-identification sibling); \code{\link[=probe_container]{probe_container
 \code{\link[=ffm_copy]{ffm_copy()}} and \code{\link[=ffm_output_options]{ffm_output_options()}}, the builders it wraps;
 \code{\link[=strip_metadata_batch]{strip_metadata_batch()}} for the many-file form.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -82,4 +82,4 @@ Other task verb functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}},
 \code{\link[=strip_metadata_batch]{strip_metadata_batch()}}
 }
-\concept{task verb functions}
+\concept{task functions}

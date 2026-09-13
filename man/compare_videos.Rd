@@ -100,7 +100,7 @@ compare_videos(c(video, video), "compare.mp4", run = FALSE)
 \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
 \code{\link[=picture_in_picture]{picture_in_picture()}} for insetting instead of stacking.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos_batch]{compare_videos_batch()}},
@@ -156,4 +156,4 @@ Other audio selection functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{audio selection functions}
-\concept{task verb functions}
+\concept{task functions}

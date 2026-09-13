@@ -143,7 +143,7 @@ batch runner and the arguments forwarded through \code{...};
 \code{\link[=standardize_video_batch]{standardize_video_batch()}} and \code{\link[=segment_video_batch]{segment_video_batch()}} for the other
 table-driven siblings.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=compare_videos_batch]{compare_videos_batch()}},
@@ -199,4 +199,4 @@ Other audio selection functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{audio selection functions}
-\concept{task verb functions}
+\concept{task functions}

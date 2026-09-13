@@ -151,7 +151,7 @@ maximum level of audio signals}; ITU-R BS.1770-4.
 for the many-file form; \code{\link[=extract_audio]{extract_audio()}} and \code{\link[=convert_audio]{convert_audio()}}, the other
 verbs whose output is one audio stream.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -207,4 +207,4 @@ Other audio selection functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{audio selection functions}
-\concept{task verb functions}
+\concept{task functions}

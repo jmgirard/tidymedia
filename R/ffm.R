@@ -13,7 +13,7 @@
 #' @seealso [ffm_compile()] to render the pipeline and [ffm_run()] to execute
 #'   it; the Layer-2 task verbs (e.g. [standardize_video()], [segment_video()])
 #'   wrap this engine.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' ffm_files(video, "output.mp4") |>
@@ -80,7 +80,7 @@ ffm_files <- function(input, output, overwrite = TRUE) {
 #'   is the frame-exact *filter*).
 #' @references https://ffmpeg.org/ffmpeg-filters.html#trim
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' ffm_files(video, "output.mp4") |>
@@ -171,7 +171,7 @@ ffm_trim <- function(object,
 #' @seealso [ffm_trim()] for the filter-based alternative, [ffm_copy()] for the
 #'   fast copy path, and [segment_video()], the task verb built on it.
 #' @references https://ffmpeg.org/ffmpeg.html#Main-options
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Fast, lossless copy cut (snaps to keyframes)
@@ -216,7 +216,7 @@ ffm_seek <- function(object, start = NULL, end = NULL, reencode = TRUE) {
 #'   streams from the output file when run.
 #' @seealso [extract_audio()], the task verb that drops the video stream via
 #'   this builder.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Drop the audio stream (keep video only)
@@ -259,7 +259,7 @@ ffm_drop <- function(object,
 #' @seealso [ffm_scale()] to resize instead of crop; [crop_video()] and
 #'   [format_for_web()] are the task verbs built on it.
 #' @references https://ffmpeg.org/ffmpeg-filters.html#crop
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Crop to a centered 160x120 region
@@ -301,7 +301,7 @@ ffm_crop <- function(object,
 #' @return \code{object} but with the added instruction to resize the image(s).
 #' @seealso [ffm_crop()] to crop instead of resize; [standardize_video()] is the
 #'   task verb built on it.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' ffm_files(video, "output.mp4") |>
@@ -337,7 +337,7 @@ ffm_scale <- function(object, width, height) {
 #'   rate.
 #' @seealso [standardize_video()], the task verb that sets frame rate via this
 #'   builder.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' ffm_files(video, "output.mp4") |>
@@ -411,7 +411,7 @@ ffm_fps <- function(object, fps) {
 #' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
 #' maximum level of audio signals}; ITU-R BS.1770-4.
 #' \url{https://ffmpeg.org/ffmpeg-filters.html#loudnorm}
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' ffm_files(video, "output.mp4") |>
@@ -508,7 +508,7 @@ ffm_loudnorm <- function(object,
 #' @seealso [ffm_copy()] for the stream-copy shortcut, [ffmpeg_codecs()] to list
 #'   available codecs, and [standardize_video()], a task verb built on it.
 #' @references https://ffmpeg.org/ffmpeg-codecs.html
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' ffm_files(video, "output.mp4") |>
@@ -573,7 +573,7 @@ ffm_codec <- function(object,
 #' @return \code{object} with the added stream mapping instruction.
 #' @seealso [ffm_copy()], which maps all streams; [separate_audio_video()] is a
 #'   task verb built on it.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' ffm_files(video, "output.mp4") |>
@@ -645,7 +645,7 @@ ffm_map <- function(object, mapping = "0", replace = FALSE) {
 #'   all streams.
 #' @seealso [ffm_codec()] and [ffm_map()], which it wraps; [segment_video()]
 #'   uses it for fast copy cuts.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' ffm_files(video, "output.mp4") |>
@@ -732,7 +732,7 @@ check_copy_map_conflict <- function(map, call = rlang::caller_env()) {
 #' @return \code{object} with the added pixel-format instruction.
 #' @seealso [standardize_video()] and [format_for_web()], the task verbs that
 #'   set the pixel format via this builder.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' ffm_files(video, "output.mp4") |>
@@ -769,7 +769,7 @@ ffm_pixel_format <- function(object, format) {
 #'   stacking.
 #' @seealso [ffm_vstack()] for vertical stacking and [compare_videos()], the
 #'   task verb built on both.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Stack two inputs side-by-side (pass more than one input to ffm_files())
@@ -837,7 +837,7 @@ ffm_hstack <- function(object,
 #'   stacking.
 #' @seealso [ffm_hstack()] for horizontal stacking and [compare_videos()], the
 #'   task verb built on both.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Stack two inputs one above the other (pass more than one input to ffm_files())
@@ -917,7 +917,7 @@ ffm_vstack <- function(object,
 #' @return \code{object} with the added instruction to overlay the second input
 #'   on the first.
 #' @seealso [picture_in_picture()], the task verb built on this verb.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Draw the second input over the first, 16px in from the top-right corner
@@ -987,7 +987,7 @@ ffm_overlay <- function(object,
 #'   \code{ffm_files()} with more than one input file.
 #' @return \code{object} with the added instruction to concatenate the inputs.
 #' @seealso [concatenate_videos()], the task verb built on this verb.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Join two inputs end-to-end (they must share codec/resolution/frame rate)
@@ -1053,7 +1053,7 @@ ffm_concat <- function(object) {
 #'   builder.
 #' @references https://ffmpeg.org/ffmpeg-filters.html#drawbox
 #' @references https://ffmpeg.org/ffmpeg-utils.html#color-syntax
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Draw a filled red box covering the top-left quarter of the frame
@@ -1102,7 +1102,7 @@ ffm_drawbox <- function(object,
 #' @return \code{object} with the added output options.
 #' @seealso [ffmpeg()] for the full Layer 0 escape hatch, and [ffm_compile()],
 #'   which places these options.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # Extract a single frame by adding a raw output option
@@ -1147,7 +1147,7 @@ ffm_output_options <- function(object, ...) {
 #'   instructions provided to the tidymedia pipeline.
 #' @seealso [ffm_run()] to compile and execute in one step, and [ffm_batch()] to
 #'   compile over many files.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' # ffm_compile() returns the reproducible FFmpeg command as a string
@@ -1565,7 +1565,7 @@ n_files <- function(x) {
 #' therefore the one handler that covers the analysis pass in both forms.
 #' @seealso [ffm_compile()] to get the command without running it, [ffm_batch()]
 #'   for the many-file runner, and [verify_media()] for the \code{verify =} spec.
-#' @family builder functions
+#' @family pipeline functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' out <- tempfile(fileext = ".mp4")

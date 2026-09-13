@@ -54,6 +54,7 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: minor amendment: each of T2-T6 updates the tests that pin its own pages, because the verify slot needs `devtools::test()` clean per task. T7 keeps the final sweep and the checks.
 - 2026-09-13: T1: base sweep over 28 pages printed 185 findings. Ledger section `### M127` added to `cairn/references/plain-docs.md` with the pages and 27 identifiers.
 - 2026-09-13: T2 and T3 in one commit, because the timeout text and its tests moved between the two files. `?tidymedia` renders 72 lines. The sweep is clean on `tidymedia-package`, `with_timeout` and `local_timeout`. Four test files re-pinned to the new page or wording (package-topic, check-tracks-docs, runtime-timeout, timeout-silence) and `helper-rd.R` now reads `?with_timeout`. None removed. Full suite: 1738 tests, 0 failed, 5 skipped.
+- 2026-09-13: T4, T5 and T6 delegated to three [O] agents in separate worktrees and merged. T4 moved blocks in `R/program_management.R`, and parsing both versions shows the function bodies unchanged. T5 rewrote the generated audio argument text, which lands on 25 task function pages, and re-pinned two phrases in `test-audio-index-docs.R`. The `@family` labels are renamed in 7 `R/` files. The sweep over the 28 pages exits 0. Checkpoint: T4-T6 stay unticked until the full suite passes on this commit.
 
 ## Decisions
 

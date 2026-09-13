@@ -44,7 +44,7 @@ https://ffmpeg.org/ffmpeg-filters.html#crop
 \code{\link[=ffm_scale]{ffm_scale()}} to resize instead of crop; \code{\link[=crop_video]{crop_video()}} and
 \code{\link[=format_for_web]{format_for_web()}} are the task verbs built on it.
 
-Other builder functions:
+Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},
@@ -68,4 +68,4 @@ Other builder functions:
 \code{\link[=ffm_vstack]{ffm_vstack()}},
 \code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
 }
-\concept{builder functions}
+\concept{pipeline functions}

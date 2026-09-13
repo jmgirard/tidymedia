@@ -109,7 +109,7 @@ ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
 \code{\link[=verify_media]{verify_media()}} for the verification spec and \code{\link[=ffm_manifest]{ffm_manifest()}} for the
 provenance manifest.
 
-Other builder functions:
+Other pipeline functions:
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},
 \code{\link[=ffm_concat]{ffm_concat()}},
@@ -133,4 +133,4 @@ Other builder functions:
 \code{\link[=ffm_vstack]{ffm_vstack()}},
 \code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
 }
-\concept{builder functions}
+\concept{pipeline functions}

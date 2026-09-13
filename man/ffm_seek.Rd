@@ -55,7 +55,7 @@ https://ffmpeg.org/ffmpeg.html#Main-options
 \code{\link[=ffm_trim]{ffm_trim()}} for the filter-based alternative, \code{\link[=ffm_copy]{ffm_copy()}} for the
 fast copy path, and \code{\link[=segment_video]{segment_video()}}, the task verb built on it.
 
-Other builder functions:
+Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},
@@ -79,4 +79,4 @@ Other builder functions:
 \code{\link[=ffm_vstack]{ffm_vstack()}},
 \code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
 }
-\concept{builder functions}
+\concept{pipeline functions}

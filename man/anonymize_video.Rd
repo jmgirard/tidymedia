@@ -121,7 +121,7 @@ https://ffmpeg.org/ffmpeg-filters.html#drawbox
 \code{hardware} toggle; \code{\link[=anonymize_video_batch]{anonymize_video_batch()}}
 for the many-file (batch) form.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
 \code{\link[=compare_videos_batch]{compare_videos_batch()}},
@@ -177,4 +177,4 @@ Other audio selection functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{audio selection functions}
-\concept{task verb functions}
+\concept{task functions}

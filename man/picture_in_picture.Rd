@@ -102,7 +102,7 @@ picture_in_picture(video, video, "pip.mp4", run = FALSE)
 \code{hardware} toggle; \code{\link[=compare_videos]{compare_videos()}} for
 side-by-side stacking.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -158,4 +158,4 @@ Other audio selection functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{audio selection functions}
-\concept{task verb functions}
+\concept{task functions}

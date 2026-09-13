@@ -107,7 +107,7 @@ batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for th
 \code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}} and \code{\link[=compare_videos_batch]{compare_videos_batch()}},
 the other fan-in batch siblings.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -163,4 +163,4 @@ Other audio selection functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{audio selection functions}
-\concept{task verb functions}
+\concept{task functions}

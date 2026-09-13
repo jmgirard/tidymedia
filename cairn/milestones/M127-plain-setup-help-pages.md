@@ -1,6 +1,6 @@
 # M127: ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** M126
 - **Driving RR:** —
@@ -25,7 +25,7 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - [x] AC2: The prose sweep over the M127 domain prints no sentence over 25 words.
 - [x] AC3: For each page in the domain, take each glossary stem found in its `--prose` output. The page defines the term at its first use or names the glossary in `vignette("tidymedia")`. One ledger row per page records the stems and how each is met.
 - [x] AC4: `tools::Rd2txt()` output for `man/tidymedia-package.Rd` is at most 80 lines. Its first paragraph says what the package does and names `vignette("tidymedia")` as the place to start.
-- [x] AC5: Each page in the domain has a ledger row that says what text left it and where that text went: moved (with the page), or deleted (with a reason). Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the domain at the base commit is still found in some `man/*.Rd` file at head, or has a ledger row.
+- [ ] AC5: Each page in the domain has a ledger row that says what text left it and where that text went: moved (with the page), or deleted (with a reason). Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the domain at the base commit is still found in some `man/*.Rd` file at head, or has a ledger row.
 - [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
@@ -63,6 +63,7 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: claim audit re-read: the same reader found all 8 corrections correct.
 - 2026-09-13: T7 done. On `2e04a4be`: `devtools::check()` 0 errors, 0 warnings, 0 notes (tests included); `devtools::document()` leaves `man/` unchanged. Agent worktrees removed. Status set to review.
 - 2026-09-13: review checkpoint: AC1-AC5 evidence recorded and ticked. AC6 check and the three reviewers still running.
+- 2026-09-13: review return 1 (defect): AC6 fails, because `devtools::check()` on `ca35647a` ends "Status: 1 NOTE". The spelling test flags `dplyr` at `probe_all.Rd:45`. AC5 fails, because one fact left `?tidymedia` with no ledger row (reviewer O4). Status back to in-progress. See the Review section for the fixes to make.
 
 ## Decisions
 
@@ -79,3 +80,28 @@ Evidence is from 2026-09-13 on `a7f5d749`. That commit contains `origin/master` 
 - AC3: a new stem search over the `--prose` output finds stems on 8 pages. The pages and stems are the same as in the ledger table. Each of the 8 rendered pages names the glossary in `vignette("tidymedia")`. The other 20 pages have no stem. The ledger says so in one sentence, as the M126 ledger did for `batch.Rmd`.
 - AC4: `tools::Rd2txt()` on `man/tidymedia-package.Rd` gives 73 lines. The Description paragraph says what the package does. It ends "Start with `vignette("tidymedia")`".
 - AC5: all 28 pages have a row in the ledger's AC5 table. At `264afff4` the pattern finds 27 identifiers in the domain. At head, a `\bname\b` search finds all 27 in `man/*.Rd`. The search finds no made-up name, and `tidymedia_ffm` does not match inside `tidymedia_ffmpeg_exit`. Spot reads found four moved items at their ledger targets. These are the timings in `R/timeout.R`, the two decision-id comments, and the `?find_ffmpeg` section on earlier versions.
+- AC5 correction: the box is unticked. Reviewer O4 found a fact that left `?tidymedia` with no ledger row. The base text said a bad `tidymedia.check_tracks` value gives an error that names the option. No `man/*.Rd` page says this at head.
+- AC6: fails. `devtools::document()` leaves `man/` unchanged, and a planted roxygen edit shows that it does write. `pkgdown::check_pkgdown()` finds no problems. `devtools::check()` on `ca35647a` gives 0 errors and 0 warnings, but ends "Status: 1 NOTE". The note is at "checking tests": `spelling.Rout` differs from `spelling.Rout.save`, because `dplyr` at `probe_all.Rd:45` is flagged. Commit `1efbcc43` changed `\code{dplyr}` to plain "dplyr" in `R/ffprobe.R:46`. `devtools::test()` did not run on its own, because AC6 already failed.
+- Consistency gate: `cairn_validate` passes. The diff adds no top-level file and changes no `README` or `NEWS.md`.
+
+### Review findings
+
+Three new-context reviewers ran on `ca35647a`. The blame-history reviewer and the prior-review reviewer found no defects. The blame-history reviewer made one note: the new `@family` names differ from the layer names in `CLAUDE.md`. The diff-bug reviewer ranked 16 findings. Items O1, O2 and O4 are confirmed against the code. The rest are as reported. Dispositions are open until the next review gate.
+
+- O1: `?with_timeout` says every task function whose name does not end in `_batch` gives a `tidymedia_timeout` error. `segment_video()` runs through `ffm_batch()` and warns instead (`R/ffmpeg.R`, `helper-timeout-sweep.R` `ffm_batch_class`).
+- O2: the branch deleted text that D074 places in `?tidymedia`. The text said that a set limit wins over two per-row checks. These are the `output` column of a `_batch` job table and the checks of `anonymize_video_batch()`. No page has it now, and the comment above `resolve_timeout()` in `R/timeout.R` still says `?tidymedia` has it.
+- O3: `test-timeout-silence.R:667` pins only "error" on `?with_timeout`, and other text on that page matches it.
+- O4: the `tidymedia.check_tracks` refusal left the docs with no ledger row (see the AC5 correction).
+- O5: `?with_timeout` says a limit set with `options()` "follows the same rule", but `options(tidymedia.timeout = NULL)` is accepted.
+- O6: `R/ffm_batch.R:314` says the limit is how long a program can run. `?with_timeout` says it is how long R waits.
+- O7: the `check_tracks` bullet in `?tidymedia` says that an input names no `audio_stream`. A call or a row names it. The bullet also omits that `run = FALSE` skips the probe.
+- O8: the `tidymedia_ffmpeg_exit` item in `?tidymedia` does not say that task functions raise it too (same at base).
+- O9: the error and warning lists on `?with_timeout` omit `ffmpeg_codecs()`, `ffmpeg_encoders()`, `has_hardware_encoder()` and the version probe of `program_status()` (same at base).
+- O10: the M69 guard in `test-timeout-silence.R:680-696` no longer reads `?tidymedia`.
+- O11: the new order check in `test-package-topic.R:84-86` cannot fail, because "exited non-zero" opens the item.
+- O12: the `?local_timeout` Description gives no limit to its restore claim. The two exceptions are only in Details.
+- O13: the `.local_envir` text can be read to include top-level use, which withr handles.
+- O14: two grammar slips, in the `separation_container` text of `R/audio-stream-doc.R` ("Count among ... not by") and on `?audio_stream` ("functions differ in how much audio it selects").
+- O15: one roxygen line in `R/ffm_batch.R:370` is over 80 characters.
+- O16: D053 and D066 quote help text that changed. The quotes are old, not false.
+- Session finding S1: the spelling note behind the AC6 failure (`R/ffprobe.R:46`).

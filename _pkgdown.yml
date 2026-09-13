@@ -6,32 +6,32 @@ template:
 reference:
 - title: "Package"
   desc: >
-    What tidymedia is for and how its three layers fit together.
+    What tidymedia is for, and how its three kinds of function fit together.
   contents:
   - tidymedia-package
 - title: "Concepts"
   desc: >
-    Background on arguments that recur across many verbs.
+    Background on arguments that many functions share.
   contents:
   - audio_stream
-- title: "Bounding a run"
+- title: "Time limits"
   desc: >
-    Put a wall-clock limit on one call, or on the rest of a function, so a
-    hung program stops that work rather than the session.
+    Set a time limit on one call, or on the rest of a function. A program that
+    hangs then stops that call, not the R session.
   contents:
   - with_timeout
   - local_timeout
-- title: "Layer 0: escape hatches"
+- title: "Direct commands"
   desc: >
-    Pass a raw argument string straight to the command-line tools. Use these
-    when you need something tidymedia does not wrap.
+    Pass your own arguments to FFmpeg, FFprobe or MediaInfo. Use these for
+    anything that tidymedia does not cover.
   contents:
   - ffmpeg
   - ffprobe
   - mediainfo
-- title: "Layer 1: the pipeline builder"
+- title: "Pipeline functions"
   desc: >
-    Assemble a reproducible FFmpeg command step by step, then compile or run it.
+    Build an FFmpeg command one step at a time, then compile it or run it.
   contents:
   - ffm_files
   - ffm_trim
@@ -56,9 +56,9 @@ reference:
   - ffm_batch
   - ffm_jobs
   - print.tidymedia_ffm
-- title: "Layer 2: task verbs"
+- title: "Task functions"
   desc: >
-    Thin wrappers over the builder for common preprocessing jobs.
+    Do a common job in one call. Each one is built from the pipeline functions.
   contents:
   - extract_frame
   - extract_frame_batch
@@ -90,16 +90,16 @@ reference:
   - compare_videos_batch
   - picture_in_picture
   - picture_in_picture_batch
-- title: "Verification & provenance"
+- title: "Checking outputs and recording runs"
   desc: >
-    Check that an output really has the properties you asked for, and record a
-    reproducibility manifest for a batch run.
+    Check that an output has the properties you asked for, and record how the
+    files in a batch were made.
   contents:
   - verify_media
   - ffm_manifest
 - title: "Media metadata"
   desc: >
-    Read container and stream metadata as tibbles, ready for the tidyverse.
+    Read container and stream metadata into tibbles.
   contents:
   - probe_all
   - probe_container
@@ -113,8 +113,8 @@ reference:
   - get_sample_rate
 - title: "FFmpeg capabilities"
   desc: >
-    Discover the codecs and encoders available in your FFmpeg build, including
-    opt-in hardware (GPU) encoding.
+    List the codecs and encoders in your FFmpeg build, including hardware
+    encoders.
   contents:
   - ffmpeg_codecs
   - ffmpeg_encoders
@@ -122,7 +122,7 @@ reference:
   - refresh_ffmpeg_capabilities
 - title: "Program management"
   desc: >
-    Locate, configure, and install the FFmpeg and MediaInfo binaries.
+    Find, set and install the FFmpeg and MediaInfo programs.
   contents:
   - program_status
   - find_ffmpeg

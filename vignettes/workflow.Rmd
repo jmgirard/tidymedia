@@ -12,29 +12,35 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+# The capability chunk in section 1 starts FFmpeg, so it is evaluated only when
+# FFmpeg is installed. Every other evaluated chunk uses `run = FALSE` and starts
+# nothing.
+has_ffmpeg <- nzchar(Sys.which("ffmpeg"))
 ```
 
 ```{r setup}
 library(tidymedia)
 ```
 
-This vignette walks a realistic end-to-end pipeline: preparing a set of recorded
-**dyadic-interaction sessions** — two people in conversation, one camera each —
-for behavioral coding and acoustic analysis. It is the kind of job tidymedia is
-built for: the same handful of steps applied identically to every file, with a
-saved command for each so the whole pipeline is reproducible.
+This page follows one research project from raw recordings to shared files.
+The study records conversations between two people, with one camera on each
+person. The recordings need the same steps before coding and sound analysis.
 
-Every step below uses `run = FALSE`, which **compiles** the FFmpeg command
-without executing it, so you can read exactly what each verb would do. Drop that
-argument to actually process the files. Chunks that describe operating over a
-whole folder are shown but not evaluated; where a step *is* evaluated we use the
-tiny sample clip that ships with the package:
+tidymedia suits this job. Each step runs the same way on every file, and each
+step gives you a command that you can save and run again.
+
+Most examples below use `run = FALSE`. The function then returns the FFmpeg
+command without running it, so you can read what it would do. Leave out
+`run = FALSE` to process the files.
+
+Some examples work on a whole folder, so they are shown but not run. The others
+use the short sample clip that comes with the package:
 
 ```{r}
 session <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ```
 
-Picture a study folder with one file per camera per session:
+Say the study folder has one file for each camera in each session:
 
 ```{r, eval = FALSE}
 jobs <- ffm_jobs("study/raw", type = "video")
@@ -48,19 +54,20 @@ jobs
 #> 4 /data/study/raw/session02_camB.mp4
 ```
 
-`ffm_jobs()` returns the jobs tibble the batch runners take: one row per file,
-with the file's full path in an `input` column. The paths come back absolute
-for every file that resolves, however you spell the folder, which is why the
-output above shows the study folder at its full location rather than as
-`study/raw`. When the folder holds no video file, `ffm_jobs()` stops with an
-error rather than returning an empty table. The next section adds an
-`output` column to that table and hands it to a `*_batch()` verb.
+`ffm_jobs()` returns a jobs table for the batch functions. It has one row for
+each file, with the file's full path in an `input` column. The full path is why
+the output above shows `/data/study/raw` and not `study/raw`.
+
+If the folder has no video files, `ffm_jobs()` stops with an error. The next
+section adds an `output` column to the table and passes it to a `*_batch()`
+function.
 
 ## 1. Standardize the recordings
 
-Cameras rarely agree on resolution, frame rate, or codec, and inconsistent
-inputs make everything downstream harder. `standardize_video()` re-encodes a
-file to a common target:
+Cameras often differ in picture size, [frame rate](tidymedia.html#glossary) and
+[codec](tidymedia.html#glossary). Those differences make later steps harder.
+`standardize_video()` [re-encodes](tidymedia.html#glossary) a file to one
+common format:
 
 ```{r}
 standardize_video(
@@ -70,79 +77,106 @@ standardize_video(
 )
 ```
 
-Because this runs the same way for every file, reach for the batch sibling to do
-the whole folder from a jobs tibble (see `vignette("batch")` for the batch
-model). Every task verb has a `*_batch()` companion like this one:
+To do the same for the whole folder, use the batch version with the jobs table.
+Each task function has a `*_batch()` version like this one. See
+`vignette("batch")` for how batches work.
 
 ```{r, eval = FALSE}
 jobs$output <- sub("/raw/", "/std/", jobs$input)
 standardize_video_batch(jobs, width = 1280, height = 720, fps = 30)
 ```
 
-Re-encoding a large study can be slow on the CPU. `standardize_video()`,
-`format_for_web()` and the other verbs that re-encode video accept
-`hardware =` to move that encode onto the machine's video hardware. There are
-two backends: `"nvenc"` for an NVIDIA GPU with an nvenc-capable FFmpeg, and
-`"videotoolbox"` for Apple hardware on macOS. Name the one this machine has,
-and check for it under the same name first:
+### Using video hardware
+
+Re-encoding a large study on the main processor can be slow. Functions that
+re-encode video, such as `standardize_video()` and `format_for_web()`, take a
+`hardware` argument. It moves the work to a
+[hardware encoder](tidymedia.html#glossary).
+
+There are two choices. Use `"nvenc"` for an NVIDIA graphics card, with an
+FFmpeg build that supports nvenc. Use `"videotoolbox"` for Apple hardware on
+macOS.
+
+These functions show what your FFmpeg can do. `ffmpeg_codecs()` and
+`ffmpeg_encoders()` list its codecs and encoders. `hardware_encoder()` gives
+the encoder name for a codec and a hardware choice. `has_hardware_encoder()`
+says whether your FFmpeg has that encoder:
+
+```{r, eval = has_ffmpeg}
+head(ffmpeg_codecs())
+
+encoders <- ffmpeg_encoders()
+head(encoders[encoders$type == "Video", c("name", "details")])
+
+hardware_encoder("h264", "nvenc")
+hardware_encoder("h264", "videotoolbox")
+has_hardware_encoder("h264", "videotoolbox")
+```
+
+`has_hardware_encoder()` checks how FFmpeg was built. A `TRUE` result does not
+prove that the hardware works. When it is `TRUE`, name that hardware in the
+batch:
 
 ```{r, eval = FALSE}
-# Check availability first: this reflects the FFmpeg build, not a guarantee
-# that the hardware behind it works at run time
-has_hardware_encoder("h264", "videotoolbox")
-
 standardize_video_batch(
   jobs, width = 1280, height = 720, fps = 30,
   hardware = "videotoolbox"
 )
 ```
 
-If the backend you named is unavailable this errors by default, so a shared
-script never silently changes codec; pass `fallback = TRUE` to re-encode in
-software instead. The two backends cover different codec families — nvenc
-h264, hevc and av1, videotoolbox h264 and hevc — and asking one for a family
-it has no encoder for is an error naming that backend and that family. Hardware *decoding*
-(`-hwaccel`) and GPU filter pipelines are out of scope — reach for the
-`ffmpeg()` escape hatch there.
+If the hardware you name is not available, the call stops with an error. So a
+shared script never changes the codec without telling you. Add
+`fallback = TRUE` to use the main processor instead.
+
+The two choices support different codecs. NVIDIA nvenc supports H.264, HEVC
+and AV1. Apple videotoolbox supports H.264 and HEVC. A codec that the hardware
+does not support is an error that names both.
+
+tidymedia does not do hardware decoding or run filters on a graphics card. For
+those, use the direct command `ffmpeg()`.
 
 ## 2. Prepare the audio
 
-Acoustic and transcription tools want clean, consistently loud audio.
-`normalize_audio()` brings a file to a target integrated loudness (here −23 LUFS,
-the EBU R128 broadcast reference). Its output is **one audio stream and no
-video**, so name an audio file for it — normalizing into a video container would
-give you a `.mp4` carrying nothing but sound:
+Sound analysis and transcription tools work best with clean audio at an even
+loudness. `normalize_audio()` sets a file's loudness to a target. Here the
+target is -23 [LUFS](tidymedia.html#glossary), the level that the EBU R 128
+broadcast standard uses.
+
+The output of `normalize_audio()` has one audio
+[stream](tidymedia.html#glossary) and no video. So give it an audio file name.
+An `.mp4` name would give you a video file with sound and no picture:
 
 ```{r}
 normalize_audio(session, "session01_camA_norm.wav",
                 target_loudness = -23, run = FALSE)
 ```
 
-To normalize a recording's loudness *and* keep its picture, normalize to an
-audio file as above and mux it back with the `ffmpeg()` escape hatch.
+To set the loudness and keep the picture, first write the audio file as above.
+Then use the direct command `ffmpeg()` to put it back with the video.
 
-To hand the speech to a transcription or acoustic-analysis tool, pull the audio
-into a standalone file. `convert_audio()` transcodes to whatever the output
-extension implies — a `.wav` for an automatic-speech-recognition pipeline:
+A transcription tool needs the audio in its own file. `convert_audio()`
+converts the audio to the format that the output extension names. Here that is
+a `.wav` file for a speech recognition tool:
 
 ```{r}
 convert_audio(session, "session01_camA.wav", run = FALSE)
 ```
 
-(If you only need the audio *without* re-encoding, `extract_audio()` stream-copies
-it instead — see `vignette("tidymedia")`.)
+If you need the audio as it is, `extract_audio()` copies it without converting
+it. See `vignette("tidymedia")`.
 
 ## 3. Frames for visual coding
 
-Frame-by-frame coding of facial behavior or gesture needs stills. `extract_frame()`
-grabs a single frame at a timestamp — handy for a coding-manual illustration:
+Coding facial expressions or gestures frame by frame needs still images.
+`extract_frame()` saves one frame at a given time. This is useful for a picture
+in a coding manual:
 
 ```{r}
 extract_frame(session, "session01_camA_t30.png", timestamp = 30, run = FALSE)
 ```
 
-`sample_frames()` samples at a fixed rate into a numbered image sequence — one
-frame per second here, ready for a manual or computer-vision coding pass:
+`sample_frames()` saves frames at a fixed rate, as numbered image files. Here it
+saves one frame per second, for coding by hand or by a computer vision tool:
 
 ```{r, eval = FALSE}
 sample_frames("session01_camA_std.mp4", outdir = "frames/session01_camA",
@@ -151,20 +185,20 @@ sample_frames("session01_camA_std.mp4", outdir = "frames/session01_camA",
 
 ## 4. De-identify before sharing
 
-Sharing recordings with remote coders usually means removing identifying
-information first. Two verbs cover the common cases.
+Before you share recordings with coders, you often must remove information
+that identifies people. Two task functions cover the common cases.
 
-`strip_metadata()` removes container-level metadata — camera model, GPS
-coordinates, recording timestamps — without touching the audio or video streams:
+`strip_metadata()` removes the file's metadata, such as the camera model, GPS
+location and recording time. It does not change the audio or the video:
 
 ```{r}
 strip_metadata(session, "session01_camA_clean.mp4", run = FALSE)
 ```
 
-`anonymize_video()` box-fills one or more **fixed rectangles** you specify. This
-is not face tracking — you give it the coordinates of a region that stays put,
-such as an on-screen name caption or a fixed nameplate, and it paints a solid box
-over it. Regions are a data frame, one row per box:
+`anonymize_video()` fills one or more rectangles with a solid color. It does
+not find or follow faces. You give the position of an area that does not move,
+such as a name caption on screen. You give the areas as a data frame, with one
+row for each box:
 
 ```{r}
 regions <- tibble::tibble(
@@ -176,9 +210,10 @@ anonymize_video(session, "session01_camA_deid.mp4", regions = regions,
 
 ## 5. Assemble and share
 
-If a session was recorded in parts, `concatenate_videos()` joins them back into
-one file (the parts must share a codec and container — they do here, since step 1
-standardized them):
+If a session was recorded in parts, `concatenate_videos()` joins the parts into
+one file. The parts must have the same codec,
+[container](tidymedia.html#glossary), picture size and frame rate. Here they
+do, because step 1 made them the same:
 
 ```{r, eval = FALSE}
 concatenate_videos(
@@ -187,9 +222,9 @@ concatenate_videos(
 )
 ```
 
-Finally, `format_for_web()` produces a lightweight, broadly compatible H.264 file
-with fast-start enabled, so coders can stream it in a browser without a large
-download:
+Last, `format_for_web()` makes an H.264 file that most browsers can play.
+It moves the file's index to the start, so coders can watch it in a browser
+before it has fully downloaded:
 
 ```{r}
 format_for_web(session, "session01_camA_share.mp4", run = FALSE)
@@ -197,24 +232,24 @@ format_for_web(session, "session01_camA_share.mp4", run = FALSE)
 
 ## Reproducibility
 
-Every verb returns the exact FFmpeg command it compiled. Capturing those strings
-— or running the pipeline through the batch runner, which collects them in a
-`command` column — gives you a complete, re-runnable record of how each processed
-file was produced. That record is the point: the pipeline above is not a
-one-off, but a specification you can re-apply to the next cohort of recordings.
+Each task function returns the FFmpeg command it used. A batch run also keeps
+these commands, in a `command` column. Save the commands, and you have a full
+record of how each file was made. You can then run the same steps on the next
+group of recordings.
 
-The command says what you asked for. To record what actually happened — the
-FFmpeg version that ran, when, and checksums of what went in and came out — run
-the batch with `manifest = TRUE` and read it back with `ffm_manifest()`. To
-confirm each output really has the duration, dimensions and codecs you asked
-for, check it with `verify_media()`. Both, and the wall-clock limit that keeps a
-hung file from taking the session with it, are covered in
-`vignette("verification")`.
+The command records what you asked for. A manifest records what happened: the
+FFmpeg version, the time, and checksums of the files. Run the batch with
+`manifest = TRUE` and read the manifest with `ffm_manifest()`.
+
+To check that each output has the duration, size and codecs you asked for, use
+`verify_media()`. `vignette("verification")` covers both, and also shows how to
+stop a file that hangs.
 
 ## Where to next
 
-- `vignette("batch")` — the jobs-tibble batch runner in depth.
-- `vignette("metadata")` — reading each file's metadata as a tibble.
-- `vignette("verification")` — checking outputs, recording provenance, bounding
-  a run that hangs.
-- `vignette("tidymedia")` — the task verbs and the builder beneath them.
+- `vignette("batch")` explains the batch functions in more detail.
+- `vignette("metadata")` shows how to read each file's metadata into a tibble.
+- `vignette("verification")` shows how to check outputs, record how files were
+  made and limit run time.
+- `vignette("tidymedia")` explains the task functions and the pipeline
+  functions.

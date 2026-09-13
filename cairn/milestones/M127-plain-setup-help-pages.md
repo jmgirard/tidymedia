@@ -44,8 +44,8 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - [ ] T3: Rewrite `R/timeout.R`. Keep what a user sets and what a user sees. Move measured timings to code comments.
 - [ ] T4: Rewrite `R/program_management.R`, with `install_on_win()` and `program_status()` first.
 - [ ] T5: Rewrite `R/mediainfo.R`, `R/ffprobe.R` and `R/audio-stream-doc.R`. For the generated sentences, check the task-function pages that reuse them after `devtools::document()`.
-- [ ] T6: Rewrite `R/ffm_batch.R`, `R/ffm_jobs.R`, `R/cache.R`, `R/verify.R`, `R/ffm_manifest.R`, `R/utils-tidy-eval.R` and `R/ffm_oop.R`.
-- [ ] T7: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. Fill the ledger. Run the sweep, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
+- [ ] T6: Rewrite `R/ffm_batch.R`, `R/ffm_jobs.R`, `R/cache.R`, `R/verify.R`, `R/ffm_manifest.R`, `R/utils-tidy-eval.R` and `R/ffm_oop.R`. In every `R/` file, rename the `@family` labels "escape hatch functions", "builder functions" and "task verb functions" to the names in rule 5.
+- [ ] T7: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. Fill the ledger. Run the sweep, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
 ## Work log
 

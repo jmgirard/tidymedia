@@ -25,7 +25,7 @@ The M129 help-page domain uses plain English for an R user who does not know FFm
 - [ ] AC2: The prose sweep over the M129 domain prints no sentence over 25 words.
 - [ ] AC3: For each page in the domain, take each glossary stem found in its `--prose` output. The page defines the term at its first use or names the glossary in `vignette("tidymedia")`. One ledger row per page records the stems and how each is met.
 - [ ] AC4: Each page in the domain has a ledger row that says what text left it and where that text went: moved (with the page), or deleted (with a reason). Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the domain at the base commit is still found in some `man/*.Rd` file at head, or has a ledger row.
-- [ ] AC5: At head, `Rscript tools/roxygen_repeats.R R/ffmpeg.R` lists no paragraph found in two or more roxygen blocks, or a ledger row explains each one it lists. A paragraph is a run of `#'` lines ended by a blank `#'` line or a tag. An inline `` `r ...` `` call counts as text written once.
+- [ ] AC5: At head, `Rscript tools/roxygen_repeats.R R/ffmpeg.R` lists no paragraph found in two or more roxygen blocks, or a ledger row explains each one it lists. A paragraph is a run of `#'` lines ended by a blank `#'` line or a tag. An inline `` `r ...` `` call counts as text written once. A line holding only a tag (`@export`, `@family`, `@examplesIf`, `@rdname`) and example code are not paragraphs.
 - [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
@@ -44,7 +44,7 @@ The M129 help-page domain uses plain English for an R user who does not know FFm
 - [ ] T3: Rewrite `ffmpeg()`, `ffmpeg_codecs()`, `ffmpeg_encoders()` and `hardware_encoder()`.
 - [ ] T4: Rewrite `extract_frame()`, `sample_frames()`, `extract_audio()` and `convert_audio()`, and their batch pages.
 - [ ] T5: Rewrite `separate_audio_video()` and `normalize_audio()`, and their batch pages. Replace the failure sections with what a user sees and can do, and move the rest to code comments.
-- [ ] T6: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. Fill the ledger. Run the sweep, the repeats script, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
+- [ ] T6: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. Fill the ledger. Run the sweep, the repeats script, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
 ## Work log
 

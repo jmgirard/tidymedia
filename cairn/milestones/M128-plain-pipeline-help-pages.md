@@ -41,7 +41,7 @@ The M128 help-page domain, the `ffm_*()` pages from `R/ffm.R`, uses plain Englis
 - [ ] T2: Rewrite the input and output pages: `ffm_files()`, `ffm_copy()`, `ffm_seek()`, `ffm_map()`, `ffm_drop()`, `ffm_codec()`, `ffm_pixel_format()` and `ffm_output_options()`.
 - [ ] T3: Rewrite the filter pages: `ffm_trim()`, `ffm_crop()`, `ffm_scale()`, `ffm_fps()`, `ffm_drawbox()` and `ffm_loudnorm()`.
 - [ ] T4: Rewrite the multi-input and run pages: `ffm_hstack()`, `ffm_vstack()`, `ffm_overlay()`, `ffm_concat()`, `ffm_compile()` and `ffm_run()`. Move the exit-status detail in `?ffm_run` to a short end section.
-- [ ] T5: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. Fill the ledger. Run the sweep, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
+- [ ] T5: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. Fill the ledger. Run the sweep, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
 ## Work log
 

@@ -25,7 +25,7 @@ All help pages from `R/ffmpeg.R` use plain English for an R user who does not kn
 - [ ] AC2: The prose sweep over the M130 domain prints no sentence over 25 words.
 - [ ] AC3: For each page in the domain without an M129 ledger row, take each glossary stem found in its `--prose` output. The page defines the term at its first use or names the glossary in `vignette("tidymedia")`. One ledger row per page records the stems and how each is met.
 - [ ] AC4: Each page in the domain without an M129 ledger row has a ledger row that says what text left it and where that text went: moved (with the page), or deleted (with a reason). Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the domain at the base commit is still found in some `man/*.Rd` file at head, or has a ledger row.
-- [ ] AC5: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
+- [ ] AC5: `Rscript tools/roxygen_repeats.R R/ffmpeg.R` lists no paragraph that lacks an M129 or M130 ledger row. `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
 
@@ -41,7 +41,7 @@ All help pages from `R/ffmpeg.R` use plain English for an R user who does not kn
 - [ ] T2: Rewrite `crop_video()`, `format_for_web()`, `standardize_video()` and `strip_metadata()`, and their batch pages.
 - [ ] T3: Rewrite `anonymize_video()` and `segment_video()`, and their batch pages.
 - [ ] T4: Rewrite `concatenate_videos()`, `compare_videos()` and `picture_in_picture()`, and their batch pages.
-- [ ] T5: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. Fill the ledger. Run the sweep over all 34 pages, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
+- [ ] T5: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. Fill the ledger. Run the sweep over all 34 pages, `tools/roxygen_repeats.R`, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
 ## Work log
 

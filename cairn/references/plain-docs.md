@@ -16,7 +16,7 @@ The reader knows R, data frames and the pipe. The reader does not know FFmpeg, a
 2. Use active voice and simple tenses. Name the actor.
 3. Put the basic task first. Put error classes, option names and limits in a short section after it, or on the page that owns them.
 4. History, measured timings, internal ordering and test notes do not go in user docs. Move them to a code comment, or delete them.
-5. Use these names for the three kinds of function: "task functions" (for example `extract_audio()`), "pipeline functions" (the `ffm_*()` functions), and "direct commands" (`ffmpeg()`, `ffprobe()`, `mediainfo()`).
+5. Use these names for the three kinds of function: "task functions" (for example `extract_audio()`), "pipeline functions" (the `ffm_*()` functions), and "direct commands" (`ffmpeg()`, `ffprobe()`, `mediainfo()`). The `@family` labels use the same names: "task functions", "pipeline functions" and "direct command functions".
 
 ## Maintainer terms
 
@@ -38,8 +38,9 @@ The criteria find a term by its stem, matched without regard to case on the `--p
 The prose sweep is `Rscript tools/doc_prose_report.R <files>`. M126 writes it.
 
 - For an `.Rmd` file, it drops the YAML header, the code chunks and the HTML comments.
-- For an `.Rd` file, it renders the file with `tools::Rd2txt()`. It drops the Usage and Examples sections and the "Other ... functions:" lists under See Also.
-- A code span counts as one word. The `--prose` output removes code spans.
+- For an `.Rd` file, it renders the file with `tools::Rd2txt()`. It drops the Usage and Examples sections. From each "Other ... functions:" list under See Also, it keeps the header line and drops the names.
+- For an `.Rd` file, it also scans the source outside `\usage` and `\examples` for ` -- ` and `---`, and prints each line that has one.
+- A code span counts as one word. The `--prose` output removes code spans and the argument names at the start of each argument item.
 - A heading, an argument item, a list item, a table cell and the end of a paragraph each end a sentence.
 - It prints each sentence over 25 words and each sentence that matches a maintainer term. If it prints a sentence, it exits with status 1.
 - With `--prose`, it prints the swept prose, one sentence per line.

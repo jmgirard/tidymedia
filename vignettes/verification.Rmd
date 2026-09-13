@@ -94,9 +94,9 @@ has no video [stream](tidymedia.html#glossary), so a width check fails with an
 verify_media("session01.m4a", width = 320, audio_codec = "aac")
 ```
 
-A field name that you give by name is looked for in the
-[container](tidymedia.html#glossary) information first. Then it is looked for in the video stream, then in the audio stream. The
-first match is used.
+Another field name is looked for in the [container](tidymedia.html#glossary)
+information first. Then it is looked for in the video stream, then in the audio
+stream. The first match is used.
 
 ### Checking every job in a batch
 
@@ -279,6 +279,8 @@ To handle these in code, use the condition classes:
 - `tidymedia_probe_timeout` for a warning from a version check or a track
   check.
 - `tidymedia_batch_timeout` for the warning from a batch.
+
+The warning from a metadata reader has no condition class of its own.
 
 `?tidymedia` lists which function gives which condition.
 

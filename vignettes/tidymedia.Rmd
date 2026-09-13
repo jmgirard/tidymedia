@@ -212,8 +212,8 @@ the opposite and keep every audio track.
 
 Two task functions cover the common cases. `compare_videos()` puts videos side
 by side or one above the other. `picture_in_picture()` puts a smaller copy of
-one video on top of another. Both take `audio_input`, which names the input whose
-audio to keep. They copy that audio unchanged unless you choose an audio
+one video on top of another. Both take `audio_input`, which names the input
+whose audio to keep. They copy that audio unchanged unless you choose an audio
 [encoder](#glossary) with `audio_codec`.
 
 ```{r}

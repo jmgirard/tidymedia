@@ -69,6 +69,8 @@ The README, the five vignettes and the pkgdown reference index use plain English
 - 2026-09-13: claim audit: 95 claims read, 6 corrected — vignettes/tidymedia.Rmd, vignettes/metadata.Rmd, vignettes/verification.Rmd, vignettes/workflow.Rmd, tools/doc_prose_report.R
 - 2026-09-13: The claim corrections were: `ffm_concat()` keeps audio, frame-rate fractions stay strings under `typed = TRUE`, `get_*()` has no `file` column, and `verified` can be `NA`. Two were narrowed: `format_for_web()` no longer says "small", and `concatenate_videos()` parts also need the same picture size and frame rate. The single re-read by the same reader confirmed five and refined the `verified` wording, which was applied. Two of the four wrong claims came from the base text.
 - 2026-09-13: status set to review.
+- 2026-09-13: review: all 7 criteria verified with fresh evidence. 3 reviewers gave 13 findings: 4 fixed now, 6 to a candidate row, 3 rejected.
+- 2026-09-13: step-7 approval: m126-plain-vignettes-readme approved for merge
 
 ## Decisions
 
@@ -112,3 +114,14 @@ Independent review (three fresh reviewers):
   - O11: the `NA` fix-up sentence does not name a setter for the `ffplay` row.
   - O12: "nearest keyframe" means the keyframe at or before the time, which `?ffm_seek` also says loosely.
   - O13: the page no longer says `ffm_manifest(res, path =)` returns invisibly.
+
+Triage at the approval gate (2026-09-13, user's choices). No finding shows a criterion failing, so no status return.
+
+- O1, O2, O3: fixed now. The README names the `brew --prefix ffmpeg` step and an unzip folder. `verification.Rmd` says the metadata reader warning has no condition class. The `cli_warn()` calls at `R/ffprobe.R:163` and `R/mediainfo.R:291` were read first.
+- O4 to O9: follow-up, as one candidate row on the prose sweep in `cairn/ROADMAP.md`.
+- O10: fixed now. Three lines were re-wrapped, and the repeated phrase is gone.
+- O11: rejected, because nothing the docs show needs `ffplay`.
+- O12: rejected, because the text matches `?ffm_seek`.
+- O13: rejected as cosmetic.
+
+After the fixes, the sweep exits 0 over the six files, and `spelling::spell_check_package()` finds no errors. `build_readme()`, `build_vignettes()` and the no-binaries build each succeed. The first stem uses are on the ledger lines, after two README rows were moved down by two lines.

@@ -46,16 +46,19 @@ run:<br /> `brew install ffmpeg media-info`
 **Windows.** For FFmpeg, run `tidymedia::install_on_win()` in R. It asks
 you to confirm before it downloads anything. For MediaInfo, download the
 CLI version from the [MediaInfo download
-page](https://mediaarea.net/en/MediaInfo/Download/Windows) and unzip it.
-Then tell tidymedia where the program is:<br />
+page](https://mediaarea.net/en/MediaInfo/Download/Windows) and unzip it
+to a folder such as `C:/Program Files/MediaInfo`. Then tell tidymedia
+where the program is:<br />
 `tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")`
 
 **Check the install.** In R, run:<br /> `tidymedia::program_status()`
 
 Each program that tidymedia found shows a location and a version. If a
 location is `NA`, give tidymedia the path with `set_ffmpeg()`,
-`set_ffprobe()` or `set_mediainfo()`. The help pages `?set_program` and
-`?install_on_win` give the details.
+`set_ffprobe()` or `set_mediainfo()`. On macOS, run
+`brew --prefix ffmpeg` in a terminal. FFmpeg and FFprobe are in the
+`bin` folder of the path that it prints. The help pages `?set_program`
+and `?install_on_win` give the details.
 
 ## Examples
 

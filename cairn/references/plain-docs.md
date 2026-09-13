@@ -120,9 +120,9 @@ Each row is one glossary stem found in a file's `--prose` output. Line is the li
 
 | File | Stem | Line | Result |
 |---|---|---|---|
-| README.Rmd | `codec` | 172 | Links (full website address). |
-| README.Rmd | `container` | 152 | Links (full website address). |
-| README.Rmd | `stream` | 152 | Links (full website address). |
+| README.Rmd | `codec` | 174 | Links (full website address). |
+| README.Rmd | `container` | 154 | Links (full website address). |
+| README.Rmd | `stream` | 154 | Links (full website address). |
 | tidymedia.Rmd | `codec` | 29 | Links. |
 | tidymedia.Rmd | `stream` | 29 | Links. |
 | tidymedia.Rmd | `frame rate` | 143 | Links. |

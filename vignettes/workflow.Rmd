@@ -129,8 +129,8 @@ shared script never changes the codec without telling you. Add
 `fallback = TRUE` to use the main processor instead.
 
 The two choices support different codecs. NVIDIA nvenc supports H.264, HEVC
-and AV1. Apple videotoolbox supports H.264 and HEVC. A codec that the hardware does not
-support is an error that names both.
+and AV1. Apple videotoolbox supports H.264 and HEVC. A codec that the hardware
+does not support is an error that names both.
 
 tidymedia does not do hardware decoding or run filters on a graphics card. For
 those, use the direct command `ffmpeg()`.
@@ -212,8 +212,8 @@ anonymize_video(session, "session01_camA_deid.mp4", regions = regions,
 
 If a session was recorded in parts, `concatenate_videos()` joins the parts into
 one file. The parts must have the same codec,
-[container](tidymedia.html#glossary), picture size and frame rate. Here they do, because step 1 made them
-the same:
+[container](tidymedia.html#glossary), picture size and frame rate. Here they
+do, because step 1 made them the same:
 
 ```{r, eval = FALSE}
 concatenate_videos(

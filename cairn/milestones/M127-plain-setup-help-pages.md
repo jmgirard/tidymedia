@@ -21,11 +21,11 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 
 ## Acceptance criteria
 
-- [ ] AC1: The prose sweep over the M127 domain prints no sentence that matches a maintainer term.
-- [ ] AC2: The prose sweep over the M127 domain prints no sentence over 25 words.
-- [ ] AC3: For each page in the domain, take each glossary stem found in its `--prose` output. The page defines the term at its first use or names the glossary in `vignette("tidymedia")`. One ledger row per page records the stems and how each is met.
-- [ ] AC4: `tools::Rd2txt()` output for `man/tidymedia-package.Rd` is at most 80 lines. Its first paragraph says what the package does and names `vignette("tidymedia")` as the place to start.
-- [ ] AC5: Each page in the domain has a ledger row that says what text left it and where that text went: moved (with the page), or deleted (with a reason). Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the domain at the base commit is still found in some `man/*.Rd` file at head, or has a ledger row.
+- [x] AC1: The prose sweep over the M127 domain prints no sentence that matches a maintainer term.
+- [x] AC2: The prose sweep over the M127 domain prints no sentence over 25 words.
+- [x] AC3: For each page in the domain, take each glossary stem found in its `--prose` output. The page defines the term at its first use or names the glossary in `vignette("tidymedia")`. One ledger row per page records the stems and how each is met.
+- [x] AC4: `tools::Rd2txt()` output for `man/tidymedia-package.Rd` is at most 80 lines. Its first paragraph says what the package does and names `vignette("tidymedia")` as the place to start.
+- [x] AC5: Each page in the domain has a ledger row that says what text left it and where that text went: moved (with the page), or deleted (with a reason). Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the domain at the base commit is still found in some `man/*.Rd` file at head, or has a ledger row.
 - [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
@@ -62,6 +62,7 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: the 8 corrections: direct commands return standard output only; `mediainfo_parameter()` warns only for missing or timed-out files; the time limit applies per program plus the stop delay (3 sites); the track check skips one call per distinct input with no `audio_stream`; `program_status()` warnings name a location or a file; `install_on_win()` names only the first case of leftovers, created folders or your files. Sweep still exits 0; `?tidymedia` renders 73 lines. Final check re-running.
 - 2026-09-13: claim audit re-read: the same reader found all 8 corrections correct.
 - 2026-09-13: T7 done. On `2e04a4be`: `devtools::check()` 0 errors, 0 warnings, 0 notes (tests included); `devtools::document()` leaves `man/` unchanged. Agent worktrees removed. Status set to review.
+- 2026-09-13: review checkpoint: AC1-AC5 evidence recorded and ticked. AC6 check and the three reviewers still running.
 
 ## Decisions
 
@@ -70,3 +71,11 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - Implement gate (user's choice): M127 does not fix the six prose-sweep parse gaps (shipped-docs candidate row, item (o)). The rewrite avoids the text shapes that the gaps misread.
 
 ## Review
+
+Evidence is from 2026-09-13 on `a7f5d749`. That commit contains `origin/master` (`264afff4`), so no sync merge was needed. The domain grep returned 28 pages.
+
+- AC1: `Rscript tools/doc_prose_report.R` over the 28 pages prints no finding and exits 0. At `264afff4`, the same sweep prints 185 findings. Of these, 73 are maintainer terms. So the sweep can fail on this domain.
+- AC2: the same run prints no sentence over 25 words. At `264afff4` it printed 112.
+- AC3: a new stem search over the `--prose` output finds stems on 8 pages. The pages and stems are the same as in the ledger table. Each of the 8 rendered pages names the glossary in `vignette("tidymedia")`. The other 20 pages have no stem. The ledger says so in one sentence, as the M126 ledger did for `batch.Rmd`.
+- AC4: `tools::Rd2txt()` on `man/tidymedia-package.Rd` gives 73 lines. The Description paragraph says what the package does. It ends "Start with `vignette("tidymedia")`".
+- AC5: all 28 pages have a row in the ledger's AC5 table. At `264afff4` the pattern finds 27 identifiers in the domain. At head, a `\bname\b` search finds all 27 in `man/*.Rd`. The search finds no made-up name, and `tidymedia_ffm` does not match inside `tidymedia_ffmpeg_exit`. Spot reads found four moved items at their ledger targets. These are the timings in `R/timeout.R`, the two decision-id comments, and the `?find_ffmpeg` section on earlier versions.

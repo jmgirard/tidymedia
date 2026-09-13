@@ -29,29 +29,31 @@ pipeline object.}
 default) or only compile them for inspection (\code{FALSE}, a dry run).}
 
 \item{parallel}{A logical: map over jobs in parallel with \pkg{furrr}
-(\code{TRUE}) or sequentially (\code{FALSE}, default). Parallelism follows
-the \code{\link[future:plan]{future}} plan the caller has set; with
-\code{TRUE} but the default sequential plan, jobs still run one at a time
-and a warning is issued. Set a plan first, e.g.
+(\code{TRUE}) or sequentially (\code{FALSE}, default). Parallel runs follow
+the \code{\link[future:plan]{future}} plan that you set. With \code{TRUE}
+and the default sequential plan, jobs still run one at a time, and you get
+a warning. Set a plan first, for example
 \code{future::plan(future::multisession)}.}
 
 \item{verify}{An optional output check applied to each job (only when
-\code{run = TRUE}). Either a named list of expected properties (the same
-spec for every job, e.g. \code{list(width = 1920)}) or a function of the
-job columns (called \code{\link[purrr:pmap]{pmap}}-style, like \code{.f})
-that returns such a list per job. Each job's output is passed to
-\code{\link{verify_media}}; unlike \code{\link{ffm_run}}, a failed check is
-\emph{recorded}, not aborted. Adds a logical \code{verified} column (all
-checks passed), \code{NA} for jobs that did not run successfully.}
+\code{run = TRUE}). Give a named list of expected properties, or a
+function. A list, for example \code{list(width = 1920)}, applies the same
+checks to every job. A function takes the job columns like \code{.f}
+(called \code{\link[purrr:pmap]{pmap}}-style) and returns such a list for
+each job. Each job's output is passed to \code{\link{verify_media}}.
+Unlike \code{\link{ffm_run}}, a failed check is \emph{recorded}, and does
+not stop the call. Adds a logical \code{verified} column (all checks
+passed), \code{NA} for jobs that did not run successfully.}
 
 \item{progress}{A logical: display a \pkg{cli} progress bar as the jobs run
 (\code{TRUE}) or run quietly (\code{FALSE}, default). Only applies when
 \code{run = TRUE}; safe (a no-op animation) in non-interactive sessions.}
 
-\item{manifest}{A logical: when \code{TRUE} (and \code{run = TRUE}), record a
-provenance manifest (per-job command, FFmpeg/FFprobe versions, timestamp,
-output size) and attach it to the result, readable with
-\code{\link{ffm_manifest}}. (default = \code{FALSE})}
+\item{manifest}{A logical. When \code{TRUE} (and \code{run = TRUE}), the
+batch records a provenance manifest and attaches it to the result. The
+manifest has each job's command, the FFmpeg and FFprobe versions, a
+timestamp and the output size. Read it with \code{\link{ffm_manifest}}.
+(default = \code{FALSE})}
 
 \item{checksums}{A logical: when \code{TRUE}, the manifest also captures md5
 checksums of each job's input(s) and output. Ignored unless
@@ -59,32 +61,35 @@ checksums of each job's input(s) and output. Ignored unless
 }
 \value{
 \code{jobs} as a \link[tibble:tibble-package]{tibble} with an added
-\code{command} column (the compiled FFmpeg command for each job) and, when
-\code{run = TRUE}, a logical \code{success} column (plus a \code{verified}
-column when \code{verify} is supplied). When \code{manifest = TRUE} a
+\code{command} column, which holds the compiled FFmpeg command for each
+job. When \code{run = TRUE}, it also has a logical \code{success} column.
+When \code{verify} is supplied, it also has a \code{verified} column. When \code{manifest = TRUE} a
 provenance manifest is attached as an attribute; read it with
 \code{\link{ffm_manifest}}.
 }
 \description{
 Apply a pipeline-building function to every row of a jobs table and compile
-(and optionally run) the resulting FFmpeg command for each. This is
-tidymedia's batch-processing entry point: one reproducible compiled command
+(and optionally run) the resulting FFmpeg command for each. This is the
+package's main batch function. It gives one reproducible compiled command
 per job, collected back into a tibble.
 }
 \details{
 Each column of \code{jobs} is passed by name to \code{.f} (as
 \code{\link[purrr:pmap]{purrr::pmap()}} does), so a job table with columns \code{input}, \code{output}
 and \code{start} calls \code{.f(input = ..., output = ..., start = ...)}.
-\code{.f} must return an ffm pipeline (see \code{\link{ffm_files}}). Give
+\code{.f} must return a pipeline (see \code{\link{ffm_files}}). Give
 \code{.f} a \code{...} argument if \code{jobs} carries columns it does not
 use.
 
 Two jobs whose pipelines write to the same \code{output} path are refused
 before any job runs, under \code{run = FALSE} as well as \code{run = TRUE}.
 Paths are compared exactly as written. An output that writes no file may
-repeat: \code{-} (standard output), a \code{pipe:} URL, or an output whose
-last \code{-f} option is \code{-f null}, as
+repeat. Such outputs are \code{-} (standard output), a \code{pipe:} URL, and
+an output whose last \code{-f} option is \code{-f null}, as
 \code{ffm_output_options("-f null")} gives.
+
+\code{\link[=with_timeout]{with_timeout()}} explains how to limit the time each job can run, and what
+happens when a job reaches the limit.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

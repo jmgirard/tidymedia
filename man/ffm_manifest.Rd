@@ -20,11 +20,12 @@ The manifest \link[tibble:tibble-package]{tibble}; invisibly when
 \description{
 Retrieve the reproducibility manifest recorded by \code{\link[=ffm_batch]{ffm_batch()}} when it was
 run with \code{manifest = TRUE}. The manifest is a tibble with one row per
-job capturing the compiled command, the FFmpeg and FFprobe versions used, a
-run timestamp, the input and output paths, and the output file size — plus
-input/output md5 checksums when the batch was run with
-\code{checksums = TRUE}. Together with the reproducible command this is what
-turns a batch run into an auditable record.
+job. Each row has the compiled command and the FFmpeg and FFprobe versions
+used. It also has the time of the run, the input and output paths, and the
+output file size.
+When the batch ran with \code{checksums = TRUE}, each row also has md5
+checksums of the input and output files. With the manifest, a batch run
+leaves a record that others can check.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}

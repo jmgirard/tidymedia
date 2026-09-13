@@ -4,7 +4,7 @@
 #' Run a MediaInfo command
 #'
 #' `mediainfo()` runs the MediaInfo program with the arguments in `command` and
-#' returns what it prints. MediaInfo reads information about media files.
+#' returns its output. MediaInfo reads information about media files.
 #'
 #' `mediainfo()` is a direct command. The package passes `command` to MediaInfo
 #' exactly as you wrote it, so you must add any quotes that it needs. To get a
@@ -12,8 +12,9 @@
 #' [mediainfo_parameter()]. These functions quote their arguments for you.
 #'
 #' @param command A string with the arguments to give MediaInfo.
-#' @return A character vector with the text that MediaInfo prints, one element
-#'   for each line.
+#' @return A character vector with the text that MediaInfo writes to standard
+#'   output, one element for each line. Messages on standard error are not
+#'   returned.
 #'
 #' @seealso [mediainfo_template()], [mediainfo_query()] and
 #'   [mediainfo_parameter()] for a tibble or a value. [get_duration()] and the
@@ -56,13 +57,13 @@ mediainfo <- function(command) {
 #'   values to their natural type, for example to numbers. If `FALSE`, it
 #'   returns strings.
 #' @return A vector with one value for each element of `file`. A value is `NA`
-#'   when it is empty, when `section` has no such parameter, or when the file
-#'   could not be read.
+#'   when MediaInfo prints no single line for it, for example when `section`
+#'   has no such parameter. It is also `NA` for a file that does not exist or
+#'   that reaches the time limit.
 #'
-#'   The function does not stop at a file that it could not read. It reads the
-#'   other files, and then gives one warning that names the files it could not
-#'   read. A file that reaches the time limit counts as not read; see
-#'   [with_timeout()].
+#'   The function does not stop at those files. It reads the other files, and
+#'   then gives one warning that names the files that do not exist or reached
+#'   the limit. See [with_timeout()] for the time limit.
 #'
 #' @seealso [mediainfo_query()] to read several parameters at once.
 #'   [mediainfo_template()] to apply a whole template. [probe_all()] to read

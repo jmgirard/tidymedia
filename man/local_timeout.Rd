@@ -33,9 +33,10 @@ to set a limit on the rest of a function, or on several calls that are hard
 to wrap in one expression.
 }
 \details{
-The limit applies to each program, not to the whole function. A 100-row
-batch after \code{local_timeout(600)} waits at most 600 seconds for each row. The
-workers of a \code{parallel = TRUE} run use the same limit.
+The limit applies to each program, not to the whole function. In a 100-row
+batch after \code{local_timeout(600)}, each program that a row starts gets 600
+seconds, plus the delay that \code{\link[=with_timeout]{with_timeout()}} describes. The workers of a
+\code{parallel = TRUE} run use the same limit.
 
 R can wait up to 40 seconds past the limit, and \code{\link[=with_timeout]{with_timeout()}} explains
 why. It also explains what happens when a limit is reached.

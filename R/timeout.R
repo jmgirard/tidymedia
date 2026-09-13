@@ -146,9 +146,10 @@ resolve_check_tracks <- function(call = rlang::caller_env()) {
 #' @return The value of `expr`.
 #'
 #' @details
-#' The limit applies to each program, not to the whole call. A 100-row batch
-#' inside `with_timeout(expr, 600)` waits at most 600 seconds for each row. The
-#' workers of a `parallel = TRUE` run use the same limit.
+#' The limit applies to each program, not to the whole call. In a 100-row batch
+#' inside `with_timeout(expr, 600)`, each program that a row starts gets 600
+#' seconds, plus the delay in "How long the wait can be". The workers of a
+#' `parallel = TRUE` run use the same limit.
 #'
 #' The limit is a whole number of seconds. The package does not round a
 #' fraction, because R would read a limit below one second as no limit.
@@ -279,9 +280,10 @@ with_timeout <- function(expr, seconds) {
 #'   element, the same form that [withr::local_options()] returns.
 #'
 #' @details
-#' The limit applies to each program, not to the whole function. A 100-row
-#' batch after `local_timeout(600)` waits at most 600 seconds for each row. The
-#' workers of a `parallel = TRUE` run use the same limit.
+#' The limit applies to each program, not to the whole function. In a 100-row
+#' batch after `local_timeout(600)`, each program that a row starts gets 600
+#' seconds, plus the delay that [with_timeout()] describes. The workers of a
+#' `parallel = TRUE` run use the same limit.
 #'
 #' R can wait up to 40 seconds past the limit, and [with_timeout()] explains
 #' why. It also explains what happens when a limit is reached.

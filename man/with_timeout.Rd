@@ -28,9 +28,10 @@ the session. \code{with_timeout()} applies to one call. For example, you can giv
 one test conversion five minutes in a session with a one-hour limit.
 }
 \details{
-The limit applies to each program, not to the whole call. A 100-row batch
-inside \code{with_timeout(expr, 600)} waits at most 600 seconds for each row. The
-workers of a \code{parallel = TRUE} run use the same limit.
+The limit applies to each program, not to the whole call. In a 100-row batch
+inside \code{with_timeout(expr, 600)}, each program that a row starts gets 600
+seconds, plus the delay in "How long the wait can be". The workers of a
+\code{parallel = TRUE} run use the same limit.
 
 The limit is a whole number of seconds. The package does not round a
 fraction, because R would read a limit below one second as no limit.

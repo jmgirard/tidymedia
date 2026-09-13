@@ -10,12 +10,13 @@ ffprobe(command)
 \item{command}{A string with the arguments to give FFprobe.}
 }
 \value{
-A character vector with the text that FFprobe prints, one element for
-each line.
+A character vector with the text that FFprobe writes to standard
+output, one element for each line. Messages on standard error, such as
+FFprobe's banner and errors, are not returned.
 }
 \description{
 \code{ffprobe()} runs the FFprobe program with the arguments in \code{command} and
-returns what it prints. FFprobe reads information about media files.
+returns its output. FFprobe reads information about media files.
 }
 \details{
 \code{ffprobe()} is a direct command. The package passes \code{command} to FFprobe

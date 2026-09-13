@@ -170,12 +170,16 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
 #'
 #' The exception is a file of yours that the failed unpack wrote over. The call
 #' removes that file too, because the file no longer holds what you put there.
-#' The error names that file by its full path.
 #'
 #' On Windows, the removal can fail. After a failed unpack, the unpack library
-#' can still hold a file open. Windows does not delete a file that is open. The
-#' error names by full path each file that the call could not remove. It also
-#' names a folder that the call created and could not remove.
+#' can still hold a file open. Windows does not delete a file that is open.
+#'
+#' The error names by full path the entries of the first case below that
+#' applies:
+#'
+#' * each unpacked file that the call could not remove
+#' * each folder that the call created and could not remove
+#' * each file of yours that the call removed
 #'
 #' Two errors come after a successful unpack: `tidymedia_program_not_extracted`
 #' and `tidymedia_program_unusable`. These errors leave the unpacked files in
@@ -684,8 +688,8 @@ install_on_win <- function(download_url = NULL,
 #' and not four warnings.
 #'
 #' A saved location that cannot be used still gives a warning. Without it, the
-#' `NA` would look like a program you never had. Each warning names a file that
-#' you can fix. There are two cases:
+#' `NA` would look like a program you never had. Each warning names the saved
+#' location or the file that holds it, so you can fix it. There are two cases:
 #'
 #' * `tidymedia_location_gone`: no program is at the saved location now.
 #' * `tidymedia_location_unreadable`: the file that stores the location does

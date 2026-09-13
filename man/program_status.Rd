@@ -31,8 +31,8 @@ columns. This case gives no warning, so four missing programs give one table
 and not four warnings.
 
 A saved location that cannot be used still gives a warning. Without it, the
-\code{NA} would look like a program you never had. Each warning names a file that
-you can fix. There are two cases:
+\code{NA} would look like a program you never had. Each warning names the saved
+location or the file that holds it, so you can fix it. There are two cases:
 \itemize{
 \item \code{tidymedia_location_gone}: no program is at the saved location now.
 \item \code{tidymedia_location_unreadable}: the file that stores the location does

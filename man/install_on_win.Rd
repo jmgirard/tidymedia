@@ -88,12 +88,17 @@ in the folder, with one exception.
 
 The exception is a file of yours that the failed unpack wrote over. The call
 removes that file too, because the file no longer holds what you put there.
-The error names that file by its full path.
 
 On Windows, the removal can fail. After a failed unpack, the unpack library
-can still hold a file open. Windows does not delete a file that is open. The
-error names by full path each file that the call could not remove. It also
-names a folder that the call created and could not remove.
+can still hold a file open. Windows does not delete a file that is open.
+
+The error names by full path the entries of the first case below that
+applies:
+\itemize{
+\item each unpacked file that the call could not remove
+\item each folder that the call created and could not remove
+\item each file of yours that the call removed
+}
 
 Two errors come after a successful unpack: \code{tidymedia_program_not_extracted}
 and \code{tidymedia_program_unusable}. These errors leave the unpacked files in

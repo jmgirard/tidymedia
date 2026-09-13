@@ -21,13 +21,13 @@ returns strings.}
 }
 \value{
 A vector with one value for each element of \code{file}. A value is \code{NA}
-when it is empty, when \code{section} has no such parameter, or when the file
-could not be read.
+when MediaInfo prints no single line for it, for example when \code{section}
+has no such parameter. It is also \code{NA} for a file that does not exist or
+that reaches the time limit.
 
-The function does not stop at a file that it could not read. It reads the
-other files, and then gives one warning that names the files it could not
-read. A file that reaches the time limit counts as not read; see
-\code{\link[=with_timeout]{with_timeout()}}.
+The function does not stop at those files. It reads the other files, and
+then gives one warning that names the files that do not exist or reached
+the limit. See \code{\link[=with_timeout]{with_timeout()}} for the time limit.
 }
 \description{
 \code{mediainfo_parameter()} uses the MediaInfo program to read one value, such as

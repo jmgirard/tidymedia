@@ -4,7 +4,7 @@
 #' Send a command to the FFprobe program
 #'
 #' `ffprobe()` runs the FFprobe program with the arguments in `command` and
-#' returns what it prints. FFprobe reads information about media files.
+#' returns its output. FFprobe reads information about media files.
 #'
 #' `ffprobe()` is a direct command. The package passes `command` to FFprobe
 #' exactly as you wrote it, so you must add any quotes that it needs. To get
@@ -12,8 +12,9 @@
 #' functions quote their arguments for you.
 #'
 #' @param command A string with the arguments to give FFprobe.
-#' @return A character vector with the text that FFprobe prints, one element for
-#'   each line.
+#' @return A character vector with the text that FFprobe writes to standard
+#'   output, one element for each line. Messages on standard error, such as
+#'   FFprobe's banner and errors, are not returned.
 #' @seealso [probe_all()] and the other `probe_*()` functions, which return
 #'   tibbles.
 #' @family direct command functions

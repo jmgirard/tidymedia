@@ -57,6 +57,9 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: T4, T5 and T6 delegated to three [O] agents in separate worktrees and merged. T4 moved blocks in `R/program_management.R`, and parsing both versions shows the function bodies unchanged. T5 rewrote the generated audio argument text, which lands on 25 task function pages, and re-pinned two phrases in `test-audio-index-docs.R`. The `@family` labels are renamed in 7 `R/` files. The sweep over the 28 pages exits 0. Checkpoint: T4-T6 stay unticked until the full suite passes on this commit.
 - 2026-09-13: T4-T6: full suite on the merged code, 1738 tests, 0 failed, 5 skipped. T4-T6 ticked.
 - 2026-09-13: T7: sweep over 28 pages exits 0; `?tidymedia` renders 72 lines; all 27 base identifiers found in `man/`; 8 pages with glossary stems all name the glossary. Ledger filled. Check and pkgdown check running.
+- 2026-09-13: T7: on `19b59ac5`, `devtools::check()` 0 errors, 0 warnings, 0 notes; `pkgdown::check_pkgdown()` no problems.
+- 2026-09-13: claim audit: 240 claims read, 8 corrected — R/ffprobe.R, R/mediainfo.R, R/timeout.R, R/ffm_batch.R, R/tidymedia-package.R, R/program_management.R
+- 2026-09-13: the 8 corrections: direct commands return standard output only; `mediainfo_parameter()` warns only for missing or timed-out files; the time limit applies per program plus the stop delay (3 sites); the track check skips one call per distinct input with no `audio_stream`; `program_status()` warnings name a location or a file; `install_on_win()` names only the first case of leftovers, created folders or your files. Sweep still exits 0; `?tidymedia` renders 73 lines. Final check re-running.
 
 ## Decisions
 

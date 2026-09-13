@@ -31,7 +31,8 @@ program the package starts. The default, \code{0}, means no limit. See
 \code{\link[=with_timeout]{with_timeout()}}.
 \item \code{options(tidymedia.check_tracks = FALSE)} turns off the dropped-track
 warning of \code{\link[=extract_audio]{extract_audio()}}, \code{\link[=convert_audio]{convert_audio()}}, \code{\link[=normalize_audio]{normalize_audio()}} and
-their \verb{_batch} forms. This skips one FFprobe call per input.
+their \verb{_batch} forms. This skips one FFprobe call for each different
+input that names no \code{audio_stream}.
 \item \code{options(tidymedia.hardware_encoders = "h264_nvenc")} names the hardware
 video encoders of this computer, so the package does not ask FFmpeg.
 \code{character(0)} means none.

@@ -88,8 +88,8 @@ repeat. Such outputs are \code{-} (standard output), a \code{pipe:} URL, and
 an output whose last \code{-f} option is \code{-f null}, as
 \code{ffm_output_options("-f null")} gives.
 
-\code{\link[=with_timeout]{with_timeout()}} explains how to limit the time each job can run, and what
-happens when a job reaches the limit.
+\code{\link[=with_timeout]{with_timeout()}} explains how to limit how long each program in a job can
+run, and what happens when a program reaches the limit.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

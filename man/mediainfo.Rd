@@ -10,12 +10,13 @@ mediainfo(command)
 \item{command}{A string with the arguments to give MediaInfo.}
 }
 \value{
-A character vector with the text that MediaInfo prints, one element
-for each line.
+A character vector with the text that MediaInfo writes to standard
+output, one element for each line. Messages on standard error are not
+returned.
 }
 \description{
 \code{mediainfo()} runs the MediaInfo program with the arguments in \code{command} and
-returns what it prints. MediaInfo reads information about media files.
+returns its output. MediaInfo reads information about media files.
 }
 \details{
 \code{mediainfo()} is a direct command. The package passes \code{command} to MediaInfo

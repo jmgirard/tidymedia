@@ -21,8 +21,8 @@
 #' an output whose last \code{-f} option is \code{-f null}, as
 #' \code{ffm_output_options("-f null")} gives.
 #'
-#' [with_timeout()] explains how to limit the time each job can run, and what
-#' happens when a job reaches the limit.
+#' [with_timeout()] explains how to limit how long each program in a job can
+#' run, and what happens when a program reaches the limit.
 #'
 #' @param jobs A data frame with one row per job. Its column names are the
 #'   arguments passed to \code{.f}.

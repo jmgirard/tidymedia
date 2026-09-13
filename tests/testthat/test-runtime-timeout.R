@@ -521,7 +521,13 @@ test_that("?tidymedia documents the option's name, unit, default and effect", {
   expect_match(txt, "tidymedia.timeout", fixed = TRUE)
   expect_match(txt, "second")            # the unit
   expect_match(txt, "no limit")          # what the default means
-  expect_match(txt, "abort")             # what reaching it does
+  # What reaching it does moved to ?with_timeout at M127; ?tidymedia points
+  # there, and that page names the error.
+  expect_match(txt, "link[=with_timeout]", fixed = TRUE)
+  src <- doc_timeout_sources()
+  skip_if(is.null(src$rd), "?with_timeout not available")
+  expect_match(src$rd, "error with the class \\code{tidymedia_timeout}",
+               fixed = TRUE)
 })
 
 # The four assertions above are substring greps, and a substring grep is how the
@@ -555,12 +561,18 @@ test_that("both docs disclose that the abort can lag the limit", {
 # disclosure was `?tidymedia`, and the grep does not know which topic it read.
 # This one fences the measured number, so a future edit that drops the
 # arithmetic back to a bare "may be exceeded" reddens.
-test_that("both docs give the measured lag, not just its existence", {
+#
+# M127 moved the measured 42.0 s out of the help page and into the code comment
+# at the top of R/timeout.R, since user docs carry no measured timings. The
+# changelog keeps the number; the help page keeps the arithmetic behind the
+# bound, so an edit back to a bare "may be exceeded" still reddens.
+test_that("both docs give the lag's size, not just its existence", {
   src <- doc_timeout_sources()
   skip_if(is.null(src$rd) || is.null(src$news), "docs not available")
-  for (nm in c("rd", "news")) {
-    expect_match(src[[nm]], "42.0 seconds", fixed = TRUE, info = nm)
-  }
+  expect_match(src$news, "42.0 seconds", fixed = TRUE)
+  rd <- gsub("[[:space:]]+", " ", src$rd)
+  expect_match(rd, "20 seconds later", fixed = TRUE)
+  expect_match(rd, "up to 40 seconds past the limit", fixed = TRUE)
 })
 
 test_that("NEWS.md carries the entry", {

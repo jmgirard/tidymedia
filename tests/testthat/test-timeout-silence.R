@@ -662,13 +662,16 @@ test_that("both docs state that a reached limit is never silent", {
     txt <- src[[nm]]
     expect_match(txt, "never silent", info = nm)
     # Both halves named, because a reader acting on an NA row needs the second
-    # as much as a reader catching an abort needs the first.
-    expect_match(txt, "abort", info = nm)
+    # as much as a reader catching an abort needs the first. The help page says
+    # "error" since M127's plain-English pass; the changelog says "abort".
+    expect_match(txt, if (nm == "rd") "error" else "abort", info = nm)
     expect_match(txt, "warn", info = nm)
-    # And the claim that the lists are derived rather than recalled, which is
-    # the only reason the uniform rule can be stated at all.
-    expect_match(txt, "call graph", fixed = TRUE, info = nm)
   }
+  # The claim that the lists are derived rather than recalled is the only
+  # reason the uniform rule can be stated at all. It is a note about the
+  # package's tests, so M127 took it out of the help page; the changelog and
+  # helper-timeout-sweep.R keep it.
+  expect_match(src$news, "call graph", fixed = TRUE)
 })
 
 test_that("M69's disclosure is gone from both docs", {

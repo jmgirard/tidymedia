@@ -165,7 +165,7 @@ The base commit is `264afff4`. The domain grep returned 28 pages. At that commit
 | get_height | R/mediainfo.R | 0 | |
 | get_frame_rate | R/mediainfo.R | 0 | |
 | get_duration | R/mediainfo.R | 0 | |
-| local_timeout | R/timeout.R | 23 | |
+| local_timeout | R/timeout.R | 23 | Moved: the 42.0 s timing, to the comment at the top of `R/timeout.R`. The 40 s bound links to `?with_timeout`. Moved: the withr measurement dates for the `local_timeout()` inside `with_timeout()` case, to the comment above `withr::defer()` in `local_timeout()`. The `on.exit()` dates were already in that comment. Deleted: that the undo step is set before the limit, and why `NULL` is refused. Reason: internal order, and the comments in the two function bodies keep both. |
 | install_on_win | R/program_management.R | 24 | |
 | get_width | R/mediainfo.R | 0 | |
 | mediainfo_template | R/mediainfo.R | 0 | |
@@ -180,9 +180,9 @@ The base commit is `264afff4`. The domain grep returned 28 pages. At that commit
 | refresh_ffmpeg_capabilities | R/cache.R | 11 | |
 | verify_media | R/verify.R | 2 | |
 | unset_program | R/program_management.R | 6 | |
-| tidymedia-package | R/tidymedia-package.R | 47 | |
+| tidymedia-package | R/tidymedia-package.R | 47 | Moved: the section "Bounding a run that hangs", to `?with_timeout` (Details and two sections). Moved: the FFmpeg 6.1.1 and 9.0.1 timings, to the comment at the top of `R/timeout.R`. Deleted: the note that a test derives the lists from the call graph (a test note, kept in `NEWS.md` and `helper-timeout-sweep.R`). Deleted: which error is reported first, and the two calls that read no limit (internal order, kept in the comment above `resolve_timeout()`). Deleted from Session options: the check cost details and the `audio_stream` exemption (on the task function pages), that the encoder answer is kept for the session (on `?refresh_ffmpeg_capabilities`), and the withr sentence (general R). The error-class section keeps one item for each class. Deleted: the zero-exit case with no fields and the batch warning with no exit status (on `?normalize_audio_batch` and `?separate_audio_video_batch`). |
 | tidyeval | R/utils-tidy-eval.R | 1 | |
-| with_timeout | R/timeout.R | 12 | |
+| with_timeout | R/timeout.R | 12 | Moved: the 42.0 s timing, to the comment at the top of `R/timeout.R`. Received the reached-limit detail from `?tidymedia`. |
 
 #### Identifiers at the base commit (AC5)
 

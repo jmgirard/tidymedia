@@ -40,9 +40,9 @@ topics_documenting <- function(rd, param) {
   rd[vapply(rd, function(txt) param %in% rd_param_names(txt), logical(1))]
 }
 
-# doc_timeout_sources(): the `?tidymedia` Rd text and NEWS.md, in whichever
-# shape
-# this run has them.
+# doc_timeout_sources(): the `?with_timeout` Rd text and NEWS.md, in whichever
+# shape this run has them. The timeout detail stood in `?tidymedia` until M127
+# moved it to `?with_timeout`.
 #
 # Both are read through here rather than from the source tree because under
 # `R CMD check` the tests run against an INSTALLED package with no man/ and no
@@ -51,7 +51,8 @@ topics_documenting <- function(rd, param) {
 # (M51). Shared by M69's lag guard and M70's uniform-rule guard.
 doc_timeout_sources <- function() {
   rd <- rd_sources()
-  hit <- if (is.null(rd)) NULL else rd[grepl("tidymedia-package", names(rd))]
+  hit <- if (is.null(rd)) NULL else
+    rd[names(rd) %in% c("with_timeout.Rd", "with_timeout")]
   news <- if (file.exists("../../NEWS.md")) {
     "../../NEWS.md"
   } else {

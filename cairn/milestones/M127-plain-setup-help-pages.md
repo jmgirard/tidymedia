@@ -40,8 +40,8 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 ## Tasks
 
 - [x] T1: Run the sweep over the domain at the base commit. Record the pages and the AC5 identifiers in a new M127 ledger section.
-- [ ] T2: Rewrite `R/tidymedia-package.R`. Keep a short overview, where to start, and the session options. Move the timeout detail to `R/timeout.R` and the error-class lists to short end sections.
-- [ ] T3: Rewrite `R/timeout.R`. Keep what a user sets and what a user sees. Move measured timings to code comments.
+- [x] T2: Rewrite `R/tidymedia-package.R`. Keep a short overview, where to start, and the session options. Move the timeout detail to `R/timeout.R` and the error-class lists to short end sections.
+- [x] T3: Rewrite `R/timeout.R`. Keep what a user sets and what a user sees. Move measured timings to code comments.
 - [ ] T4: Rewrite `R/program_management.R`, with `install_on_win()` and `program_status()` first.
 - [ ] T5: Rewrite `R/mediainfo.R`, `R/ffprobe.R` and `R/audio-stream-doc.R`. For the generated sentences, check the task-function pages that reuse them after `devtools::document()`.
 - [ ] T6: Rewrite `R/ffm_batch.R`, `R/ffm_jobs.R`, `R/cache.R`, `R/verify.R`, `R/ffm_manifest.R`, `R/utils-tidy-eval.R` and `R/ffm_oop.R`. In every `R/` file, rename the `@family` labels "escape hatch functions", "builder functions" and "task verb functions" to the names in rule 5.
@@ -53,6 +53,7 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: implement gate: class lists split, old settings location on one page, sweep gaps not fixed here (see Decisions).
 - 2026-09-13: minor amendment: each of T2-T6 updates the tests that pin its own pages, because the verify slot needs `devtools::test()` clean per task. T7 keeps the final sweep and the checks.
 - 2026-09-13: T1: base sweep over 28 pages printed 185 findings. Ledger section `### M127` added to `cairn/references/plain-docs.md` with the pages and 27 identifiers.
+- 2026-09-13: T2 and T3 in one commit, because the timeout text and its tests moved between the two files. `?tidymedia` renders 72 lines. The sweep is clean on `tidymedia-package`, `with_timeout` and `local_timeout`. Four test files re-pinned to the new page or wording (package-topic, check-tracks-docs, runtime-timeout, timeout-silence) and `helper-rd.R` now reads `?with_timeout`. None removed. Full suite: 1738 tests, 0 failed, 5 skipped.
 
 ## Decisions
 

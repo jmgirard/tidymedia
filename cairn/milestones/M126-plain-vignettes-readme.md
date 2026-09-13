@@ -1,6 +1,6 @@
 # M126: The vignettes and README read as plain English for an R user
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
@@ -47,7 +47,7 @@ The README, the five vignettes and the pkgdown reference index use plain English
 - [x] T4: Rewrite `vignettes/verification.Rmd`. Put the basic check first. Move the timeout measurements and ordering detail out, and record where they went.
 - [x] T5: Rewrite `vignettes/workflow.Rmd`, `batch.Rmd` and `metadata.Rmd`. Add a guarded chunk that calls the three capability functions, in the hardware section of `workflow.Rmd`.
 - [x] T6: Rewrite the prose of `README.Rmd` and the `title:` and `desc:` text in `_pkgdown.yml`, including "three layers" at `_pkgdown.yml:9`. Run `devtools::build_readme()`.
-- [ ] T7: Fill the ledger rows for AC3, AC4 and AC5. Run the sweep, both builds, `tools/vignette_chunk_guards.R` and `tools/vignette_chunk_program_identity.R`. Run `devtools::check()`, and run `devtools::test()` with no other R session working.
+- [x] T7: Fill the ledger rows for AC3, AC4 and AC5. Run the sweep, both builds, `tools/vignette_chunk_guards.R` and `tools/vignette_chunk_program_identity.R`. Run `devtools::check()`, and run `devtools::test()` with no other R session working.
 
 ## Work log
 
@@ -65,6 +65,10 @@ The README, the five vignettes and the pkgdown reference index use plain English
 - 2026-09-13: T4 done. `vignettes/verification.Rmd` puts the basic `verify_media()` call first and the check rules in a "What the checks cover" section after it. The timeout signal schedule and the 42.0 s measurement left the page. Both stay in the code comment at `R/timeout.R:5-10`, and the schedule is also in `?with_timeout` Details. The per-function list of errors and warnings now points to `?tidymedia`, which holds it. The sweep is clean and the page renders.
 - 2026-09-13: T5 done. `workflow.Rmd`, `batch.Rmd` and `metadata.Rmd` are rewritten. The hardware part of `workflow.Rmd` is now a "Using video hardware" section with a chunk guarded on `has_ffmpeg`. That chunk calls `ffmpeg_codecs()`, `ffmpeg_encoders()`, `hardware_encoder()` and `has_hardware_encoder()`, and its output was read from a render. The sweep is clean on all three, and all three render.
 - 2026-09-13: T6 done. `README.Rmd` prose is rewritten, and the install section now has one install line for each platform and one `program_status()` check, per the gate. The macOS line `brew install ffmpeg media-info` was checked against this machine's Homebrew list. `_pkgdown.yml` titles now use the rule 5 names, and "three layers" is gone. The AC1 greps find nothing, `devtools::build_readme()` ran, and `pkgdown::check_pkgdown()` finds no problems.
+- 2026-09-13: T7 done. The ledger in `cairn/references/plain-docs.md` has the AC3 stem rows (26), the AC4 heading results (39), and the AC5 result: all 70 names are still in the six files, so no dropped rows. The spelling test flagged MKV and WAV from the new glossary, so both were added to `inst/WORDLIST`. On the final tree the sweep exits 0, both builds and the no-binaries build succeed, and both chunk scripts report none. `devtools::check()` gives 0 errors, 0 warnings and 0 notes, and `devtools::test()` gives FAIL 0, PASS 13858.
+- 2026-09-13: claim audit: 95 claims read, 6 corrected — vignettes/tidymedia.Rmd, vignettes/metadata.Rmd, vignettes/verification.Rmd, vignettes/workflow.Rmd, tools/doc_prose_report.R
+- 2026-09-13: The claim corrections were: `ffm_concat()` keeps audio, frame-rate fractions stay strings under `typed = TRUE`, `get_*()` has no `file` column, and `verified` can be `NA`. Two were narrowed: `format_for_web()` no longer says "small", and `concatenate_videos()` parts also need the same picture size and frame rate. The single re-read by the same reader confirmed five and refined the `verified` wording, which was applied. Two of the four wrong claims came from the base text.
+- 2026-09-13: status set to review.
 
 ## Decisions
 

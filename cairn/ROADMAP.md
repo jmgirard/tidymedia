@@ -11,7 +11,7 @@ _Last hygiene check: 2026-09-11 (M125 done and archived; PR #129 squash-merged, 
 | M123 | Help pages stop naming the internal find_program() | done | — | high | milestones/archive/M123-help-pages-drop-find-program.md |
 | M124 | The batch docs teach ffm_jobs(), and four wrong doc statements are corrected | done | — | normal | milestones/archive/M124-batch-docs-teach-ffm-jobs.md |
 | M125 | Batch runs refuse two jobs writing one output | done | — | normal | milestones/archive/M125-batch-output-collisions.md |
-| M126 | The vignettes and README read as plain English for an R user | in-progress | — | high | milestones/M126-plain-vignettes-readme.md |
+| M126 | The vignettes and README read as plain English for an R user | review | — | high | milestones/M126-plain-vignettes-readme.md |
 | M127 | ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English | planned | M126 | high | milestones/M127-plain-setup-help-pages.md |
 | M128 | The pipeline function (ffm_*) help pages read as plain English | planned | M126 | high | milestones/M128-plain-pipeline-help-pages.md |
 | M129 | The audio, frame and FFmpeg-capability help pages read as plain English, and repeated text is written once | planned | M126 | high | milestones/M129-plain-audio-frame-help-pages.md |

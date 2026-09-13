@@ -187,3 +187,24 @@ The base commit is `264afff4`. The domain grep returned 28 pages. At that commit
 #### Identifiers at the base commit (AC5)
 
 These 27 identifiers match `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the 28 `.Rd` files: `tidymedia.check_tracks`, `tidymedia.hardware_encoders`, `tidymedia.timeout`, `tidymedia_archive_unreadable`, `tidymedia_batch_timeout`, `tidymedia_checksum_mismatch`, `tidymedia_checksum_unavailable`, `tidymedia_confirmation_unavailable`, `tidymedia_download_unavailable`, `tidymedia_dropped_audio`, `tidymedia_ffm`, `tidymedia_ffmpeg_exit`, `tidymedia_location_gone`, `tidymedia_location_unreadable`, `tidymedia_loudnorm_no_measurement`, `tidymedia_multitrack_separation`, `tidymedia_probe_timeout`, `tidymedia_program_not_extracted`, `tidymedia_program_unusable`, `tidymedia_timeout`, `tidymedia_wrong_platform`, `tm_file`, `tm_location`, `tm_program`, `tm_row_status`, `tm_rows`, `tm_status`.
+
+At head, a `\bname\b` search over `man/*.Rd` finds all 27 identifiers, so no identifier needs a row. This was found on 2026-09-13 at T7.
+
+#### Glossary stems (AC3)
+
+Each row is one page whose `--prose` output has a glossary stem. "Names the glossary" means the page has a sentence that names the glossary in `vignette("tidymedia")`. The other 20 pages use no stem.
+
+| Page | Stems | Result |
+|---|---|---|
+| audio_stream | `codec`, `container`, `encod`, `stream` | Names the glossary. |
+| get_frame_rate | `frame rate` | Names the glossary. |
+| get_sample_rate | `sampl(e\|ing) rate` | Names the glossary. |
+| probe_all | `container`, `stream` | Names the glossary. |
+| probe_container | `container`, `stream` | Names the glossary. |
+| refresh_ffmpeg_capabilities | `encod` | Names the glossary. |
+| tidymedia-package | `encod` | Names the glossary. |
+| verify_media | `codec`, `container`, `key ?frame`, `sampl(e\|ing) rate`, `stream` | Names the glossary. |
+
+#### Tests (T7)
+
+No test was removed. These tests now pin new wording of the same property. `test-package-topic.R` checks that the `tidymedia_ffmpeg_exit` item says "exited non-zero" before it names the `loudnorm` pass. `test-check-tracks-docs.R` reads the dropped-track item on `?with_timeout`. `test-runtime-timeout.R` reads the reached-limit error and the 40 s arithmetic on `?with_timeout`, and the 42.0 s timing in `NEWS.md`. `test-timeout-silence.R` reads "never silent" on `?with_timeout`, and the call-graph note in `NEWS.md`. `helper-rd.R` now reads `?with_timeout`. `test-audio-index-docs.R` pins two rewritten phrases of the generated `audio_input` text.

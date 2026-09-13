@@ -42,9 +42,9 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - [x] T1: Run the sweep over the domain at the base commit. Record the pages and the AC5 identifiers in a new M127 ledger section.
 - [x] T2: Rewrite `R/tidymedia-package.R`. Keep a short overview, where to start, and the session options. Move the timeout detail to `R/timeout.R` and the error-class lists to short end sections.
 - [x] T3: Rewrite `R/timeout.R`. Keep what a user sets and what a user sees. Move measured timings to code comments.
-- [ ] T4: Rewrite `R/program_management.R`, with `install_on_win()` and `program_status()` first.
-- [ ] T5: Rewrite `R/mediainfo.R`, `R/ffprobe.R` and `R/audio-stream-doc.R`. For the generated sentences, check the task-function pages that reuse them after `devtools::document()`.
-- [ ] T6: Rewrite `R/ffm_batch.R`, `R/ffm_jobs.R`, `R/cache.R`, `R/verify.R`, `R/ffm_manifest.R`, `R/utils-tidy-eval.R` and `R/ffm_oop.R`. In every `R/` file, rename the `@family` labels "escape hatch functions", "builder functions" and "task verb functions" to the names in rule 5.
+- [x] T4: Rewrite `R/program_management.R`, with `install_on_win()` and `program_status()` first.
+- [x] T5: Rewrite `R/mediainfo.R`, `R/ffprobe.R` and `R/audio-stream-doc.R`. For the generated sentences, check the task-function pages that reuse them after `devtools::document()`.
+- [x] T6: Rewrite `R/ffm_batch.R`, `R/ffm_jobs.R`, `R/cache.R`, `R/verify.R`, `R/ffm_manifest.R`, `R/utils-tidy-eval.R` and `R/ffm_oop.R`. In every `R/` file, rename the `@family` labels "escape hatch functions", "builder functions" and "task verb functions" to the names in rule 5.
 - [ ] T7: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. Fill the ledger. Run the sweep, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
 ## Work log
@@ -55,6 +55,8 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: T1: base sweep over 28 pages printed 185 findings. Ledger section `### M127` added to `cairn/references/plain-docs.md` with the pages and 27 identifiers.
 - 2026-09-13: T2 and T3 in one commit, because the timeout text and its tests moved between the two files. `?tidymedia` renders 72 lines. The sweep is clean on `tidymedia-package`, `with_timeout` and `local_timeout`. Four test files re-pinned to the new page or wording (package-topic, check-tracks-docs, runtime-timeout, timeout-silence) and `helper-rd.R` now reads `?with_timeout`. None removed. Full suite: 1738 tests, 0 failed, 5 skipped.
 - 2026-09-13: T4, T5 and T6 delegated to three [O] agents in separate worktrees and merged. T4 moved blocks in `R/program_management.R`, and parsing both versions shows the function bodies unchanged. T5 rewrote the generated audio argument text, which lands on 25 task function pages, and re-pinned two phrases in `test-audio-index-docs.R`. The `@family` labels are renamed in 7 `R/` files. The sweep over the 28 pages exits 0. Checkpoint: T4-T6 stay unticked until the full suite passes on this commit.
+- 2026-09-13: T4-T6: full suite on the merged code, 1738 tests, 0 failed, 5 skipped. T4-T6 ticked.
+- 2026-09-13: T7: sweep over 28 pages exits 0; `?tidymedia` renders 72 lines; all 27 base identifiers found in `man/`; 8 pages with glossary stems all name the glossary. Ledger filled. Check and pkgdown check running.
 
 ## Decisions
 

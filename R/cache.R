@@ -30,51 +30,57 @@ cached_encoder_names <- function() {
 
 #' Forget what tidymedia remembers about your FFmpeg build
 #'
-#' Discard the session-scoped record of which encoders your FFmpeg build
-#' provides, so the next capability query asks FFmpeg again.
+#' Discard the package's record of which encoders your FFmpeg build has. The
+#' next query then asks FFmpeg again.
 #'
-#' The first hardware-encoding call in an R session -- \code{hardware =
-#' "nvenc"} or \code{hardware = "videotoolbox"}, whichever comes first --
-#' asks FFmpeg which encoders it has; later calls reuse that answer rather than starting a new
-#' FFmpeg process per call, which is what makes a large batch practical. The
-#' answer is remembered for the rest of the session, so a build that changes
-#' underneath you -- a fresh FFmpeg install, a new GPU driver, a different
-#' binary -- is not seen until the record is discarded. There are three ways to
-#' discard it:
+#' The first call in an R session that uses \code{hardware = "nvenc"} or
+#' \code{hardware = "videotoolbox"} asks FFmpeg which encoders it has. The
+#' package remembers that answer for the rest of the session. Later calls reuse
+#' it and do not start FFmpeg again each time, so a large batch stays fast.
+#'
+#' So the package does not see a change to your FFmpeg build until you discard
+#' the record. Examples of a change are a new FFmpeg install, a new graphics
+#' card (GPU) driver, or a different FFmpeg program. There are three ways to
+#' discard the record:
 #'
 #' \itemize{
-#'   \item call \code{refresh_ffmpeg_capabilities()} yourself, at any time;
-#'   \item call \code{\link{set_program}} (or \code{\link{set_ffmpeg}}), which
-#'     discards it for you, since pointing tidymedia at a different binary
-#'     invalidates everything remembered about the old one;
-#'   \item call \code{\link{unset_program}} and have it remove something, for
-#'     the same reason: forgetting a remembered location can change which
-#'     binary tidymedia resolves to. A call that removed nothing leaves the
-#'     record alone, since nothing about the resolved binary changed -- and a
-#'     call that removed one remembered file before failing on another
-#'     discards it, because the file it did remove may be the one your lookups
-#'     were answered from.
+#'   \item Call \code{refresh_ffmpeg_capabilities()} yourself, at any time.
+#'   \item Call \code{\link{set_program}} (or \code{\link{set_ffmpeg}}). It
+#'     discards the record for you, because the record describes the old
+#'     program.
+#'   \item Call \code{\link{unset_program}} and have it remove something. When
+#'     it forgets a saved location, the package can find a different program. A
+#'     call that removed nothing keeps the record, because the program in use
+#'     did not change. A call that removed one saved file and then failed on
+#'     another discards the record. The file it removed may have named the
+#'     program that the record came from.
 #' }
 #'
-#' The record is per R process, and it does not travel to a worker. So unless
-#' you have set \code{tidymedia.hardware_encoders} yourself, a batch running on
-#' \code{W} workers asks FFmpeg \code{W} times rather than once, and
-#' discarding the record in the parent does not reach them.
+#' The glossary in \code{vignette("tidymedia")} explains media terms such as
+#' encoder and hardware encoder.
 #'
-#' Setting that option is different: the value you set is carried into each
-#' worker for the duration of the call, and the worker's own value is put back
-#' afterwards. A batch built under your override therefore asks FFmpeg
-#' for no encoder list at all, and every worker answers as the parent would.
+#' @section Parallel workers:
+#' Each R process keeps its own record, and a worker does not get the record of
+#' your session. So a batch on \code{W} workers asks FFmpeg \code{W} times, not
+#' once. Discarding the record in your session does not reach the workers. This
+#' is not the case when you have set \code{tidymedia.hardware_encoders}
+#' yourself.
 #'
-#' \code{\link{ffmpeg_encoders}} and \code{\link{ffmpeg_codecs}} are never
-#' remembered: they query FFmpeg on every call, so they always report the build
-#' as it is now, whether or not this function has been called.
+#' That option works in a different way. The package copies your value into
+#' each worker for the duration of the call, and then puts back the worker's own
+#' value. So a batch under your setting does not ask FFmpeg for an encoder list
+#' at all. Every worker gives the same answer as your session.
+#'
+#' @section Functions that never use the record:
+#' \code{\link{ffmpeg_encoders}} and \code{\link{ffmpeg_codecs}} ask FFmpeg on
+#' every call. So they always show the build as it is now, whether or not you
+#' called this function.
 #'
 #' @return \code{NULL}, invisibly. Called for its side effect.
-#' @seealso \code{\link{has_hardware_encoder}} and \code{\link{hardware_encoder}} for the
-#'   queries that use the remembered answer, \code{\link{ffmpeg_encoders}} for
-#'   an always-fresh encoder list, and \code{\link{set_program}} to point
-#'   tidymedia at a different binary.
+#' @seealso \code{\link{has_hardware_encoder}} and
+#'   \code{\link{hardware_encoder}} use the remembered answer.
+#'   \code{\link{ffmpeg_encoders}} always gives a fresh encoder list.
+#'   \code{\link{set_program}} points the package at a different FFmpeg program.
 #' @family capability functions
 #' @examples
 #' # After installing FFmpeg, or a GPU driver or OS update mid-session:

@@ -25,7 +25,7 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - [x] AC2: The prose sweep over the M127 domain prints no sentence over 25 words.
 - [x] AC3: For each page in the domain, take each glossary stem found in its `--prose` output. The page defines the term at its first use or names the glossary in `vignette("tidymedia")`. One ledger row per page records the stems and how each is met.
 - [x] AC4: `tools::Rd2txt()` output for `man/tidymedia-package.Rd` is at most 80 lines. Its first paragraph says what the package does and names `vignette("tidymedia")` as the place to start.
-- [ ] AC5: Each page in the domain has a ledger row that says what text left it and where that text went: moved (with the page), or deleted (with a reason). Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the domain at the base commit is still found in some `man/*.Rd` file at head, or has a ledger row.
+- [x] AC5: Each page in the domain has a ledger row that says what text left it and where that text went: moved (with the page), or deleted (with a reason). Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the domain at the base commit is still found in some `man/*.Rd` file at head, or has a ledger row.
 - [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
@@ -112,3 +112,13 @@ Three new-context reviewers ran on `ca35647a`. The blame-history reviewer and th
 - O15: one roxygen line in `R/ffm_batch.R:370` is over 80 characters.
 - O16: D053 and D066 quote help text that changed. The quotes are old, not false.
 - Session finding S1: the spelling note behind the AC6 failure (`R/ffprobe.R:46`).
+
+### Review round 2
+
+Evidence is from 2026-09-13 on `629d68a4`. That commit contains `origin/master` (`264afff4`), so no sync merge was needed. No PR exists for the branch.
+
+- AC1: `Rscript tools/doc_prose_report.R` over the 28 ledger pages prints no finding and exits 0. The same sweep over the 28 pages as they were at `264afff4` prints 185 findings and exits 1. Of these, 73 are maintainer terms.
+- AC2: the same head run prints no sentence over 25 words. At `264afff4` it printed 112.
+- AC3: a search for the ten glossary stems over each page's `--prose` output finds stems on 8 pages, with the same pages and stems as the ledger table. Each of the 8 rendered pages names the glossary in `vignette("tidymedia")`.
+- AC4: `tools::Rd2txt()` on `man/tidymedia-package.Rd` gives 78 lines. The Description paragraph says what the package does and ends "Start with `vignette("tidymedia")`".
+- AC5: the ledger's AC5 table has one row for each of the 28 pages. At `264afff4` the pattern finds 27 identifiers in the 28 pages. At head, a whole-word search finds all 27 in `man/*.Rd`. The fact that reviewer O4 found missing is back on `?tidymedia`. `man/tidymedia-package.Rd` says that a bad `tidymedia.check_tracks` value gives an error that names the option. The `tidymedia-package` and `with_timeout` rows record the check-order text that moved to `?with_timeout`.

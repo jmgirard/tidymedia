@@ -20,7 +20,8 @@
 #
 # A heading, an argument item, a list item, a table cell and the end of a
 # paragraph each end a sentence, as do `.`, `?` and `!` before a capital letter,
-# a digit, a code span, an opening bracket, a double quote or an underscore. A code span counts as one word.
+# a digit, a code span, an opening bracket, a double quote or an
+# underscore. A code span counts as one word.
 # `--prose` prints one sentence per line with its line number, code spans and
 # leading argument names removed; for an `.Rd` file the line number is the line
 # of the rendered text, not of the source.

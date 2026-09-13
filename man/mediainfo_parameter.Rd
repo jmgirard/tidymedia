@@ -7,33 +7,38 @@
 mediainfo_parameter(file, section, parameter, typed = TRUE)
 }
 \arguments{
-\item{file}{A character vector of one or more media-file paths.}
+\item{file}{A character vector of one or more media file paths.}
 
-\item{section}{A string containing the name of the mediainfo section from
-which to query \code{parameter}.}
+\item{section}{A string. The name of the MediaInfo section to read
+\code{parameter} from.}
 
-\item{parameter}{A string containing the name of the mediainfo parameter to
-query from \code{section}.}
+\item{parameter}{A string. The name of the MediaInfo parameter to read from
+\code{section}.}
 
-\item{typed}{A logical. When \code{TRUE} (default) the value is converted to
-its natural type (e.g. a number); when \code{FALSE} it is returned as a
-string.}
+\item{typed}{A logical. If \code{TRUE} (the default), the function converts the
+values to their natural type, for example to numbers. If \code{FALSE}, it
+returns strings.}
 }
 \value{
-A vector the same length as \code{file} holding each requested value,
-or \code{NA} where the value was empty, the section-parameter combination
-was not found, or the file could not be read (a warning is issued for
-unreadable files rather than aborting).
+A vector with one value for each element of \code{file}. A value is \code{NA}
+when it is empty, when \code{section} has no such parameter, or when the file
+could not be read.
+
+The function does not stop at a file that it could not read. It reads the
+other files, and then gives one warning that names the files it could not
+read. A file that reaches the time limit counts as not read; see
+\code{\link[=with_timeout]{with_timeout()}}.
 }
 \description{
-Query a single parameter in a single section from MediaInfo. \code{file} may be a
-vector of several files, in which case a vector of values (one per file) is
-returned.
+\code{mediainfo_parameter()} uses the MediaInfo program to read one value, such as
+the video width, from media files. MediaInfo groups its values in sections,
+such as \code{"General"}, \code{"Video"} and \code{"Audio"}. You name the section and the
+parameter to read.
 }
 \details{
-This \strong{MediaInfo}-backed reader returns a \strong{value} (or a vector of values,
-one per file), not a tibble; the FFprobe counterpart is the \verb{probe_*()}
-family.
+Give several files in \code{file} to get one value for each file. The function
+returns a vector, not a tibble. The \verb{probe_*()} functions read similar
+information with FFprobe and return tibbles.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
@@ -42,9 +47,10 @@ mediainfo_parameter(video, section = "Video", parameter = "Width")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=mediainfo_query]{mediainfo_query()}} to pull several parameters at once,
-\code{\link[=mediainfo_template]{mediainfo_template()}} for a whole template, \code{\link[=probe_all]{probe_all()}} for the FFprobe
-backend, and \code{\link[=get_duration]{get_duration()}} and friends for common single values.
+\code{\link[=mediainfo_query]{mediainfo_query()}} to read several parameters at once.
+\code{\link[=mediainfo_template]{mediainfo_template()}} to apply a whole template. \code{\link[=probe_all]{probe_all()}} to read
+information with FFprobe. \code{\link[=get_duration]{get_duration()}} and the other \verb{get_*()}
+functions for common single values.
 
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},

@@ -6,85 +6,91 @@
 \alias{audio_indices}
 \title{Audio track and audio input indices}
 \description{
-tidymedia has two 0-based audio arguments that count different things. This
-page says which is which, so that meeting one after the other is not a trap.
+Two audio arguments in this package count different things: \code{audio_stream}
+and \code{audio_input}. Both count from \code{0}, so \code{0} means the first one. This page
+explains which is which.
+
+The glossary in \code{vignette("tidymedia")} explains media terms such as stream,
+container and codec.
 }
 \section{The two indices}{
-\code{audio_stream} counts \strong{one input's audio streams}. On
-\code{\link{extract_audio}}, \code{audio_stream = 1} is that file's second
-audio track, whatever position it holds among the file's streams overall (it
-is not the \code{index} column of \code{\link{probe_audio}}, which counts
-every stream, audio or not).
+\code{audio_stream} counts \strong{the audio tracks of one input file}. On
+\code{\link[=extract_audio]{extract_audio()}}, \code{audio_stream = 1} is the second audio track of the file.
+Where that track sits among all the streams of the file does not matter. So
+\code{audio_stream} is not the \code{index} column of \code{\link[=probe_audio]{probe_audio()}}, which counts
+every stream, audio or not.
 
-\code{audio_input} counts \strong{a verb's inputs}. On
-\code{\link{compare_videos}} and \code{\link{picture_in_picture}}, which
-combine several files into one output and must choose whose sound to keep,
-\code{audio_input = 1} is the second \emph{file}, and says nothing about which of
-its tracks is taken.
+\code{audio_input} counts \strong{the input files of a function}. The functions
+\code{\link[=compare_videos]{compare_videos()}} and \code{\link[=picture_in_picture]{picture_in_picture()}} combine several files into one
+output, so they must choose whose sound to keep. On these functions,
+\code{audio_input = 1} is the second \emph{file}. It says nothing about which
+track of that file is used.
 
-Neither can be computed from the other, which is why they stay separate
-names rather than one argument meaning two things depending on the verb's
-arity.
+You cannot work out one index from the other. So the package keeps two
+names, rather than one argument whose meaning depends on how many inputs a
+function takes.
 }
 
-\section{What \code{NULL} means, and it is not the same thing}{
-\code{audio_stream = NULL} is a selection rather than an absence: the verb
-still emits a stream map. What differs is how much it selects.
+\section{What \code{NULL} means}{
+\code{audio_stream = NULL} still selects audio. It does not mean "no audio". The
+functions differ in how much audio it selects.
 \itemize{
-\item The first-track family reads \code{NULL} this way -- \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus their \code{_batch} siblings. The every-track family keeps them all instead: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus theirs.
-\item The two readings exist because a verb that writes one audio stream by
-construction must pick one track when you name none, while a verb that
-carries audio through can keep whatever its container holds.
-\item On the verbs that pass video through, the every-track map is written so
-that it matches nothing rather than failing, so an input with no audio at
-all simply yields an output with none. On
-\code{\link{separate_audio_video}} and \code{\link{normalize_audio}},
-whose product \emph{is} audio, that same case is an FFmpeg error.
+\item The first-track family reads \code{NULL} as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The every-track family reads it as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms.
+\item The two readings have a reason. A function that writes one audio stream
+must pick one track when you name none. A function that carries audio
+through can keep all the tracks its container holds.
+\item On the functions that pass video through, an input with no audio gives an
+output with no audio, not an error. On \code{\link[=separate_audio_video]{separate_audio_video()}} and
+\code{\link[=normalize_audio]{normalize_audio()}}, whose output \emph{is} audio, that input gives an
+FFmpeg error.
 }
 
-\code{audio_input = NULL} is different in kind: it emits no audio map at all, so
-the output carries \strong{no audio}. A silent output is the default for
-\code{\link{compare_videos}} and \code{\link{picture_in_picture}}, because
-there is no non-arbitrary answer to which of several inputs should be heard.
+\code{audio_input = NULL} is different: it selects no audio at all, so the output
+has \strong{no audio}. A silent output is the default for \code{\link[=compare_videos]{compare_videos()}}
+and \code{\link[=picture_in_picture]{picture_in_picture()}}. With several inputs, no choice of which one to
+hear is better than another.
 
-Out of range, the two also fail differently. An \code{audio_input} beyond the
-inputs you passed is an R error raised before FFmpeg runs; an
-\code{audio_stream} beyond the input's tracks is an FFmpeg error, because
-the track count is a property of the file rather than of the call.
+The two arguments also fail in different ways when a number is too large.
+An \code{audio_input} that names an input you did not pass gives an R error,
+before FFmpeg runs. An \code{audio_stream} that names a track the input does not
+have gives an FFmpeg error. The reason is that the number of tracks is a fact
+about the file, not about the call.
 }
 
 \section{In a \verb{_batch} jobs table}{
-Both arguments follow one rule on a \code{_batch} verb: the scalar argument
-is the default, and a \code{jobs} column of the same name overrides it row by
-row. (This is how these two behave; it is not a claim about every
-\code{_batch} argument — \code{hardware}, \code{parallel} and \code{two_pass}
-are batch-wide and read no column.) An \strong{absent column}
-means the scalar argument applies to every row. A \strong{present column}
-overrides it row by row, and an \code{NA} cell is that column's spelling of
-\code{NULL} -- it does not fall back to the scalar argument. So
-\code{audio_stream = 2} with an \code{audio_stream} column holding \code{NA}
-puts that row on its family's \code{NULL} reading, not on track 2.
+On a \verb{_batch} function, both arguments follow one rule. The argument you
+pass is the default, and a \code{jobs} column with the same name overrides it row
+by row.
+
+This rule is about these two arguments only. The arguments \code{hardware},
+\code{parallel} and \code{two_pass} apply to the whole batch, and the function reads
+no column for them.
+
+If the column is absent, the argument applies to every row. If the column is
+present, each row uses its own cell. An \code{NA} cell means \code{NULL} for that row.
+It does not fall back to the argument. So \code{audio_stream = 2} with an \code{NA}
+cell in an \code{audio_stream} column gives that row the \code{NULL} reading of its
+family, not track 2.
 }
 
-\section{The bare name \code{audio} is not an index}{
-Layer 1 keeps \code{audio} for two things that count nothing:
+\section{The name \code{audio} alone is not an index}{
+The pipeline functions use \code{audio} for two things that are not counts:
 \itemize{
-\item an audio \emph{codec} string on \code{\link{ffm_codec}}, where
-\code{audio = "aac"} names an encoder;
-\item a \emph{logical} on \code{\link{ffm_copy}}, where \code{audio = TRUE}
-stream-copies the audio instead of re-encoding it.
+\item an audio codec name on \code{\link[=ffm_codec]{ffm_codec()}}, where \code{audio = "aac"} names an
+encoder;
+\item a logical on \code{\link[=ffm_copy]{ffm_copy()}}, where \code{audio = TRUE} copies the audio stream
+without re-encoding it.
 }
 
-The input index is \code{audio_input}, so that its name says what it counts,
-as \code{audio_stream} does.
+The input index is called \code{audio_input}, so that its name says what it
+counts, as \code{audio_stream} does.
 }
 
 \seealso{
-\code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}} for the first-track
-reading; \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}} for the every-track
-one; \code{\link{compare_videos}} and \code{\link{picture_in_picture}} for
-the input index; \code{\link{probe_audio}} to see what tracks a file
-actually holds.
+\code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}} read \code{NULL} as the
+first audio track. \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}} read it
+as every audio track. \code{\link[=compare_videos]{compare_videos()}} and \code{\link[=picture_in_picture]{picture_in_picture()}} take
+the input index. \code{\link[=probe_audio]{probe_audio()}} shows which audio tracks a file has.
 
 Other audio selection functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

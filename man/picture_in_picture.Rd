@@ -36,7 +36,7 @@ preserved (\code{0 < scale <= 1}). (default = \code{0.25})}
 \item{margin}{The gap in pixels between the inset and the video edges (ignored
 for \code{position = "center"}). (default = \code{16})}
 
-\item{audio_input}{The 0-based index of the \emph{input} whose audio to keep -- \code{0} is the first file passed in, \code{1} the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from \code{audio_stream} on the single-input verbs. \code{NULL} (default) maps no audio at all, so the output is silent -- unlike \code{audio_stream = NULL}, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. See \code{\link{audio_stream}}. (default = \code{NULL})}
+\item{audio_input}{The input file whose audio to keep, as a number that counts from \code{0}. \code{0} is the first file you pass and \code{1} is the second. This counts the function's inputs, not the audio tracks of one input. So it is a different index from \code{audio_stream} on the functions that take one input. \code{NULL} (default) selects no audio at all, so the output is silent. This differs from \code{audio_stream = NULL}, which still selects audio. An input number the call does not have gives an R error, before FFmpeg runs. See \code{\link{audio_stream}}. (default = \code{NULL})}
 
 \item{video_codec}{A string naming the output video codec, or \code{NULL}
 (default) to leave it unset, so the output container's default encoder is

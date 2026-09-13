@@ -12,34 +12,38 @@ mediainfo_template(
 )
 }
 \arguments{
-\item{file}{A character vector of one or more media-file paths.}
+\item{file}{A character vector of one or more media file paths.}
 
-\item{template}{A string naming the template to apply: a built-in
-(\code{"brief"} or \code{"extended"}) or \code{"custom"} to apply the file
-given in \code{templatefile}.}
+\item{template}{A string. Use \code{"brief"} or \code{"extended"} for a template that
+comes with the package. Use \code{"custom"} to apply the file in \code{templatefile}.}
 
-\item{templatefile}{Either the path to a MediaInfo template (.txt) file
-formatted to output comma-separated values (required when \code{template}
-is \code{"custom"}) or \code{NULL} (default).}
+\item{templatefile}{The path to your own MediaInfo template, a \code{.txt} file
+that makes MediaInfo print comma-separated values. Give it when \code{template}
+is \code{"custom"}, and only then. The default is \code{NULL}.}
 
-\item{typed}{A logical. When \code{TRUE} (default) numeric columns are typed
-and empty values become \code{NA}; when \code{FALSE} columns stay strings.}
+\item{typed}{A logical. If \code{TRUE} (the default), numeric columns become
+numbers and empty values become \code{NA}. If \code{FALSE}, all columns stay strings.}
 }
 \value{
-A tibble with one row per input file. The columns (and their
-names/order) are determined by the template; custom-template column names
-are used verbatim.
+A tibble with one row for each input file. The template sets the
+columns, their names and their order. The function keeps the column names
+of a custom template, but removes spaces at their start and end.
+
+A file that the function could not read gets a row of \code{NA} values. The
+function reads the other files, and then gives one warning that names the
+files it could not read. A file that reaches the time limit counts as not
+read; see \code{\link[=with_timeout]{with_timeout()}}.
 }
 \description{
-Create a tibble describing one or more media files by applying a MediaInfo
-template, which can pull multiple parameters from multiple sections. Two
-templates ship with the package (\code{"brief"} and \code{"extended"}); a
-custom template file can also be supplied. \code{file} may be a vector of several
-files; results are stacked with a leading \code{file} column.
+\code{mediainfo_template()} uses the MediaInfo program to describe media files,
+and returns a tibble. It applies a MediaInfo template, which can read many
+parameters from many sections.
 }
 \details{
-This \strong{MediaInfo}-backed reader returns a \strong{tibble}; the FFprobe
-counterpart is the \verb{probe_*()} family.
+The package comes with two templates, \code{"brief"} and \code{"extended"}. You can
+also give your own template file. Give several files in \code{file} to get one
+row for each file. The first column, \code{file}, names the input file. The
+\verb{probe_*()} functions read similar information with FFprobe.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
@@ -48,9 +52,10 @@ mediainfo_template(video, template = "brief")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=mediainfo_query]{mediainfo_query()}} for a single section, \code{\link[=mediainfo_parameter]{mediainfo_parameter()}}
-for a single value, \code{\link[=probe_all]{probe_all()}} for the FFprobe backend, and
-\code{\link[=get_duration]{get_duration()}} and friends for single scalar values.
+\code{\link[=mediainfo_query]{mediainfo_query()}} to read one section. \code{\link[=mediainfo_parameter]{mediainfo_parameter()}} to
+read a single value. \code{\link[=probe_all]{probe_all()}} to read information with FFprobe.
+\code{\link[=get_duration]{get_duration()}} and the other \verb{get_*()} functions for common single
+values.
 
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},

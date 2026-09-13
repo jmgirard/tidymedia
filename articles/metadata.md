@@ -5,18 +5,21 @@
 library(tidymedia)
 ```
 
-tidymedia reads media metadata as **tibbles**, so a whole folder of
-files becomes a data frame you can filter, join, and summarize with the
-tidyverse. Two engines back these readers:
+tidymedia reads media metadata into tibbles. So the metadata of a whole
+folder becomes a data frame that you can filter, join and summarize.
 
-- **FFprobe** (`probe_*()`) returns container- and stream-level
-  metadata.
-- **MediaInfo** (`mediainfo_*()`, `get_*()`) returns a broader,
-  differently organized set of fields.
+Two programs read the metadata:
 
-Both require the corresponding command-line tool to be installed (see
-the [README](https://github.com/jmgirard/tidymedia) for setup). We use
-the sample clip that ships with the package:
+- FFprobe, used by the `probe_*()` functions, reads facts about the
+  [container](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary)
+  and each
+  [stream](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary).
+- MediaInfo, used by the `mediainfo_*()` and `get_*()` functions, reads
+  a larger set of fields, grouped in a different way.
+
+You need the program installed to use its functions. The
+[README](https://github.com/jmgirard/tidymedia) shows how to install
+them. The examples use the sample clip that comes with the package:
 
 ``` r
 
@@ -25,32 +28,28 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 
 ## Which reader?
 
-The reader families differ by **backend** (FFprobe vs. MediaInfo) and by
-**return shape** (a tibble vs. a single value). Pick by what you need
-back:
+The readers differ in the program they use and in what they return.
+Choose by what you need back:
 
-| Reader family | Backend | Returns | Reach for it when |
+| Functions | Program | Returns | Use it when |
 |----|----|----|----|
-| [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md), [`probe_container()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md), [`probe_streams()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md), [`probe_video()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md), [`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md) | FFprobe | tibbles (container + per-stream rows) | you want container/stream metadata as a data frame |
-| [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md), [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md) | MediaInfo | a tibble (one row per file) | you want MediaInfo’s broader field set as a data frame |
-| [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md) | MediaInfo | a value (one per file) | you want a single MediaInfo parameter across files |
-| [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md), [`get_frame_rate()`](https://jmgirard.github.io/tidymedia/reference/get_frame_rate.md), [`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md), [`get_height()`](https://jmgirard.github.io/tidymedia/reference/get_height.md), [`get_sample_rate()`](https://jmgirard.github.io/tidymedia/reference/get_sample_rate.md) | MediaInfo | a scalar (numeric, one per file) | you want one common field without naming MediaInfo sections |
+| [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md), [`probe_container()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md), [`probe_streams()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md), [`probe_video()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md), [`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md) | FFprobe | tibbles, with rows for the file and for each stream | you want the file and stream facts as a data frame |
+| [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md), [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md) | MediaInfo | a tibble with one row per file | you want MediaInfo’s larger set of fields as a data frame |
+| [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md) | MediaInfo | one value per file | you want one MediaInfo field for several files |
+| [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md), [`get_frame_rate()`](https://jmgirard.github.io/tidymedia/reference/get_frame_rate.md), [`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md), [`get_height()`](https://jmgirard.github.io/tidymedia/reference/get_height.md), [`get_sample_rate()`](https://jmgirard.github.io/tidymedia/reference/get_sample_rate.md) | MediaInfo | one number per file | you want one common field without naming a MediaInfo section |
 
-The `probe_*()` family needs FFprobe installed; the `mediainfo_*()` and
-`get_*()` families need MediaInfo. Because
+Some facts, such as the width of the picture, come from both
 [`probe_video()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
 and
-[`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md)
-can report the same underlying fact (here, the frame width), the choice
-usually comes down to the shape you want back and which tool you have
-installed.
+[`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md).
+Then choose by the shape you want back and the program you have.
 
 ## Probing with FFprobe
 
 [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
-returns a list of two tibbles: `container` (one row per file) and
-`streams` (one row per stream). Both lead with a `file` column, so
-results stack cleanly when you pass several files.
+returns a list of two tibbles. `container` has one row for each file,
+and `streams` has one row for each stream. Both start with a `file`
+column, so the results for several files stack into one table.
 
 ``` r
 
@@ -82,13 +81,15 @@ info$streams
 #> #   nal_length_size <int>, id <chr>, r_frame_rate <chr>, …
 ```
 
-The `probe_*()` shortcuts pull out just what you need. They accept
-**either** a `probe` object (to avoid re-reading the file) or a file
-location via `infile`:
+The other `probe_*()` functions return one part of that result. You can
+give them the result of
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md),
+so FFprobe does not read the file again. Or you can give them a file
+with `infile`:
 
 ``` r
 
-# Reuse the probe object rather than reprobing
+# Use the probe result, so the file is not read again
 probe_video(info)
 #> # A tibble: 1 × 71
 #>   file      index codec_name codec_long_name profile codec_type codec_tag_string
@@ -103,17 +104,18 @@ probe_video(info)
 #> #   nal_length_size <int>, id <chr>, r_frame_rate <chr>, …
 ```
 
-Numeric columns are typed by default (`typed = TRUE`); pass
-`typed = FALSE` to keep everything as strings. Frame rates that FFprobe
-reports as fractions (e.g. `"30000/1001"`) are evaluated to doubles
-automatically when the columns are typed.
+By default, `typed = TRUE` gives number columns a number type. With
+`typed = FALSE`, every column is a string. FFprobe reports a [frame
+rate](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary)
+as a fraction such as `"30000/1001"`. The fraction stays a string, even
+with `typed = TRUE`.
 
 ## Querying with MediaInfo
 
-MediaInfo organizes metadata into sections (`General`, `Video`, `Audio`,
-…).
+MediaInfo groups its fields in sections, such as `General`, `Video` and
+`Audio`.
 [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
-pulls several parameters from one section into a tibble:
+reads several fields from one section into a tibble:
 
 ``` r
 
@@ -129,8 +131,8 @@ mediainfo_query(
 ```
 
 [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
-applies a whole template at once; two ship with the package (`"brief"`
-and `"extended"`):
+reads a whole set of fields at once. The package has two templates,
+`"brief"` and `"extended"`:
 
 ``` r
 
@@ -143,7 +145,7 @@ mediainfo_template(video, template = "brief")
 #> #   sampling_rate <int>, audio_bit_rate <int>
 ```
 
-For single values, the `get_*()` helpers are the quickest path:
+For one value, use the `get_*()` functions:
 
 ``` r
 
@@ -157,14 +159,20 @@ get_height(video)
 
 ## Batching over many files
 
-Because every reader accepts a vector of files and keys its output by
-`file`, describing a whole directory needs no loop.
+Each reader takes a vector of files, so you do not need a loop to read a
+whole folder. The `probe_*()`,
+[`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
+and
+[`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
+functions mark each row with its `file`. The `get_*()` functions return
+one value per file, in the order given.
+
 [`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
-lists the folder’s video files across the containers it knows, not one
-in particular; pass `extension = "mp4"` to narrow it. When the folder
-holds no such file,
+lists the video files in a folder, in all the formats it knows. To list
+only one format, add `extension = "mp4"`. If the folder has no such
+files,
 [`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
-stops with an error rather than returning an empty table:
+stops with an error:
 
 ``` r
 
@@ -172,33 +180,31 @@ files <- ffm_jobs("my/videos", type = "video")$input
 probe_all(files)$container
 ```
 
-Files that cannot be read yield an all-`NA` row plus a warning, rather
-than aborting the whole call — so one bad file never sinks a batch.
+A file that cannot be read gives a row of `NA` values and a warning. The
+other files are still read.
 
-A large folder is the case for `parallel = TRUE`, which fans the
-per-file probes out with [furrr](https://furrr.futureverse.org/) instead
-of reading them one after another. Every `probe_*()` reader accepts it,
-and on the four shortcuts it applies to the `infile` you pass — hand one
-an existing `probe` object instead and there is nothing left to fan out,
-so the argument is ignored.
+For a large folder, add `parallel = TRUE`. The files are then read in
+parallel with [furrr](https://furrr.futureverse.org/). Each `probe_*()`
+function takes this argument. On the functions other than
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md),
+it has an effect only when you pass `infile`.
 
 ``` r
 
 probe_all(files, parallel = TRUE)$container
 ```
 
-Like every parallel path in tidymedia it follows whatever
-[future](https://future.futureverse.org/) plan you have set. With no
-plan set it still reads one file at a time, and warns to tell you so —
-see
+The files are read in parallel only if you set a
+[future](https://future.futureverse.org/) plan. With no plan, they are
+read one at a time, and R gives a warning that says so.
 [`vignette("batch")`](https://jmgirard.github.io/tidymedia/articles/batch.md)
-for the setup.
+shows how to set a plan.
 
 ## Where to next
 
 - [`vignette("workflow")`](https://jmgirard.github.io/tidymedia/articles/workflow.md)
-  — an end-to-end research preprocessing pipeline.
+  shows a full research example.
 - [`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
-  — the task verbs and the builder beneath them.
+  explains the task functions and the pipeline functions.
 - [`vignette("batch")`](https://jmgirard.github.io/tidymedia/articles/batch.md)
-  — running a verb over many files at once.
+  shows how to run a task function over many files.

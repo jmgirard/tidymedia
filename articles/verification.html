@@ -71,13 +71,11 @@
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jmgirard/tidymedia" class="external-link">tidymedia</a></span><span class="op">)</span></span></code></pre></div>
-<p>A processed file raises two questions that the pipeline itself cannot
-answer. Did the encode actually produce what you asked for? And a year
-later, can you say how a given file was made? This vignette covers the
-three facilities that answer them — checking an output against
-expectations, recording a run’s provenance, and bounding a run that
-hangs so it stops the call instead of your session.</p>
-<p>We work on a copy of the sample clip that ships with the package:</p>
+<p>This page answers three questions about processed files. Does an
+output have the properties you asked for? Can you later say how a file
+was made? And how do you stop a program that hangs?</p>
+<p>The examples use a copy of the sample clip that comes with the
+package:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.copy</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span>,</span>
@@ -87,10 +85,9 @@ hangs so it stops the call instead of your session.</p>
 <div class="section level2">
 <h2 id="check-the-output-against-what-you-asked-for">Check the output against what you asked for<a class="anchor" aria-label="anchor" href="#check-the-output-against-what-you-asked-for"></a>
 </h2>
-<p>Every verb returns the FFmpeg command it compiled, and that command
-is a record of what you <em>asked</em> for. <code><a href="../reference/verify_media.html">verify_media()</a></code>
-answers the other half: it probes a file and compares its actual
-properties against your expectations, one row per check.</p>
+<p>A task function returns the FFmpeg command it ran. That command says
+what you asked for. <code><a href="../reference/verify_media.html">verify_media()</a></code> reads the output file
+and says what you got:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/extract_audio.html">extract_audio</a></span><span class="op">(</span><span class="st">"session01.mp4"</span>, <span class="st">"session01.m4a"</span><span class="op">)</span></span>
 <span></span>
@@ -100,10 +97,10 @@ properties against your expectations, one row per check.</p>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> session01.m4a duration    1        1      TRUE </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> session01.m4a audio_codec aac      aac    TRUE</span></span></code></pre></div>
-<p>The report is a tibble with <code>file</code>, <code>check</code>,
-<code>expected</code>, <code>actual</code> and <code>pass</code>, so a
-failure tells you which property was wrong and what the file holds
-instead:</p>
+<p>The result is a tibble with one row for each check. Its columns are
+<code>file</code>, <code>check</code>, <code>expected</code>,
+<code>actual</code> and <code>pass</code>. When a check fails,
+<code>actual</code> shows what the file holds instead:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/verify_media.html">verify_media</a></span><span class="op">(</span><span class="st">"session01.mp4"</span>, duration <span class="op">=</span> <span class="fl">5</span>, width <span class="op">=</span> <span class="fl">1920</span>, audio_codec <span class="op">=</span> <span class="st">"aac"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 5</span></span></span>
@@ -112,35 +109,8 @@ instead:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> session01.mp4 duration    5        1      FALSE</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> session01.mp4 width       1920     320    FALSE</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> session01.mp4 audio_codec aac      aac    TRUE</span></span></code></pre></div>
-<p>Three things are worth knowing before you rely on it.</p>
-<p><strong>The checks are structural, not perceptual.</strong> They read
-FFprobe’s metadata — duration, dimensions, codec names, sample rate —
-and say nothing about whether the picture or the sound looks and sounds
-right. An encode that came out at the right size in the right codec and
-looks terrible passes every check above.</p>
-<p><strong>Numeric checks carry a tolerance; string checks do
-not.</strong> A numeric expectation passes when
-<code>abs(actual - expected) &lt;= tolerance</code>, and
-<code>tolerance</code> defaults to <code>0.1</code>. That is exact for
-integers like width and sample rate, and a little slack for
-<code>duration</code>, which moves when a cut snaps to a keyframe. Codec
-names must match exactly.</p>
-<p><strong>A property that is not there fails.</strong> If the file has
-no stream of that kind, or FFprobe reports no such field, the actual
-value is <code>NA</code> and the check fails rather than being skipped.
-The audio file extracted above has no picture, so asking it for a width
-fails with nothing to report:</p>
+<p>You can check any field that FFprobe reports, by its name:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/verify_media.html">verify_media</a></span><span class="op">(</span><span class="st">"session01.m4a"</span>, width <span class="op">=</span> <span class="fl">320</span>, audio_codec <span class="op">=</span> <span class="st">"aac"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 5</span></span></span>
-<span><span class="co">#&gt;   file          check       expected actual pass </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> session01.m4a width       320      <span style="color: #BB0000;">NA</span>     FALSE</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> session01.m4a audio_codec aac      aac    TRUE</span></span></code></pre></div>
-<p>Beyond the named arguments, any FFprobe field can be checked by name.
-Extra names are resolved against the container first, then the video
-stream, then the audio stream, and the first match wins:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/verify_media.html">verify_media</a></span><span class="op">(</span><span class="st">"session01.mp4"</span>, pix_fmt <span class="op">=</span> <span class="st">"yuv420p"</span>, nb_streams <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 5</span></span></span>
 <span><span class="co">#&gt;   file          check      expected actual  pass </span></span>
@@ -148,12 +118,39 @@ stream, then the audio stream, and the first match wins:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> session01.mp4 pix_fmt    yuv420p  yuv420p TRUE </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> session01.mp4 nb_streams 2        2       TRUE</span></span></code></pre></div>
 <div class="section level3">
+<h3 id="what-the-checks-cover">What the checks cover<a class="anchor" aria-label="anchor" href="#what-the-checks-cover"></a>
+</h3>
+<p>The checks read the file’s metadata, such as its duration, size and
+<a href="tidymedia.html#glossary">codec</a> names. They do not judge
+whether the picture or the sound is good.</p>
+<p>A number passes when it is within <code>tolerance</code> of the
+expected value. The default <code>tolerance</code> is <code>0.1</code>.
+So a width or a <a href="tidymedia.html#glossary">sample rate</a> must
+match exactly, but a duration can differ a little. A codec name must
+match exactly.</p>
+<p>A property that the file does not have fails. For example, the audio
+file above has no video <a href="tidymedia.html#glossary">stream</a>, so
+a width check fails with an <code>actual</code> of <code>NA</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/verify_media.html">verify_media</a></span><span class="op">(</span><span class="st">"session01.m4a"</span>, width <span class="op">=</span> <span class="fl">320</span>, audio_codec <span class="op">=</span> <span class="st">"aac"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 5</span></span></span>
+<span><span class="co">#&gt;   file          check       expected actual pass </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> session01.m4a width       320      <span style="color: #BB0000;">NA</span>     FALSE</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> session01.m4a audio_codec aac      aac    TRUE</span></span></code></pre></div>
+<p>Another field name is looked for in the <a href="tidymedia.html#glossary">container</a> information first. Then it
+is looked for in the video stream, then in the audio stream. The first
+match is used.</p>
+</div>
+<div class="section level3">
 <h3 id="checking-every-job-in-a-batch">Checking every job in a batch<a class="anchor" aria-label="anchor" href="#checking-every-job-in-a-batch"></a>
 </h3>
-<p><code><a href="../reference/ffm_batch.html">ffm_batch()</a></code> and the <code>*_batch()</code> verbs take
-the same expectations through a <code>verify =</code> argument and add a
-<code>verified</code> column to the result, one logical per job. Pass a
-named list to hold every job to the same expectations:</p>
+<p><code><a href="../reference/ffm_batch.html">ffm_batch()</a></code> and the <code>*_batch()</code> task
+functions take a <code>verify</code> argument. It adds a
+<code>verified</code> column to the result. The column is
+<code>TRUE</code> or <code>FALSE</code> for each job that ran and could
+be checked. It is <code>NA</code> for a job that failed or could not be
+checked. A named list applies the same checks to every job:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">jobs</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
 <span>  input  <span class="op">=</span> <span class="st">"session01.mp4"</span>,</span>
@@ -173,27 +170,21 @@ named list to hold every job to the same expectations:</p>
 <span><span class="co">#&gt;   input         output        command                           success verified</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                             <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>   </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> session01.mp4 session01.mp3 <span style="color: #949494;">"</span>-y -i \"session01.mp4\" -codec:… TRUE    TRUE</span></span></code></pre></div>
-<p>A failed check here marks the row and does not stop the batch — the
-remaining jobs still run, and <code>verified</code> tells you afterwards
-which outputs to look at. For expectations that differ per job, pass a
-function of the job columns instead of a list, and it is called once per
-row.</p>
+<p>A failed check does not stop the batch. The other jobs still run, and
+the <code>verified</code> column shows which outputs to look at. To use
+different checks for each job, pass a function of the job columns in
+place of the list.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="record-how-the-files-were-made">Record how the files were made<a class="anchor" aria-label="anchor" href="#record-how-the-files-were-made"></a>
 </h2>
-<p>A compiled command is a complete recipe, and
-<code><a href="../articles/workflow.html">vignette("workflow")</a></code> builds its reproducibility story on
-exactly that: capture the command each verb returns — or the
-<code>command</code> column the batch runner adds — and you can re-run
-any step. The command is what you <em>asked</em> for, though, and it is
-silent about the run itself. Two FFmpeg versions accept the same command
-and need not produce the same file, which is why the manifest below
-records the version that ran.</p>
-<p><code>ffm_batch(manifest = TRUE)</code> records the rest. The result
-itself looks like any other batch result — the manifest rides along on
-it as an attribute, and <code><a href="../reference/ffm_manifest.html">ffm_manifest()</a></code> reads it out:</p>
+<p>The command for each job records what you asked FFmpeg to do. It does
+not record which FFmpeg version ran, and two versions can make different
+files from one command.</p>
+<p><code>ffm_batch(manifest = TRUE)</code> records those facts. The
+manifest is stored with the batch result, and
+<code><a href="../reference/ffm_manifest.html">ffm_manifest()</a></code> reads it:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ffm_batch.html">ffm_batch</a></span><span class="op">(</span></span>
 <span>  <span class="va">jobs</span>,</span>
@@ -216,30 +207,27 @@ it as an attribute, and <code><a href="../reference/ffm_manifest.html">ffm_manif
 <span><span class="co">#&gt;   command      input output output_size ffmpeg_version ffprobe_version timestamp</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">"</span>-y -i \"se… sess… sessi…        <span style="text-decoration: underline;">8</span>898 6.1.1-3ubuntu5 6.1.1-3ubuntu5  2026-09-…</span></span></code></pre></div>
-<p>One row per job. <code>command</code>, <code>input</code> and
-<code>output</code> restate the job; the other columns are what the
-command cannot carry:</p>
+<p>The manifest has one row for each job. The <code>command</code>,
+<code>input</code> and <code>output</code> columns repeat the job. The
+other columns record the run:</p>
 <ul>
 <li>
-<code>ffmpeg_version</code> and <code>ffprobe_version</code> — the
-versions tidymedia resolved when the batch ran, read out of the binaries
-themselves rather than assumed. <code>ffmpeg_version</code> is the
-version that did the work; <code>ffprobe_version</code> is the one that
-was on hand to probe, which a job like this one never needed. A version
-that could not be read is <code>NA</code>.</li>
+<code>ffmpeg_version</code> is the FFmpeg version that did the work,
+and <code>ffprobe_version</code> is the FFprobe version that was
+available. tidymedia reads both from the programs. A version it cannot
+read is <code>NA</code>.</li>
 <li>
-<code>timestamp</code> — when the run happened, with its UTC
-offset.</li>
+<code>timestamp</code> is the time of the run, with its offset from
+UTC.</li>
 <li>
-<code>output_size</code> — the size in bytes of the file that came
-out, so a truncated or empty result is visible in the record
-itself.</li>
+<code>output_size</code> is the size of the output file in bytes, so
+an empty or cut-off file shows in the record.</li>
 </ul>
-<p>Multiple inputs — a stacked or concatenated job — are joined by
-<code>;</code> in the one <code>input</code> cell.</p>
-<p>Ask for <code>checksums = TRUE</code> and each row also carries
-<code>input_md5</code> and <code>output_md5</code>, which is what lets
-you say later that a file on disk is the file this row describes:</p>
+<p>A job with several inputs lists them in one <code>input</code> cell,
+separated by <code>;</code>.</p>
+<p>With <code>checksums = TRUE</code>, each row also has
+<code>input_md5</code> and <code>output_md5</code>. A checksum lets you
+show later that a file on disk is the file in the record:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ffm_batch.html">ffm_batch</a></span><span class="op">(</span></span>
 <span>  <span class="va">jobs</span>,</span>
@@ -252,40 +240,27 @@ you say later that a file on disk is the file this row describes:</p>
 <span>  <span class="op">}</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/ffm_manifest.html">ffm_manifest</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 9</span></span></span>
-<span><span class="co">#&gt;   command      input output output_size ffmpeg_version ffprobe_version timestamp</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">"</span>-y -i \"se… sess… sessi…        <span style="text-decoration: underline;">8</span>898 6.1.1-3ubuntu5 6.1.1-3ubuntu5  2026-09-…</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: input_md5 &lt;chr&gt;, output_md5 &lt;chr&gt;</span></span></span>
-<span></span>
 <span><span class="fu"><a href="../reference/ffm_manifest.html">ffm_manifest</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"input_md5"</span>, <span class="st">"output_md5"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 2</span></span></span>
 <span><span class="co">#&gt;   input_md5                        output_md5                      </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                           </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 170526b94587d1a6e52a559eb1239e28 353f557796208278301d66c9de98df11</span></span></code></pre></div>
-<p>The manifest is nine columns wide now, so at a typical console width
-the two new ones print as a footer line rather than in the table; the
-second call above pulls them out to show what they hold.</p>
-<p>Checksums are off by default because they read every input and output
-in full, which is real time on a large study.</p>
-<p><code>manifest =</code> and <code>checksums =</code> reach the
-<code>*_batch()</code> verbs too, so a pipeline built from
-<code><a href="../reference/extract_audio_batch.html">extract_audio_batch()</a></code> and its siblings records provenance
-the same way without dropping down to <code><a href="../reference/ffm_batch.html">ffm_batch()</a></code>.</p>
-<p>Give <code><a href="../reference/ffm_manifest.html">ffm_manifest()</a></code> a <code>path</code> and it writes
-the manifest as CSV as well as returning it, invisibly — one file to
-commit next to the processed data:</p>
+<p>Checksums are off by default, because they read every input and
+output file in full. That takes time on a large study.</p>
+<p>The <code>*_batch()</code> task functions take <code>manifest</code>
+and <code>checksums</code> too. So <code><a href="../reference/extract_audio_batch.html">extract_audio_batch()</a></code>
+and the others record the same facts.</p>
+<p>If you give <code><a href="../reference/ffm_manifest.html">ffm_manifest()</a></code> a <code>path</code>, it also
+writes the manifest to a CSV file. You can then keep that file next to
+the processed data:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ffm_manifest.html">ffm_manifest</a></span><span class="op">(</span><span class="va">res</span>, path <span class="op">=</span> <span class="st">"session01_manifest.csv"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="st">"session01_manifest.csv"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
-<p>A manifest is a record of a run, so there is nothing to record when
-nothing ran. A <code>run = FALSE</code> batch attaches none even when
-you ask for one, and reading it back is an error rather than an empty
-tibble — a silent empty record being the failure a provenance record
-exists to prevent:</p>
+<p>A batch run with <code>run = FALSE</code> runs nothing, so it has no
+manifest. Reading the manifest of such a batch is an error, not an empty
+tibble:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">compiled</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ffm_batch.html">ffm_batch</a></span><span class="op">(</span><span class="va">jobs</span>, run <span class="op">=</span> <span class="cn">FALSE</span>, manifest <span class="op">=</span> <span class="cn">TRUE</span>, .f <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span>, <span class="va">...</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_files.html">ffm_files</a></span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/ffm_drop.html">ffm_drop</a></span><span class="op">(</span><span class="st">"video"</span><span class="op">)</span></span>
@@ -299,19 +274,16 @@ exists to prevent:</p>
 <div class="section level2">
 <h2 id="bound-a-run-that-hangs">Bound a run that hangs<a class="anchor" aria-label="anchor" href="#bound-a-run-that-hangs"></a>
 </h2>
-<p>Every tidymedia call waits for the program it started to finish. A
-program that hangs — a network path that stalls, a malformed file FFmpeg
-will not give up on — takes the R session down with it, and in a batch
-of a thousand files that is the whole run. Set a wall-clock limit and
-the hang stops the call instead.</p>
-<p>The limit is a session option, in whole seconds:</p>
+<p>Each tidymedia call waits for the program it started. If that program
+hangs, the R session waits with it. For example, a network drive can
+stall, or FFmpeg can get stuck on a damaged file. A time limit stops the
+call instead.</p>
+<p>The limit is an option, in whole seconds:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>tidymedia.timeout <span class="op">=</span> <span class="fl">600</span><span class="op">)</span></span></code></pre></div>
-<p>Unset, it is <code>0</code>, which means no limit — so nothing you
-already run changes behavior until you ask for a bound.</p>
-<p>To bound one call rather than the session, wrap it in
-<code><a href="../reference/with_timeout.html">with_timeout()</a></code>. The session’s setting, or the absence of
-one, is back when the call returns, by any route:</p>
+<p>The default is <code>0</code>, which means no limit.</p>
+<p>To limit one call, wrap it in <code><a href="../reference/with_timeout.html">with_timeout()</a></code>. When the
+call ends, the option goes back to its earlier value:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/with_timeout.html">with_timeout</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/extract_audio.html">extract_audio</a></span><span class="op">(</span><span class="st">"session01.mp4"</span>, <span class="st">"bounded.m4a"</span><span class="op">)</span>,</span>
@@ -320,10 +292,9 @@ one, is back when the call returns, by any route:</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"tidymedia.timeout"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; NULL</span></span></code></pre></div>
-<p>To bound the rest of a function rather than an expression you wrap,
-say it as a statement with <code><a href="../reference/local_timeout.html">local_timeout()</a></code>. Every program
-started after that line is bounded, and the caller’s setting comes back
-when the function returns:</p>
+<p>To limit the rest of a function, call <code><a href="../reference/local_timeout.html">local_timeout()</a></code>
+inside it. Each program started after that line has the limit. When the
+function returns, the option goes back to its earlier value:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">convert_all</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">files</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/local_timeout.html">local_timeout</a></span><span class="op">(</span><span class="fl">60</span><span class="op">)</span></span>
@@ -338,55 +309,45 @@ when the function returns:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"tidymedia.timeout"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; NULL</span></span></code></pre></div>
 <div class="section level3">
-<h3 id="what-the-limit-actually-bounds">What the limit actually bounds<a class="anchor" aria-label="anchor" href="#what-the-limit-actually-bounds"></a>
+<h3 id="limits-of-the-time-limit">Limits of the time limit<a class="anchor" aria-label="anchor" href="#limits-of-the-time-limit"></a>
 </h3>
-<p>The limit bounds <strong>how long R waits</strong>, not how long the
-program runs, and the two are not the same number. R escalates: it
-interrupts the program at the limit, asks it to terminate 20 seconds
-later, and kills it 20 seconds after that. A program that ignores the
-first two signals is therefore waited for up to <strong>40 seconds
-longer than the limit you set</strong> — measured on 2026-08-28 at 42.0
-s under a 2 s limit, on a Linux runner, with the same reading on a macOS
-host. Set a limit meaning “give up somewhere around here”, not “return
-at exactly this second”, and leave that headroom in anything downstream
-that depends on the call returning.</p>
-<p>A fractional limit is refused rather than rounded, because R
-truncates it toward zero and <code>0</code> is the no-limit sentinel, so
-a rounded <code>0.5</code> would leave the call unbounded. Every seam
-refuses it: <code><a href="../reference/with_timeout.html">with_timeout()</a></code>, as below, and equally
-<code><a href="../reference/local_timeout.html">local_timeout()</a></code> and
-<code>options(tidymedia.timeout = 0.5)</code> when a call reads the
-option:</p>
+<p>The limit sets how long R waits, not how long the program runs. A
+program that does not stop when asked can make R wait up to 40 seconds
+longer than the limit. So choose a limit with room to spare.</p>
+<p>The limit applies to each program that tidymedia starts. In a batch
+of 100 jobs, each job gets the full limit.</p>
+<p>The limit must be a whole number of seconds. A value such as
+<code>0.5</code> is an error:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/with_timeout.html">with_timeout</a></span><span class="op">(</span><span class="fu"><a href="../reference/extract_audio.html">extract_audio</a></span><span class="op">(</span><span class="st">"session01.mp4"</span>, <span class="st">"x.m4a"</span><span class="op">)</span>, seconds <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;"> in `with_timeout()`:</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> `seconds` must be a whole number, not the number 0.5.</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="a-reached-limit-is-never-silent">A reached limit is never silent<a class="anchor" aria-label="anchor" href="#a-reached-limit-is-never-silent"></a>
+<h3 id="what-happens-when-the-limit-is-reached">What happens when the limit is reached<a class="anchor" aria-label="anchor" href="#what-happens-when-the-limit-is-reached"></a>
 </h3>
-<p>Every call that can start one of these programs either aborts or
-warns when the limit is reached; none of them quietly returns as though
-nothing happened.</p>
-<p>It <strong>aborts</strong>, naming the program and the limit, from
-the task verbs, <code><a href="../reference/ffm_run.html">ffm_run()</a></code>, the escape hatches
-<code><a href="../reference/ffmpeg.html">ffmpeg()</a></code>, <code><a href="../reference/ffprobe.html">ffprobe()</a></code> and
-<code><a href="../reference/mediainfo.html">mediainfo()</a></code>, and from <code><a href="../reference/verify_media.html">verify_media()</a></code> — a probe
-that never answered is not an answer of “no”, and absorbing it there
-would blame a good output for the probe’s failure.</p>
-<p>It <strong>warns</strong> where one hung file must not discard the
-rest of the work. <code><a href="../reference/probe_all.html">probe_all()</a></code> and the
-<code>probe_*()</code> accessors, the MediaInfo readers and the
-<code>get_*()</code> helpers give an <code>NA</code> row and one warning
-at the end of the call. <code><a href="../reference/ffm_batch.html">ffm_batch()</a></code> and the
-<code>*_batch()</code> verbs mark the row <code>success = FALSE</code>,
-as for any failed job, and warn once at the end saying how many jobs
-timed out. The provenance manifest above warns that it could not read a
-version, and records <code>NA</code> for it.</p>
-<p>To act on either outcome in code, the abort carries the condition
-class <code>tidymedia_timeout</code>; the version-probe and
-dropped-track warnings carry <code>tidymedia_probe_timeout</code>, and
-the batch warning <code>tidymedia_batch_timeout</code>.</p>
+<p>A reached limit always gives an error or a warning. The task
+functions, <code><a href="../reference/ffm_run.html">ffm_run()</a></code>, the direct commands and
+<code><a href="../reference/verify_media.html">verify_media()</a></code> stop with an error.</p>
+<p>Functions that work on many files give a warning, so the other files
+are not lost. The metadata readers return a row of <code>NA</code>
+values. <code><a href="../reference/ffm_batch.html">ffm_batch()</a></code> and the <code>*_batch()</code> task
+functions mark the job with <code>success = FALSE</code>.</p>
+<p>To handle these in code, use the condition classes:</p>
+<ul>
+<li>
+<code>tidymedia_timeout</code> for the error.</li>
+<li>
+<code>tidymedia_probe_timeout</code> for a warning from a version
+check or a track check.</li>
+<li>
+<code>tidymedia_batch_timeout</code> for the warning from a
+batch.</li>
+</ul>
+<p>The warning from a metadata reader has no condition class of its
+own.</p>
+<p><code><a href="../reference/tidymedia-package.html">?tidymedia</a></code> lists which function gives which
+condition.</p>
 </div>
 </div>
 <div class="section level2">
@@ -394,17 +355,16 @@ the batch warning <code>tidymedia_batch_timeout</code>.</p>
 </h2>
 <ul>
 <li>
-<code><a href="../articles/workflow.html">vignette("workflow")</a></code> — an end-to-end preprocessing
-pipeline.</li>
+<code><a href="../articles/workflow.html">vignette("workflow")</a></code> shows a full research
+example.</li>
 <li>
-<code><a href="../articles/batch.html">vignette("batch")</a></code> — the jobs-tibble batch runner in
-depth.</li>
+<code><a href="../articles/batch.html">vignette("batch")</a></code> shows how to run a task function over
+many files.</li>
 <li>
-<code><a href="../articles/metadata.html">vignette("metadata")</a></code> — reading each file’s metadata as
-a tibble.</li>
+<code><a href="../articles/metadata.html">vignette("metadata")</a></code> shows how to read metadata into
+tibbles.</li>
 <li>
-<code><a href="../reference/tidymedia-package.html">?tidymedia</a></code> — the package’s option seams in one
-place.</li>
+<code><a href="../reference/tidymedia-package.html">?tidymedia</a></code> lists the package options in one place.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

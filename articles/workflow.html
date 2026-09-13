@@ -71,21 +71,21 @@
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jmgirard/tidymedia" class="external-link">tidymedia</a></span><span class="op">)</span></span></code></pre></div>
-<p>This vignette walks a realistic end-to-end pipeline: preparing a set
-of recorded <strong>dyadic-interaction sessions</strong> — two people in
-conversation, one camera each — for behavioral coding and acoustic
-analysis. It is the kind of job tidymedia is built for: the same handful
-of steps applied identically to every file, with a saved command for
-each so the whole pipeline is reproducible.</p>
-<p>Every step below uses <code>run = FALSE</code>, which
-<strong>compiles</strong> the FFmpeg command without executing it, so
-you can read exactly what each verb would do. Drop that argument to
-actually process the files. Chunks that describe operating over a whole
-folder are shown but not evaluated; where a step <em>is</em> evaluated
-we use the tiny sample clip that ships with the package:</p>
+<p>This page follows one research project from raw recordings to shared
+files. The study records conversations between two people, with one
+camera on each person. The recordings need the same steps before coding
+and sound analysis.</p>
+<p>tidymedia suits this job. Each step runs the same way on every file,
+and each step gives you a command that you can save and run again.</p>
+<p>Most examples below use <code>run = FALSE</code>. The function then
+returns the FFmpeg command without running it, so you can read what it
+would do. Leave out <code>run = FALSE</code> to process the files.</p>
+<p>Some examples work on a whole folder, so they are shown but not run.
+The others use the short sample clip that comes with the package:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">session</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span></code></pre></div>
-<p>Picture a study folder with one file per camera per session:</p>
+<p>Say the study folder has one file for each camera in each
+session:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">jobs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ffm_jobs.html">ffm_jobs</a></span><span class="op">(</span><span class="st">"study/raw"</span>, type <span class="op">=</span> <span class="st">"video"</span><span class="op">)</span></span>
 <span><span class="va">jobs</span></span>
@@ -96,22 +96,19 @@ we use the tiny sample clip that ships with the package:</p>
 <span><span class="co">#&gt; 2 /data/study/raw/session01_camB.mp4</span></span>
 <span><span class="co">#&gt; 3 /data/study/raw/session02_camA.mp4</span></span>
 <span><span class="co">#&gt; 4 /data/study/raw/session02_camB.mp4</span></span></code></pre></div>
-<p><code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> returns the jobs tibble the batch runners
-take: one row per file, with the file’s full path in an
-<code>input</code> column. The paths come back absolute for every file
-that resolves, however you spell the folder, which is why the output
-above shows the study folder at its full location rather than as
-<code>study/raw</code>. When the folder holds no video file,
-<code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> stops with an error rather than returning an
-empty table. The next section adds an <code>output</code> column to that
-table and hands it to a <code>*_batch()</code> verb.</p>
+<p><code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> returns a jobs table for the batch functions.
+It has one row for each file, with the file’s full path in an
+<code>input</code> column. The full path is why the output above shows
+<code>/data/study/raw</code> and not <code>study/raw</code>.</p>
+<p>If the folder has no video files, <code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> stops with
+an error. The next section adds an <code>output</code> column to the
+table and passes it to a <code>*_batch()</code> function.</p>
 <div class="section level2">
 <h2 id="standardize-the-recordings">1. Standardize the recordings<a class="anchor" aria-label="anchor" href="#standardize-the-recordings"></a>
 </h2>
-<p>Cameras rarely agree on resolution, frame rate, or codec, and
-inconsistent inputs make everything downstream harder.
-<code><a href="../reference/standardize_video.html">standardize_video()</a></code> re-encodes a file to a common
-target:</p>
+<p>Cameras often differ in picture size, <a href="tidymedia.html#glossary">frame rate</a> and <a href="tidymedia.html#glossary">codec</a>. Those differences make later
+steps harder. <code><a href="../reference/standardize_video.html">standardize_video()</a></code> <a href="tidymedia.html#glossary">re-encodes</a> a file to one common
+format:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/standardize_video.html">standardize_video</a></span><span class="op">(</span></span>
 <span>  <span class="va">session</span>, <span class="st">"session01_camA_std.mp4"</span>,</span>
@@ -119,99 +116,136 @@ target:</p>
 <span>  run <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"scale=w=1280:h=720,fps=30\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart -map \"0:v?\" -map \"0:a?\" \"session01_camA_std.mp4\""</span></span></code></pre></div>
-<p>Because this runs the same way for every file, reach for the batch
-sibling to do the whole folder from a jobs tibble (see
-<code><a href="../articles/batch.html">vignette("batch")</a></code> for the batch model). Every task verb has
-a <code>*_batch()</code> companion like this one:</p>
+<p>To do the same for the whole folder, use the batch version with the
+jobs table. Each task function has a <code>*_batch()</code> version like
+this one. See <code><a href="../articles/batch.html">vignette("batch")</a></code> for how batches work.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">jobs</span><span class="op">$</span><span class="va">output</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">"/raw/"</span>, <span class="st">"/std/"</span>, <span class="va">jobs</span><span class="op">$</span><span class="va">input</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/standardize_video_batch.html">standardize_video_batch</a></span><span class="op">(</span><span class="va">jobs</span>, width <span class="op">=</span> <span class="fl">1280</span>, height <span class="op">=</span> <span class="fl">720</span>, fps <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span></code></pre></div>
-<p>Re-encoding a large study can be slow on the CPU.
-<code><a href="../reference/standardize_video.html">standardize_video()</a></code>, <code><a href="../reference/format_for_web.html">format_for_web()</a></code> and the
-other verbs that re-encode video accept <code>hardware =</code> to move
-that encode onto the machine’s video hardware. There are two backends:
-<code>"nvenc"</code> for an NVIDIA GPU with an nvenc-capable FFmpeg, and
-<code>"videotoolbox"</code> for Apple hardware on macOS. Name the one
-this machine has, and check for it under the same name first:</p>
+<div class="section level3">
+<h3 id="using-video-hardware">Using video hardware<a class="anchor" aria-label="anchor" href="#using-video-hardware"></a>
+</h3>
+<p>Re-encoding a large study on the main processor can be slow.
+Functions that re-encode video, such as <code><a href="../reference/standardize_video.html">standardize_video()</a></code>
+and <code><a href="../reference/format_for_web.html">format_for_web()</a></code>, take a <code>hardware</code>
+argument. It moves the work to a <a href="tidymedia.html#glossary">hardware encoder</a>.</p>
+<p>There are two choices. Use <code>"nvenc"</code> for an NVIDIA
+graphics card, with an FFmpeg build that supports nvenc. Use
+<code>"videotoolbox"</code> for Apple hardware on macOS.</p>
+<p>These functions show what your FFmpeg can do.
+<code><a href="../reference/ffmpeg_codecs.html">ffmpeg_codecs()</a></code> and <code><a href="../reference/ffmpeg_encoders.html">ffmpeg_encoders()</a></code> list its
+codecs and encoders. <code><a href="../reference/hardware_encoder.html">hardware_encoder()</a></code> gives the encoder
+name for a codec and a hardware choice.
+<code><a href="../reference/hardware_encoder.html">has_hardware_encoder()</a></code> says whether your FFmpeg has that
+encoder:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Check availability first: this reflects the FFmpeg build, not a guarantee</span></span>
-<span><span class="co"># that the hardware behind it works at run time</span></span>
-<span><span class="fu"><a href="../reference/hardware_encoder.html">has_hardware_encoder</a></span><span class="op">(</span><span class="st">"h264"</span>, <span class="st">"videotoolbox"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/ffmpeg_codecs.html">ffmpeg_codecs</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 8</span></span></span>
+<span><span class="co">#&gt;   name       details           type  decoding encoding intraframe lossy lossless</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 012v       Uncompressed 4:2… Video TRUE     FALSE    TRUE       FALSE TRUE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 4xm        4X Movie          Video TRUE     FALSE    FALSE      TRUE  FALSE   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 8bps       QuickTime 8BPS v… Video TRUE     FALSE    TRUE       FALSE TRUE    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> a64_multi  Multicolor chars… Video FALSE    TRUE     TRUE       TRUE  FALSE   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> a64_multi5 Multicolor chars… Video FALSE    TRUE     TRUE       TRUE  FALSE   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> aasc       Autodesk RLE      Video TRUE     FALSE    FALSE      FALSE TRUE</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/standardize_video_batch.html">standardize_video_batch</a></span><span class="op">(</span></span>
+<span><span class="va">encoders</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ffmpeg_encoders.html">ffmpeg_encoders</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">encoders</span><span class="op">[</span><span class="va">encoders</span><span class="op">$</span><span class="va">type</span> <span class="op">==</span> <span class="st">"Video"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"name"</span>, <span class="st">"details"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 2</span></span></span>
+<span><span class="co">#&gt;   name      details                                                             </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> a64multi  Multicolor charset for Commodore 64 (codec a64_multi)               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> a64multi5 Multicolor charset for Commodore 64, extended with 5th color (colra…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> alias_pix Alias/Wavefront PIX image                                           </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> amv       AMV Video                                                           </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> apng      APNG (Animated Portable Network Graphics) image                     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> asv1      ASUS V1</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/hardware_encoder.html">hardware_encoder</a></span><span class="op">(</span><span class="st">"h264"</span>, <span class="st">"nvenc"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "h264_nvenc"</span></span>
+<span><span class="fu"><a href="../reference/hardware_encoder.html">hardware_encoder</a></span><span class="op">(</span><span class="st">"h264"</span>, <span class="st">"videotoolbox"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "h264_videotoolbox"</span></span>
+<span><span class="fu"><a href="../reference/hardware_encoder.html">has_hardware_encoder</a></span><span class="op">(</span><span class="st">"h264"</span>, <span class="st">"videotoolbox"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
+<p><code><a href="../reference/hardware_encoder.html">has_hardware_encoder()</a></code> checks how FFmpeg was built. A
+<code>TRUE</code> result does not prove that the hardware works. When it
+is <code>TRUE</code>, name that hardware in the batch:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/standardize_video_batch.html">standardize_video_batch</a></span><span class="op">(</span></span>
 <span>  <span class="va">jobs</span>, width <span class="op">=</span> <span class="fl">1280</span>, height <span class="op">=</span> <span class="fl">720</span>, fps <span class="op">=</span> <span class="fl">30</span>,</span>
 <span>  hardware <span class="op">=</span> <span class="st">"videotoolbox"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>If the backend you named is unavailable this errors by default, so a
-shared script never silently changes codec; pass
-<code>fallback = TRUE</code> to re-encode in software instead. The two
-backends cover different codec families — nvenc h264, hevc and av1,
-videotoolbox h264 and hevc — and asking one for a family it has no
-encoder for is an error naming that backend and that family. Hardware
-<em>decoding</em> (<code>-hwaccel</code>) and GPU filter pipelines are
-out of scope — reach for the <code><a href="../reference/ffmpeg.html">ffmpeg()</a></code> escape hatch
-there.</p>
+<p>If the hardware you name is not available, the call stops with an
+error. So a shared script never changes the codec without telling you.
+Add <code>fallback = TRUE</code> to use the main processor instead.</p>
+<p>The two choices support different codecs. NVIDIA nvenc supports
+H.264, HEVC and AV1. Apple videotoolbox supports H.264 and HEVC. A codec
+that the hardware does not support is an error that names both.</p>
+<p>tidymedia does not do hardware decoding or run filters on a graphics
+card. For those, use the direct command <code><a href="../reference/ffmpeg.html">ffmpeg()</a></code>.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="prepare-the-audio">2. Prepare the audio<a class="anchor" aria-label="anchor" href="#prepare-the-audio"></a>
 </h2>
-<p>Acoustic and transcription tools want clean, consistently loud audio.
-<code><a href="../reference/normalize_audio.html">normalize_audio()</a></code> brings a file to a target integrated
-loudness (here −23 LUFS, the EBU R128 broadcast reference). Its output
-is <strong>one audio stream and no video</strong>, so name an audio file
-for it — normalizing into a video container would give you a
-<code>.mp4</code> carrying nothing but sound:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<p>Sound analysis and transcription tools work best with clean audio at
+an even loudness. <code><a href="../reference/normalize_audio.html">normalize_audio()</a></code> sets a file’s loudness
+to a target. Here the target is -23 <a href="tidymedia.html#glossary">LUFS</a>, the level that the EBU R 128
+broadcast standard uses.</p>
+<p>The output of <code><a href="../reference/normalize_audio.html">normalize_audio()</a></code> has one audio <a href="tidymedia.html#glossary">stream</a> and no video. So give it an
+audio file name. An <code>.mp4</code> name would give you a video file
+with sound and no picture:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/normalize_audio.html">normalize_audio</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_norm.wav"</span>,</span>
 <span>                target_loudness <span class="op">=</span> <span class="op">-</span><span class="fl">23</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0\" -map \"0:a:0\" \"session01_camA_norm.wav\""</span></span></code></pre></div>
-<p>To normalize a recording’s loudness <em>and</em> keep its picture,
-normalize to an audio file as above and mux it back with the
-<code><a href="../reference/ffmpeg.html">ffmpeg()</a></code> escape hatch.</p>
-<p>To hand the speech to a transcription or acoustic-analysis tool, pull
-the audio into a standalone file. <code><a href="../reference/convert_audio.html">convert_audio()</a></code>
-transcodes to whatever the output extension implies — a
-<code>.wav</code> for an automatic-speech-recognition pipeline:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p>To set the loudness and keep the picture, first write the audio file
+as above. Then use the direct command <code><a href="../reference/ffmpeg.html">ffmpeg()</a></code> to put it
+back with the video.</p>
+<p>A transcription tool needs the audio in its own file.
+<code><a href="../reference/convert_audio.html">convert_audio()</a></code> converts the audio to the format that the
+output extension names. Here that is a <code>.wav</code> file for a
+speech recognition tool:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/convert_audio.html">convert_audio</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA.wav"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map \"0:a:0\" \"session01_camA.wav\""</span></span></code></pre></div>
-<p>(If you only need the audio <em>without</em> re-encoding,
-<code><a href="../reference/extract_audio.html">extract_audio()</a></code> stream-copies it instead — see
-<code><a href="../articles/tidymedia.html">vignette("tidymedia")</a></code>.)</p>
+<p>If you need the audio as it is, <code><a href="../reference/extract_audio.html">extract_audio()</a></code> copies
+it without converting it. See <code><a href="../articles/tidymedia.html">vignette("tidymedia")</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="frames-for-visual-coding">3. Frames for visual coding<a class="anchor" aria-label="anchor" href="#frames-for-visual-coding"></a>
 </h2>
-<p>Frame-by-frame coding of facial behavior or gesture needs stills.
-<code><a href="../reference/extract_frame.html">extract_frame()</a></code> grabs a single frame at a timestamp — handy
-for a coding-manual illustration:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<p>Coding facial expressions or gestures frame by frame needs still
+images. <code><a href="../reference/extract_frame.html">extract_frame()</a></code> saves one frame at a given time.
+This is useful for a picture in a coding manual:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/extract_frame.html">extract_frame</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_t30.png"</span>, timestamp <span class="op">=</span> <span class="fl">30</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -ss 30 -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -avoid_negative_ts make_zero -qmin 1 -q:v 1 -qscale:v 2 -frames:v 1 -huffman optimal \"session01_camA_t30.png\""</span></span></code></pre></div>
-<p><code><a href="../reference/sample_frames.html">sample_frames()</a></code> samples at a fixed rate into a numbered
-image sequence — one frame per second here, ready for a manual or
-computer-vision coding pass:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<p><code><a href="../reference/sample_frames.html">sample_frames()</a></code> saves frames at a fixed rate, as
+numbered image files. Here it saves one frame per second, for coding by
+hand or by a computer vision tool:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sample_frames.html">sample_frames</a></span><span class="op">(</span><span class="st">"session01_camA_std.mp4"</span>, outdir <span class="op">=</span> <span class="st">"frames/session01_camA"</span>,</span>
 <span>              fps <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="de-identify-before-sharing">4. De-identify before sharing<a class="anchor" aria-label="anchor" href="#de-identify-before-sharing"></a>
 </h2>
-<p>Sharing recordings with remote coders usually means removing
-identifying information first. Two verbs cover the common cases.</p>
-<p><code><a href="../reference/strip_metadata.html">strip_metadata()</a></code> removes container-level metadata —
-camera model, GPS coordinates, recording timestamps — without touching
-the audio or video streams:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<p>Before you share recordings with coders, you often must remove
+information that identifies people. Two task functions cover the common
+cases.</p>
+<p><code><a href="../reference/strip_metadata.html">strip_metadata()</a></code> removes the file’s metadata, such as
+the camera model, GPS location and recording time. It does not change
+the audio or the video:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/strip_metadata.html">strip_metadata</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_clean.mp4"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -codec:a copy -map_metadata -1 -map_chapters -1 -fflags +bitexact -map \"0\" \"session01_camA_clean.mp4\""</span></span></code></pre></div>
-<p><code><a href="../reference/anonymize_video.html">anonymize_video()</a></code> box-fills one or more <strong>fixed
-rectangles</strong> you specify. This is not face tracking — you give it
-the coordinates of a region that stays put, such as an on-screen name
-caption or a fixed nameplate, and it paints a solid box over it. Regions
-are a data frame, one row per box:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<p><code><a href="../reference/anonymize_video.html">anonymize_video()</a></code> fills one or more rectangles with a
+solid color. It does not find or follow faces. You give the position of
+an area that does not move, such as a name caption on screen. You give
+the areas as a data frame, with one row for each box:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">regions</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
 <span>  x <span class="op">=</span> <span class="fl">16</span>, y <span class="op">=</span> <span class="fl">640</span>, width <span class="op">=</span> <span class="fl">360</span>, height <span class="op">=</span> <span class="fl">64</span>  <span class="co"># lower-left name caption</span></span>
 <span><span class="op">)</span></span>
@@ -223,54 +257,52 @@ are a data frame, one row per box:</p>
 <h2 id="assemble-and-share">5. Assemble and share<a class="anchor" aria-label="anchor" href="#assemble-and-share"></a>
 </h2>
 <p>If a session was recorded in parts, <code><a href="../reference/concatenate_videos.html">concatenate_videos()</a></code>
-joins them back into one file (the parts must share a codec and
-container — they do here, since step 1 standardized them):</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+joins the parts into one file. The parts must have the same codec, <a href="tidymedia.html#glossary">container</a>, picture size and frame
+rate. Here they do, because step 1 made them the same:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/concatenate_videos.html">concatenate_videos</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"session01_camA_part1.mp4"</span>, <span class="st">"session01_camA_part2.mp4"</span><span class="op">)</span>,</span>
 <span>  <span class="st">"session01_camA_full.mp4"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>Finally, <code><a href="../reference/format_for_web.html">format_for_web()</a></code> produces a lightweight,
-broadly compatible H.264 file with fast-start enabled, so coders can
-stream it in a browser without a large download:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<p>Last, <code><a href="../reference/format_for_web.html">format_for_web()</a></code> makes an H.264 file that most
+browsers can play. It moves the file’s index to the start, so coders can
+watch it in a browser before it has fully downloaded:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/format_for_web.html">format_for_web</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_share.mp4"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a aac -pix_fmt yuv420p -movflags +faststart -map \"0:v?\" -map \"0:a?\" \"session01_camA_share.mp4\""</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="reproducibility">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility"></a>
 </h2>
-<p>Every verb returns the exact FFmpeg command it compiled. Capturing
-those strings — or running the pipeline through the batch runner, which
-collects them in a <code>command</code> column — gives you a complete,
-re-runnable record of how each processed file was produced. That record
-is the point: the pipeline above is not a one-off, but a specification
-you can re-apply to the next cohort of recordings.</p>
-<p>The command says what you asked for. To record what actually happened
-— the FFmpeg version that ran, when, and checksums of what went in and
-came out — run the batch with <code>manifest = TRUE</code> and read it
-back with <code><a href="../reference/ffm_manifest.html">ffm_manifest()</a></code>. To confirm each output really has
-the duration, dimensions and codecs you asked for, check it with
-<code><a href="../reference/verify_media.html">verify_media()</a></code>. Both, and the wall-clock limit that keeps a
-hung file from taking the session with it, are covered in
-<code><a href="../articles/verification.html">vignette("verification")</a></code>.</p>
+<p>Each task function returns the FFmpeg command it used. A batch run
+also keeps these commands, in a <code>command</code> column. Save the
+commands, and you have a full record of how each file was made. You can
+then run the same steps on the next group of recordings.</p>
+<p>The command records what you asked for. A manifest records what
+happened: the FFmpeg version, the time, and checksums of the files. Run
+the batch with <code>manifest = TRUE</code> and read the manifest with
+<code><a href="../reference/ffm_manifest.html">ffm_manifest()</a></code>.</p>
+<p>To check that each output has the duration, size and codecs you asked
+for, use <code><a href="../reference/verify_media.html">verify_media()</a></code>.
+<code><a href="../articles/verification.html">vignette("verification")</a></code> covers both, and also shows how to
+stop a file that hangs.</p>
 </div>
 <div class="section level2">
 <h2 id="where-to-next">Where to next<a class="anchor" aria-label="anchor" href="#where-to-next"></a>
 </h2>
 <ul>
 <li>
-<code><a href="../articles/batch.html">vignette("batch")</a></code> — the jobs-tibble batch runner in
-depth.</li>
+<code><a href="../articles/batch.html">vignette("batch")</a></code> explains the batch functions in more
+detail.</li>
 <li>
-<code><a href="../articles/metadata.html">vignette("metadata")</a></code> — reading each file’s metadata as
-a tibble.</li>
+<code><a href="../articles/metadata.html">vignette("metadata")</a></code> shows how to read each file’s
+metadata into a tibble.</li>
 <li>
-<code><a href="../articles/verification.html">vignette("verification")</a></code> — checking outputs, recording
-provenance, bounding a run that hangs.</li>
+<code><a href="../articles/verification.html">vignette("verification")</a></code> shows how to check outputs,
+record how files were made and limit run time.</li>
 <li>
-<code><a href="../articles/tidymedia.html">vignette("tidymedia")</a></code> — the task verbs and the builder
-beneath them.</li>
+<code><a href="../articles/tidymedia.html">vignette("tidymedia")</a></code> explains the task functions and
+the pipeline functions.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

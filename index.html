@@ -61,7 +61,7 @@
 </h1></div>
 <!-- badges: start -->
 
-<p>The goal of <strong>tidymedia</strong> is to provide tools for easily working with media (e.g., image, audio, and video) files within R and the tidyverse. It wraps <a href="https://ffmpeg.org/" class="external-link">FFmpeg</a> and <a href="https://mediaarea.net/en/MediaInfo" class="external-link">MediaInfo</a> for <strong>reproducible media preprocessing</strong> — batch trimming, cropping, format standardization, and metadata extraction as tibbles.</p>
+<p><strong>tidymedia</strong> helps you work with video, audio and image files in R. It runs <a href="https://ffmpeg.org/" class="external-link">FFmpeg</a> and <a href="https://mediaarea.net/en/MediaInfo" class="external-link">MediaInfo</a> for you, so you can prepare media for research in a way you can repeat. It trims, crops and converts files, often many at once. It also reads media metadata into tibbles.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -72,69 +72,12 @@
 <div class="section level3">
 <h3 id="dependencies">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies"></a>
 </h3>
-<div class="section level4">
-<h4 id="id_1-mediainfo">1. MediaInfo<a class="anchor" aria-label="anchor" href="#id_1-mediainfo"></a>
-</h4>
-<p><strong>tidymedia</strong> uses <a href="https://mediaarea.net/en/MediaInfo" class="external-link">MediaInfo</a> to query information about media files. If you would like to use these functions, you will need to install the command line interface (CLI) version of this program. Links and instructions for doing so are available <a href="https://mediaarea.net/en/MediaInfo/Download" class="external-link">here</a>. Below are instructions for several popular platforms.</p>
-<p><strong>Debian/Ubuntu</strong></p>
-<ol style="list-style-type: decimal">
-<li>Enter this code into your terminal:<br><code>sudo apt-get install mediainfo</code>
-</li>
-<li>Check that R can find it:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>mediainfo</code> row should show a location and a version. If its location is <code>NA</code>, tidymedia cannot see the program: give it the path yourself with <code>tidymedia::set_mediainfo("/path/to/mediainfo")</code>.</li>
-</ol>
-<p><strong>Windows</strong></p>
-<ol style="list-style-type: decimal">
-<li>Download the appropriate CLI .zip file from:<br><a href="https://mediaarea.net/en/MediaInfo/Download/Windows" class="external-link uri">https://mediaarea.net/en/MediaInfo/Download/Windows</a>
-</li>
-<li>Extract (or copy) the contents of this .zip file to a folder on your computer such as:<br><code>C:/Program Files/MediaInfo</code>
-</li>
-<li>Run the following code in R (changing the path to match Step 2):<br><code>tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")</code><br> This asks you to confirm the path before it remembers it. In a script with no one to ask, add <code>confirm = FALSE</code>.</li>
-<li>Check that R can find it:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>mediainfo</code> row should show a location and a version. If its location is <code>NA</code>, the path in Step 3 is not where <code>mediainfo.exe</code> actually landed: look in the folder from Step 2 and run <code><a href="reference/set_program.html">tidymedia::set_mediainfo()</a></code> again with the path you find there.</li>
-</ol>
-<p><strong>Mac</strong></p>
-<ol style="list-style-type: decimal">
-<li>Download the appropriate CLI .dmg file from:<br><a href="https://mediaarea.net/en/MediaInfo/Download/Mac_OS" class="external-link uri">https://mediaarea.net/en/MediaInfo/Download/Mac_OS</a>
-</li>
-<li>Open the .dmg file and drag the program icon to the Applications folder</li>
-<li>The Applications folder is not on the <code>PATH</code>, so tell tidymedia where the program landed (changing the path to match Step 2):<br><code>tidymedia::set_mediainfo("/Applications/mediainfo")</code><br> This asks you to confirm the path before it remembers it, and it is remembered across R sessions.</li>
-<li>Check that R can find it:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>mediainfo</code> row should show a location and a version. If its location is <code>NA</code>, the path in Step 3 is not where the program actually landed: find it in the Applications folder and run <code><a href="reference/set_program.html">tidymedia::set_mediainfo()</a></code> again with that path.</li>
-</ol>
-</div>
-<div class="section level4">
-<h4 id="id_2-ffmpeg">2. FFmpeg<a class="anchor" aria-label="anchor" href="#id_2-ffmpeg"></a>
-</h4>
-<p><strong>tidymedia</strong> uses <a href="https://ffmpeg.org/" class="external-link">FFmpeg</a> to encode media files. If you would like to use these functions, you will need to install the command line interface (CLI) version of this program. Links and instructions for doing so are available <a href="https://ffmpeg.org/download.html" class="external-link">here</a>. Below are instructions for several popular platforms.</p>
-<p><strong>Debian/Ubuntu</strong></p>
-<ol style="list-style-type: decimal">
-<li>Enter this code into your terminal:<br><code>sudo apt-get install ffmpeg</code>
-</li>
-<li>Check that R can find it:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>ffmpeg</code> and <code>ffprobe</code> rows should show locations and versions. If either is <code>NA</code>, tidymedia cannot see that program: give it the path yourself with <code>tidymedia::set_ffmpeg("/path/to/ffmpeg")</code> or <code>tidymedia::set_ffprobe("/path/to/ffprobe")</code>. The two are looked up separately, so a row that is still <code>NA</code> needs its own call.</li>
-</ol>
-<p><strong>Windows</strong></p>
-<ol style="list-style-type: decimal">
-<li>Install the <code>tidymedia</code> package in R.</li>
-<li>Run <code><a href="reference/install_on_win.html">tidymedia::install_on_win()</a></code> in R and confirm the prompt, which names the digest and the archive it will download, the directory it will unpack into, and the program locations it may overwrite. The archive is checked against the SHA-256 digest gyan.dev publishes beside it before anything is unpacked, and no program location is remembered unless the extraction produced that program. To install from a different build, pass its address and its digest: <code>install_on_win(download_url = ..., archive_checksum = ...)</code>.</li>
-<li>Check that R can find it:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>ffmpeg</code> and <code>ffprobe</code> rows should show locations and versions. If either is <code>NA</code>, tidymedia cannot see that program: read the message <code><a href="reference/install_on_win.html">install_on_win()</a></code> printed, or point tidymedia at a build you already have with <code>tidymedia::set_ffmpeg("C:/path/to/ffmpeg.exe")</code> or <code>tidymedia::set_ffprobe("C:/path/to/ffprobe.exe")</code>. The two are looked up separately, so a row that is still <code>NA</code> needs its own call.</li>
-</ol>
-<p><strong>macOS Homebrew Install</strong></p>
-<ol style="list-style-type: decimal">
-<li>Open the macOS Terminal or Linux shell prompt.</li>
-<li>Install <a href="https://brew.sh/" class="external-link">Homebrew</a> by entering this code into your terminal:<br><code>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</code>
-</li>
-<li>Enter this code into your terminal:<br><code>brew install ffmpeg</code>
-</li>
-<li>Check that R can find it:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>ffmpeg</code> and <code>ffprobe</code> rows should show locations and versions. If either is <code>NA</code>, tidymedia cannot see that program: run <code>brew --prefix ffmpeg</code> in the terminal and give tidymedia the <code>bin/ffmpeg</code> and <code>bin/ffprobe</code> under what it prints, with <code>tidymedia::set_ffmpeg("/path/to/ffmpeg")</code> and <code>tidymedia::set_ffprobe("/path/to/ffprobe")</code>. The two are looked up separately, so a row that is still <code>NA</code> needs its own call.</li>
-</ol>
-<p><strong>macOS Manual Install</strong></p>
-<ol style="list-style-type: decimal">
-<li>Download the latest snapshot version from:<br><a href="https://evermeet.cx/ffmpeg/get" class="external-link uri">https://evermeet.cx/ffmpeg/get</a><br> That address gives you <code>ffmpeg</code> on its own. The metadata functions also need <code>ffprobe</code>, which is a separate download:<br><a href="https://evermeet.cx/ffmpeg/getrelease/ffprobe/7z" class="external-link uri">https://evermeet.cx/ffmpeg/getrelease/ffprobe/7z</a>
-</li>
-<li>Extract the contents of each downloaded <a href="https://www.7-zip.org/" class="external-link">.7z</a> file</li>
-<li>Drag the extracted contents to the Applications folder</li>
-<li>The Applications folder is not on the <code>PATH</code>, so nothing looking a program up by name will find it there. Tell tidymedia where each program landed (changing the paths to match Step 3):<br><code>tidymedia::set_ffmpeg("/Applications/ffmpeg")</code><br><code>tidymedia::set_ffprobe("/Applications/ffprobe")</code><br> Each asks you to confirm the path before it remembers it, and it is remembered across R sessions. Set both: the two programs are looked up separately, so setting <code>ffmpeg</code> does not tell tidymedia where <code>ffprobe</code> is.</li>
-<li>Check that R can find them:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code><br> The <code>ffmpeg</code> and <code>ffprobe</code> rows should show locations and versions. If either is <code>NA</code>, the path you gave in Step 4 is not where that program actually landed: find it in the Applications folder and run the call again with that path.</li>
-</ol>
-</div>
+<p>tidymedia uses two free command-line programs. <a href="https://ffmpeg.org/" class="external-link">FFmpeg</a> converts media files and comes with FFprobe, which reads them. <a href="https://mediaarea.net/en/MediaInfo" class="external-link">MediaInfo</a> also reads media files. Install the ones you need.</p>
+<p><strong>Debian and Ubuntu.</strong> In a terminal, run:<br><code>sudo apt-get install ffmpeg mediainfo</code></p>
+<p><strong>macOS.</strong> Install <a href="https://brew.sh/" class="external-link">Homebrew</a>. Then, in a terminal, run:<br><code>brew install ffmpeg media-info</code></p>
+<p><strong>Windows.</strong> For FFmpeg, run <code><a href="reference/install_on_win.html">tidymedia::install_on_win()</a></code> in R. It asks you to confirm before it downloads anything. For MediaInfo, download the CLI version from the <a href="https://mediaarea.net/en/MediaInfo/Download/Windows" class="external-link">MediaInfo download page</a> and unzip it to a folder such as <code>C:/Program Files/MediaInfo</code>. Then tell tidymedia where the program is:<br><code>tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")</code></p>
+<p><strong>Check the install.</strong> In R, run:<br><code><a href="reference/program_status.html">tidymedia::program_status()</a></code></p>
+<p>Each program that tidymedia found shows a location and a version. If a location is <code>NA</code>, give tidymedia the path with <code><a href="reference/set_program.html">set_ffmpeg()</a></code>, <code><a href="reference/set_program.html">set_ffprobe()</a></code> or <code><a href="reference/set_program.html">set_mediainfo()</a></code>. On macOS, run <code>brew --prefix ffmpeg</code> in a terminal. FFmpeg and FFprobe are in the <code>bin</code> folder of the path that it prints. The help pages <code><a href="reference/set_program.html">?set_program</a></code> and <code><a href="reference/install_on_win.html">?install_on_win</a></code> give the details.</p>
 </div>
 </div>
 <div class="section level2">
@@ -142,14 +85,14 @@
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jmgirard/tidymedia" class="external-link">tidymedia</a></span><span class="op">)</span></span></code></pre></div>
-<p>The examples below use a tiny sample clip that ships with the package, copied into the working folder so the paths they print stay short:</p>
+<p>The examples below use a short sample clip that comes with the package. They copy it to the working folder, so the paths they print stay short:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.copy</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span>, <span class="st">"."</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">video</span> <span class="op">&lt;-</span> <span class="st">"sample.mp4"</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="build-reproducible-ffmpeg-commands">Build reproducible FFmpeg commands<a class="anchor" aria-label="anchor" href="#build-reproducible-ffmpeg-commands"></a>
 </h3>
-<p>The <code>ffm_*</code> builder assembles a command step by step. Nothing runs until you ask it to: <code><a href="reference/ffm_compile.html">ffm_compile()</a></code> returns the exact FFmpeg command as a string, and <code><a href="reference/ffm_run.html">ffm_run()</a></code> executes it. See <code><a href="articles/tidymedia.html">vignette("tidymedia")</a></code> for the full tour.</p>
+<p>The pipeline functions, whose names start with <code>ffm_</code>, build an FFmpeg command one step at a time. Nothing runs until you ask. <code><a href="reference/ffm_compile.html">ffm_compile()</a></code> returns the command as a string, and <code><a href="reference/ffm_run.html">ffm_run()</a></code> runs it. See <code><a href="articles/tidymedia.html">vignette("tidymedia")</a></code> for a full tour.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/ffm_files.html">ffm_files</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"output.mp4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/ffm_trim.html">ffm_trim</a></span><span class="op">(</span>start <span class="op">=</span> <span class="fl">1</span>, end <span class="op">=</span> <span class="fl">5</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -158,7 +101,7 @@
 <span>  <span class="fu"><a href="reference/ffm_drop.html">ffm_drop</a></span><span class="op">(</span>streams <span class="op">=</span> <span class="st">"audio"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/ffm_compile.html">ffm_compile</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""</span></span></code></pre></div>
-<p>Common tasks have their own verbs (Layer 2). Pass <code>run = FALSE</code> to see the command without executing it:</p>
+<p>Common jobs have their own task functions. Add <code>run = FALSE</code> to see the command without running it:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/extract_audio.html">extract_audio</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.aac"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"sample.mp4\" -codec:a copy -vn -map \"0:a:0\" \"audio.aac\""</span></span></code></pre></div>
@@ -166,7 +109,8 @@
 <div class="section level3">
 <h3 id="process-a-folder-in-batch">Process a folder in batch<a class="anchor" aria-label="anchor" href="#process-a-folder-in-batch"></a>
 </h3>
-<p><code><a href="reference/ffm_jobs.html">ffm_jobs()</a></code> turns a folder into a jobs table, one row per media file. Some <code>*_batch()</code> verbs, such as <code><a href="reference/crop_video_batch.html">crop_video_batch()</a></code>, take that table as it is; others need a column added first, such as an <code>output</code>. When the folder holds no file of the type you ask for, <code><a href="reference/ffm_jobs.html">ffm_jobs()</a></code> stops with an error rather than returning an empty table. See <code><a href="articles/batch.html">vignette("batch")</a></code> for more.</p>
+<p><code><a href="reference/ffm_jobs.html">ffm_jobs()</a></code> turns a folder into a jobs table, with one row for each media file. Some <code>*_batch()</code> functions, such as <code><a href="reference/crop_video_batch.html">crop_video_batch()</a></code>, take that table as it is. Others need a column added first, such as <code>output</code>.</p>
+<p>If the folder has no files of the type you ask for, <code><a href="reference/ffm_jobs.html">ffm_jobs()</a></code> stops with an error. See <code><a href="articles/batch.html">vignette("batch")</a></code> for more.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">jobs</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ffm_jobs.html">ffm_jobs</a></span><span class="op">(</span><span class="st">"."</span>, type <span class="op">=</span> <span class="st">"video"</span><span class="op">)</span></span>
 <span><span class="co"># ffm_jobs() returns full paths; keep only the file name so this page stays</span></span>
@@ -181,7 +125,7 @@
 <div class="section level3">
 <h3 id="read-metadata-as-tibbles">Read metadata as tibbles<a class="anchor" aria-label="anchor" href="#read-metadata-as-tibbles"></a>
 </h3>
-<p><code><a href="reference/probe_all.html">probe_all()</a></code> returns container- and stream-level metadata from FFprobe as tibbles, keyed by a leading <code>file</code> column so a whole batch stacks cleanly:</p>
+<p><code><a href="reference/probe_all.html">probe_all()</a></code> uses FFprobe to read facts about the <a href="https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary">container</a> and each <a href="https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary">stream</a>. It returns them as tibbles. Each tibble starts with a <code>file</code> column, so the results for many files stack into one table:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/probe_all.html">probe_all</a></span><span class="op">(</span><span class="va">video</span><span class="op">)</span><span class="op">$</span><span class="va">streams</span></span>
 <span><span class="co">#&gt; # A tibble: 2 × 69</span></span>
@@ -196,7 +140,7 @@
 <span><span class="co">#&gt; #   color_primaries &lt;chr&gt;, chroma_location &lt;chr&gt;, field_order &lt;chr&gt;,</span></span>
 <span><span class="co">#&gt; #   is_avc &lt;chr&gt;, nal_length_size &lt;int&gt;, id &lt;chr&gt;, r_frame_rate &lt;chr&gt;,</span></span>
 <span><span class="co">#&gt; #   avg_frame_rate &lt;chr&gt;, time_base &lt;chr&gt;, start_pts &lt;int&gt;, start_time &lt;dbl&gt;, …</span></span></code></pre></div>
-<p>MediaInfo is available too, via <code><a href="reference/mediainfo_query.html">mediainfo_query()</a></code>, <code><a href="reference/mediainfo_template.html">mediainfo_template()</a></code>, and the <code>get_*()</code> shortcuts (see <code><a href="articles/metadata.html">vignette("metadata")</a></code>):</p>
+<p>MediaInfo works too, through <code><a href="reference/mediainfo_query.html">mediainfo_query()</a></code>, <code><a href="reference/mediainfo_template.html">mediainfo_template()</a></code> and the <code>get_*()</code> functions. See <code><a href="articles/metadata.html">vignette("metadata")</a></code>.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/get_duration.html">get_duration</a></span><span class="op">(</span><span class="va">video</span>, unit <span class="op">=</span> <span class="st">"sec"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1</span></span>
@@ -206,6 +150,7 @@
 <div class="section level3">
 <h3 id="query-ffmpegs-capabilities">Query FFmpeg’s capabilities<a class="anchor" aria-label="anchor" href="#query-ffmpegs-capabilities"></a>
 </h3>
+<p><code><a href="reference/ffmpeg_codecs.html">ffmpeg_codecs()</a></code> lists the <a href="https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary">codecs</a> that your FFmpeg build knows:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="reference/ffmpeg_codecs.html">ffmpeg_codecs</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 6 × 8</span></span>

@@ -71,29 +71,29 @@
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jmgirard/tidymedia" class="external-link">tidymedia</a></span><span class="op">)</span></span></code></pre></div>
-<p>Batch processing over many files is what tidymedia is built for. The
-examples below use <code>run = FALSE</code>, which
-<strong>compiles</strong> each FFmpeg command without executing it — so
-you can inspect exactly what would run. Drop that argument (or set
-<code>run = TRUE</code>) to actually process the files.</p>
+<p>tidymedia is made for running the same job on many files. The
+examples on this page use <code>run = FALSE</code>. Each function then
+returns its FFmpeg commands without running them, so you can read them
+first. Leave out <code>run = FALSE</code> to process the files.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">folder</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span>
 <span><span class="va">video</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample.mp4"</span>, package <span class="op">=</span> <span class="st">"tidymedia"</span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="the-batch-runner">The batch runner<a class="anchor" aria-label="anchor" href="#the-batch-runner"></a>
 </h2>
-<p><code><a href="../reference/ffm_batch.html">ffm_batch()</a></code> is the general-purpose engine: it takes a
-<strong>jobs tibble</strong> (one row per output) and a function that
-turns a row into a pipeline. Each column is passed to the function by
-name, <code><a href="https://purrr.tidyverse.org/reference/pmap.html" class="external-link">purrr::pmap()</a></code>-style, and the runner returns your jobs
-tibble with a <code>command</code> column added (and a
-<code>success</code> column when <code>run = TRUE</code>).</p>
-<p><code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> builds that tibble from a folder: one row per
-file of the media type you ask for, with the file’s full path in an
-<code>input</code> column. When the folder holds no file of that type,
-<code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> stops with an error rather than returning an
-empty table. Add any other columns your function needs, here an
-<code>output</code> for each input:</p>
+<p><code><a href="../reference/ffm_batch.html">ffm_batch()</a></code> runs a job for each row of a jobs table. You
+also give it a function, <code>.f</code>, that turns one row into a
+pipeline. Each column of the table goes to <code>.f</code> as an
+argument of the same name, as in <code><a href="https://purrr.tidyverse.org/reference/pmap.html" class="external-link">purrr::pmap()</a></code>.</p>
+<p><code><a href="../reference/ffm_batch.html">ffm_batch()</a></code> returns your jobs table with a
+<code>command</code> column added. When <code>run = TRUE</code>, it also
+adds a <code>success</code> column.</p>
+<p><code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> makes a jobs table from a folder. It has one
+row for each file of the media type you ask for, with the file’s full
+path in an <code>input</code> column. If the folder has no such files,
+<code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> stops with an error.</p>
+<p>Add any other columns that <code>.f</code> needs. Here each input
+gets an <code>output</code>:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">jobs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ffm_jobs.html">ffm_jobs</a></span><span class="op">(</span><span class="va">folder</span>, type <span class="op">=</span> <span class="st">"video"</span><span class="op">)</span></span>
 <span><span class="va">jobs</span><span class="op">$</span><span class="va">output</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="fu">tools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/tools/fileutils.html" class="external-link">file_path_sans_ext</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">jobs</span><span class="op">$</span><span class="va">input</span><span class="op">)</span><span class="op">)</span>, <span class="st">".mp3"</span><span class="op">)</span></span>
@@ -107,27 +107,24 @@ empty table. Add any other columns your function needs, here an
 <span><span class="co">#&gt;   input                                                        output    command</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 sample.m… <span style="color: #949494;">"</span>-y -i…</span></span></code></pre></div>
-<p>Because you build the pipeline yourself, any combination of builder
-verbs is available per job. Give <code>.f</code> a <code>...</code>
-argument so it tolerates extra job columns it does not use: without one,
-a column <code>.f</code> has no argument for stops the batch with R’s
-“unused argument” error.</p>
+<p>You write the pipeline, so each job can use any pipeline functions.
+Give <code>.f</code> a <code>...</code> argument, so that it accepts
+table columns it does not use. Without <code>...</code>, such a column
+stops the batch with R’s “unused argument” error.</p>
 </div>
 <div class="section level2">
-<h2 id="per-verb-batch-siblings">Per-verb batch siblings<a class="anchor" aria-label="anchor" href="#per-verb-batch-siblings"></a>
+<h2 id="batch-task-functions">Batch task functions<a class="anchor" aria-label="anchor" href="#batch-task-functions"></a>
 </h2>
-<p>You do not have to write <code>.f</code> by hand for the common jobs.
-Every task verb ships a <code>*_batch()</code> companion —
+<p>For common jobs, you do not need to write <code>.f</code>. Each task
+function has a <code>*_batch()</code> version that takes a jobs table
+and runs the task on each row. Examples are
 <code><a href="../reference/extract_audio_batch.html">extract_audio_batch()</a></code>, <code><a href="../reference/convert_audio_batch.html">convert_audio_batch()</a></code>,
-<code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code>, <code><a href="../reference/standardize_video_batch.html">standardize_video_batch()</a></code>,
-<code><a href="../reference/normalize_audio_batch.html">normalize_audio_batch()</a></code>, and the rest — that takes a jobs
-tibble directly and applies the verb to each row.
-<code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code> can take the table straight from
-<code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code>; others, such as
-<code><a href="../reference/extract_audio_batch.html">extract_audio_batch()</a></code>, refuse it until you add an
-<code>output</code> column. <code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> again stops with an
-error rather than returning an empty table when the folder holds no file
-of the type:</p>
+<code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code>, <code><a href="../reference/standardize_video_batch.html">standardize_video_batch()</a></code>
+and <code><a href="../reference/normalize_audio_batch.html">normalize_audio_batch()</a></code>.</p>
+<p>Some batch functions, such as <code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code>, can
+take the table from <code><a href="../reference/ffm_jobs.html">ffm_jobs()</a></code> as it is. Others, such as
+<code><a href="../reference/extract_audio_batch.html">extract_audio_batch()</a></code>, need an <code>output</code> column
+first:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">jobs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ffm_jobs.html">ffm_jobs</a></span><span class="op">(</span><span class="va">folder</span>, type <span class="op">=</span> <span class="st">"video"</span><span class="op">)</span></span>
 <span><span class="va">jobs</span><span class="op">$</span><span class="va">output</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="fu">tools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/tools/fileutils.html" class="external-link">file_path_sans_ext</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">jobs</span><span class="op">$</span><span class="va">input</span><span class="op">)</span><span class="op">)</span>, <span class="st">"_cropped.mp4"</span><span class="op">)</span></span>
@@ -138,22 +135,20 @@ of the type:</p>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 sample_c… <span style="color: #949494;">"</span>-y -i…</span></span></code></pre></div>
 <p>Without an <code>output</code> column,
-<code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code> names each output after its input,
-adding <code>_cropped</code>, in the input’s own folder. Here that
-folder is inside the installed package, so the example adds an
-<code>output</code> column that puts the files in the working directory
-instead. Either way <code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code> rejects two rows
-that would resolve to the same output path.
-<code><a href="../articles/workflow.html">vignette("workflow")</a></code> chains several of these across a study
-folder.</p>
+<code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code> adds <code>_cropped</code> to each input
+name and writes to the input’s folder. Here that folder is inside the
+installed package. So the example adds an <code>output</code> column
+that writes to the working folder instead.</p>
+<p><code><a href="../reference/crop_video_batch.html">crop_video_batch()</a></code> stops with an error if two rows would
+write the same output file. <code><a href="../articles/workflow.html">vignette("workflow")</a></code> uses
+several batch functions on a study folder.</p>
 </div>
 <div class="section level2">
-<h2 id="fan-out-verbs">Fan-out verbs<a class="anchor" aria-label="anchor" href="#fan-out-verbs"></a>
+<h2 id="one-input-many-outputs">One input, many outputs<a class="anchor" aria-label="anchor" href="#one-input-many-outputs"></a>
 </h2>
-<p>Some tasks turn one input into <em>many</em> outputs. These fan-out
-verbs are Layer 2 wrappers built on <code><a href="../reference/ffm_batch.html">ffm_batch()</a></code>.</p>
-<p><code><a href="../reference/segment_video.html">segment_video()</a></code> cuts a file into pieces given start/stop
-timestamps, returning one row per segment:</p>
+<p>Some tasks make many outputs from one input.</p>
+<p><code><a href="../reference/segment_video.html">segment_video()</a></code> cuts a file into pieces at the start and
+end times you give. It returns one row for each piece:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/segment_video.html">segment_video</a></span><span class="op">(</span></span>
 <span>  <span class="va">video</span>,</span>
@@ -166,8 +161,8 @@ timestamps, returning one row per segment:</p>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                               <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> /home/runner/work/_temp/Library/tidymedia/extdata/… /home…   0     0.5 <span style="color: #949494;">"</span>-y -i…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> /home/runner/work/_temp/Library/tidymedia/extdata/… /home…   0.5   1   <span style="color: #949494;">"</span>-y -i…</span></span></code></pre></div>
-<p><code><a href="../reference/separate_audio_video.html">separate_audio_video()</a></code> splits a file into its audio and
-video streams, returning the two compiled commands:</p>
+<p><code><a href="../reference/separate_audio_video.html">separate_audio_video()</a></code> writes the audio and the video of
+a file to two files. It returns the two commands:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/separate_audio_video.html">separate_audio_video</a></span><span class="op">(</span><span class="va">video</span>, <span class="st">"audio.aac"</span>, <span class="st">"video.mp4"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                                                                                                             audio </span></span>
@@ -178,23 +173,27 @@ video streams, returning the two compiled commands:</p>
 <div class="section level2">
 <h2 id="running-in-parallel">Running in parallel<a class="anchor" aria-label="anchor" href="#running-in-parallel"></a>
 </h2>
-<p><code>parallel = TRUE</code> is accepted by <code><a href="../reference/ffm_batch.html">ffm_batch()</a></code>
-and by every <code>*_batch</code> verb; by <code><a href="../reference/segment_video.html">segment_video()</a></code>,
-which sends its own segments through the same machinery; and by the five
-metadata readers <code><a href="../reference/probe_all.html">probe_all()</a></code>,
+<p>These functions take <code>parallel = TRUE</code>:</p>
+<ul>
+<li>
+<code><a href="../reference/ffm_batch.html">ffm_batch()</a></code> and each <code>*_batch()</code> task
+function.</li>
+<li>
+<code><a href="../reference/segment_video.html">segment_video()</a></code>, which runs its pieces through
+<code><a href="../reference/ffm_batch.html">ffm_batch()</a></code>.</li>
+<li>The five metadata readers <code><a href="../reference/probe_all.html">probe_all()</a></code>,
 <code><a href="../reference/probe_container.html">probe_container()</a></code>, <code><a href="../reference/probe_container.html">probe_streams()</a></code>,
-<code><a href="../reference/probe_container.html">probe_video()</a></code>, and <code><a href="../reference/probe_container.html">probe_audio()</a></code>. On the four
-reader shortcuts it applies when you pass <code>infile</code> and is
-ignored when you hand them an existing <code>probe</code> object, which
-has nothing left to fan out. Nothing else takes the argument —
-<code><a href="../reference/separate_audio_video.html">separate_audio_video()</a></code> compiles its two commands directly
-rather than through <code><a href="../reference/ffm_batch.html">ffm_batch()</a></code>, so only
-<code><a href="../reference/separate_audio_video_batch.html">separate_audio_video_batch()</a></code> accepts it.</p>
-<p>The argument maps over jobs with <a href="https://furrr.futureverse.org/" class="external-link">furrr</a>, and parallelism follows
-whatever <a href="https://future.futureverse.org/" class="external-link">future</a> plan you
-have set, so you opt in explicitly. With no plan set,
-<code>parallel = TRUE</code> still runs one job at a time, and warns to
-tell you so:</p>
+<code><a href="../reference/probe_container.html">probe_video()</a></code> and <code><a href="../reference/probe_container.html">probe_audio()</a></code>.</li>
+</ul>
+<p><code><a href="../reference/separate_audio_video.html">separate_audio_video()</a></code> does not take it, but
+<code><a href="../reference/separate_audio_video_batch.html">separate_audio_video_batch()</a></code> does. On
+<code><a href="../reference/probe_container.html">probe_container()</a></code>, <code><a href="../reference/probe_container.html">probe_streams()</a></code>,
+<code><a href="../reference/probe_container.html">probe_video()</a></code> and <code><a href="../reference/probe_container.html">probe_audio()</a></code>, the argument
+has an effect only when you pass <code>infile</code>.</p>
+<p>With <code>parallel = TRUE</code>, the jobs run through <a href="https://furrr.futureverse.org/" class="external-link">furrr</a>. They run in parallel
+only if you set a <a href="https://future.futureverse.org/" class="external-link">future</a>
+plan. With no plan, the jobs run one at a time, and R gives a warning
+that says so:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">multisession</span><span class="op">)</span></span>
@@ -202,23 +201,22 @@ tell you so:</p>
 <span><span class="fu"><a href="../reference/ffm_batch.html">ffm_batch</a></span><span class="op">(</span><span class="va">jobs</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span>, .f <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span>, <span class="va">...</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/ffm_files.html">ffm_files</a></span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/ffm_drop.html">ffm_drop</a></span><span class="op">(</span><span class="st">"video"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/ffm_codec.html">ffm_codec</a></span><span class="op">(</span>audio <span class="op">=</span> <span class="st">"libmp3lame"</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
-<p>Every job carries its own compiled command in the returned tibble, so
-a batch run is fully reproducible: save that column and you have an
-exact record of the FFmpeg commands that produced your outputs.</p>
+<p>The result has the command for each job. Save that column, and you
+have a full record of the FFmpeg commands that made your files.</p>
 </div>
 <div class="section level2">
 <h2 id="where-to-next">Where to next<a class="anchor" aria-label="anchor" href="#where-to-next"></a>
 </h2>
 <ul>
 <li>
-<code><a href="../articles/workflow.html">vignette("workflow")</a></code> — an end-to-end research pipeline
-that applies these batch tools across a study folder.</li>
+<code><a href="../articles/workflow.html">vignette("workflow")</a></code> shows a full research example that
+uses batch functions on a study folder.</li>
 <li>
-<code><a href="../articles/tidymedia.html">vignette("tidymedia")</a></code> — the task verbs and the builder
-they are made of.</li>
+<code><a href="../articles/tidymedia.html">vignette("tidymedia")</a></code> explains the task functions and
+the pipeline functions.</li>
 <li>
-<code><a href="../articles/metadata.html">vignette("metadata")</a></code> — reading each file’s metadata as
-a tibble.</li>
+<code><a href="../articles/metadata.html">vignette("metadata")</a></code> shows how to read each file’s
+metadata into a tibble.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

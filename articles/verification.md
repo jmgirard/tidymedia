@@ -5,14 +5,11 @@
 library(tidymedia)
 ```
 
-A processed file raises two questions that the pipeline itself cannot
-answer. Did the encode actually produce what you asked for? And a year
-later, can you say how a given file was made? This vignette covers the
-three facilities that answer them — checking an output against
-expectations, recording a run’s provenance, and bounding a run that
-hangs so it stops the call instead of your session.
+This page answers three questions about processed files. Does an output
+have the properties you asked for? Can you later say how a file was
+made? And how do you stop a program that hangs?
 
-We work on a copy of the sample clip that ships with the package:
+The examples use a copy of the sample clip that comes with the package:
 
 ``` r
 
@@ -25,11 +22,10 @@ file.copy(
 
 ## Check the output against what you asked for
 
-Every verb returns the FFmpeg command it compiled, and that command is a
-record of what you *asked* for.
+A task function returns the FFmpeg command it ran. That command says
+what you asked for.
 [`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
-answers the other half: it probes a file and compares its actual
-properties against your expectations, one row per check.
+reads the output file and says what you got:
 
 ``` r
 
@@ -43,9 +39,9 @@ verify_media("session01.m4a", audio_codec = "aac", duration = 1)
 #> 2 session01.m4a audio_codec aac      aac    TRUE
 ```
 
-The report is a tibble with `file`, `check`, `expected`, `actual` and
-`pass`, so a failure tells you which property was wrong and what the
-file holds instead:
+The result is a tibble with one row for each check. Its columns are
+`file`, `check`, `expected`, `actual` and `pass`. When a check fails,
+`actual` shows what the file holds instead:
 
 ``` r
 
@@ -58,39 +54,7 @@ verify_media("session01.mp4", duration = 5, width = 1920, audio_codec = "aac")
 #> 3 session01.mp4 audio_codec aac      aac    TRUE
 ```
 
-Three things are worth knowing before you rely on it.
-
-**The checks are structural, not perceptual.** They read FFprobe’s
-metadata — duration, dimensions, codec names, sample rate — and say
-nothing about whether the picture or the sound looks and sounds right.
-An encode that came out at the right size in the right codec and looks
-terrible passes every check above.
-
-**Numeric checks carry a tolerance; string checks do not.** A numeric
-expectation passes when `abs(actual - expected) <= tolerance`, and
-`tolerance` defaults to `0.1`. That is exact for integers like width and
-sample rate, and a little slack for `duration`, which moves when a cut
-snaps to a keyframe. Codec names must match exactly.
-
-**A property that is not there fails.** If the file has no stream of
-that kind, or FFprobe reports no such field, the actual value is `NA`
-and the check fails rather than being skipped. The audio file extracted
-above has no picture, so asking it for a width fails with nothing to
-report:
-
-``` r
-
-verify_media("session01.m4a", width = 320, audio_codec = "aac")
-#> # A tibble: 2 × 5
-#>   file          check       expected actual pass 
-#>   <chr>         <chr>       <chr>    <chr>  <lgl>
-#> 1 session01.m4a width       320      NA     FALSE
-#> 2 session01.m4a audio_codec aac      aac    TRUE
-```
-
-Beyond the named arguments, any FFprobe field can be checked by name.
-Extra names are resolved against the container first, then the video
-stream, then the audio stream, and the first match wins:
+You can check any field that FFprobe reports, by its name:
 
 ``` r
 
@@ -102,13 +66,46 @@ verify_media("session01.mp4", pix_fmt = "yuv420p", nb_streams = 2)
 #> 2 session01.mp4 nb_streams 2        2       TRUE
 ```
 
+### What the checks cover
+
+The checks read the file’s metadata, such as its duration, size and
+[codec](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary)
+names. They do not judge whether the picture or the sound is good.
+
+A number passes when it is within `tolerance` of the expected value. The
+default `tolerance` is `0.1`. So a width or a [sample
+rate](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary)
+must match exactly, but a duration can differ a little. A codec name
+must match exactly.
+
+A property that the file does not have fails. For example, the audio
+file above has no video
+[stream](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary),
+so a width check fails with an `actual` of `NA`:
+
+``` r
+
+verify_media("session01.m4a", width = 320, audio_codec = "aac")
+#> # A tibble: 2 × 5
+#>   file          check       expected actual pass 
+#>   <chr>         <chr>       <chr>    <chr>  <lgl>
+#> 1 session01.m4a width       320      NA     FALSE
+#> 2 session01.m4a audio_codec aac      aac    TRUE
+```
+
+Another field name is looked for in the
+[container](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary)
+information first. Then it is looked for in the video stream, then in
+the audio stream. The first match is used.
+
 ### Checking every job in a batch
 
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-and the `*_batch()` verbs take the same expectations through a
-`verify =` argument and add a `verified` column to the result, one
-logical per job. Pass a named list to hold every job to the same
-expectations:
+and the `*_batch()` task functions take a `verify` argument. It adds a
+`verified` column to the result. The column is `TRUE` or `FALSE` for
+each job that ran and could be checked. It is `NA` for a job that failed
+or could not be checked. A named list applies the same checks to every
+job:
 
 ``` r
 
@@ -132,28 +129,21 @@ ffm_batch(
 #> 1 session01.mp4 session01.mp3 "-y -i \"session01.mp4\" -codec:… TRUE    TRUE
 ```
 
-A failed check here marks the row and does not stop the batch — the
-remaining jobs still run, and `verified` tells you afterwards which
-outputs to look at. For expectations that differ per job, pass a
-function of the job columns instead of a list, and it is called once per
-row.
+A failed check does not stop the batch. The other jobs still run, and
+the `verified` column shows which outputs to look at. To use different
+checks for each job, pass a function of the job columns in place of the
+list.
 
 ## Record how the files were made
 
-A compiled command is a complete recipe, and
-[`vignette("workflow")`](https://jmgirard.github.io/tidymedia/articles/workflow.md)
-builds its reproducibility story on exactly that: capture the command
-each verb returns — or the `command` column the batch runner adds — and
-you can re-run any step. The command is what you *asked* for, though,
-and it is silent about the run itself. Two FFmpeg versions accept the
-same command and need not produce the same file, which is why the
-manifest below records the version that ran.
+The command for each job records what you asked FFmpeg to do. It does
+not record which FFmpeg version ran, and two versions can make different
+files from one command.
 
-`ffm_batch(manifest = TRUE)` records the rest. The result itself looks
-like any other batch result — the manifest rides along on it as an
-attribute, and
+`ffm_batch(manifest = TRUE)` records those facts. The manifest is stored
+with the batch result, and
 [`ffm_manifest()`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md)
-reads it out:
+reads it:
 
 ``` r
 
@@ -180,25 +170,22 @@ ffm_manifest(res)
 #> 1 "-y -i \"se… sess… sessi…        8898 6.1.1-3ubuntu5 6.1.1-3ubuntu5  2026-09-…
 ```
 
-One row per job. `command`, `input` and `output` restate the job; the
-other columns are what the command cannot carry:
+The manifest has one row for each job. The `command`, `input` and
+`output` columns repeat the job. The other columns record the run:
 
-- `ffmpeg_version` and `ffprobe_version` — the versions tidymedia
-  resolved when the batch ran, read out of the binaries themselves
-  rather than assumed. `ffmpeg_version` is the version that did the
-  work; `ffprobe_version` is the one that was on hand to probe, which a
-  job like this one never needed. A version that could not be read is
-  `NA`.
-- `timestamp` — when the run happened, with its UTC offset.
-- `output_size` — the size in bytes of the file that came out, so a
-  truncated or empty result is visible in the record itself.
+- `ffmpeg_version` is the FFmpeg version that did the work, and
+  `ffprobe_version` is the FFprobe version that was available. tidymedia
+  reads both from the programs. A version it cannot read is `NA`.
+- `timestamp` is the time of the run, with its offset from UTC.
+- `output_size` is the size of the output file in bytes, so an empty or
+  cut-off file shows in the record.
 
-Multiple inputs — a stacked or concatenated job — are joined by `;` in
-the one `input` cell.
+A job with several inputs lists them in one `input` cell, separated by
+`;`.
 
-Ask for `checksums = TRUE` and each row also carries `input_md5` and
-`output_md5`, which is what lets you say later that a file on disk is
-the file this row describes:
+With `checksums = TRUE`, each row also has `input_md5` and `output_md5`.
+A checksum lets you show later that a file on disk is the file in the
+record:
 
 ``` r
 
@@ -213,13 +200,6 @@ res <- ffm_batch(
   }
 )
 
-ffm_manifest(res)
-#> # A tibble: 1 × 9
-#>   command      input output output_size ffmpeg_version ffprobe_version timestamp
-#>   <chr>        <chr> <chr>        <dbl> <chr>          <chr>           <chr>    
-#> 1 "-y -i \"se… sess… sessi…        8898 6.1.1-3ubuntu5 6.1.1-3ubuntu5  2026-09-…
-#> # ℹ 2 more variables: input_md5 <chr>, output_md5 <chr>
-
 ffm_manifest(res)[, c("input_md5", "output_md5")]
 #> # A tibble: 1 × 2
 #>   input_md5                        output_md5                      
@@ -227,24 +207,17 @@ ffm_manifest(res)[, c("input_md5", "output_md5")]
 #> 1 170526b94587d1a6e52a559eb1239e28 353f557796208278301d66c9de98df11
 ```
 
-The manifest is nine columns wide now, so at a typical console width the
-two new ones print as a footer line rather than in the table; the second
-call above pulls them out to show what they hold.
+Checksums are off by default, because they read every input and output
+file in full. That takes time on a large study.
 
-Checksums are off by default because they read every input and output in
-full, which is real time on a large study.
-
-`manifest =` and `checksums =` reach the `*_batch()` verbs too, so a
-pipeline built from
+The `*_batch()` task functions take `manifest` and `checksums` too. So
 [`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md)
-and its siblings records provenance the same way without dropping down
-to
-[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+and the others record the same facts.
 
-Give
+If you give
 [`ffm_manifest()`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md)
-a `path` and it writes the manifest as CSV as well as returning it,
-invisibly — one file to commit next to the processed data:
+a `path`, it also writes the manifest to a CSV file. You can then keep
+that file next to the processed data:
 
 ``` r
 
@@ -254,11 +227,8 @@ file.exists("session01_manifest.csv")
 #> [1] TRUE
 ```
 
-A manifest is a record of a run, so there is nothing to record when
-nothing ran. A `run = FALSE` batch attaches none even when you ask for
-one, and reading it back is an error rather than an empty tibble — a
-silent empty record being the failure a provenance record exists to
-prevent:
+A batch run with `run = FALSE` runs nothing, so it has no manifest.
+Reading the manifest of such a batch is an error, not an empty tibble:
 
 ``` r
 
@@ -274,26 +244,23 @@ ffm_manifest(compiled)
 
 ## Bound a run that hangs
 
-Every tidymedia call waits for the program it started to finish. A
-program that hangs — a network path that stalls, a malformed file FFmpeg
-will not give up on — takes the R session down with it, and in a batch
-of a thousand files that is the whole run. Set a wall-clock limit and
-the hang stops the call instead.
+Each tidymedia call waits for the program it started. If that program
+hangs, the R session waits with it. For example, a network drive can
+stall, or FFmpeg can get stuck on a damaged file. A time limit stops the
+call instead.
 
-The limit is a session option, in whole seconds:
+The limit is an option, in whole seconds:
 
 ``` r
 
 options(tidymedia.timeout = 600)
 ```
 
-Unset, it is `0`, which means no limit — so nothing you already run
-changes behavior until you ask for a bound.
+The default is `0`, which means no limit.
 
-To bound one call rather than the session, wrap it in
+To limit one call, wrap it in
 [`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md).
-The session’s setting, or the absence of one, is back when the call
-returns, by any route:
+When the call ends, the option goes back to its earlier value:
 
 ``` r
 
@@ -306,11 +273,10 @@ getOption("tidymedia.timeout")
 #> NULL
 ```
 
-To bound the rest of a function rather than an expression you wrap, say
-it as a statement with
-[`local_timeout()`](https://jmgirard.github.io/tidymedia/reference/local_timeout.md).
-Every program started after that line is bounded, and the caller’s
-setting comes back when the function returns:
+To limit the rest of a function, call
+[`local_timeout()`](https://jmgirard.github.io/tidymedia/reference/local_timeout.md)
+inside it. Each program started after that line has the limit. When the
+function returns, the option goes back to its earlier value:
 
 ``` r
 
@@ -328,26 +294,17 @@ getOption("tidymedia.timeout")
 #> NULL
 ```
 
-### What the limit actually bounds
+### Limits of the time limit
 
-The limit bounds **how long R waits**, not how long the program runs,
-and the two are not the same number. R escalates: it interrupts the
-program at the limit, asks it to terminate 20 seconds later, and kills
-it 20 seconds after that. A program that ignores the first two signals
-is therefore waited for up to **40 seconds longer than the limit you
-set** — measured on 2026-08-28 at 42.0 s under a 2 s limit, on a Linux
-runner, with the same reading on a macOS host. Set a limit meaning “give
-up somewhere around here”, not “return at exactly this second”, and
-leave that headroom in anything downstream that depends on the call
-returning.
+The limit sets how long R waits, not how long the program runs. A
+program that does not stop when asked can make R wait up to 40 seconds
+longer than the limit. So choose a limit with room to spare.
 
-A fractional limit is refused rather than rounded, because R truncates
-it toward zero and `0` is the no-limit sentinel, so a rounded `0.5`
-would leave the call unbounded. Every seam refuses it:
-[`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md),
-as below, and equally
-[`local_timeout()`](https://jmgirard.github.io/tidymedia/reference/local_timeout.md)
-and `options(tidymedia.timeout = 0.5)` when a call reads the option:
+The limit applies to each program that tidymedia starts. In a batch of
+100 jobs, each job gets the full limit.
+
+The limit must be a whole number of seconds. A value such as `0.5` is an
+error:
 
 ``` r
 
@@ -356,46 +313,38 @@ with_timeout(extract_audio("session01.mp4", "x.m4a"), seconds = 0.5)
 #> ! `seconds` must be a whole number, not the number 0.5.
 ```
 
-### A reached limit is never silent
+### What happens when the limit is reached
 
-Every call that can start one of these programs either aborts or warns
-when the limit is reached; none of them quietly returns as though
-nothing happened.
-
-It **aborts**, naming the program and the limit, from the task verbs,
+A reached limit always gives an error or a warning. The task functions,
 [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md),
-the escape hatches
-[`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md),
-[`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md)
-and
-[`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md),
-and from
+the direct commands and
 [`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
-— a probe that never answered is not an answer of “no”, and absorbing it
-there would blame a good output for the probe’s failure.
+stop with an error.
 
-It **warns** where one hung file must not discard the rest of the work.
-[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
-and the `probe_*()` accessors, the MediaInfo readers and the `get_*()`
-helpers give an `NA` row and one warning at the end of the call.
+Functions that work on many files give a warning, so the other files are
+not lost. The metadata readers return a row of `NA` values.
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-and the `*_batch()` verbs mark the row `success = FALSE`, as for any
-failed job, and warn once at the end saying how many jobs timed out. The
-provenance manifest above warns that it could not read a version, and
-records `NA` for it.
+and the `*_batch()` task functions mark the job with `success = FALSE`.
 
-To act on either outcome in code, the abort carries the condition class
-`tidymedia_timeout`; the version-probe and dropped-track warnings carry
-`tidymedia_probe_timeout`, and the batch warning
-`tidymedia_batch_timeout`.
+To handle these in code, use the condition classes:
+
+- `tidymedia_timeout` for the error.
+- `tidymedia_probe_timeout` for a warning from a version check or a
+  track check.
+- `tidymedia_batch_timeout` for the warning from a batch.
+
+The warning from a metadata reader has no condition class of its own.
+
+[`?tidymedia`](https://jmgirard.github.io/tidymedia/reference/tidymedia-package.md)
+lists which function gives which condition.
 
 ## Where to next
 
 - [`vignette("workflow")`](https://jmgirard.github.io/tidymedia/articles/workflow.md)
-  — an end-to-end preprocessing pipeline.
+  shows a full research example.
 - [`vignette("batch")`](https://jmgirard.github.io/tidymedia/articles/batch.md)
-  — the jobs-tibble batch runner in depth.
+  shows how to run a task function over many files.
 - [`vignette("metadata")`](https://jmgirard.github.io/tidymedia/articles/metadata.md)
-  — reading each file’s metadata as a tibble.
+  shows how to read metadata into tibbles.
 - [`?tidymedia`](https://jmgirard.github.io/tidymedia/reference/tidymedia-package.md)
-  — the package’s option seams in one place.
+  lists the package options in one place.

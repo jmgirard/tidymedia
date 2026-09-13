@@ -5,10 +5,10 @@
 library(tidymedia)
 ```
 
-Batch processing over many files is what tidymedia is built for. The
-examples below use `run = FALSE`, which **compiles** each FFmpeg command
-without executing it — so you can inspect exactly what would run. Drop
-that argument (or set `run = TRUE`) to actually process the files.
+tidymedia is made for running the same job on many files. The examples
+on this page use `run = FALSE`. Each function then returns its FFmpeg
+commands without running them, so you can read them first. Leave out
+`run = FALSE` to process the files.
 
 ``` r
 
@@ -19,20 +19,23 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ## The batch runner
 
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-is the general-purpose engine: it takes a **jobs tibble** (one row per
-output) and a function that turns a row into a pipeline. Each column is
-passed to the function by name,
-[`purrr::pmap()`](https://purrr.tidyverse.org/reference/pmap.html)-style,
-and the runner returns your jobs tibble with a `command` column added
-(and a `success` column when `run = TRUE`).
+runs a job for each row of a jobs table. You also give it a function,
+`.f`, that turns one row into a pipeline. Each column of the table goes
+to `.f` as an argument of the same name, as in
+[`purrr::pmap()`](https://purrr.tidyverse.org/reference/pmap.html).
+
+[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+returns your jobs table with a `command` column added. When
+`run = TRUE`, it also adds a `success` column.
 
 [`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
-builds that tibble from a folder: one row per file of the media type you
-ask for, with the file’s full path in an `input` column. When the folder
-holds no file of that type,
+makes a jobs table from a folder. It has one row for each file of the
+media type you ask for, with the file’s full path in an `input` column.
+If the folder has no such files,
 [`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
-stops with an error rather than returning an empty table. Add any other
-columns your function needs, here an `output` for each input:
+stops with an error.
+
+Add any other columns that `.f` needs. Here each input gets an `output`:
 
 ``` r
 
@@ -50,31 +53,30 @@ ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
 #> 1 /home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4 sample.m… "-y -i…
 ```
 
-Because you build the pipeline yourself, any combination of builder
-verbs is available per job. Give `.f` a `...` argument so it tolerates
-extra job columns it does not use: without one, a column `.f` has no
-argument for stops the batch with R’s “unused argument” error.
+You write the pipeline, so each job can use any pipeline functions. Give
+`.f` a `...` argument, so that it accepts table columns it does not use.
+Without `...`, such a column stops the batch with R’s “unused argument”
+error.
 
-## Per-verb batch siblings
+## Batch task functions
 
-You do not have to write `.f` by hand for the common jobs. Every task
-verb ships a `*_batch()` companion —
+For common jobs, you do not need to write `.f`. Each task function has a
+`*_batch()` version that takes a jobs table and runs the task on each
+row. Examples are
 [`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md),
 [`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md),
 [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md),
-[`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
-[`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md),
-and the rest — that takes a jobs tibble directly and applies the verb to
-each row.
-[`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)
-can take the table straight from
-[`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md);
-others, such as
-[`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md),
-refuse it until you add an `output` column.
+[`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
+and
+[`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md).
+
+Some batch functions, such as
+[`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md),
+can take the table from
 [`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
-again stops with an error rather than returning an empty table when the
-folder holds no file of the type:
+as it is. Others, such as
+[`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md),
+need an `output` column first:
 
 ``` r
 
@@ -90,24 +92,22 @@ crop_video_batch(jobs, width = 160, height = 120, run = FALSE)
 
 Without an `output` column,
 [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)
-names each output after its input, adding `_cropped`, in the input’s own
-folder. Here that folder is inside the installed package, so the example
-adds an `output` column that puts the files in the working directory
-instead. Either way
+adds `_cropped` to each input name and writes to the input’s folder.
+Here that folder is inside the installed package. So the example adds an
+`output` column that writes to the working folder instead.
+
 [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)
-rejects two rows that would resolve to the same output path.
+stops with an error if two rows would write the same output file.
 [`vignette("workflow")`](https://jmgirard.github.io/tidymedia/articles/workflow.md)
-chains several of these across a study folder.
+uses several batch functions on a study folder.
 
-## Fan-out verbs
+## One input, many outputs
 
-Some tasks turn one input into *many* outputs. These fan-out verbs are
-Layer 2 wrappers built on
-[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+Some tasks make many outputs from one input.
 
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
-cuts a file into pieces given start/stop timestamps, returning one row
-per segment:
+cuts a file into pieces at the start and end times you give. It returns
+one row for each piece:
 
 ``` r
 
@@ -125,8 +125,8 @@ segment_video(
 ```
 
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
-splits a file into its audio and video streams, returning the two
-compiled commands:
+writes the audio and the video of a file to two files. It returns the
+two commands:
 
 ``` r
 
@@ -139,33 +139,36 @@ separate_audio_video(video, "audio.aac", "video.mp4", run = FALSE)
 
 ## Running in parallel
 
-`parallel = TRUE` is accepted by
-[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-and by every `*_batch` verb; by
-[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
-which sends its own segments through the same machinery; and by the five
-metadata readers
-[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md),
+These functions take `parallel = TRUE`:
+
+- [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+  and each `*_batch()` task function.
+- [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+  which runs its pieces through
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+- The five metadata readers
+  [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md),
+  [`probe_container()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
+  [`probe_streams()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
+  [`probe_video()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
+  and
+  [`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md).
+
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+does not take it, but
+[`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md)
+does. On
 [`probe_container()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
 [`probe_streams()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
-[`probe_video()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
+[`probe_video()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
 and
-[`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md).
-On the four reader shortcuts it applies when you pass `infile` and is
-ignored when you hand them an existing `probe` object, which has nothing
-left to fan out. Nothing else takes the argument —
-[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
-compiles its two commands directly rather than through
-[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
-so only
-[`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md)
-accepts it.
+[`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
+the argument has an effect only when you pass `infile`.
 
-The argument maps over jobs with
-[furrr](https://furrr.futureverse.org/), and parallelism follows
-whatever [future](https://future.futureverse.org/) plan you have set, so
-you opt in explicitly. With no plan set, `parallel = TRUE` still runs
-one job at a time, and warns to tell you so:
+With `parallel = TRUE`, the jobs run through
+[furrr](https://furrr.futureverse.org/). They run in parallel only if
+you set a [future](https://future.futureverse.org/) plan. With no plan,
+the jobs run one at a time, and R gives a warning that says so:
 
 ``` r
 
@@ -177,16 +180,15 @@ ffm_batch(jobs, parallel = TRUE, .f = function(input, output, ...) {
 })
 ```
 
-Every job carries its own compiled command in the returned tibble, so a
-batch run is fully reproducible: save that column and you have an exact
-record of the FFmpeg commands that produced your outputs.
+The result has the command for each job. Save that column, and you have
+a full record of the FFmpeg commands that made your files.
 
 ## Where to next
 
 - [`vignette("workflow")`](https://jmgirard.github.io/tidymedia/articles/workflow.md)
-  — an end-to-end research pipeline that applies these batch tools
-  across a study folder.
+  shows a full research example that uses batch functions on a study
+  folder.
 - [`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
-  — the task verbs and the builder they are made of.
+  explains the task functions and the pipeline functions.
 - [`vignette("metadata")`](https://jmgirard.github.io/tidymedia/articles/metadata.md)
-  — reading each file’s metadata as a tibble.
+  shows how to read each file’s metadata into a tibble.

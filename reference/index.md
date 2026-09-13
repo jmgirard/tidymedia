@@ -2,7 +2,7 @@
 
 ## Package
 
-What tidymedia is for and how its three layers fit together.
+What tidymedia is for, and how its three kinds of function fit together.
 
 - [`tidymedia`](https://jmgirard.github.io/tidymedia/reference/tidymedia-package.md)
   [`tidymedia-package`](https://jmgirard.github.io/tidymedia/reference/tidymedia-package.md)
@@ -10,27 +10,27 @@ What tidymedia is for and how its three layers fit together.
 
 ## Concepts
 
-Background on arguments that recur across many verbs.
+Background on arguments that many functions share.
 
 - [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
   [`audio-tracks`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
   [`audio_indices`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
   : Audio track and audio input indices
 
-## Bounding a run
+## Time limits
 
-Put a wall-clock limit on one call, or on the rest of a function, so a
-hung program stops that work rather than the session.
+Set a time limit on one call, or on the rest of a function. A program
+that hangs then stops that call, not the R session.
 
 - [`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md)
   : Bound one call's wall-clock time
 - [`local_timeout()`](https://jmgirard.github.io/tidymedia/reference/local_timeout.md)
   : Bound the rest of a function's wall-clock time
 
-## Layer 0: escape hatches
+## Direct commands
 
-Pass a raw argument string straight to the command-line tools. Use these
-when you need something tidymedia does not wrap.
+Pass your own arguments to FFmpeg, FFprobe or MediaInfo. Use these for
+anything that tidymedia does not cover.
 
 - [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
   : Run a raw FFmpeg command
@@ -39,10 +39,9 @@ when you need something tidymedia does not wrap.
 - [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)
   : Run MediaInfo CLI
 
-## Layer 1: the pipeline builder
+## Pipeline functions
 
-Assemble a reproducible FFmpeg command step by step, then compile or run
-it.
+Build an FFmpeg command one step at a time, then compile it or run it.
 
 - [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md)
   : Specify Files in an FFmpeg Pipeline
@@ -91,9 +90,10 @@ it.
 - [`print(`*`<tidymedia_ffm>`*`)`](https://jmgirard.github.io/tidymedia/reference/print.tidymedia_ffm.md)
   : Print an FFmpeg pipeline
 
-## Layer 2: task verbs
+## Task functions
 
-Thin wrappers over the builder for common preprocessing jobs.
+Do a common job in one call. Each one is built from the pipeline
+functions.
 
 - [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md)
   : Extract a single frame from a video
@@ -156,10 +156,10 @@ Thin wrappers over the builder for common preprocessing jobs.
 - [`picture_in_picture_batch()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.md)
   : Inset One Video Over Another For Many Outputs From a Jobs Table
 
-## Verification & provenance
+## Checking outputs and recording runs
 
-Check that an output really has the properties you asked for, and record
-a reproducibility manifest for a batch run.
+Check that an output has the properties you asked for, and record how
+the files in a batch were made.
 
 - [`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
   : Verify a Media File Against Expected Properties
@@ -168,7 +168,7 @@ a reproducibility manifest for a batch run.
 
 ## Media metadata
 
-Read container and stream metadata as tibbles, ready for the tidyverse.
+Read container and stream metadata into tibbles.
 
 - [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
   : Look up information about media files using FFprobe
@@ -196,8 +196,8 @@ Read container and stream metadata as tibbles, ready for the tidyverse.
 
 ## FFmpeg capabilities
 
-Discover the codecs and encoders available in your FFmpeg build,
-including opt-in hardware (GPU) encoding.
+List the codecs and encoders in your FFmpeg build, including hardware
+encoders.
 
 - [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
   : Get a data frame of all installed codecs
@@ -211,7 +211,7 @@ including opt-in hardware (GPU) encoding.
 
 ## Program management
 
-Locate, configure, and install the FFmpeg and MediaInfo binaries.
+Find, set and install the FFmpeg and MediaInfo programs.
 
 - [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)
   : Report which dependency programs tidymedia can find

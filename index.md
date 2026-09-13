@@ -1,11 +1,11 @@
 # tidymedia
 
-The goal of **tidymedia** is to provide tools for easily working with
-media (e.g., image, audio, and video) files within R and the tidyverse.
-It wraps [FFmpeg](https://ffmpeg.org/) and
-[MediaInfo](https://mediaarea.net/en/MediaInfo) for **reproducible media
-preprocessing** — batch trimming, cropping, format standardization, and
-metadata extraction as tibbles.
+**tidymedia** helps you work with video, audio and image files in R. It
+runs [FFmpeg](https://ffmpeg.org/) and
+[MediaInfo](https://mediaarea.net/en/MediaInfo) for you, so you can
+prepare media for research in a way you can repeat. It trims, crops and
+converts files, often many at once. It also reads media metadata into
+tibbles.
 
 ## Installation
 
@@ -20,152 +20,43 @@ devtools::install_github("jmgirard/tidymedia")
 
 ### Dependencies
 
-#### 1. MediaInfo
+tidymedia uses two free command-line programs.
+[FFmpeg](https://ffmpeg.org/) converts media files and comes with
+FFprobe, which reads them.
+[MediaInfo](https://mediaarea.net/en/MediaInfo) also reads media files.
+Install the ones you need.
 
-**tidymedia** uses [MediaInfo](https://mediaarea.net/en/MediaInfo) to
-query information about media files. If you would like to use these
-functions, you will need to install the command line interface (CLI)
-version of this program. Links and instructions for doing so are
-available [here](https://mediaarea.net/en/MediaInfo/Download). Below are
-instructions for several popular platforms.
+**Debian and Ubuntu.** In a terminal, run:  
+`sudo apt-get install ffmpeg mediainfo`
 
-**Debian/Ubuntu**
+**macOS.** Install [Homebrew](https://brew.sh/). Then, in a terminal,
+run:  
+`brew install ffmpeg media-info`
 
-1.  Enter this code into your terminal:  
-    `sudo apt-get install mediainfo`
-2.  Check that R can find it:  
-    [`tidymedia::program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)  
-    The `mediainfo` row should show a location and a version. If its
-    location is `NA`, tidymedia cannot see the program: give it the path
-    yourself with `tidymedia::set_mediainfo("/path/to/mediainfo")`.
+**Windows.** For FFmpeg, run
+[`tidymedia::install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+in R. It asks you to confirm before it downloads anything. For
+MediaInfo, download the CLI version from the [MediaInfo download
+page](https://mediaarea.net/en/MediaInfo/Download/Windows) and unzip it
+to a folder such as `C:/Program Files/MediaInfo`. Then tell tidymedia
+where the program is:  
+`tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")`
 
-**Windows**
+**Check the install.** In R, run:  
+[`tidymedia::program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)
 
-1.  Download the appropriate CLI .zip file from:  
-    <https://mediaarea.net/en/MediaInfo/Download/Windows>
-2.  Extract (or copy) the contents of this .zip file to a folder on your
-    computer such as:  
-    `C:/Program Files/MediaInfo`
-3.  Run the following code in R (changing the path to match Step 2):  
-    `tidymedia::set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe")`  
-    This asks you to confirm the path before it remembers it. In a
-    script with no one to ask, add `confirm = FALSE`.
-4.  Check that R can find it:  
-    [`tidymedia::program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)  
-    The `mediainfo` row should show a location and a version. If its
-    location is `NA`, the path in Step 3 is not where `mediainfo.exe`
-    actually landed: look in the folder from Step 2 and run
-    [`tidymedia::set_mediainfo()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
-    again with the path you find there.
-
-**Mac**
-
-1.  Download the appropriate CLI .dmg file from:  
-    <https://mediaarea.net/en/MediaInfo/Download/Mac_OS>
-2.  Open the .dmg file and drag the program icon to the Applications
-    folder
-3.  The Applications folder is not on the `PATH`, so tell tidymedia
-    where the program landed (changing the path to match Step 2):  
-    `tidymedia::set_mediainfo("/Applications/mediainfo")`  
-    This asks you to confirm the path before it remembers it, and it is
-    remembered across R sessions.
-4.  Check that R can find it:  
-    [`tidymedia::program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)  
-    The `mediainfo` row should show a location and a version. If its
-    location is `NA`, the path in Step 3 is not where the program
-    actually landed: find it in the Applications folder and run
-    [`tidymedia::set_mediainfo()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
-    again with that path.
-
-#### 2. FFmpeg
-
-**tidymedia** uses [FFmpeg](https://ffmpeg.org/) to encode media files.
-If you would like to use these functions, you will need to install the
-command line interface (CLI) version of this program. Links and
-instructions for doing so are available
-[here](https://ffmpeg.org/download.html). Below are instructions for
-several popular platforms.
-
-**Debian/Ubuntu**
-
-1.  Enter this code into your terminal:  
-    `sudo apt-get install ffmpeg`
-2.  Check that R can find it:  
-    [`tidymedia::program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)  
-    The `ffmpeg` and `ffprobe` rows should show locations and versions.
-    If either is `NA`, tidymedia cannot see that program: give it the
-    path yourself with `tidymedia::set_ffmpeg("/path/to/ffmpeg")` or
-    `tidymedia::set_ffprobe("/path/to/ffprobe")`. The two are looked up
-    separately, so a row that is still `NA` needs its own call.
-
-**Windows**
-
-1.  Install the `tidymedia` package in R.
-2.  Run
-    [`tidymedia::install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
-    in R and confirm the prompt, which names the digest and the archive
-    it will download, the directory it will unpack into, and the program
-    locations it may overwrite. The archive is checked against the
-    SHA-256 digest gyan.dev publishes beside it before anything is
-    unpacked, and no program location is remembered unless the
-    extraction produced that program. To install from a different build,
-    pass its address and its digest:
-    `install_on_win(download_url = ..., archive_checksum = ...)`.
-3.  Check that R can find it:  
-    [`tidymedia::program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)  
-    The `ffmpeg` and `ffprobe` rows should show locations and versions.
-    If either is `NA`, tidymedia cannot see that program: read the
-    message
-    [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
-    printed, or point tidymedia at a build you already have with
-    `tidymedia::set_ffmpeg("C:/path/to/ffmpeg.exe")` or
-    `tidymedia::set_ffprobe("C:/path/to/ffprobe.exe")`. The two are
-    looked up separately, so a row that is still `NA` needs its own
-    call.
-
-**macOS Homebrew Install**
-
-1.  Open the macOS Terminal or Linux shell prompt.
-2.  Install [Homebrew](https://brew.sh/) by entering this code into your
-    terminal:  
-    `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
-3.  Enter this code into your terminal:  
-    `brew install ffmpeg`
-4.  Check that R can find it:  
-    [`tidymedia::program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)  
-    The `ffmpeg` and `ffprobe` rows should show locations and versions.
-    If either is `NA`, tidymedia cannot see that program: run
-    `brew --prefix ffmpeg` in the terminal and give tidymedia the
-    `bin/ffmpeg` and `bin/ffprobe` under what it prints, with
-    `tidymedia::set_ffmpeg("/path/to/ffmpeg")` and
-    `tidymedia::set_ffprobe("/path/to/ffprobe")`. The two are looked up
-    separately, so a row that is still `NA` needs its own call.
-
-**macOS Manual Install**
-
-1.  Download the latest snapshot version from:  
-    <https://evermeet.cx/ffmpeg/get>  
-    That address gives you `ffmpeg` on its own. The metadata functions
-    also need `ffprobe`, which is a separate download:  
-    <https://evermeet.cx/ffmpeg/getrelease/ffprobe/7z>
-2.  Extract the contents of each downloaded
-    [.7z](https://www.7-zip.org/) file
-3.  Drag the extracted contents to the Applications folder
-4.  The Applications folder is not on the `PATH`, so nothing looking a
-    program up by name will find it there. Tell tidymedia where each
-    program landed (changing the paths to match Step 3):  
-    `tidymedia::set_ffmpeg("/Applications/ffmpeg")`  
-    `tidymedia::set_ffprobe("/Applications/ffprobe")`  
-    Each asks you to confirm the path before it remembers it, and it is
-    remembered across R sessions. Set both: the two programs are looked
-    up separately, so setting `ffmpeg` does not tell tidymedia where
-    `ffprobe` is.
-5.  Check that R can find them:  
-    [`tidymedia::program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)  
-    The `ffmpeg` and `ffprobe` rows should show locations and versions.
-    If either is `NA`, the path you gave in Step 4 is not where that
-    program actually landed: find it in the Applications folder and run
-    the call again with that path.
+Each program that tidymedia found shows a location and a version. If a
+location is `NA`, give tidymedia the path with
+[`set_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/set_program.md),
+[`set_ffprobe()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+or
+[`set_mediainfo()`](https://jmgirard.github.io/tidymedia/reference/set_program.md).
+On macOS, run `brew --prefix ffmpeg` in a terminal. FFmpeg and FFprobe
+are in the `bin` folder of the path that it prints. The help pages
+[`?set_program`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+and
+[`?install_on_win`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+give the details.
 
 ## Examples
 
@@ -174,8 +65,8 @@ several popular platforms.
 library(tidymedia)
 ```
 
-The examples below use a tiny sample clip that ships with the package,
-copied into the working folder so the paths they print stay short:
+The examples below use a short sample clip that comes with the package.
+They copy it to the working folder, so the paths they print stay short:
 
 ``` r
 
@@ -185,14 +76,14 @@ video <- "sample.mp4"
 
 ### Build reproducible FFmpeg commands
 
-The `ffm_*` builder assembles a command step by step. Nothing runs until
-you ask it to:
+The pipeline functions, whose names start with `ffm_`, build an FFmpeg
+command one step at a time. Nothing runs until you ask.
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)
-returns the exact FFmpeg command as a string, and
+returns the command as a string, and
 [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
-executes it. See
+runs it. See
 [`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
-for the full tour.
+for a full tour.
 
 ``` r
 
@@ -205,8 +96,8 @@ ffm_files(video, "output.mp4") |>
 #> [1] "-y -i \"sample.mp4\" -vf \"trim=start=1:end=5,setpts=PTS-STARTPTS,crop=w=160:h=120:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -an \"output.mp4\""
 ```
 
-Common tasks have their own verbs (Layer 2). Pass `run = FALSE` to see
-the command without executing it:
+Common jobs have their own task functions. Add `run = FALSE` to see the
+command without running it:
 
 ``` r
 
@@ -217,13 +108,15 @@ extract_audio(video, "audio.aac", run = FALSE)
 ### Process a folder in batch
 
 [`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
-turns a folder into a jobs table, one row per media file. Some
-`*_batch()` verbs, such as
+turns a folder into a jobs table, with one row for each media file. Some
+`*_batch()` functions, such as
 [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md),
-take that table as it is; others need a column added first, such as an
-`output`. When the folder holds no file of the type you ask for,
+take that table as it is. Others need a column added first, such as
+`output`.
+
+If the folder has no files of the type you ask for,
 [`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
-stops with an error rather than returning an empty table. See
+stops with an error. See
 [`vignette("batch")`](https://jmgirard.github.io/tidymedia/articles/batch.md)
 for more.
 
@@ -243,8 +136,12 @@ crop_video_batch(jobs, width = 160, height = 120, run = FALSE)
 ### Read metadata as tibbles
 
 [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
-returns container- and stream-level metadata from FFprobe as tibbles,
-keyed by a leading `file` column so a whole batch stacks cleanly:
+uses FFprobe to read facts about the
+[container](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary)
+and each
+[stream](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary).
+It returns them as tibbles. Each tibble starts with a `file` column, so
+the results for many files stack into one table:
 
 ``` r
 
@@ -263,11 +160,11 @@ probe_all(video)$streams
 #> #   avg_frame_rate <chr>, time_base <chr>, start_pts <int>, start_time <dbl>, …
 ```
 
-MediaInfo is available too, via
+MediaInfo works too, through
 [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md),
-[`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md),
-and the `get_*()` shortcuts (see
-[`vignette("metadata")`](https://jmgirard.github.io/tidymedia/articles/metadata.md)):
+[`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
+and the `get_*()` functions. See
+[`vignette("metadata")`](https://jmgirard.github.io/tidymedia/articles/metadata.md).
 
 ``` r
 
@@ -278,6 +175,11 @@ get_width(video)
 ```
 
 ### Query FFmpeg’s capabilities
+
+[`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
+lists the
+[codecs](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary)
+that your FFmpeg build knows:
 
 ``` r
 

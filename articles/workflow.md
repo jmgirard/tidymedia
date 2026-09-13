@@ -5,26 +5,27 @@
 library(tidymedia)
 ```
 
-This vignette walks a realistic end-to-end pipeline: preparing a set of
-recorded **dyadic-interaction sessions** — two people in conversation,
-one camera each — for behavioral coding and acoustic analysis. It is the
-kind of job tidymedia is built for: the same handful of steps applied
-identically to every file, with a saved command for each so the whole
-pipeline is reproducible.
+This page follows one research project from raw recordings to shared
+files. The study records conversations between two people, with one
+camera on each person. The recordings need the same steps before coding
+and sound analysis.
 
-Every step below uses `run = FALSE`, which **compiles** the FFmpeg
-command without executing it, so you can read exactly what each verb
-would do. Drop that argument to actually process the files. Chunks that
-describe operating over a whole folder are shown but not evaluated;
-where a step *is* evaluated we use the tiny sample clip that ships with
-the package:
+tidymedia suits this job. Each step runs the same way on every file, and
+each step gives you a command that you can save and run again.
+
+Most examples below use `run = FALSE`. The function then returns the
+FFmpeg command without running it, so you can read what it would do.
+Leave out `run = FALSE` to process the files.
+
+Some examples work on a whole folder, so they are shown but not run. The
+others use the short sample clip that comes with the package:
 
 ``` r
 
 session <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ```
 
-Picture a study folder with one file per camera per session:
+Say the study folder has one file for each camera in each session:
 
 ``` r
 
@@ -40,22 +41,25 @@ jobs
 ```
 
 [`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
-returns the jobs tibble the batch runners take: one row per file, with
-the file’s full path in an `input` column. The paths come back absolute
-for every file that resolves, however you spell the folder, which is why
-the output above shows the study folder at its full location rather than
-as `study/raw`. When the folder holds no video file,
+returns a jobs table for the batch functions. It has one row for each
+file, with the file’s full path in an `input` column. The full path is
+why the output above shows `/data/study/raw` and not `study/raw`.
+
+If the folder has no video files,
 [`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
-stops with an error rather than returning an empty table. The next
-section adds an `output` column to that table and hands it to a
-`*_batch()` verb.
+stops with an error. The next section adds an `output` column to the
+table and passes it to a `*_batch()` function.
 
 ## 1. Standardize the recordings
 
-Cameras rarely agree on resolution, frame rate, or codec, and
-inconsistent inputs make everything downstream harder.
+Cameras often differ in picture size, [frame
+rate](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary)
+and
+[codec](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary).
+Those differences make later steps harder.
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
-re-encodes a file to a common target:
+[re-encodes](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary)
+a file to one common format:
 
 ``` r
 
@@ -67,11 +71,10 @@ standardize_video(
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"scale=w=1280:h=720,fps=30\" -codec:v libx264 -codec:a copy -pix_fmt yuv420p -movflags +faststart -map \"0:v?\" -map \"0:a?\" \"session01_camA_std.mp4\""
 ```
 
-Because this runs the same way for every file, reach for the batch
-sibling to do the whole folder from a jobs tibble (see
+To do the same for the whole folder, use the batch version with the jobs
+table. Each task function has a `*_batch()` version like this one. See
 [`vignette("batch")`](https://jmgirard.github.io/tidymedia/articles/batch.md)
-for the batch model). Every task verb has a `*_batch()` companion like
-this one:
+for how batches work.
 
 ``` r
 
@@ -79,20 +82,68 @@ jobs$output <- sub("/raw/", "/std/", jobs$input)
 standardize_video_batch(jobs, width = 1280, height = 720, fps = 30)
 ```
 
-Re-encoding a large study can be slow on the CPU.
-[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
-[`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
-and the other verbs that re-encode video accept `hardware =` to move
-that encode onto the machine’s video hardware. There are two backends:
-`"nvenc"` for an NVIDIA GPU with an nvenc-capable FFmpeg, and
-`"videotoolbox"` for Apple hardware on macOS. Name the one this machine
-has, and check for it under the same name first:
+### Using video hardware
+
+Re-encoding a large study on the main processor can be slow. Functions
+that re-encode video, such as
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+and
+[`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
+take a `hardware` argument. It moves the work to a [hardware
+encoder](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary).
+
+There are two choices. Use `"nvenc"` for an NVIDIA graphics card, with
+an FFmpeg build that supports nvenc. Use `"videotoolbox"` for Apple
+hardware on macOS.
+
+These functions show what your FFmpeg can do.
+[`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
+and
+[`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
+list its codecs and encoders.
+[`hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
+gives the encoder name for a codec and a hardware choice.
+[`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
+says whether your FFmpeg has that encoder:
 
 ``` r
 
-# Check availability first: this reflects the FFmpeg build, not a guarantee
-# that the hardware behind it works at run time
+head(ffmpeg_codecs())
+#> # A tibble: 6 × 8
+#>   name       details           type  decoding encoding intraframe lossy lossless
+#>   <chr>      <chr>             <fct> <lgl>    <lgl>    <lgl>      <lgl> <lgl>   
+#> 1 012v       Uncompressed 4:2… Video TRUE     FALSE    TRUE       FALSE TRUE    
+#> 2 4xm        4X Movie          Video TRUE     FALSE    FALSE      TRUE  FALSE   
+#> 3 8bps       QuickTime 8BPS v… Video TRUE     FALSE    TRUE       FALSE TRUE    
+#> 4 a64_multi  Multicolor chars… Video FALSE    TRUE     TRUE       TRUE  FALSE   
+#> 5 a64_multi5 Multicolor chars… Video FALSE    TRUE     TRUE       TRUE  FALSE   
+#> 6 aasc       Autodesk RLE      Video TRUE     FALSE    FALSE      FALSE TRUE
+
+encoders <- ffmpeg_encoders()
+head(encoders[encoders$type == "Video", c("name", "details")])
+#> # A tibble: 6 × 2
+#>   name      details                                                             
+#>   <chr>     <chr>                                                               
+#> 1 a64multi  Multicolor charset for Commodore 64 (codec a64_multi)               
+#> 2 a64multi5 Multicolor charset for Commodore 64, extended with 5th color (colra…
+#> 3 alias_pix Alias/Wavefront PIX image                                           
+#> 4 amv       AMV Video                                                           
+#> 5 apng      APNG (Animated Portable Network Graphics) image                     
+#> 6 asv1      ASUS V1
+
+hardware_encoder("h264", "nvenc")
+#> [1] "h264_nvenc"
+hardware_encoder("h264", "videotoolbox")
+#> [1] "h264_videotoolbox"
 has_hardware_encoder("h264", "videotoolbox")
+#> [1] FALSE
+```
+
+[`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
+checks how FFmpeg was built. A `TRUE` result does not prove that the
+hardware works. When it is `TRUE`, name that hardware in the batch:
+
+``` r
 
 standardize_video_batch(
   jobs, width = 1280, height = 720, fps = 30,
@@ -100,24 +151,33 @@ standardize_video_batch(
 )
 ```
 
-If the backend you named is unavailable this errors by default, so a
-shared script never silently changes codec; pass `fallback = TRUE` to
-re-encode in software instead. The two backends cover different codec
-families — nvenc h264, hevc and av1, videotoolbox h264 and hevc — and
-asking one for a family it has no encoder for is an error naming that
-backend and that family. Hardware *decoding* (`-hwaccel`) and GPU filter
-pipelines are out of scope — reach for the
-[`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
-escape hatch there.
+If the hardware you name is not available, the call stops with an error.
+So a shared script never changes the codec without telling you. Add
+`fallback = TRUE` to use the main processor instead.
+
+The two choices support different codecs. NVIDIA nvenc supports H.264,
+HEVC and AV1. Apple videotoolbox supports H.264 and HEVC. A codec that
+the hardware does not support is an error that names both.
+
+tidymedia does not do hardware decoding or run filters on a graphics
+card. For those, use the direct command
+[`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md).
 
 ## 2. Prepare the audio
 
-Acoustic and transcription tools want clean, consistently loud audio.
+Sound analysis and transcription tools work best with clean audio at an
+even loudness.
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
-brings a file to a target integrated loudness (here −23 LUFS, the EBU
-R128 broadcast reference). Its output is **one audio stream and no
-video**, so name an audio file for it — normalizing into a video
-container would give you a `.mp4` carrying nothing but sound:
+sets a file’s loudness to a target. Here the target is -23
+[LUFS](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary),
+the level that the EBU R 128 broadcast standard uses.
+
+The output of
+[`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
+has one audio
+[stream](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary)
+and no video. So give it an audio file name. An `.mp4` name would give
+you a video file with sound and no picture:
 
 ``` r
 
@@ -126,16 +186,15 @@ normalize_audio(session, "session01_camA_norm.wav",
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0\" -map \"0:a:0\" \"session01_camA_norm.wav\""
 ```
 
-To normalize a recording’s loudness *and* keep its picture, normalize to
-an audio file as above and mux it back with the
+To set the loudness and keep the picture, first write the audio file as
+above. Then use the direct command
 [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
-escape hatch.
+to put it back with the video.
 
-To hand the speech to a transcription or acoustic-analysis tool, pull
-the audio into a standalone file.
+A transcription tool needs the audio in its own file.
 [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
-transcodes to whatever the output extension implies — a `.wav` for an
-automatic-speech-recognition pipeline:
+converts the audio to the format that the output extension names. Here
+that is a `.wav` file for a speech recognition tool:
 
 ``` r
 
@@ -143,17 +202,17 @@ convert_audio(session, "session01_camA.wav", run = FALSE)
 #> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map \"0:a:0\" \"session01_camA.wav\""
 ```
 
-(If you only need the audio *without* re-encoding,
+If you need the audio as it is,
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
-stream-copies it instead — see
-[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md).)
+copies it without converting it. See
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md).
 
 ## 3. Frames for visual coding
 
-Frame-by-frame coding of facial behavior or gesture needs stills.
+Coding facial expressions or gestures frame by frame needs still images.
 [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md)
-grabs a single frame at a timestamp — handy for a coding-manual
-illustration:
+saves one frame at a given time. This is useful for a picture in a
+coding manual:
 
 ``` r
 
@@ -162,8 +221,8 @@ extract_frame(session, "session01_camA_t30.png", timestamp = 30, run = FALSE)
 ```
 
 [`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md)
-samples at a fixed rate into a numbered image sequence — one frame per
-second here, ready for a manual or computer-vision coding pass:
+saves frames at a fixed rate, as numbered image files. Here it saves one
+frame per second, for coding by hand or by a computer vision tool:
 
 ``` r
 
@@ -173,12 +232,13 @@ sample_frames("session01_camA_std.mp4", outdir = "frames/session01_camA",
 
 ## 4. De-identify before sharing
 
-Sharing recordings with remote coders usually means removing identifying
-information first. Two verbs cover the common cases.
+Before you share recordings with coders, you often must remove
+information that identifies people. Two task functions cover the common
+cases.
 
 [`strip_metadata()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md)
-removes container-level metadata — camera model, GPS coordinates,
-recording timestamps — without touching the audio or video streams:
+removes the file’s metadata, such as the camera model, GPS location and
+recording time. It does not change the audio or the video:
 
 ``` r
 
@@ -187,10 +247,10 @@ strip_metadata(session, "session01_camA_clean.mp4", run = FALSE)
 ```
 
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
-box-fills one or more **fixed rectangles** you specify. This is not face
-tracking — you give it the coordinates of a region that stays put, such
-as an on-screen name caption or a fixed nameplate, and it paints a solid
-box over it. Regions are a data frame, one row per box:
+fills one or more rectangles with a solid color. It does not find or
+follow faces. You give the position of an area that does not move, such
+as a name caption on screen. You give the areas as a data frame, with
+one row for each box:
 
 ``` r
 
@@ -206,8 +266,10 @@ anonymize_video(session, "session01_camA_deid.mp4", regions = regions,
 
 If a session was recorded in parts,
 [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md)
-joins them back into one file (the parts must share a codec and
-container — they do here, since step 1 standardized them):
+joins the parts into one file. The parts must have the same codec,
+[container](https://jmgirard.github.io/tidymedia/articles/tidymedia.html#glossary),
+picture size and frame rate. Here they do, because step 1 made them the
+same:
 
 ``` r
 
@@ -217,10 +279,11 @@ concatenate_videos(
 )
 ```
 
-Finally,
+Last,
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
-produces a lightweight, broadly compatible H.264 file with fast-start
-enabled, so coders can stream it in a browser without a large download:
+makes an H.264 file that most browsers can play. It moves the file’s
+index to the start, so coders can watch it in a browser before it has
+fully downloaded:
 
 ``` r
 
@@ -230,31 +293,30 @@ format_for_web(session, "session01_camA_share.mp4", run = FALSE)
 
 ## Reproducibility
 
-Every verb returns the exact FFmpeg command it compiled. Capturing those
-strings — or running the pipeline through the batch runner, which
-collects them in a `command` column — gives you a complete, re-runnable
-record of how each processed file was produced. That record is the
-point: the pipeline above is not a one-off, but a specification you can
-re-apply to the next cohort of recordings.
+Each task function returns the FFmpeg command it used. A batch run also
+keeps these commands, in a `command` column. Save the commands, and you
+have a full record of how each file was made. You can then run the same
+steps on the next group of recordings.
 
-The command says what you asked for. To record what actually happened —
-the FFmpeg version that ran, when, and checksums of what went in and
-came out — run the batch with `manifest = TRUE` and read it back with
+The command records what you asked for. A manifest records what
+happened: the FFmpeg version, the time, and checksums of the files. Run
+the batch with `manifest = TRUE` and read the manifest with
 [`ffm_manifest()`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md).
-To confirm each output really has the duration, dimensions and codecs
-you asked for, check it with
+
+To check that each output has the duration, size and codecs you asked
+for, use
 [`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md).
-Both, and the wall-clock limit that keeps a hung file from taking the
-session with it, are covered in
-[`vignette("verification")`](https://jmgirard.github.io/tidymedia/articles/verification.md).
+[`vignette("verification")`](https://jmgirard.github.io/tidymedia/articles/verification.md)
+covers both, and also shows how to stop a file that hangs.
 
 ## Where to next
 
 - [`vignette("batch")`](https://jmgirard.github.io/tidymedia/articles/batch.md)
-  — the jobs-tibble batch runner in depth.
+  explains the batch functions in more detail.
 - [`vignette("metadata")`](https://jmgirard.github.io/tidymedia/articles/metadata.md)
-  — reading each file’s metadata as a tibble.
+  shows how to read each file’s metadata into a tibble.
 - [`vignette("verification")`](https://jmgirard.github.io/tidymedia/articles/verification.md)
-  — checking outputs, recording provenance, bounding a run that hangs.
+  shows how to check outputs, record how files were made and limit run
+  time.
 - [`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
-  — the task verbs and the builder beneath them.
+  explains the task functions and the pipeline functions.

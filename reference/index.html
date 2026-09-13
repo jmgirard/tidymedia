@@ -42,7 +42,7 @@
     <div class="section level2">
       <h2 id="package">Package<a class="anchor" aria-label="anchor" href="#package"></a></h2>
 
-      <div class="section-desc"><p>What tidymedia is for and how its three layers fit together.</p></div>
+      <div class="section-desc"><p>What tidymedia is for, and how its three kinds of function fit together.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -58,7 +58,7 @@
       </dl></div><div class="section level2">
       <h2 id="concepts">Concepts<a class="anchor" aria-label="anchor" href="#concepts"></a></h2>
 
-      <div class="section-desc"><p>Background on arguments that recur across many verbs.</p></div>
+      <div class="section-desc"><p>Background on arguments that many functions share.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -72,9 +72,9 @@
         </dt>
         <dd>Audio track and audio input indices</dd>
       </dl></div><div class="section level2">
-      <h2 id="bounding-a-run">Bounding a run<a class="anchor" aria-label="anchor" href="#bounding-a-run"></a></h2>
+      <h2 id="time-limits">Time limits<a class="anchor" aria-label="anchor" href="#time-limits"></a></h2>
 
-      <div class="section-desc"><p>Put a wall-clock limit on one call, or on the rest of a function, so a hung program stops that work rather than the session.</p></div>
+      <div class="section-desc"><p>Set a time limit on one call, or on the rest of a function. A program that hangs then stops that call, not the R session.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -95,9 +95,9 @@
         </dt>
         <dd>Bound the rest of a function's wall-clock time</dd>
       </dl></div><div class="section level2">
-      <h2 id="layer-escape-hatches">Layer 0: escape hatches<a class="anchor" aria-label="anchor" href="#layer-escape-hatches"></a></h2>
+      <h2 id="direct-commands">Direct commands<a class="anchor" aria-label="anchor" href="#direct-commands"></a></h2>
 
-      <div class="section-desc"><p>Pass a raw argument string straight to the command-line tools. Use these when you need something tidymedia does not wrap.</p></div>
+      <div class="section-desc"><p>Pass your own arguments to FFmpeg, FFprobe or MediaInfo. Use these for anything that tidymedia does not cover.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -125,9 +125,9 @@
         </dt>
         <dd>Run MediaInfo CLI</dd>
       </dl></div><div class="section level2">
-      <h2 id="layer-the-pipeline-builder">Layer 1: the pipeline builder<a class="anchor" aria-label="anchor" href="#layer-the-pipeline-builder"></a></h2>
+      <h2 id="pipeline-functions">Pipeline functions<a class="anchor" aria-label="anchor" href="#pipeline-functions"></a></h2>
 
-      <div class="section-desc"><p>Assemble a reproducible FFmpeg command step by step, then compile or run it.</p></div>
+      <div class="section-desc"><p>Build an FFmpeg command one step at a time, then compile it or run it.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -295,9 +295,9 @@
         </dt>
         <dd>Print an FFmpeg pipeline</dd>
       </dl></div><div class="section level2">
-      <h2 id="layer-task-verbs">Layer 2: task verbs<a class="anchor" aria-label="anchor" href="#layer-task-verbs"></a></h2>
+      <h2 id="task-functions">Task functions<a class="anchor" aria-label="anchor" href="#task-functions"></a></h2>
 
-      <div class="section-desc"><p>Thin wrappers over the builder for common preprocessing jobs.</p></div>
+      <div class="section-desc"><p>Do a common job in one call. Each one is built from the pipeline functions.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -514,9 +514,9 @@
         </dt>
         <dd>Inset One Video Over Another For Many Outputs From a Jobs Table</dd>
       </dl></div><div class="section level2">
-      <h2 id="verification-provenance">Verification &amp; provenance<a class="anchor" aria-label="anchor" href="#verification-provenance"></a></h2>
+      <h2 id="checking-outputs-and-recording-runs">Checking outputs and recording runs<a class="anchor" aria-label="anchor" href="#checking-outputs-and-recording-runs"></a></h2>
 
-      <div class="section-desc"><p>Check that an output really has the properties you asked for, and record a reproducibility manifest for a batch run.</p></div>
+      <div class="section-desc"><p>Check that an output has the properties you asked for, and record how the files in a batch were made.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -539,7 +539,7 @@
       </dl></div><div class="section level2">
       <h2 id="media-metadata">Media metadata<a class="anchor" aria-label="anchor" href="#media-metadata"></a></h2>
 
-      <div class="section-desc"><p>Read container and stream metadata as tibbles, ready for the tidyverse.</p></div>
+      <div class="section-desc"><p>Read container and stream metadata into tibbles.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -618,7 +618,7 @@
       </dl></div><div class="section level2">
       <h2 id="ffmpeg-capabilities">FFmpeg capabilities<a class="anchor" aria-label="anchor" href="#ffmpeg-capabilities"></a></h2>
 
-      <div class="section-desc"><p>Discover the codecs and encoders available in your FFmpeg build, including opt-in hardware (GPU) encoding.</p></div>
+      <div class="section-desc"><p>List the codecs and encoders in your FFmpeg build, including hardware encoders.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -655,7 +655,7 @@
       </dl></div><div class="section level2">
       <h2 id="program-management">Program management<a class="anchor" aria-label="anchor" href="#program-management"></a></h2>
 
-      <div class="section-desc"><p>Locate, configure, and install the FFmpeg and MediaInfo binaries.</p></div>
+      <div class="section-desc"><p>Find, set and install the FFmpeg and MediaInfo programs.</p></div>
 
       <dl></dl></div><div class="section level2">
 

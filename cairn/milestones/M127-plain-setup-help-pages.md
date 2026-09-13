@@ -25,8 +25,8 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - [x] AC2: The prose sweep over the M127 domain prints no sentence over 25 words.
 - [x] AC3: For each page in the domain, take each glossary stem found in its `--prose` output. The page defines the term at its first use or names the glossary in `vignette("tidymedia")`. One ledger row per page records the stems and how each is met.
 - [x] AC4: `tools::Rd2txt()` output for `man/tidymedia-package.Rd` is at most 80 lines. Its first paragraph says what the package does and names `vignette("tidymedia")` as the place to start.
-- [x] AC5: Each page in the domain has a ledger row that says what text left it and where that text went: moved (with the page), or deleted (with a reason). Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the domain at the base commit is still found in some `man/*.Rd` file at head, or has a ledger row.
-- [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
+- [ ] AC5: Each page in the domain has a ledger row that says what text left it and where that text went: moved (with the page), or deleted (with a reason). Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the domain at the base commit is still found in some `man/*.Rd` file at head, or has a ledger row.
+- [x] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
 
@@ -122,3 +122,23 @@ Evidence is from 2026-09-13 on `629d68a4`. That commit contains `origin/master` 
 - AC3: a search for the ten glossary stems over each page's `--prose` output finds stems on 8 pages, with the same pages and stems as the ledger table. Each of the 8 rendered pages names the glossary in `vignette("tidymedia")`.
 - AC4: `tools::Rd2txt()` on `man/tidymedia-package.Rd` gives 78 lines. The Description paragraph says what the package does and ends "Start with `vignette("tidymedia")`".
 - AC5: the ledger's AC5 table has one row for each of the 28 pages. At `264afff4` the pattern finds 27 identifiers in the 28 pages. At head, a whole-word search finds all 27 in `man/*.Rd`. The fact that reviewer O4 found missing is back on `?tidymedia`. `man/tidymedia-package.Rd` says that a bad `tidymedia.check_tracks` value gives an error that names the option. The `tidymedia-package` and `with_timeout` rows record the check-order text that moved to `?with_timeout`.
+- AC6: passes on `32894fbf`, whose code is the same as `629d68a4`. `devtools::check()` on `629d68a4` gives 0 errors, 0 warnings and 0 notes, and the spelling comparison is OK. `devtools::document()` leaves `man/` and `NAMESPACE` unchanged. In round 1, a planted roxygen edit showed that it does write. `devtools::test()` gives 1738 tests, 0 failed, 0 errors, 5 skipped. `pkgdown::check_pkgdown()` finds no problems.
+- AC5 correction: the box is unticked again. Reviewer finding R2-7 shows three facts that left `?tidymedia` with no ledger row. These are what the FFprobe and MediaInfo readers return, and that the full function list is on the reference index. The third is the layer description. The reworded overview may cover it, and the row must say so.
+- Consistency gate: `cairn_validate` passes. The diff adds no top-level file and changes no `README`, `NEWS.md`, `DESCRIPTION` or `DESIGN.md`. No principle changed.
+
+### Review round 2 findings
+
+Three new-context reviewers ran on `629d68a4`. The prior-review reviewer found no PR comments, and its one finding is R2-2. The blame-history reviewer's one finding is also R2-2. It made one note: the `@family` renames are consistent and contradict no decision. The diff-bug reviewer ranked 12 findings, listed here in its order. It found the code the same as at base, apart from reordered functions and generated help strings. R2-2, R2-6 and R2-7 are confirmed by this session. The rest are as reported.
+
+- R2-1: `?with_timeout` lists every `_batch` function and `segment_video()` as warning on a reached limit. Two paths give a `tidymedia_timeout` error instead. The first is the analysis pass of `normalize_audio_batch(two_pass = TRUE)`, which calls `run_program()` inside `purrr::pmap()` with no catch. The second is the encoder check under a named `hardware` backend. The same gap is at base.
+- R2-2: "which counts every stream.An input" is missing a space in `R/audio-stream-doc.R:151`. The O14 fix added the error, and the text lands on `?separate_audio_video` and `?separate_audio_video_batch`.
+- R2-3: `?local_timeout` narrowed the second case to a function that has returned. A `.local_envir` such as `new.env()` also leaves the limit set, and the page no longer says so.
+- R2-4: the `?local_timeout` Description says "except in the two cases in Details". Details also describes a third case, a call written directly inside `with_timeout()`.
+- R2-5: `R/verify.R:26` is a new roxygen line of 83 characters, so O15 is not fully fixed.
+- R2-6: the comment above `resolve_timeout()` still names `segment_video()`'s `outfiles` as losing to the limit. `outfiles` is checked first (`R/ffmpeg.R:3842`, before 3906).
+- R2-7: the `tidymedia-package` ledger row does not record three removed items. See the AC5 correction.
+- R2-8: in `?refresh_ffmpeg_capabilities` Parallel workers, "This is not the case when you have set `tidymedia.hardware_encoders`" attaches to the wrong sentence.
+- R2-9: in the `?install_on_win` Value section, "Other failures give an error, listed in the section Errors" also covers argument errors that the section does not list.
+- R2-10: the `ffprobe()` and `mediainfo()` Value sections say that standard error is not returned. A command ending in `2>&1` does return it.
+- R2-11: in `test-timeout-silence.R:692`, the new `skip_if()` for the landing topic also skips the `rd` and `news` assertions.
+- R2-12: the `?with_timeout` Description says "the session's own limit is back". Inside a function that called `local_timeout()`, it is the limit that was in force.

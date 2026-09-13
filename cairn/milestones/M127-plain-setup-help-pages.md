@@ -1,13 +1,13 @@
 # M127: ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** M126
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — shipped help pages, including the package's landing page
-- **Branch/PR:** —
+- **Branch/PR:** `m127-plain-setup-help-pages`
 
 ## Goal
 

@@ -11,7 +11,7 @@ _Last hygiene check: 2026-09-13 (M126 done and archived; PR #130 squash-merged, 
 | M124 | The batch docs teach ffm_jobs(), and four wrong doc statements are corrected | done | — | normal | milestones/archive/M124-batch-docs-teach-ffm-jobs.md |
 | M125 | Batch runs refuse two jobs writing one output | done | — | normal | milestones/archive/M125-batch-output-collisions.md |
 | M126 | The vignettes and README read as plain English for an R user | done | — | high | milestones/archive/M126-plain-vignettes-readme.md |
-| M127 | ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English | planned | M126 | high | milestones/M127-plain-setup-help-pages.md |
+| M127 | ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English | in-progress | M126 | high | milestones/M127-plain-setup-help-pages.md |
 | M128 | The pipeline function (ffm_*) help pages read as plain English | planned | M126 | high | milestones/M128-plain-pipeline-help-pages.md |
 | M129 | The audio, frame and FFmpeg-capability help pages read as plain English, and repeated text is written once | planned | M126 | high | milestones/M129-plain-audio-frame-help-pages.md |
 | M130 | The video and composition task help pages read as plain English | planned | M129 | high | milestones/M130-plain-video-help-pages.md |

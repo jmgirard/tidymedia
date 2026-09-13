@@ -27,7 +27,7 @@ The README, the five vignettes and the pkgdown reference index use plain English
 - [x] AC4: Each `##` or `###` heading in the six files at the base commit has a ledger row. The row says where the content went: kept, moved (with the file and section), or deleted (with a reason).
 - [x] AC5: Take every name from `getNamespaceExports("tidymedia")` that a search for `\bname\(` finds in the six files at the base commit. Add every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` there. Each one is still found in the six files or in `man/*.Rd` at head, or has a ledger row that says why it was dropped.
 - [x] AC6: The pipeline tour in `vignette("tidymedia")` calls `ffm_fps()`, `ffm_drawbox()`, `ffm_loudnorm()` and `ffm_output_options()` in code chunks. A vignette calls `ffmpeg_codecs()`, `ffmpeg_encoders()` and `hardware_encoder()` in a code chunk.
-- [ ] AC7: With FFmpeg, FFprobe and MediaInfo present, `devtools::build_readme()` and `devtools::build_vignettes()` succeed. `Rscript tools/build_vignettes_without_binaries.R both` exits 0. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures.
+- [x] AC7: With FFmpeg, FFprobe and MediaInfo present, `devtools::build_readme()` and `devtools::build_vignettes()` succeed. `Rscript tools/build_vignettes_without_binaries.R both` exits 0. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures.
 
 ## Coverage
 
@@ -82,3 +82,33 @@ Evidence gathered 2026-09-13 on `m126-plain-vignettes-readme` at `c2b555a2`. The
 - AC4: An `awk` pass lists the `##` and `###` headings outside code chunks in the six files at `d5c53674`. It finds 39. Each has a matching `| file | heading |` row in the M126 ledger, and none is missing. Every "Kept, as" name is a heading at head. The moved timeout schedule and the 42.0 s measurement were read at `R/timeout.R:5-10`. The schedule was read in `man/with_timeout.Rd` Details. The per-function error list was read in the "Bounding a run that hangs" section of `man/tidymedia-package.Rd`.
 - AC5: `getNamespaceExports("tidymedia")` gives 90 names, the same count as `export(` lines in the base `NAMESPACE`. A `\bname\(` search of the six files at `d5c53674` matches 66 of them. The two identifier patterns add 4. At head, a `\bname\b` search of the six files finds all 70, so no name falls back to `man/*.Rd` and no dropped row is needed. The 66 exports are still called as `name(` at head. The 4 condition and option names are named without a call.
 - AC6: An `awk` pass over lines inside `{r` chunks finds `ffm_fps(`, `ffm_drawbox(`, `ffm_loudnorm(` and `ffm_output_options(` in `vignettes/tidymedia.Rmd` at lines 148, 149, 160 and 170. It finds `ffmpeg_codecs(`, `ffmpeg_encoders(` and `hardware_encoder(` in `vignettes/workflow.Rmd` at lines 106, 108, 111 and 112. That chunk is `eval = has_ffmpeg`.
+- AC7: FFmpeg 9.0.1, FFprobe and MediaInfo were found in `/opt/homebrew/bin`. `devtools::build_readme()` and `devtools::build_vignettes()` each exit 0, and `README.md` has no diff after the build. `Rscript tools/build_vignettes_without_binaries.R both` exits 0 and reports no error or warning lines. `devtools::check()` reports 0 errors, 0 warnings and 0 notes in 7m 43.1s. `devtools::test()`, run alone after it, reports FAIL 0, WARN 12, SKIP 5, PASS 13858.
+
+Consistency gate:
+
+- `cairn_validate.py` exits 0 with all checks passed. No principle changed, so `cairn_impact.py` was skipped.
+- `devtools::document()` exits 0 with no diff. It did not regenerate, because the installed roxygen2 is 8.0.0 and the package uses 8.1.0. The branch changes no roxygen comment, so no `man/` drift can come from it.
+- `README.md` is in sync with `README.Rmd` after `build_readme()`.
+- `pkgdown::check_pkgdown()` finds no problems.
+- `NEWS.md` has no entry, as Scope Out and D091 state.
+- The branch adds no top-level file. `tools/` is covered by `^tools$` in `.Rbuildignore`.
+- `tools/vignette_chunk_guards.R` and `tools/vignette_chunk_program_identity.R` each report none.
+
+Independent review (three fresh reviewers):
+
+- [S] history: no finding. It traced the three largest deletions: the install digest note, the 42.0 s timing and the fractional-limit note. Each destination carries the content.
+- [S] prior reviews: no finding. The archived reviews for M114, M115, M119, M123 and M124 were checked. GitHub has no PR review comments.
+- [O] diff: 13 findings, ranked below. O1 to O3 were confirmed against the files.
+  - O1: `README.Rmd:91-94` lost the `brew --prefix ffmpeg` step for a `NA` location, and no help page has it.
+  - O2: `README.Rmd:83-86` says to unzip MediaInfo but no longer names a folder. The next line assumes `C:/Program Files/MediaInfo`.
+  - O3: `verification.Rmd:273-281` implies the condition classes cover the metadata readers' `NA`-row warning. `warn_unreadable()` gives that warning with no class. The base text had the same gap.
+  - O4: the sweep needs a capital letter after a period, so a sentence that starts with "tidymedia" joins the one before it (`tidymedia.Rmd:165`, `verification.Rmd:158`).
+  - O5: in an Rd Arguments section, a wrapped line with `": "` and a short indent counts as a new argument, and the text before the colon is dropped.
+  - O6: Rd code spans are found only as curly quotes, so a non-UTF-8 locale gives other results.
+  - O7: exit codes overlap. A usage error and findings both exit 1, and exit 2 for an empty file drops reports already found.
+  - O8: in `.Rmd` prose, ` -- ` and `---` are not flagged. None is in the six files.
+  - O9: parse edge cases: a four-backtick fence, a `|` inside a code span, and prose between `<` and `>`. None is in the six files.
+  - O10: some lines are over 80 characters, and "A field name that you give by name" repeats itself.
+  - O11: the `NA` fix-up sentence does not name a setter for the `ffplay` row.
+  - O12: "nearest keyframe" means the keyframe at or before the time, which `?ffm_seek` also says loosely.
+  - O13: the page no longer says `ffm_manifest(res, path =)` returns invisibly.

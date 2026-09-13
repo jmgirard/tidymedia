@@ -60,51 +60,51 @@ Each help-page domain is the set of files that `grep -l -E "^% Please edit docum
 
 ### M126
 
-The base commit is `d5c53674`. The six files are `README.Rmd` and `vignettes/{tidymedia,workflow,batch,metadata,verification}.Rmd`. Chunks are left out of the heading list. T7 fills the Result column.
+The base commit is `d5c53674`. The six files are `README.Rmd` and `vignettes/{tidymedia,workflow,batch,metadata,verification}.Rmd`. Chunks are left out of the heading list. The Result column was filled at T7. "Kept" means the heading and its content are still in the same file, under the name given.
 
 #### Headings at the base commit (AC4)
 
 | File | Heading | Result |
 |---|---|---|
-| README.Rmd | `## Installation` | |
-| README.Rmd | `### Dependencies` | |
-| README.Rmd | `## Examples` | |
-| README.Rmd | `### Build reproducible FFmpeg commands` | |
-| README.Rmd | `### Process a folder in batch` | |
-| README.Rmd | `### Read metadata as tibbles` | |
-| README.Rmd | `### Query FFmpeg's capabilities` | |
-| README.Rmd | `## Code of Conduct` | |
-| tidymedia.Rmd | `## Start with a task verb` | |
-| tidymedia.Rmd | `### Choosing an audio track` | |
-| tidymedia.Rmd | `## The three layers` | |
-| tidymedia.Rmd | `## Building a pipeline` | |
-| tidymedia.Rmd | `## Copy versus re-encode` | |
-| tidymedia.Rmd | `## Combining multiple inputs` | |
-| tidymedia.Rmd | `## Where to next` | |
-| workflow.Rmd | `## 1. Standardize the recordings` | |
-| workflow.Rmd | `## 2. Prepare the audio` | |
-| workflow.Rmd | `## 3. Frames for visual coding` | |
-| workflow.Rmd | `## 4. De-identify before sharing` | |
-| workflow.Rmd | `## 5. Assemble and share` | |
-| workflow.Rmd | `## Reproducibility` | |
-| workflow.Rmd | `## Where to next` | |
-| batch.Rmd | `## The batch runner` | |
-| batch.Rmd | `## Per-verb batch siblings` | |
-| batch.Rmd | `## Fan-out verbs` | |
-| batch.Rmd | `## Running in parallel` | |
-| batch.Rmd | `## Where to next` | |
-| metadata.Rmd | `## Which reader?` | |
-| metadata.Rmd | `## Probing with FFprobe` | |
-| metadata.Rmd | `## Querying with MediaInfo` | |
-| metadata.Rmd | `## Batching over many files` | |
-| metadata.Rmd | `## Where to next` | |
-| verification.Rmd | `## Check the output against what you asked for` | |
-| verification.Rmd | `### Checking every job in a batch` | |
-| verification.Rmd | `## Record how the files were made` | |
-| verification.Rmd | `## Bound a run that hangs` | |
-| verification.Rmd | `### What the limit actually bounds` | |
-| verification.Rmd | `### A reached limit is never silent` | |
-| verification.Rmd | `## Where to next` | |
+| README.Rmd | `## Installation` | Kept. |
+| README.Rmd | `### Dependencies` | Kept. Content trimmed at the implement gate: one install line for each platform and one `program_status()` check. Deleted: the Windows and macOS download steps for MediaInfo, the evermeet.cx manual FFmpeg route, the `brew --prefix` recovery step, and the `install_on_win()` digest details. Reason: the user chose a short install section, and `?set_program` and `?install_on_win` carry the details. |
+| README.Rmd | `## Examples` | Kept. |
+| README.Rmd | `### Build reproducible FFmpeg commands` | Kept. |
+| README.Rmd | `### Process a folder in batch` | Kept. |
+| README.Rmd | `### Read metadata as tibbles` | Kept. |
+| README.Rmd | `### Query FFmpeg's capabilities` | Kept. |
+| README.Rmd | `## Code of Conduct` | Kept. |
+| tidymedia.Rmd | `## Start with a task verb` | Kept, as `## Start with a task function`. |
+| tidymedia.Rmd | `### Choosing an audio track` | Kept. |
+| tidymedia.Rmd | `## The three layers` | Kept, as `## Three kinds of function`. |
+| tidymedia.Rmd | `## Building a pipeline` | Kept. New `### More pipeline steps` added under it. |
+| tidymedia.Rmd | `## Copy versus re-encode` | Kept, as `## Fast cuts and exact cuts`. |
+| tidymedia.Rmd | `## Combining multiple inputs` | Kept. |
+| tidymedia.Rmd | `## Where to next` | Kept. |
+| workflow.Rmd | `## 1. Standardize the recordings` | Kept. Its hardware paragraphs moved to a new `### Using video hardware` under it. |
+| workflow.Rmd | `## 2. Prepare the audio` | Kept. |
+| workflow.Rmd | `## 3. Frames for visual coding` | Kept. |
+| workflow.Rmd | `## 4. De-identify before sharing` | Kept. |
+| workflow.Rmd | `## 5. Assemble and share` | Kept. |
+| workflow.Rmd | `## Reproducibility` | Kept. |
+| workflow.Rmd | `## Where to next` | Kept. |
+| batch.Rmd | `## The batch runner` | Kept. |
+| batch.Rmd | `## Per-verb batch siblings` | Kept, as `## Batch task functions`. |
+| batch.Rmd | `## Fan-out verbs` | Kept, as `## One input, many outputs`. |
+| batch.Rmd | `## Running in parallel` | Kept. |
+| batch.Rmd | `## Where to next` | Kept. |
+| metadata.Rmd | `## Which reader?` | Kept. |
+| metadata.Rmd | `## Probing with FFprobe` | Kept. |
+| metadata.Rmd | `## Querying with MediaInfo` | Kept. |
+| metadata.Rmd | `## Batching over many files` | Kept. |
+| metadata.Rmd | `## Where to next` | Kept. |
+| verification.Rmd | `## Check the output against what you asked for` | Kept. The check rules moved to a new `### What the checks cover` under it. |
+| verification.Rmd | `### Checking every job in a batch` | Kept. |
+| verification.Rmd | `## Record how the files were made` | Kept. |
+| verification.Rmd | `## Bound a run that hangs` | Kept. |
+| verification.Rmd | `### What the limit actually bounds` | Kept, as `### Limits of the time limit`. Moved: the signal schedule and the 42.0 s measurement, to the code comment at `R/timeout.R:5-10`. The schedule is also in `?with_timeout` Details. Deleted: the note that `local_timeout()` and the option also refuse `0.5`, because the one example shows the rule. |
+| verification.Rmd | `### A reached limit is never silent` | Kept, as `### What happens when the limit is reached`. Moved: the per-function list of errors and warnings, to the "Bounding a run that hangs" section of `?tidymedia`. Deleted: the reason `verify_media()` gives an error, as design history. |
+| verification.Rmd | `## Where to next` | Kept. |
 
 #### Names and identifiers at the base commit (AC5)
 
@@ -112,4 +112,37 @@ These 66 exports match `\bname\(` in the six files: `anonymize_video`, `compare_
 
 These 4 identifiers match `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+`: `tidymedia_batch_timeout`, `tidymedia_probe_timeout`, `tidymedia_timeout`, `tidymedia.timeout`.
 
-T7 records here each name that is in neither the six files nor `man/*.Rd` at head, with the reason it was dropped.
+At head, a `\bname\b` search finds all 70 of these names in the six files, so no name needs a dropped row. This was found on 2026-09-13 at T7.
+
+#### Glossary stems (AC3)
+
+Each row is one glossary stem found in a file's `--prose` output. Line is the line of the first sentence that uses the stem. "Links" means that sentence links the stem's word to the glossary. "Defines" means that sentence is the glossary entry itself. `batch.Rmd` uses no stem.
+
+| File | Stem | Line | Result |
+|---|---|---|---|
+| README.Rmd | `codec` | 172 | Links (full website address). |
+| README.Rmd | `container` | 152 | Links (full website address). |
+| README.Rmd | `stream` | 152 | Links (full website address). |
+| tidymedia.Rmd | `codec` | 29 | Links. |
+| tidymedia.Rmd | `stream` | 29 | Links. |
+| tidymedia.Rmd | `frame rate` | 143 | Links. |
+| tidymedia.Rmd | `LUFS` | 153 | Links. |
+| tidymedia.Rmd | `true peak` | 153 | Links. |
+| tidymedia.Rmd | `encod` | 176 | Links ("re-encodes"). |
+| tidymedia.Rmd | `key ?frame` | 176 | Links. |
+| tidymedia.Rmd | `container` | 234 | Defines. |
+| tidymedia.Rmd | `pixel format` | 247 | Defines. |
+| tidymedia.Rmd | `sampl(e\|ing) rate` | 252 | Defines. |
+| workflow.Rmd | `codec` | 67 | Links. |
+| workflow.Rmd | `frame rate` | 67 | Links. |
+| workflow.Rmd | `encod` | 67 | Links ("re-encodes"). |
+| workflow.Rmd | `LUFS` | 140 | Links. |
+| workflow.Rmd | `stream` | 145 | Links. |
+| workflow.Rmd | `container` | 213 | Links. |
+| metadata.Rmd | `container` | 31 | Links. |
+| metadata.Rmd | `stream` | 31 | Links. |
+| metadata.Rmd | `frame rate` | 85 | Links. |
+| verification.Rmd | `codec` | 80 | Links. |
+| verification.Rmd | `sampl(e\|ing) rate` | 84 | Links. |
+| verification.Rmd | `stream` | 89 | Links. |
+| verification.Rmd | `container` | 97 | Links. |

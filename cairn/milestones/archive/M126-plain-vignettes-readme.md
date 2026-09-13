@@ -1,0 +1,11 @@
+# M126: The vignettes and README read as plain English for an R user
+
+**Status:** done (2026-09-13, PR #130 https://github.com/jmgirard/tidymedia/pull/130)
+
+**Goal:** The five vignettes, `README.Rmd` and the `_pkgdown.yml` index text read as plain English for an R user, with no maintainer vocabulary, no sentence over 25 words, and every user-facing fact kept or moved on the record.
+
+**Outcome:** New `tools/doc_prose_report.R` sweeps `.Rmd` and `.Rd` prose for maintainer terms, sentences over 25 words and Rd dash asides. `vignette("tidymedia")` gained a 13-term `## Glossary` and a "More pipeline steps" tour calling `ffm_fps()`, `ffm_drawbox()`, `ffm_loudnorm()` and `ffm_output_options()`. `workflow.Rmd` gained a "Using video hardware" chunk calling `ffmpeg_codecs()`, `ffmpeg_encoders()`, `hardware_encoder()` and `has_hardware_encoder()`. `verification.Rmd` puts the basic `verify_media()` call first; the timeout schedule and 42.0 s timing left it for `R/timeout.R` and `?with_timeout`. The README install section keeps one install line and one `program_status()` check per platform. `_pkgdown.yml` drops the layer names. `cairn/references/plain-docs.md` holds the rules and the ledger: 39 headings, 26 glossary-stem rows, 70 names all still present. Six wrong claims were corrected, two of them from the base text.
+
+**Decisions:** Plan gate: a 25-word sentence cap; user facts kept in short end sections, history and timings moved out; help pages link to the glossary rather than define terms (user's choice). Implement gate: one glossary section with one anchor; README links by full address; README install trimmed to one route per platform (user's choice). No DECISIONS entry.
+
+**Review:** Fresh evidence for AC1-AC7 (check 0/0/0, test FAIL 0; CI 8/8 green). Fan-out: blame-history and prior-review lenses found nothing; diff-bug lens reported 13. Fixed at the gate: the README lost the `brew --prefix ffmpeg` step (O1) and the MediaInfo unzip folder (O2); `verification.Rmd` implied the metadata-reader warning has a condition class (O3); line wraps and a repeated phrase (O10). Follow-up: six sweep-parser limits (O4-O9) as item (o) of the shipped-docs candidate row. Three rejected with reasons. The CI wait timed out once and resumed. No returns. No lessons added or retired.

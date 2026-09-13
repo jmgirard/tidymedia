@@ -12,7 +12,8 @@ ffprobe(command)
 \value{
 A character vector with the text that FFprobe writes to standard
 output, one element for each line. Messages on standard error, such as
-FFprobe's banner and errors, are not returned.
+FFprobe's banner and errors, are not returned, unless \code{command} ends
+with a shell redirect such as \verb{2>&1}.
 }
 \description{
 \code{ffprobe()} runs the FFprobe program with the arguments in \code{command} and

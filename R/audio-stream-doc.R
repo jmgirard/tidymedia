@@ -148,8 +148,8 @@ audio_stream_extras <- list(
     "(\\code{.aac}, \\code{.mp3}, \\code{.wav}) makes FFmpeg fail, so name a ",
     "track to write one of those. Count only the input's \\emph{audio} ",
     "streams. Do not use the \\code{index} column of ",
-    "\\code{\\link{probe_audio}}, which counts every stream.An input with no audio at all is an FFmpeg ",
-    "error here, because the product of this function is the audio file. ",
+    "\\code{\\link{probe_audio}}, which counts every stream. An input with ",
+    "no audio at all is an FFmpeg error here, because the product of this function is the audio file. ",
     "The functions that pass video through do not fail in that case. ",
     "\\code{videofile} is never affected."
   ),

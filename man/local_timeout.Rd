@@ -15,9 +15,10 @@ limit does not change.}
 \item{.local_envir}{The environment that holds the limit. The default is the
 function that calls \code{local_timeout()}. Change it only when you write a
 helper that sets a limit for its own caller. Inside a function, the
-environment must belong to a function that is still running. If it
-belongs to a function that has returned, the limit stays set with no
-error. \code{\link[withr:local_options]{withr::local_options()}} works the same way. At the top level of a
+environment must belong to a function that is still running. Suppose it
+belongs to a function that has returned, or it is an environment such as
+\code{new.env()}. Then the limit stays set with no error.
+\code{\link[withr:local_options]{withr::local_options()}} works the same way. At the top level of a
 script or the console, \code{\link[withr:defer]{withr::defer()}} decides when the limit is undone.}
 }
 \value{
@@ -28,7 +29,7 @@ element, the same form that \code{\link[withr:local_options]{withr::local_option
 \code{local_timeout()} sets a time limit for the rest of the function that calls
 it. The limit applies to each FFmpeg, FFprobe or MediaInfo program that the
 function starts after this call. When the function returns, or stops with an
-error, the caller's own limit is back, except in the two cases in Details.
+error, the caller's own limit is back, except in the cases in Details.
 
 Use \code{\link[=with_timeout]{with_timeout()}} to set a limit on one expression. Use \code{local_timeout()}
 to set a limit on the rest of a function, or on several calls that are hard
@@ -47,21 +48,22 @@ Two calls in one function work like any two \verb{local_*()} calls. The second
 limit applies until the function ends. Then both are undone, and the caller's
 limit is back.
 
-In two cases, the limit stays set after the function ends, with no error.
-The first case is a function that calls \code{on.exit()} without \code{add = TRUE}.
-That call removes the undo step. Write \code{on.exit(..., add = TRUE)} instead.
-The second case is a \code{.local_envir} that belongs to a function that has
-returned.
-\code{\link[withr:local_options]{withr::local_options()}} has the same two limits, because R's exit handlers
-work this way.
-
-Do not call \code{local_timeout()} directly inside the expression of
+In three cases, the caller's limit is not back when the function ends, and
+there is no error.
+\itemize{
+\item The function calls \code{on.exit()} without \code{add = TRUE}. That call removes the
+undo step. Write \code{on.exit(..., add = TRUE)} instead.
+\item The \code{.local_envir} belongs to a function that has returned, or it is an
+environment such as \code{new.env()}.
+\item \code{local_timeout()} is called directly inside the expression of
 \code{\link[=with_timeout]{with_timeout()}}. There, \code{local_timeout()} belongs to the function around
-it, so the limit that \code{\link[=with_timeout]{with_timeout()}} set stays set after that function
-ends. Put
-the inner limit in a function of its own, or use only one of the two. The
-functions \code{\link[withr:with_options]{withr::with_options()}} and \code{\link[withr:local_options]{withr::local_options()}} work the same
-way.
+it. So when that function ends, the limit that \code{\link[=with_timeout]{with_timeout()}} set is in
+force. Put the inner limit in a function of its own, or use only one of
+the two.
+}
+
+\code{\link[withr:local_options]{withr::local_options()}} and \code{\link[withr:with_options]{withr::with_options()}} have the same limits,
+because R's exit handlers work this way.
 }
 \examples{
 bounded <- function() {

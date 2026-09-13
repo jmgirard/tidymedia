@@ -44,9 +44,8 @@ encoder and hardware encoder.
 
 Each R process keeps its own record, and a worker does not get the record of
 your session. So a batch on \code{W} workers asks FFmpeg \code{W} times, not
-once. Discarding the record in your session does not reach the workers. This
-is not the case when you have set \code{tidymedia.hardware_encoders}
-yourself.
+once, unless you set \code{tidymedia.hardware_encoders} yourself.
+Discarding the record in your session does not reach the workers.
 
 That option works in a different way. The package copies your value into
 each worker for the duration of the call, and then puts back the worker's own

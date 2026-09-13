@@ -17,7 +17,7 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 
 **In:** the roxygen text behind the M127 domain in `cairn/references/plain-docs.md` (28 pages on 2026-09-13). That includes `?tidymedia`, whose timeout detail moves to `?with_timeout` and `?local_timeout`. It also includes the generated audio-stream sentences in `R/audio-stream-doc.R` that other pages reuse. The tests that pin wording on these pages are in scope too.
 
-**Out:** the `ffm_*()` pages go to M128. The task-function pages go to M129 and M130. Code comments in `R/` stay as they are. `NEWS.md` gets no entry (D091). Some pages describe the settings location that version 0.1.0 used. If that text leaves them, the ledger records where users of 0.1.0 find it.
+**Out:** the `ffm_*()` pages go to M128. The task-function pages go to M129 and M130. Code comments in `R/` stay as they are. `NEWS.md` gets no entry (D091).
 
 ## Acceptance criteria
 
@@ -25,7 +25,7 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - [x] AC2: The prose sweep over the M127 domain prints no sentence over 25 words.
 - [x] AC3: For each page in the domain, take each glossary stem found in its `--prose` output. The page defines the term at its first use or names the glossary in `vignette("tidymedia")`. One ledger row per page records the stems and how each is met.
 - [x] AC4: `tools::Rd2txt()` output for `man/tidymedia-package.Rd` is at most 80 lines. Its first paragraph says what the package does and names `vignette("tidymedia")` as the place to start.
-- [ ] AC5: Each page in the domain has a ledger row that says what text left it and where that text went: moved (with the page), or deleted (with a reason). Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the domain at the base commit is still found in some `man/*.Rd` file at head, or has a ledger row.
+- [ ] AC5: Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the 28 domain pages at the base commit (`264afff4`) is found as a whole word in some `man/*.Rd` file at head.
 - [x] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
@@ -73,12 +73,18 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: review round 2 on `629d68a4`: AC1-AC4 and AC6 pass with fresh evidence. AC5 fails a second time, on reviewer finding R2-7. The widening test applies, because adding rows widens a list that the author wrote from memory, so this is an amendment return and not a defect return.
 - 2026-09-13: amendment return: AC5 — "Each page in the domain has a ledger row. Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the domain at the base commit is still found in some `man/*.Rd` file at head, or has a ledger row."
 - 2026-09-13: gate (user's choice): narrow AC5 as above, through the amendment protocol with a fresh re-audit reader. Rows for the three items in R2-7 are still to be added. Fix now R2-1 to R2-6 and R2-8 to R2-12 on the branch. Status back to in-progress.
+- 2026-09-13: re-audit: AC5 (full) — 12 findings on the gate wording. Clear ones applied at the mini gate: whole-word matching, base commit named, ledger-row escape removed, row-exists sentence dropped. Judgment ones went to the mini gate. It found no IP or D-entry conflict, and the wording holds at head.
+- 2026-09-13: mini gate (user's choice): AC5 is the identifier check only. The Scope Out sentence on the 0.1.0 settings location is deleted. The three R2-7 items and a note that AC5 does not check the ledger's Result column are added to the ledger.
+- 2026-09-13: re-audit: AC5 (full) — 8 findings, none blocking. Wording holds at HEAD and in the working tree, all 27 names found with `git grep -wF`. Not applied, because a further wording change goes to the user: use fixed-string matching (`git grep -wF`) instead of "whole word", and point "the 28 domain pages" at the domain grep in `cairn/references/plain-docs.md`. Applied: ledger heading no longer says AC5. Accepted as a gap (see Decisions): no criterion checks that facts survive the rewrite.
+- 2026-09-13: amendment executed: AC5 and Scope written as chosen at the mini gate.
+- 2026-09-13: R2-1 to R2-6 and R2-8 to R2-12 fixed. R2-1 was measured with `tm_force_timeout()`: the two-pass analysis and a `hardware` backend's encoder check both give errors on a reached limit. The `ffprobe()` redirect claim was measured with `2>&1`. The `mediainfo()` redirect claim was read from its `system()` call. R2-11: a missing landing topic now drops only its own assertions. Sweep over 28 pages exits 0. `devtools::test()`: 1738 tests, 0 failed, 5 skipped.
 
 ## Decisions
 
 - Implement gate (user's choice): the timeout condition classes go to `?with_timeout` with the other timeout detail. `?tidymedia` keeps one short end section with one line for each FFmpeg-exit class and its fields.
 - Implement gate (user's choice): only `?find_ffmpeg` explains the settings file that version 0.1.0 used, in a short end section. `?program_status` and `?unset_program` link to it.
 - Review return 1: D074 names `?tidymedia` as where the per-row check order is disclosed. M127 moved that text to `?with_timeout` with the other timeout detail. The code comment now names the new page. D074 stays as written, because it is history.
+- Amendment return (user's choice): AC5 checks only that the base identifiers are still in `man/`. No criterion checks that other facts survive the rewrite. Two lists of removed text written from memory each missed facts, and no procedure can list reworded facts. Keeping facts is left to the claim audit and the review's diff reviewer. The ledger's Result column stays as the author's account.
 - Implement gate (user's choice): M127 does not fix the six prose-sweep parse gaps (shipped-docs candidate row, item (o)). The rewrite avoids the text shapes that the gaps misread.
 
 ## Review

@@ -14,7 +14,7 @@
 #' @param command A string with the arguments to give MediaInfo.
 #' @return A character vector with the text that MediaInfo writes to standard
 #'   output, one element for each line. Messages on standard error are not
-#'   returned.
+#'   returned, unless `command` ends with a shell redirect such as `2>&1`.
 #'
 #' @seealso [mediainfo_template()], [mediainfo_query()] and
 #'   [mediainfo_parameter()] for a tibble or a value. [get_duration()] and the

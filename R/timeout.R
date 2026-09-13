@@ -46,8 +46,10 @@
 #     its pipeline before running anything, after the builder's argument
 #     validation too -- so a refusal the VERB itself can reach still fires first
 #     and only the blame for this one moves. Not every refusal that fired before
-#     it does: a check inside the per-row fan-out (segment_video()'s outfiles, a
-#     _batch verb argument such as anonymize_video_batch()'s pixel_format) still
+#     it does: a check inside the per-row fan-out (a _batch verb argument such
+#     as anonymize_video_batch()'s pixel_format, or a wrong form of
+#     segment_video()'s outfiles that its front-door check_string() loop lets
+#     through -- tm_corrupt_dropped_master() records both) still
 #     loses to the limit, and is disclosed in NEWS.md and ?with_timeout (in
 #     ?tidymedia until M127) and carried on the ROADMAP rather than
 #     fixed (M094 review H1/H3). The OTHER class M094 disclosed -- a check
@@ -131,8 +133,8 @@ resolve_check_tracks <- function(call = rlang::caller_env()) {
 #' @description
 #' `with_timeout()` runs `expr` with a time limit of its own. The limit applies
 #' to each FFmpeg, FFprobe or MediaInfo program that `expr` starts. When
-#' `with_timeout()` returns, or stops with an error, the session's own limit is
-#' back.
+#' `with_timeout()` returns, or stops with an error, the limit that was in
+#' force before the call is back.
 #'
 #' The session limit, `options(tidymedia.timeout = )`, applies to every call in
 #' the session. `with_timeout()` applies to one call. For example, you can give
@@ -198,7 +200,10 @@ resolve_check_tracks <- function(call = rlang::caller_env()) {
 #'   out.
 #' * [ffm_batch()], [segment_video()] and the `_batch` task functions set
 #'   `success = FALSE` for that job. One warning at the end says how many jobs
-#'   timed out. It has the class `tidymedia_batch_timeout`.
+#'   timed out. It has the class `tidymedia_batch_timeout`. Two steps of these
+#'   calls give an error instead. One is the analysis pass of
+#'   `normalize_audio_batch(two_pass = TRUE)`. The other is the encoder check
+#'   of a call that names a `hardware` backend.
 #' * The dropped-track check of [extract_audio()], [convert_audio()],
 #'   [normalize_audio()] and their `_batch` forms warns that it could not check.
 #'   The track count that [separate_audio_video()] reads after a failed run
@@ -271,7 +276,7 @@ with_timeout <- function(expr, seconds) {
 #' `local_timeout()` sets a time limit for the rest of the function that calls
 #' it. The limit applies to each FFmpeg, FFprobe or MediaInfo program that the
 #' function starts after this call. When the function returns, or stops with an
-#' error, the caller's own limit is back, except in the two cases in Details.
+#' error, the caller's own limit is back, except in the cases in Details.
 #'
 #' Use [with_timeout()] to set a limit on one expression. Use `local_timeout()`
 #' to set a limit on the rest of a function, or on several calls that are hard
@@ -284,9 +289,10 @@ with_timeout <- function(expr, seconds) {
 #' @param .local_envir The environment that holds the limit. The default is the
 #'   function that calls `local_timeout()`. Change it only when you write a
 #'   helper that sets a limit for its own caller. Inside a function, the
-#'   environment must belong to a function that is still running. If it
-#'   belongs to a function that has returned, the limit stays set with no
-#'   error. [withr::local_options()] works the same way. At the top level of a
+#'   environment must belong to a function that is still running. Suppose it
+#'   belongs to a function that has returned, or it is an environment such as
+#'   `new.env()`. Then the limit stays set with no error.
+#'   [withr::local_options()] works the same way. At the top level of a
 #'   script or the console, [withr::defer()] decides when the limit is undone.
 #'
 #' @return The caller's earlier setting, invisibly. It is a list with one
@@ -305,21 +311,21 @@ with_timeout <- function(expr, seconds) {
 #' limit applies until the function ends. Then both are undone, and the caller's
 #' limit is back.
 #'
-#' In two cases, the limit stays set after the function ends, with no error.
-#' The first case is a function that calls `on.exit()` without `add = TRUE`.
-#' That call removes the undo step. Write `on.exit(..., add = TRUE)` instead.
-#' The second case is a `.local_envir` that belongs to a function that has
-#' returned.
-#' [withr::local_options()] has the same two limits, because R's exit handlers
-#' work this way.
+#' In three cases, the caller's limit is not back when the function ends, and
+#' there is no error.
 #'
-#' Do not call `local_timeout()` directly inside the expression of
-#' [with_timeout()]. There, `local_timeout()` belongs to the function around
-#' it, so the limit that [with_timeout()] set stays set after that function
-#' ends. Put
-#' the inner limit in a function of its own, or use only one of the two. The
-#' functions [withr::with_options()] and [withr::local_options()] work the same
-#' way.
+#' * The function calls `on.exit()` without `add = TRUE`. That call removes the
+#'   undo step. Write `on.exit(..., add = TRUE)` instead.
+#' * The `.local_envir` belongs to a function that has returned, or it is an
+#'   environment such as `new.env()`.
+#' * `local_timeout()` is called directly inside the expression of
+#'   [with_timeout()]. There, `local_timeout()` belongs to the function around
+#'   it. So when that function ends, the limit that [with_timeout()] set is in
+#'   force. Put the inner limit in a function of its own, or use only one of
+#'   the two.
+#'
+#' [withr::local_options()] and [withr::with_options()] have the same limits,
+#' because R's exit handlers work this way.
 #'
 #' @seealso [with_timeout()] to set a limit for one expression.
 #'   [tidymedia-package] describes the session options.

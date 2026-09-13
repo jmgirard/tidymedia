@@ -231,7 +231,8 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
 #'   default source, the call checks nothing and says so.
 #' @return `TRUE` when the install finished. `FALSE` when you said no to the
 #'   question, or when the call could not create the install folder. Other
-#'   failures give an error, listed in the section "Errors".
+#'   failures give an error. The section "Errors" lists the error classes of
+#'   the install steps.
 #' @seealso [set_program()] to save the location of a program you already have,
 #'   and [find_ffmpeg()] to check where the package finds a program.
 #' @family program management functions

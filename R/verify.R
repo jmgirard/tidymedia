@@ -23,8 +23,8 @@
 #' default `tolerance` of `0.1`, whole-number properties (width, height, sample
 #' rate) must match exactly. The `duration` check allows a small difference, for
 #' example for cuts that snap to a keyframe. String checks (the codecs) must
-#' match exactly. A property whose stream or column is absent yields an `NA` actual
-#' value and a failing check.
+#' match exactly. A property whose stream or column is absent yields an `NA`
+#' actual value and a failing check.
 #'
 #' @param file A string naming a single media file to verify.
 #' @param duration Expected container duration in seconds (numeric).

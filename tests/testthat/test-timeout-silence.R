@@ -688,11 +688,12 @@ test_that("M69's disclosure is gone from both docs", {
   skip_if(is.null(src$rd) || is.null(src$news), "docs not available")
   # `?tidymedia` held the timeout text until M127 moved it, so the retired
   # disclosure is fenced there too (M127 review O10).
+  # A missing landing topic drops only its own assertions, not the other two
+  # sources' (M127 review R2-11).
   rd <- rd_sources()
   landing <- rd[names(rd) %in% c("tidymedia-package.Rd", "tidymedia-package")]
-  skip_if(length(landing) != 1L, "no landing topic")
-  src$landing <- landing[[1]]
-  for (nm in c("rd", "landing", "news")) {
+  if (length(landing) == 1L) src$landing <- landing[[1]]
+  for (nm in intersect(c("rd", "landing", "news"), names(src))) {
     txt <- src[[nm]]
     expect_no_match(txt, "no warning", info = nm)
     expect_no_match(txt, "not a complete", info = nm)

@@ -20,8 +20,8 @@ The value of \code{expr}.
 \description{
 \code{with_timeout()} runs \code{expr} with a time limit of its own. The limit applies
 to each FFmpeg, FFprobe or MediaInfo program that \code{expr} starts. When
-\code{with_timeout()} returns, or stops with an error, the session's own limit is
-back.
+\code{with_timeout()} returns, or stops with an error, the limit that was in
+force before the call is back.
 
 The session limit, \code{options(tidymedia.timeout = )}, applies to every call in
 the session. \code{with_timeout()} applies to one call. For example, you can give
@@ -83,7 +83,10 @@ give \code{NA} for that file. One warning at the end says how many files timed
 out.
 \item \code{\link[=ffm_batch]{ffm_batch()}}, \code{\link[=segment_video]{segment_video()}} and the \verb{_batch} task functions set
 \code{success = FALSE} for that job. One warning at the end says how many jobs
-timed out. It has the class \code{tidymedia_batch_timeout}.
+timed out. It has the class \code{tidymedia_batch_timeout}. Two steps of these
+calls give an error instead. One is the analysis pass of
+\code{normalize_audio_batch(two_pass = TRUE)}. The other is the encoder check
+of a call that names a \code{hardware} backend.
 \item The dropped-track check of \code{\link[=extract_audio]{extract_audio()}}, \code{\link[=convert_audio]{convert_audio()}},
 \code{\link[=normalize_audio]{normalize_audio()}} and their \verb{_batch} forms warns that it could not check.
 The track count that \code{\link[=separate_audio_video]{separate_audio_video()}} reads after a failed run

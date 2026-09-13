@@ -7,19 +7,19 @@
 get_frame_rate(file)
 }
 \arguments{
-\item{file}{A character vector of one or more media-file paths.}
+\item{file}{A character vector of one or more media file paths.}
 }
 \value{
 A double vector (one per file) giving the video frame rate in fps.
 }
 \description{
-Use MediaInfo to quickly look up the video frame rate of a media file in
-frames per second (fps).
+\code{get_frame_rate()} uses the MediaInfo program to look up the video frame
+rate of a media file, in frames per second (fps). The glossary in
+\code{vignette("tidymedia")} explains media terms such as frame rate.
 }
 \details{
-This \strong{MediaInfo}-backed helper returns a \strong{single value per file} (a
-numeric scalar), unlike the tibble-returning \verb{probe_*()}, \code{mediainfo_query()},
-and \code{mediainfo_template()} readers.
+The function returns one number for each file. The \verb{probe_*()} functions,
+\code{\link[=mediainfo_query]{mediainfo_query()}} and \code{\link[=mediainfo_template]{mediainfo_template()}} return tibbles instead.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
@@ -29,7 +29,7 @@ get_frame_rate(video)
 }
 \seealso{
 \code{\link[=mediainfo_parameter]{mediainfo_parameter()}} for arbitrary MediaInfo fields, and
-\code{\link[=probe_all]{probe_all()}} for the FFprobe backend.
+\code{\link[=probe_all]{probe_all()}} to read information with FFprobe.
 
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},

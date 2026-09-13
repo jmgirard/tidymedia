@@ -7,39 +7,48 @@
 probe_all(infile, typed = TRUE, parallel = FALSE)
 }
 \arguments{
-\item{infile}{A character vector of one or more media-file locations (file
-paths or web links) to probe.}
+\item{infile}{A character vector of one or more media files to probe, as
+file paths or web links.}
 
-\item{typed}{A logical. When \code{TRUE} (default) numeric columns are converted
-to integers/doubles and FFprobe's \code{"N/A"} becomes \code{NA}; fractions, ratios,
-hex identifiers, and text stay as strings. When \code{FALSE} every value is
-returned as an unconverted string.}
+\item{typed}{A logical. If \code{TRUE} (the default), numeric columns become
+integers or doubles, and FFprobe's \code{"N/A"} becomes \code{NA}. Fractions,
+ratios, hex identifiers and text stay as strings. If \code{FALSE}, every value
+stays a string.}
 
-\item{parallel}{A logical: probe the files in parallel with \pkg{furrr}
-(\code{TRUE}) or one at a time (\code{FALSE}, the default). The parallel path
-honors the active \code{future::plan()} and warns when that plan is
-sequential, since it would then give no speedup. Output is identical
-either way, rows included and in the same order. Requires the optional
-\pkg{furrr} package, which is checked for only when \code{parallel} is \code{TRUE}.}
+\item{parallel}{A logical. If \code{TRUE}, the function probes the files in
+parallel with \pkg{furrr}. If \code{FALSE} (the default), it probes them one at
+a time. A parallel run uses the active \code{future::plan()}. It warns when that
+plan is sequential, because the run is then no faster. The output is the
+same either way, with the same rows in the same order. \code{parallel = TRUE}
+needs the \pkg{furrr} package, and only then does the function check for
+it.}
 }
 \value{
-A list of two tibbles: \code{container} (one row per input file) and
-\code{streams} (one row per stream, or a single \code{NA} row for a file with no
-readable streams). Both lead with a \code{file} column identifying the input.
-Files that cannot be probed yield an all-\code{NA} row and a warning rather than
-aborting the call.
+A list of two tibbles. \code{container} has one row for each input file.
+\code{streams} has one row for each stream. Both tibbles start with a \code{file}
+column that names the input file. A file with no readable streams gets one
+row in \code{streams}, with \code{NA} in every other column.
+
+The function does not stop at a file that it could not probe. That file
+gets a row of \code{NA} values in both tibbles, and the function gives a
+warning. A file that reaches the time limit counts as not probed; see
+\code{\link[=with_timeout]{with_timeout()}}.
 }
 \description{
-Probe one or more media files and return their container- and stream-level
-metadata as tibbles. \code{infile} may be a vector of several files: the results
-are stacked and keyed by a leading \code{file} column, so the output is ready for
-\code{dplyr} joins and filters over a whole batch.
+\code{probe_all()} uses the FFprobe program to read information about media
+files. It returns two tibbles. One describes each file as a whole, and one
+describes each stream in the files.
 }
 \details{
-This is tidymedia's \strong{FFprobe} metadata reader, returning \strong{tibbles} (one
-row per file or per stream) — distinct from the \strong{MediaInfo} readers
-(\verb{mediainfo_*()}, which return tibbles or values) and the scalar \verb{get_*()}
-helpers (which return a single value per file).
+Give several files in \code{infile} to read them all in one call. The function
+stacks the rows, and the first column, \code{file}, names the input file. So you
+can join and filter the results for a whole batch with dplyr.
+
+The MediaInfo functions, \verb{mediainfo_*()}, return tibbles or values. The
+\verb{get_*()} functions return one value for each file.
+
+The glossary in \code{vignette("tidymedia")} explains media terms such as
+container and stream.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("ffprobe"))) withAutoprint(\{ # examplesIf}
@@ -50,8 +59,9 @@ info$streams
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=mediainfo_template]{mediainfo_template()}} and \code{\link[=mediainfo_query]{mediainfo_query()}} for the MediaInfo
-backend, and \code{\link[=get_duration]{get_duration()}} and friends for single scalar values.
+\code{\link[=mediainfo_template]{mediainfo_template()}} and \code{\link[=mediainfo_query]{mediainfo_query()}} to read information
+with MediaInfo. \code{\link[=get_duration]{get_duration()}} and the other \verb{get_*()} functions for
+single values.
 
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},

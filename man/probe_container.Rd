@@ -16,35 +16,42 @@ probe_video(probe = NULL, infile = NULL, typed = TRUE, parallel = FALSE)
 probe_audio(probe = NULL, infile = NULL, typed = TRUE, parallel = FALSE)
 }
 \arguments{
-\item{probe}{A list object created by \code{\link[=probe_all]{probe_all()}}. Must be \code{NULL} if
-\code{infile} is supplied.}
+\item{probe}{A list made by \code{\link[=probe_all]{probe_all()}}. Must be \code{NULL} if you give
+\code{infile}.}
 
-\item{infile}{A character vector of one or more media-file locations. Must be
-\code{NULL} if \code{probe} is supplied.}
+\item{infile}{A character vector of one or more media files. Must be \code{NULL}
+if you give \code{probe}.}
 
-\item{typed}{A logical passed to \code{\link[=probe_all]{probe_all()}} when \code{infile} is used (default
-\code{TRUE}); ignored when \code{probe} is supplied.}
+\item{typed}{A logical that the function passes to \code{\link[=probe_all]{probe_all()}} when you
+give \code{infile}. The default is \code{TRUE}. The function ignores it when you give
+\code{probe}.}
 
-\item{parallel}{A logical passed to \code{\link[=probe_all]{probe_all()}} when \code{infile} is used:
-probe the files in parallel with \pkg{furrr} (\code{TRUE}) or one at a time
-(\code{FALSE}, the default). Ignored when \code{probe} is supplied, since a probe
-object has nothing left to probe.}
+\item{parallel}{A logical that the function passes to \code{\link[=probe_all]{probe_all()}} when you
+give \code{infile}. If \code{TRUE}, it probes the files in parallel with \pkg{furrr}.
+If \code{FALSE} (the default), it probes them one at a time. The function
+ignores it when you give \code{probe}, because nothing is left to probe.}
 }
 \value{
-A tibble containing only the requested information.
+A tibble with only the requested information. When you give
+\code{infile}, a file that could not be probed gives a warning, as in
+\code{\link[=probe_all]{probe_all()}}.
 }
 \description{
-Return just the \code{container} tibble via \code{probe_container()}, just the
-\code{streams} tibble via \code{probe_streams()}, or just the video/audio stream rows
-via \code{probe_video()} / \code{probe_audio()}. Each takes \strong{either} the output of
-\code{\link[=probe_all]{probe_all()}} (via \code{probe}) \strong{or} one or more file locations (via \code{infile});
-passing \code{infile} reprobes, so reuse a \code{probe} object when working with large
-files.
+These functions return one part of what \code{\link[=probe_all]{probe_all()}} returns.
+\code{probe_container()} returns the \code{container} tibble, and \code{probe_streams()}
+returns the \code{streams} tibble. \code{probe_video()} and \code{probe_audio()} return only
+the video rows or the audio rows of \code{streams}.
 }
 \details{
-These \strong{FFprobe}-backed shortcuts return \strong{tibbles}; the \strong{MediaInfo}
-readers (\verb{mediainfo_*()}) and the scalar \verb{get_*()} helpers are the
-alternatives.
+Give each function either the output of \code{\link[=probe_all]{probe_all()}} in \code{probe}, or one or
+more files in \code{infile}. Give exactly one of the two, or the function gives
+an error. With \code{infile}, the function probes the files again. For large
+files, probe once with \code{\link[=probe_all]{probe_all()}} and reuse the result.
+
+These functions use FFprobe and return tibbles. The MediaInfo functions,
+\verb{mediainfo_*()}, and the \verb{get_*()} functions are the other ways to read
+information. The glossary in \code{vignette("tidymedia")} explains media terms
+such as container and stream.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("ffprobe"))) withAutoprint(\{ # examplesIf}
@@ -58,8 +65,9 @@ probe_audio(info)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=probe_all]{probe_all()}} for the full probe; \code{\link[=mediainfo_query]{mediainfo_query()}} for the
-MediaInfo backend; \code{\link[=get_width]{get_width()}} and friends for single scalar values.
+\code{\link[=probe_all]{probe_all()}} for the full probe. \code{\link[=mediainfo_query]{mediainfo_query()}} to read
+information with MediaInfo. \code{\link[=get_width]{get_width()}} and the other \verb{get_*()}
+functions for single values.
 
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},

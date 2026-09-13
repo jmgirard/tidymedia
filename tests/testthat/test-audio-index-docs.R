@@ -77,11 +77,11 @@ test_that("the generated @param text names both families and links the topic", {
 test_that("the generated @param audio text states the input basis", {
   scalar <- audio_input_param()
   batch <- audio_input_param(batch = TRUE, extra = "Row-checked.")
-  expect_match(scalar, "counts the verb's inputs", fixed = TRUE)
+  expect_match(scalar, "counts the function's inputs", fixed = TRUE)
   expect_match(scalar, "\\\\link\\{audio_stream\\}")
   # `audio = NULL` drops audio entirely -- the difference from audio_stream that
   # the whole concept topic exists to make legible.
-  expect_match(scalar, "maps no audio at all", fixed = TRUE)
+  expect_match(scalar, "selects no audio at all", fixed = TRUE)
   expect_match(batch, "Row-checked.", fixed = TRUE)
   # Verb-specific text lands before the closing pointer, not after it.
   expect_lt(regexpr("Row-checked.", batch, fixed = TRUE),

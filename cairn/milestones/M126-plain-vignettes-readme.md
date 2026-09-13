@@ -118,7 +118,7 @@ Independent review (three fresh reviewers):
 Triage at the approval gate (2026-09-13, user's choices). No finding shows a criterion failing, so no status return.
 
 - O1, O2, O3: fixed now. The README names the `brew --prefix ffmpeg` step and an unzip folder. `verification.Rmd` says the metadata reader warning has no condition class. The `cli_warn()` calls at `R/ffprobe.R:163` and `R/mediainfo.R:291` were read first.
-- O4 to O9: follow-up, as one candidate row on the prose sweep in `cairn/ROADMAP.md`.
+- O4 to O9: follow-up, as item (o) of the shipped-docs candidate row in `cairn/ROADMAP.md`. A new row would have put the ROADMAP at its 60-line cap.
 - O10: fixed now. Three lines were re-wrapped, and the repeated phrase is gone.
 - O11: rejected, because nothing the docs show needs `ffplay`.
 - O12: rejected, because the text matches `?ffm_seek`.

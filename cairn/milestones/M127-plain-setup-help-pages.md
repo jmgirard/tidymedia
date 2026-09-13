@@ -1,6 +1,6 @@
 # M127: ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** M126
 - **Driving RR:** —
@@ -45,7 +45,7 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - [x] T4: Rewrite `R/program_management.R`, with `install_on_win()` and `program_status()` first.
 - [x] T5: Rewrite `R/mediainfo.R`, `R/ffprobe.R` and `R/audio-stream-doc.R`. For the generated sentences, check the task-function pages that reuse them after `devtools::document()`.
 - [x] T6: Rewrite `R/ffm_batch.R`, `R/ffm_jobs.R`, `R/cache.R`, `R/verify.R`, `R/ffm_manifest.R`, `R/utils-tidy-eval.R` and `R/ffm_oop.R`. In every `R/` file, rename the `@family` labels "escape hatch functions", "builder functions" and "task verb functions" to the names in rule 5.
-- [ ] T7: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. Fill the ledger. Run the sweep, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
+- [x] T7: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. Fill the ledger. Run the sweep, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
 ## Work log
 
@@ -60,6 +60,8 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: T7: on `19b59ac5`, `devtools::check()` 0 errors, 0 warnings, 0 notes; `pkgdown::check_pkgdown()` no problems.
 - 2026-09-13: claim audit: 240 claims read, 8 corrected — R/ffprobe.R, R/mediainfo.R, R/timeout.R, R/ffm_batch.R, R/tidymedia-package.R, R/program_management.R
 - 2026-09-13: the 8 corrections: direct commands return standard output only; `mediainfo_parameter()` warns only for missing or timed-out files; the time limit applies per program plus the stop delay (3 sites); the track check skips one call per distinct input with no `audio_stream`; `program_status()` warnings name a location or a file; `install_on_win()` names only the first case of leftovers, created folders or your files. Sweep still exits 0; `?tidymedia` renders 73 lines. Final check re-running.
+- 2026-09-13: claim audit re-read: the same reader found all 8 corrections correct.
+- 2026-09-13: T7 done. On `2e04a4be`: `devtools::check()` 0 errors, 0 warnings, 0 notes (tests included); `devtools::document()` leaves `man/` unchanged. Agent worktrees removed. Status set to review.
 
 ## Decisions
 

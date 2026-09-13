@@ -20,35 +20,54 @@ The location of the program as a string, or \code{NULL} when it could
 not be found.
 }
 \description{
-Returns the location of one of the programs tidymedia drives as a string:
-\code{\link[=find_ffmpeg]{find_ffmpeg()}}, \code{\link[=find_ffprobe]{find_ffprobe()}}, \code{\link[=find_ffplay]{find_ffplay()}} and \code{\link[=find_mediainfo]{find_mediainfo()}},
-one per program.
+Each of these functions returns the location of one program as a string:
+\code{\link[=find_ffmpeg]{find_ffmpeg()}}, \code{\link[=find_ffprobe]{find_ffprobe()}}, \code{\link[=find_ffplay]{find_ffplay()}} and \code{\link[=find_mediainfo]{find_mediainfo()}}.
 }
 \details{
-The program is looked up on the \code{PATH} first. When it is not there, the
-location remembered by \code{\link[=set_program]{set_program()}} is read from
-\code{tools::R_user_dir("tidymedia", "config")}; a location remembered by a
-version of tidymedia before 0.2.0 was written to
-\code{rappdirs::user_config_dir("tidymedia", "R")}, and that file is read only
-when no file for the program exists under
-\code{tools::R_user_dir("tidymedia", "config")}.
+The function looks on the \code{PATH} first. If the program is not there, the
+function reads the location that \code{\link[=set_program]{set_program()}} saved. That location is in
+a file under \code{tools::R_user_dir("tidymedia", "config")}. If neither place has
+the program, the function gives a warning and returns \code{NULL}.
+}
+\section{Problems with a saved location}{
 
-A remembered location that no longer works warns and returns \code{NULL} rather
-than failing, under a condition class you can catch:
+A saved location that no longer works gives a warning, and the function
+returns \code{NULL}. The warning has one of two classes that you can catch:
 \itemize{
-\item \code{tidymedia_location_gone} -- the location was read, but there is no
-binary there any more. The condition carries the program in \code{tm_program}
-and the location in \code{tm_location}.
-\item \code{tidymedia_location_unreadable} -- the file holding the location does not
-hold one location to try: it is empty, holds more than one line, or holds
-one empty line. A line holding only spaces is read as a location, and
-raises \code{tidymedia_location_gone} instead. The condition carries the program in
-\code{tm_program} and the file in \code{tm_file}.
+\item \code{tidymedia_location_gone}: the function read the location, but no program
+is there now. The condition holds the program name in \code{tm_program} and the
+location in \code{tm_location}.
+\item \code{tidymedia_location_unreadable}: the file does not hold exactly one
+location. It is empty, has more than one line, or has one empty line. The
+condition holds the program name in \code{tm_program} and the file in
+\code{tm_file}.
 }
 
-Either is repaired with \code{\link[=unset_program]{unset_program()}}, which forgets the location, or
-\code{\link[=set_program]{set_program()}}, which replaces it.
+A line that holds only spaces counts as a location. So it gives
+\code{tidymedia_location_gone}, not \code{tidymedia_location_unreadable}.
+
+To fix either problem, forget the location with \code{\link[=unset_program]{unset_program()}}, or
+replace it with \code{\link[=set_program]{set_program()}}.
 }
+
+\section{Locations saved by earlier versions}{
+
+Versions of the package before 0.2.0 saved locations in a different folder,
+\code{rappdirs::user_config_dir("tidymedia", "R")}. The functions still read a
+file in that folder. They read it only when the current folder has no file
+for the program. \code{\link[=program_status]{program_status()}} looks in the same places, in the same
+order.
+
+A \code{tidymedia_location_unreadable} warning names the file that the function
+read. That file can be the one in the old folder.
+
+\code{\link[=set_program]{set_program()}} writes to the current folder only. After it writes a file
+for a program, the old file for that program is not read.
+
+\code{\link[=unset_program]{unset_program()}} removes the file in both folders. So the old location does
+not come back after the current file is gone.
+}
+
 \examples{
 \dontshow{if (nzchar(Sys.which("ffmpeg")) && nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
 # Returns the path to the binary, or NULL with a warning if it is not found
@@ -57,8 +76,8 @@ find_mediainfo()
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=set_program]{set_program()}} to point tidymedia at a binary in a non-standard
-location, and \code{\link[=install_on_win]{install_on_win()}} to download FFmpeg on Windows.
+\code{\link[=set_program]{set_program()}} to save the location of a program that is not on
+the \code{PATH}, and \code{\link[=install_on_win]{install_on_win()}} to download FFmpeg on Windows.
 
 Other program management functions:
 \code{\link[=install_on_win]{install_on_win()}},

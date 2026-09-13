@@ -146,3 +146,44 @@ Each row is one glossary stem found in a file's `--prose` output. Line is the li
 | verification.Rmd | `sampl(e\|ing) rate` | 84 | Links. |
 | verification.Rmd | `stream` | 89 | Links. |
 | verification.Rmd | `container` | 97 | Links. |
+
+### M127
+
+The base commit is `264afff4`. The domain grep returned 28 pages. At that commit, the prose sweep over the 28 pages printed 185 findings and exited with status 1. The Found column counts those findings for each page. The Result column is filled at T7.
+
+#### Pages and what left them (AC5)
+
+| Page | Source | Found | Result |
+|---|---|---|---|
+| audio_stream | R/audio-stream-doc.R | 13 | |
+| ffm_batch | R/ffm_batch.R | 5 | |
+| ffm_jobs | R/ffm_jobs.R | 12 | |
+| ffm_manifest | R/ffm_manifest.R | 2 | |
+| find_ffmpeg | R/program_management.R | 4 | |
+| ffprobe | R/ffprobe.R | 3 | |
+| get_sample_rate | R/mediainfo.R | 0 | |
+| get_height | R/mediainfo.R | 0 | |
+| get_frame_rate | R/mediainfo.R | 0 | |
+| get_duration | R/mediainfo.R | 0 | |
+| local_timeout | R/timeout.R | 23 | |
+| install_on_win | R/program_management.R | 24 | |
+| get_width | R/mediainfo.R | 0 | |
+| mediainfo_template | R/mediainfo.R | 0 | |
+| mediainfo_parameter | R/mediainfo.R | 1 | |
+| mediainfo_query | R/mediainfo.R | 0 | |
+| mediainfo | R/mediainfo.R | 3 | |
+| probe_container | R/ffprobe.R | 1 | |
+| probe_all | R/ffprobe.R | 4 | |
+| program_status | R/program_management.R | 8 | |
+| print.tidymedia_ffm | R/ffm_oop.R | 0 | |
+| set_program | R/program_management.R | 3 | |
+| refresh_ffmpeg_capabilities | R/cache.R | 11 | |
+| verify_media | R/verify.R | 2 | |
+| unset_program | R/program_management.R | 6 | |
+| tidymedia-package | R/tidymedia-package.R | 47 | |
+| tidyeval | R/utils-tidy-eval.R | 1 | |
+| with_timeout | R/timeout.R | 12 | |
+
+#### Identifiers at the base commit (AC5)
+
+These 27 identifiers match `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the 28 `.Rd` files: `tidymedia.check_tracks`, `tidymedia.hardware_encoders`, `tidymedia.timeout`, `tidymedia_archive_unreadable`, `tidymedia_batch_timeout`, `tidymedia_checksum_mismatch`, `tidymedia_checksum_unavailable`, `tidymedia_confirmation_unavailable`, `tidymedia_download_unavailable`, `tidymedia_dropped_audio`, `tidymedia_ffm`, `tidymedia_ffmpeg_exit`, `tidymedia_location_gone`, `tidymedia_location_unreadable`, `tidymedia_loudnorm_no_measurement`, `tidymedia_multitrack_separation`, `tidymedia_probe_timeout`, `tidymedia_program_not_extracted`, `tidymedia_program_unusable`, `tidymedia_timeout`, `tidymedia_wrong_platform`, `tm_file`, `tm_location`, `tm_program`, `tm_row_status`, `tm_rows`, `tm_status`.

@@ -85,7 +85,7 @@ probe_video(info)
 By default, `typed = TRUE` gives number columns a number type. With
 `typed = FALSE`, every column is a string. FFprobe reports a
 [frame rate](tidymedia.html#glossary) as a fraction such as `"30000/1001"`.
-With `typed = TRUE`, that fraction becomes a number.
+The fraction stays a string, even with `typed = TRUE`.
 
 ## Querying with MediaInfo
 
@@ -118,8 +118,10 @@ get_height(video)
 
 ## Batching over many files
 
-Each reader takes a vector of files and marks each row with its `file`. So you
-do not need a loop to read a whole folder.
+Each reader takes a vector of files, so you do not need a loop to read a whole
+folder. The `probe_*()`, `mediainfo_query()` and `mediainfo_template()`
+functions mark each row with its `file`. The `get_*()` functions return one
+value per file, in the order given.
 
 `ffm_jobs()` lists the video files in a folder, in all the formats it knows. To
 list only one format, add `extension = "mp4"`. If the folder has no such files,

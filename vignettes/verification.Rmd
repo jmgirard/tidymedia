@@ -101,8 +101,8 @@ first match is used.
 ### Checking every job in a batch
 
 `ffm_batch()` and the `*_batch()` task functions take a `verify` argument. It
-adds a `verified` column to the result, with one `TRUE` or `FALSE` for each
-job. A named list applies the same checks to every job:
+adds a `verified` column to the result. The column is `TRUE` or `FALSE` for
+each job that ran, and `NA` for a job that failed. A named list applies the same checks to every job:
 
 ```{r, eval = has_both}
 jobs <- tibble::tibble(

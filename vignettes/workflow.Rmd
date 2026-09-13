@@ -211,8 +211,8 @@ anonymize_video(session, "session01_camA_deid.mp4", regions = regions,
 ## 5. Assemble and share
 
 If a session was recorded in parts, `concatenate_videos()` joins the parts into
-one file. The parts must have the same codec and
-[container](tidymedia.html#glossary). Here they do, because step 1 made them
+one file. The parts must have the same codec,
+[container](tidymedia.html#glossary), picture size and frame rate. Here they do, because step 1 made them
 the same:
 
 ```{r, eval = FALSE}
@@ -222,7 +222,7 @@ concatenate_videos(
 )
 ```
 
-Last, `format_for_web()` makes a small H.264 file that most browsers can play.
+Last, `format_for_web()` makes an H.264 file that most browsers can play.
 It moves the file's index to the start, so coders can watch it in a browser
 before it has fully downloaded:
 

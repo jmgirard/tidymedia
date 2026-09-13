@@ -130,9 +130,9 @@ Each row is one glossary stem found in a file's `--prose` output. Line is the li
 | tidymedia.Rmd | `true peak` | 153 | Links. |
 | tidymedia.Rmd | `encod` | 176 | Links ("re-encodes"). |
 | tidymedia.Rmd | `key ?frame` | 176 | Links. |
-| tidymedia.Rmd | `container` | 234 | Defines. |
-| tidymedia.Rmd | `pixel format` | 247 | Defines. |
-| tidymedia.Rmd | `sampl(e\|ing) rate` | 252 | Defines. |
+| tidymedia.Rmd | `container` | 236 | Defines. |
+| tidymedia.Rmd | `pixel format` | 249 | Defines. |
+| tidymedia.Rmd | `sampl(e\|ing) rate` | 254 | Defines. |
 | workflow.Rmd | `codec` | 67 | Links. |
 | workflow.Rmd | `frame rate` | 67 | Links. |
 | workflow.Rmd | `encod` | 67 | Links ("re-encodes"). |

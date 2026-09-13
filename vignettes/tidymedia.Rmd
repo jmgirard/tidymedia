@@ -204,7 +204,9 @@ ffm_files(c(video, video), "side_by_side.mp4") |>
   ffm_compile()
 ```
 
-These four functions leave the audio out. To keep it, add `ffm_map("0:a")`.
+`ffm_hstack()`, `ffm_vstack()` and `ffm_overlay()` leave the audio out. To
+keep it, add `ffm_map("0:a")`. `ffm_concat()` keeps all the streams, audio
+included.
 One-input task functions that pass audio through, such as `crop_video()`, do
 the opposite and keep every audio track.
 

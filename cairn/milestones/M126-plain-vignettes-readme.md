@@ -46,7 +46,7 @@ The README, the five vignettes and the pkgdown reference index use plain English
 - [x] T3: Rewrite `vignettes/tidymedia.Rmd`. Add the glossary. Replace the layer and escape-hatch wording with the names in rule 5. Add the four pipeline functions to the tour. Write each new claim from a run's output.
 - [x] T4: Rewrite `vignettes/verification.Rmd`. Put the basic check first. Move the timeout measurements and ordering detail out, and record where they went.
 - [x] T5: Rewrite `vignettes/workflow.Rmd`, `batch.Rmd` and `metadata.Rmd`. Add a guarded chunk that calls the three capability functions, in the hardware section of `workflow.Rmd`.
-- [ ] T6: Rewrite the prose of `README.Rmd` and the `title:` and `desc:` text in `_pkgdown.yml`, including "three layers" at `_pkgdown.yml:9`. Run `devtools::build_readme()`.
+- [x] T6: Rewrite the prose of `README.Rmd` and the `title:` and `desc:` text in `_pkgdown.yml`, including "three layers" at `_pkgdown.yml:9`. Run `devtools::build_readme()`.
 - [ ] T7: Fill the ledger rows for AC3, AC4 and AC5. Run the sweep, both builds, `tools/vignette_chunk_guards.R` and `tools/vignette_chunk_program_identity.R`. Run `devtools::check()`, and run `devtools::test()` with no other R session working.
 
 ## Work log
@@ -64,6 +64,7 @@ The README, the five vignettes and the pkgdown reference index use plain English
 - 2026-09-13: T3 done. `vignettes/tidymedia.Rmd` has a Glossary section, the rule 5 names and a "More pipeline steps" section with the four missing pipeline functions. The sweep is clean on it and it renders. Each new command output was read from a run first. One draft claim was wrong and was fixed before commit: one-input pipeline functions do not keep every audio track, but task functions such as `crop_video()` do.
 - 2026-09-13: T4 done. `vignettes/verification.Rmd` puts the basic `verify_media()` call first and the check rules in a "What the checks cover" section after it. The timeout signal schedule and the 42.0 s measurement left the page. Both stay in the code comment at `R/timeout.R:5-10`, and the schedule is also in `?with_timeout` Details. The per-function list of errors and warnings now points to `?tidymedia`, which holds it. The sweep is clean and the page renders.
 - 2026-09-13: T5 done. `workflow.Rmd`, `batch.Rmd` and `metadata.Rmd` are rewritten. The hardware part of `workflow.Rmd` is now a "Using video hardware" section with a chunk guarded on `has_ffmpeg`. That chunk calls `ffmpeg_codecs()`, `ffmpeg_encoders()`, `hardware_encoder()` and `has_hardware_encoder()`, and its output was read from a render. The sweep is clean on all three, and all three render.
+- 2026-09-13: T6 done. `README.Rmd` prose is rewritten, and the install section now has one install line for each platform and one `program_status()` check, per the gate. The macOS line `brew install ffmpeg media-info` was checked against this machine's Homebrew list. `_pkgdown.yml` titles now use the rule 5 names, and "three layers" is gone. The AC1 greps find nothing, `devtools::build_readme()` ran, and `pkgdown::check_pkgdown()` finds no problems.
 
 ## Decisions
 

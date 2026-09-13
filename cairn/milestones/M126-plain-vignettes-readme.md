@@ -21,12 +21,12 @@ The README, the five vignettes and the pkgdown reference index use plain English
 
 ## Acceptance criteria
 
-- [ ] AC1: The prose sweep over `README.Rmd` and the five vignettes prints no sentence that matches a maintainer term. Over `_pkgdown.yml`, `grep -n -E` of the first maintainer-term pattern and `grep -n -i -E` of each other pattern find no match.
-- [ ] AC2: The prose sweep over `README.Rmd` and the five vignettes prints no sentence over 25 words.
-- [ ] AC3: `vignette("tidymedia")` has a glossary section that defines each of the 13 glossary terms in at most two sentences. For each of the six files, take each glossary stem found in its `--prose` output. The first sentence that uses the stem defines the term or links to the glossary. One ledger row per file and stem records the result.
-- [ ] AC4: Each `##` or `###` heading in the six files at the base commit has a ledger row. The row says where the content went: kept, moved (with the file and section), or deleted (with a reason).
-- [ ] AC5: Take every name from `getNamespaceExports("tidymedia")` that a search for `\bname\(` finds in the six files at the base commit. Add every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` there. Each one is still found in the six files or in `man/*.Rd` at head, or has a ledger row that says why it was dropped.
-- [ ] AC6: The pipeline tour in `vignette("tidymedia")` calls `ffm_fps()`, `ffm_drawbox()`, `ffm_loudnorm()` and `ffm_output_options()` in code chunks. A vignette calls `ffmpeg_codecs()`, `ffmpeg_encoders()` and `hardware_encoder()` in a code chunk.
+- [x] AC1: The prose sweep over `README.Rmd` and the five vignettes prints no sentence that matches a maintainer term. Over `_pkgdown.yml`, `grep -n -E` of the first maintainer-term pattern and `grep -n -i -E` of each other pattern find no match.
+- [x] AC2: The prose sweep over `README.Rmd` and the five vignettes prints no sentence over 25 words.
+- [x] AC3: `vignette("tidymedia")` has a glossary section that defines each of the 13 glossary terms in at most two sentences. For each of the six files, take each glossary stem found in its `--prose` output. The first sentence that uses the stem defines the term or links to the glossary. One ledger row per file and stem records the result.
+- [x] AC4: Each `##` or `###` heading in the six files at the base commit has a ledger row. The row says where the content went: kept, moved (with the file and section), or deleted (with a reason).
+- [x] AC5: Take every name from `getNamespaceExports("tidymedia")` that a search for `\bname\(` finds in the six files at the base commit. Add every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` there. Each one is still found in the six files or in `man/*.Rd` at head, or has a ledger row that says why it was dropped.
+- [x] AC6: The pipeline tour in `vignette("tidymedia")` calls `ffm_fps()`, `ffm_drawbox()`, `ffm_loudnorm()` and `ffm_output_options()` in code chunks. A vignette calls `ffmpeg_codecs()`, `ffmpeg_encoders()` and `hardware_encoder()` in a code chunk.
 - [ ] AC7: With FFmpeg, FFprobe and MediaInfo present, `devtools::build_readme()` and `devtools::build_vignettes()` succeed. `Rscript tools/build_vignettes_without_binaries.R both` exits 0. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures.
 
 ## Coverage
@@ -73,3 +73,12 @@ The README, the five vignettes and the pkgdown reference index use plain English
 ## Decisions
 
 ## Review
+
+Evidence gathered 2026-09-13 on `m126-plain-vignettes-readme` at `c2b555a2`. The branch contains `origin/master` (`d5c53674`), so no sync merge was needed.
+
+- AC1: `Rscript tools/doc_prose_report.R` over the six files exits 0 and prints no sentence. In the order above, it reads 58, 115, 101, 51, 70 and 93 sentences. A scratch `.Rmd` with "Layer 1" and a 26-word sentence was reported with exit 1. A 25-word sentence in it stayed silent. Over `_pkgdown.yml`, each of the ten greps returns 1 with no match. The same greps match "Layer 0/1/2" at `d5c53674`, so they can find a match.
+- AC2: The same sweep run as AC1 prints no sentence over 25 words and exits 0. The scratch 26-word sentence was reported as `[26 words]`. At `d5c53674`, the sweep prints 35 lines for `README.Rmd` and `tidymedia.Rmd` alone.
+- AC3: `## Glossary` in `vignettes/tidymedia.Rmd` has 13 entries, one per glossary term. The `--prose` output gives each entry one or two sentences. For each file, the first `--prose` sentence with each stem was found by `grep -i -E -m1`. The source line of each was read. All 26 match the ledger rows in `cairn/references/plain-docs.md` by file, stem and line. Each one links to `#glossary` or is the glossary entry. `batch.Rmd` uses no stem.
+- AC4: An `awk` pass lists the `##` and `###` headings outside code chunks in the six files at `d5c53674`. It finds 39. Each has a matching `| file | heading |` row in the M126 ledger, and none is missing. Every "Kept, as" name is a heading at head. The moved timeout schedule and the 42.0 s measurement were read at `R/timeout.R:5-10`. The schedule was read in `man/with_timeout.Rd` Details. The per-function error list was read in the "Bounding a run that hangs" section of `man/tidymedia-package.Rd`.
+- AC5: `getNamespaceExports("tidymedia")` gives 90 names, the same count as `export(` lines in the base `NAMESPACE`. A `\bname\(` search of the six files at `d5c53674` matches 66 of them. The two identifier patterns add 4. At head, a `\bname\b` search of the six files finds all 70, so no name falls back to `man/*.Rd` and no dropped row is needed. The 66 exports are still called as `name(` at head. The 4 condition and option names are named without a call.
+- AC6: An `awk` pass over lines inside `{r` chunks finds `ffm_fps(`, `ffm_drawbox(`, `ffm_loudnorm(` and `ffm_output_options(` in `vignettes/tidymedia.Rmd` at lines 148, 149, 160 and 170. It finds `ffmpeg_codecs(`, `ffmpeg_encoders(` and `hardware_encoder(` in `vignettes/workflow.Rmd` at lines 106, 108, 111 and 112. That chunk is `eval = has_ffmpeg`.

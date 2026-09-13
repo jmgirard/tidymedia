@@ -1,6 +1,6 @@
 # M127: ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** M126
 - **Driving RR:** —
@@ -78,6 +78,7 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: re-audit: AC5 (full) — 8 findings, none blocking. Wording holds at HEAD and in the working tree, all 27 names found with `git grep -wF`. Not applied, because a further wording change goes to the user: use fixed-string matching (`git grep -wF`) instead of "whole word", and point "the 28 domain pages" at the domain grep in `cairn/references/plain-docs.md`. Applied: ledger heading no longer says AC5. Accepted as a gap (see Decisions): no criterion checks that facts survive the rewrite.
 - 2026-09-13: amendment executed: AC5 and Scope written as chosen at the mini gate.
 - 2026-09-13: R2-1 to R2-6 and R2-8 to R2-12 fixed. R2-1 was measured with `tm_force_timeout()`: the two-pass analysis and a `hardware` backend's encoder check both give errors on a reached limit. The `ffprobe()` redirect claim was measured with `2>&1`. The `mediainfo()` redirect claim was read from its `system()` call. R2-11: a missing landing topic now drops only its own assertions. Sweep over 28 pages exits 0. `devtools::test()`: 1738 tests, 0 failed, 5 skipped.
+- 2026-09-13: on `98e2ea71`: `devtools::check()` gives 0 errors, 0 warnings, 0 notes, with spelling OK and tests included. `devtools::document()` leaves `man/` unchanged. `pkgdown::check_pkgdown()` finds no problems. Status set to review.
 
 ## Decisions
 

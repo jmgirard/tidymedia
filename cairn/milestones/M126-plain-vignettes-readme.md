@@ -42,7 +42,7 @@ The README, the five vignettes and the pkgdown reference index use plain English
 ## Tasks
 
 - [x] T1: Write `tools/doc_prose_report.R` to the definition in `cairn/references/plain-docs.md`. Before trusting a clean result, plant a maintainer term and a 26-word sentence in a temporary `.Rmd` and `.Rd`. Put the term in body text, in an argument or list item, and across a line wrap. Put a ` -- ` aside in the `.Rd` source. See each one reported. Show that the sweep reads a non-empty set of sentences from each real file.
-- [ ] T2: Record the base-commit inventory in a new M126 ledger section: the `##` and `###` headings of the six files, and the names and identifiers that AC5 lists.
+- [x] T2: Record the base-commit inventory in a new M126 ledger section: the `##` and `###` headings of the six files, and the names and identifiers that AC5 lists.
 - [ ] T3: Rewrite `vignettes/tidymedia.Rmd`. Add the glossary. Replace the layer and escape-hatch wording with the names in rule 5. Add the four pipeline functions to the tour. Write each new claim from a run's output.
 - [ ] T4: Rewrite `vignettes/verification.Rmd`. Put the basic check first. Move the timeout measurements and ordering detail out, and record where they went.
 - [ ] T5: Rewrite `vignettes/workflow.Rmd`, `batch.Rmd` and `metadata.Rmd`. Add a guarded chunk that calls the three capability functions, in the hardware section of `workflow.Rmd`.
@@ -60,6 +60,7 @@ The README, the five vignettes and the pkgdown reference index use plain English
 - 2026-09-13: re-audit (full mode) returned 8 findings, all applied: argument names left out of `--prose`, an Rd-source dash scan, `@family` labels renamed (M127 T6) with list headers swept, tag lines not paragraphs (M129 AC5), case-insensitive `_pkgdown.yml` grep, `\bname\(` search, tests named in DECISIONS.md rewritten never removed, and a repeats re-check in M130 AC5.
 - 2026-09-13: implement started on `m126-plain-vignettes-readme`. Question gate: the glossary is one `## Glossary` section with a bulleted list and one anchor (recommended). The README links to it by full website address (recommended). The README install section keeps one install route and one check per platform and leaves the rest to the help pages. The user chose this over the recommended keep-all rewrite.
 - 2026-09-13: T1 done. In a scratch `.Rmd` and `.Rd`, `tools/doc_prose_report.R` reported each planted term (body text, list item, argument item, across a line wrap), each 26-word sentence and the ` -- ` in the `.Rd` source. It stayed silent on terms in a chunk, an HTML comment, the YAML title, an `.Rd` family list, `\usage` and `\examples`, and on a 25-word sentence. At the base commit it reads 116, 54, 62, 36, 56 and 75 sentences from the six files and reports 135 lines. The plant run found two parse bugs, now fixed: abbreviations split sentences, and `**` stayed in the text.
+- 2026-09-13: T2 done. The M126 ledger in `cairn/references/plain-docs.md` lists 39 headings, 66 exports and 4 identifiers from `d5c53674`.
 
 ## Decisions
 

@@ -57,3 +57,59 @@ Each help-page domain is the set of files that `grep -l -E "^% Please edit docum
 ## Ledger
 
 <!-- One section per milestone, added by that milestone's implement phase. -->
+
+### M126
+
+The base commit is `d5c53674`. The six files are `README.Rmd` and `vignettes/{tidymedia,workflow,batch,metadata,verification}.Rmd`. Chunks are left out of the heading list. T7 fills the Result column.
+
+#### Headings at the base commit (AC4)
+
+| File | Heading | Result |
+|---|---|---|
+| README.Rmd | `## Installation` | |
+| README.Rmd | `### Dependencies` | |
+| README.Rmd | `## Examples` | |
+| README.Rmd | `### Build reproducible FFmpeg commands` | |
+| README.Rmd | `### Process a folder in batch` | |
+| README.Rmd | `### Read metadata as tibbles` | |
+| README.Rmd | `### Query FFmpeg's capabilities` | |
+| README.Rmd | `## Code of Conduct` | |
+| tidymedia.Rmd | `## Start with a task verb` | |
+| tidymedia.Rmd | `### Choosing an audio track` | |
+| tidymedia.Rmd | `## The three layers` | |
+| tidymedia.Rmd | `## Building a pipeline` | |
+| tidymedia.Rmd | `## Copy versus re-encode` | |
+| tidymedia.Rmd | `## Combining multiple inputs` | |
+| tidymedia.Rmd | `## Where to next` | |
+| workflow.Rmd | `## 1. Standardize the recordings` | |
+| workflow.Rmd | `## 2. Prepare the audio` | |
+| workflow.Rmd | `## 3. Frames for visual coding` | |
+| workflow.Rmd | `## 4. De-identify before sharing` | |
+| workflow.Rmd | `## 5. Assemble and share` | |
+| workflow.Rmd | `## Reproducibility` | |
+| workflow.Rmd | `## Where to next` | |
+| batch.Rmd | `## The batch runner` | |
+| batch.Rmd | `## Per-verb batch siblings` | |
+| batch.Rmd | `## Fan-out verbs` | |
+| batch.Rmd | `## Running in parallel` | |
+| batch.Rmd | `## Where to next` | |
+| metadata.Rmd | `## Which reader?` | |
+| metadata.Rmd | `## Probing with FFprobe` | |
+| metadata.Rmd | `## Querying with MediaInfo` | |
+| metadata.Rmd | `## Batching over many files` | |
+| metadata.Rmd | `## Where to next` | |
+| verification.Rmd | `## Check the output against what you asked for` | |
+| verification.Rmd | `### Checking every job in a batch` | |
+| verification.Rmd | `## Record how the files were made` | |
+| verification.Rmd | `## Bound a run that hangs` | |
+| verification.Rmd | `### What the limit actually bounds` | |
+| verification.Rmd | `### A reached limit is never silent` | |
+| verification.Rmd | `## Where to next` | |
+
+#### Names and identifiers at the base commit (AC5)
+
+These 66 exports match `\bname\(` in the six files: `anonymize_video`, `compare_videos`, `concatenate_videos`, `convert_audio`, `convert_audio_batch`, `crop_video`, `crop_video_batch`, `extract_audio`, `extract_audio_batch`, `extract_frame`, `ffm_batch`, `ffm_codec`, `ffm_compile`, `ffm_concat`, `ffm_copy`, `ffm_crop`, `ffm_drop`, `ffm_files`, `ffm_hstack`, `ffm_jobs`, `ffm_manifest`, `ffm_map`, `ffm_overlay`, `ffm_pixel_format`, `ffm_run`, `ffm_scale`, `ffm_seek`, `ffm_trim`, `ffm_vstack`, `ffmpeg`, `ffmpeg_codecs`, `ffprobe`, `format_for_web`, `get_duration`, `get_frame_rate`, `get_height`, `get_sample_rate`, `get_width`, `has_hardware_encoder`, `install_on_win`, `local_timeout`, `mediainfo`, `mediainfo_parameter`, `mediainfo_query`, `mediainfo_template`, `normalize_audio`, `normalize_audio_batch`, `picture_in_picture`, `probe_all`, `probe_audio`, `probe_container`, `probe_streams`, `probe_video`, `program_status`, `sample_frames`, `segment_video`, `separate_audio_video`, `separate_audio_video_batch`, `set_ffmpeg`, `set_ffprobe`, `set_mediainfo`, `standardize_video`, `standardize_video_batch`, `strip_metadata`, `verify_media`, `with_timeout`.
+
+These 4 identifiers match `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+`: `tidymedia_batch_timeout`, `tidymedia_probe_timeout`, `tidymedia_timeout`, `tidymedia.timeout`.
+
+T7 records here each name that is in neither the six files nor `man/*.Rd` at head, with the reason it was dropped.

@@ -7,35 +7,35 @@
 ffm_copy(object, audio = TRUE, video = TRUE, streams = TRUE)
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{audio}{A logical indicating whether to copy the audio codec
-(default = \code{TRUE}). See \code{\link{audio_stream}} for the two
-things the bare name \code{audio} means at Layer 1, and for the input
-index \code{audio_input}.}
+\item{audio}{A logical. \code{TRUE} (the default) copies the audio codec.
+See \code{\link{audio_stream}} for the two things that the name
+\code{audio} means in the pipeline functions, and for the input index
+\code{audio_input}.}
 
-\item{video}{A logical indicating whether to copy the video codec.
-(default = \code{TRUE})}
+\item{video}{A logical. \code{TRUE} (the default) copies the video codec.}
 
-\item{streams}{A logical indicating whether to map all streams from the
-input. This \strong{sets} the mapping to the all-streams specifier
-\code{"0"} rather than adding to it, so calling \code{ffm_copy()} twice
-compiles one \code{-map "0"}, not two. If the pipeline already states a
-\emph{different} mapping, that is a
-conflict and \code{ffm_copy()} aborts rather than discard it silently:
-pass \code{streams = FALSE} to keep the mapping you set, or call
-\code{ffm_copy()} first and narrow afterwards with
-\code{ffm_map(replace = TRUE)}. (default = \code{TRUE})}
+\item{streams}{A logical. \code{TRUE} (the default) maps all streams from the
+input. It \strong{sets} the mapping to the all-streams specifier
+\code{"0"}, and does not add to it. So two \code{ffm_copy()} calls compile
+one \code{-map "0"}, not two. If the pipeline already has a
+\emph{different} mapping, \code{ffm_copy()} gives an error and does not
+discard that mapping silently. To keep the mapping you set, pass
+\code{streams = FALSE}. Or call \code{ffm_copy()} first, and then narrow
+the mapping with \code{ffm_map(replace = TRUE)}.}
 }
 \value{
-\code{object} with the added instruction to copy codecs and/or map
-all streams.
+\code{object} with an added instruction to copy codecs, map all
+streams, or both.
 }
 \description{
-Stream-copy the audio and/or video (no re-encoding) and, optionally, map all
-streams from the input. This is the fast, lossless path when you only need to
-remux or cut on keyframes.
+Copy the audio, the video, or both, with stream copy and no re-encoding. It
+can also map all streams from the input. This is the fast, lossless path when
+you only need to put the streams in a new container or cut on keyframes. The
+glossary in \code{vignette("tidymedia")} explains media terms such as codec,
+container, keyframe and stream copy.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -44,8 +44,8 @@ ffm_files(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
-\code{\link[=ffm_codec]{ffm_codec()}} and \code{\link[=ffm_map]{ffm_map()}}, which it wraps; \code{\link[=segment_video]{segment_video()}}
-uses it for fast copy cuts.
+\code{\link[=ffm_codec]{ffm_codec()}} and \code{\link[=ffm_map]{ffm_map()}}, which \code{ffm_copy()} calls, and
+\code{\link[=segment_video]{segment_video()}}, which uses it for fast copy cuts.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

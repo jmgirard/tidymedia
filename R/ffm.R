@@ -4,15 +4,16 @@
 #'
 #' Start an FFmpeg pipeline by specifying input and output files.
 #'
-#' @param input A character vector containing strings that indicate the input
-#'   media file for the pipeline (provide more than one for stacking).
-#' @param output A string indicating the output media file for the pipeline.
-#' @param overwrite A logical indicating whether the output media file should be
-#'   overwritten if it already exists. (default = \code{TRUE})
+#' @param input A character vector of paths to the input media files of the
+#'   pipeline. Give more than one path for stacking.
+#' @param output A string with the path of the output media file of the
+#'   pipeline.
+#' @param overwrite A logical. If \code{TRUE} (the default), an output media
+#'   file that already exists is overwritten.
 #' @return An FFmpeg pipeline object.
-#' @seealso [ffm_compile()] to render the pipeline and [ffm_run()] to execute
-#'   it; the Layer-2 task verbs (e.g. [standardize_video()], [segment_video()])
-#'   wrap this engine.
+#' @seealso [ffm_compile()] to build the command and [ffm_run()] to run it. The
+#'   task functions, such as [standardize_video()] and [segment_video()], are
+#'   built on the pipeline functions.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -143,33 +144,36 @@ ffm_trim <- function(object,
 
 #' Cut a Continuous Section from an FFmpeg Pipeline by Seeking
 #'
-#' Keep one continuous section of the input using FFmpeg's fast \code{-ss}/
-#' \code{-to} seek options, rather than the \code{trim} *filter* (see
-#' \code{\link{ffm_trim}}). Unlike the filter, seeking can stream-copy, so it is
-#' the tool for fast, lossless cutting.
+#' Keep one continuous section of the input with FFmpeg's fast \code{-ss} and
+#' \code{-to} seek options. It does not use the \code{trim} *filter* of
+#' \code{\link{ffm_trim}}. Unlike the filter, seeking can use stream copy, so it
+#' is the tool for fast, lossless cuts. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as keyframe,
+#' re-encode and stream copy.
 #'
 #' The \code{reencode} argument trades accuracy against speed:
 #' \itemize{
-#'   \item \code{reencode = TRUE} (default) is \strong{frame-accurate}: the
-#'     section is re-encoded so it begins and ends on the exact requested
-#'     frames. This is the safe default.
-#'   \item \code{reencode = FALSE} is a \strong{fast, lossless copy}, but the cut
-#'     points snap to the nearest keyframes, so the output duration can differ
-#'     from the request by up to one group-of-pictures. Pair it with
-#'     \code{\link{ffm_copy}} for the fastest path.
+#'   \item \code{reencode = TRUE} (the default) is \strong{frame-accurate}. The
+#'     section is re-encoded, so it starts and ends on the exact frames you ask
+#'     for. This is the safe default.
+#'   \item \code{reencode = FALSE} is a \strong{fast, lossless copy}. But the
+#'     cut points move to the nearest keyframes. So the output duration can
+#'     differ from the request by up to the gap between two keyframes. Use it
+#'     with \code{\link{ffm_copy}} for the fastest path.
 #' }
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param start The start of the kept section, in seconds or FFmpeg time
-#'   duration syntax. \code{NULL} keeps from the beginning.
-#' @param end The end of the kept section, in seconds or FFmpeg time duration
-#'   syntax. \code{NULL} keeps to the end.
-#' @param reencode A logical: re-encode for a frame-accurate cut (\code{TRUE},
-#'   default) or fast copy-safe seek that snaps to keyframes (\code{FALSE}).
-#' @return \code{object} with the added instruction to seek-cut the input.
-#' @seealso [ffm_trim()] for the filter-based alternative, [ffm_copy()] for the
-#'   fast copy path, and [segment_video()], the task verb built on it.
+#' @param start The start of the kept section, in seconds or in FFmpeg time
+#'   duration syntax. \code{NULL} keeps the section from the beginning.
+#' @param end The end of the kept section, in seconds or in FFmpeg time duration
+#'   syntax. \code{NULL} keeps the section to the end.
+#' @param reencode A logical. \code{TRUE} (the default) re-encodes for a
+#'   frame-accurate cut. \code{FALSE} makes a fast seek that is safe to copy,
+#'   and its cut points move to keyframes.
+#' @return \code{object} with an added instruction to cut the input by seeking.
+#' @seealso [ffm_trim()] for the filter that cuts, [ffm_copy()] for the fast
+#'   copy path, and [segment_video()], the task function built on it.
 #' @references https://ffmpeg.org/ffmpeg.html#Main-options
 #' @family pipeline functions
 #' @examples
@@ -203,19 +207,20 @@ ffm_seek <- function(object, start = NULL, end = NULL, reencode = TRUE) {
 
 # ffm_drop() -------------------------------------------------------------------
 
-#' Drop Steams from an FFmpeg Pipeline
+#' Drop Streams from an FFmpeg Pipeline
 #'
-#' Remove one or more specified streams from the media file. For example, remove
-#' the video, audio, subtitles, or data stream from a media file.
+#' Remove one or more streams from the media file. For example, remove the
+#' video, audio, subtitles or data stream from a media file. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as stream.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param streams A character vector containing one or more of the following
-#'   strings: \code{"video"}, \code{"audio"}, \code{"subtitles"}, \code{"data"}
-#' @return \code{object} but with the added instruction to drop one or more
-#'   streams from the output file when run.
-#' @seealso [extract_audio()], the task verb that drops the video stream via
-#'   this builder.
+#' @param streams A character vector with one or more of these strings:
+#'   \code{"video"}, \code{"audio"}, \code{"subtitles"} and \code{"data"}.
+#' @return \code{object} with an added instruction to drop these streams from
+#'   the output file when the pipeline runs.
+#' @seealso [extract_audio()], the task function that uses \code{ffm_drop()} to
+#'   drop the video stream.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -492,21 +497,24 @@ ffm_loudnorm <- function(object,
 
 #' Set Codecs in an FFmpeg Pipeline
 #'
-#' Set the audio and/or video codecs for the output file. Note that you can use
-#' the command \code{ffmpeg_codecs()} to see a list of the codecs included in your
-#' FFmpeg version.
+#' Set the audio codec, the video codec, or both, for the output file. Use
+#' \code{ffmpeg_codecs()} to see a list of the codecs in your FFmpeg version.
+#' The glossary in \code{vignette("tidymedia")} explains media terms such as
+#' codec and stream copy.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param audio A string indicating which audio codec to use or \code{NULL} to
-#'   only set the video codec (default = \code{NULL}). See
-#'   \code{\link{audio_stream}} for the two things the bare name \code{audio}
-#'   means at Layer 1, and for the input index \code{audio_input}.
-#' @param video A string indicating which video codec to use or \code{NULL} to
-#'   only set the audio codec. default = \code{NULL}
-#' @return \code{object} but with the added instruction to change the codec(s).
-#' @seealso [ffm_copy()] for the stream-copy shortcut, [ffmpeg_codecs()] to list
-#'   available codecs, and [standardize_video()], a task verb built on it.
+#' @param audio A string that names the audio codec, or \code{NULL} to set only
+#'   the video codec. The default is \code{NULL}. See
+#'   \code{\link{audio_stream}} for the two things that the name \code{audio}
+#'   means in the pipeline functions, and for the input index
+#'   \code{audio_input}.
+#' @param video A string that names the video codec, or \code{NULL} to set only
+#'   the audio codec. The default is \code{NULL}.
+#' @return \code{object} with an added instruction to change the codecs.
+#' @seealso [ffm_copy()], the shortcut for stream copy, [ffmpeg_codecs()] to
+#'   list the codecs you can use, and [standardize_video()], a task function
+#'   built on it.
 #' @references https://ffmpeg.org/ffmpeg-codecs.html
 #' @family pipeline functions
 #' @examples
@@ -540,39 +548,40 @@ ffm_codec <- function(object,
 
 #' Set the Stream Mapping in an FFmpeg Pipeline
 #'
-#' Select which input streams are included in the output via FFmpeg's
-#' \code{-map} option. The default (\code{"0"}) maps every stream from the first
-#' input. \code{mapping} may be a character vector, which emits one \code{-map}
-#' per element in the order given — for example
-#' \code{ffm_map(object, c("0:v", "0:a:1"))} keeps the video and the input's
-#' \emph{second} audio track.
+#' Choose which input streams go into the output, with FFmpeg's \code{-map}
+#' option. The default, \code{"0"}, maps every stream from the first input. The
+#' glossary in \code{vignette("tidymedia")} explains media terms such as stream.
 #'
-#' Chaining \strong{appends}: a second \code{ffm_map()} call adds to the maps
-#' already set rather than replacing them. Pass \code{replace = TRUE} to discard
-#' them instead, which is how you narrow the all-streams map that
-#' \code{\link{ffm_copy}} sets — appending to that one would duplicate the
-#' stream in the output rather than select it.
+#' \code{mapping} can be a character vector. Each element adds one \code{-map},
+#' in the order given. For example, \code{ffm_map(object, c("0:v", "0:a:1"))}
+#' keeps the video and the \emph{second} audio track of the input.
 #'
-#' This is the only builder verb that accumulates; every other \code{ffm_*}
-#' setter, \code{\link{ffm_copy}} included, assigns. The exception is earned by
-#' this function's arguments being \emph{partial} selections that genuinely
-#' compose (keep the video, then name one audio track).
+#' A second \code{ffm_map()} call \strong{adds} to the maps already set. It does
+#' not replace them. Pass \code{replace = TRUE} to discard them instead. That is
+#' how you narrow the all-streams map that \code{\link{ffm_copy}} sets. Adding
+#' to that map puts the stream in the output twice, and does not select it.
 #'
-#' When the pipeline uses a multi-input verb (e.g.
-#' \code{\link{ffm_hstack}}), the explicit mapping is added \emph{alongside}
-#' the automatic \code{-map "[vout]"} of the filtered stream — for example,
-#' \code{ffm_map(object, "0:a")} keeps the first input's audio next to the
+#' \code{ffm_map()} is the only pipeline function that adds to earlier calls.
+#' Every other \code{ffm_*} function that sets a value, \code{\link{ffm_copy}}
+#' included, replaces it. \code{ffm_map()} is different because its arguments
+#' are \emph{partial} choices that combine. For example, you keep the video,
+#' then name one audio track.
+#'
+#' When the pipeline uses a function with several inputs, such as
+#' \code{\link{ffm_hstack}}, your mapping is added \emph{beside} the automatic
+#' \code{-map "[vout]"} of the filtered stream. For example,
+#' \code{ffm_map(object, "0:a")} keeps the audio of the first input next to the
 #' stacked video.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param mapping A character vector of one or more stream specifiers, one
-#'   \code{-map} each.
-#' @param replace A logical: discard any mapping already set on \code{object}
-#'   (\code{TRUE}) or append to it (\code{FALSE}, default).
-#' @return \code{object} with the added stream mapping instruction.
-#' @seealso [ffm_copy()], which maps all streams; [separate_audio_video()] is a
-#'   task verb built on it.
+#' @param mapping A character vector of one or more stream specifiers. Each one
+#'   adds one \code{-map}.
+#' @param replace A logical. \code{TRUE} discards any mapping already set on
+#'   \code{object}. \code{FALSE} (the default) adds to it.
+#' @return \code{object} with an added instruction to map streams.
+#' @seealso [ffm_copy()], which maps all streams, and [separate_audio_video()],
+#'   a task function built on \code{ffm_map()}.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -620,31 +629,31 @@ ffm_map <- function(object, mapping = "0", replace = FALSE) {
 
 #' Copy the codecs and map all streams
 #'
-#' Stream-copy the audio and/or video (no re-encoding) and, optionally, map all
-#' streams from the input. This is the fast, lossless path when you only need to
-#' remux or cut on keyframes.
+#' Copy the audio, the video, or both, with stream copy and no re-encoding. It
+#' can also map all streams from the input. This is the fast, lossless path when
+#' you only need to put the streams in a new container or cut on keyframes. The
+#' glossary in \code{vignette("tidymedia")} explains media terms such as codec,
+#' container, keyframe and stream copy.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param audio A logical indicating whether to copy the audio codec
-#'   (default = \code{TRUE}). See \code{\link{audio_stream}} for the two
-#'   things the bare name \code{audio} means at Layer 1, and for the input
-#'   index \code{audio_input}.
-#' @param video A logical indicating whether to copy the video codec.
-#'   (default = \code{TRUE})
-#' @param streams A logical indicating whether to map all streams from the
-#'   input. This \strong{sets} the mapping to the all-streams specifier
-#'   \code{"0"} rather than adding to it, so calling \code{ffm_copy()} twice
-#'   compiles one \code{-map "0"}, not two. If the pipeline already states a
-#'   \emph{different} mapping, that is a
-#'   conflict and \code{ffm_copy()} aborts rather than discard it silently:
-#'   pass \code{streams = FALSE} to keep the mapping you set, or call
-#'   \code{ffm_copy()} first and narrow afterwards with
-#'   \code{ffm_map(replace = TRUE)}. (default = \code{TRUE})
-#' @return \code{object} with the added instruction to copy codecs and/or map
-#'   all streams.
-#' @seealso [ffm_codec()] and [ffm_map()], which it wraps; [segment_video()]
-#'   uses it for fast copy cuts.
+#' @param audio A logical. \code{TRUE} (the default) copies the audio codec.
+#'   See \code{\link{audio_stream}} for the two things that the name
+#'   \code{audio} means in the pipeline functions, and for the input index
+#'   \code{audio_input}.
+#' @param video A logical. \code{TRUE} (the default) copies the video codec.
+#' @param streams A logical. \code{TRUE} (the default) maps all streams from the
+#'   input. It \strong{sets} the mapping to the all-streams specifier
+#'   \code{"0"}, and does not add to it. So two \code{ffm_copy()} calls compile
+#'   one \code{-map "0"}, not two. If the pipeline already has a
+#'   \emph{different} mapping, \code{ffm_copy()} gives an error and does not
+#'   discard that mapping silently. To keep the mapping you set, pass
+#'   \code{streams = FALSE}. Or call \code{ffm_copy()} first, and then narrow
+#'   the mapping with \code{ffm_map(replace = TRUE)}.
+#' @return \code{object} with an added instruction to copy codecs, map all
+#'   streams, or both.
+#' @seealso [ffm_codec()] and [ffm_map()], which \code{ffm_copy()} calls, and
+#'   [segment_video()], which uses it for fast copy cuts.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -723,15 +732,16 @@ check_copy_map_conflict <- function(map, call = rlang::caller_env()) {
 
 #' Set the Pixel Format in an FFmpeg Pipeline
 #'
-#' Set the output pixel format via FFmpeg's \code{-pix_fmt} option (for example
-#' \code{"yuv420p"} for broad player compatibility).
+#' Set the pixel format of the output with FFmpeg's \code{-pix_fmt} option. For
+#' example, use \code{"yuv420p"} for broad player compatibility. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as pixel format.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param format A string indicating the pixel format for the output file.
-#' @return \code{object} with the added pixel-format instruction.
-#' @seealso [standardize_video()] and [format_for_web()], the task verbs that
-#'   set the pixel format via this builder.
+#' @param format A string that names the pixel format of the output file.
+#' @return \code{object} with an added instruction to set the pixel format.
+#' @seealso [standardize_video()] and [format_for_web()], the task functions
+#'   that use \code{ffm_pixel_format()} to set the pixel format.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -1087,21 +1097,23 @@ ffm_drawbox <- function(object,
 
 #' Add Raw Output Options to an FFmpeg Pipeline
 #'
-#' Append one or more raw FFmpeg output options (the flags that sit after the
-#' input and before the output file) to the pipeline. This is a controlled
-#' escape hatch for options that lack a dedicated verb: \code{ffm_compile()}
-#' still owns where they are placed and how the rest of the command is quoted,
-#' so this is not the same as gluing a command string yourself.
+#' Add one or more raw FFmpeg output options to the pipeline, after any added
+#' before. Output options are the flags after the input and before the output
+#' file. Use this function for an option that has no pipeline function of its
+#' own. \code{ffm_compile()} still decides where the options go and how the rest
+#' of the command is quoted. So this is not the same as writing the command
+#' string yourself.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param ... One or more strings, each a whitespace-separated option group
-#'   (e.g. \code{"-q:v 1"}, \code{"-frames:v 1"}). Added in the order given.
-#'   At execution time each whitespace-separated token becomes one FFmpeg
-#'   argument, so option values themselves must not contain spaces.
+#' @param ... One or more strings. Each string is a group of options separated
+#'   by white space, for example \code{"-q:v 1"} or \code{"-frames:v 1"}. They
+#'   are added in the order given. When the command runs, each word between
+#'   white space becomes one FFmpeg argument. So an option value must not
+#'   contain spaces.
 #' @return \code{object} with the added output options.
-#' @seealso [ffmpeg()] for the full Layer 0 escape hatch, and [ffm_compile()],
-#'   which places these options.
+#' @seealso [ffmpeg()], the direct command that takes any FFmpeg arguments, and
+#'   [ffm_compile()], which places these options.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -1136,16 +1148,16 @@ ffm_output_options <- function(object, ...) {
 
 # ffm_compile() ----------------------------------------------------------------
 
-#' Compile the tidymedia pipeline into FFmpeg command
+#' Compile the tidymedia pipeline into an FFmpeg command
 #'
-#' Compile all the instructions into a string representing the FFmpeg command
-#' needed to run it.
+#' Compile all the instructions into one string, the FFmpeg command that runs
+#' them.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @return A string containing the FFmpeg command needed to execute all the
-#'   instructions provided to the tidymedia pipeline.
-#' @seealso [ffm_run()] to compile and execute in one step, and [ffm_batch()] to
+#' @return A string with the FFmpeg command that carries out all the
+#'   instructions in the tidymedia pipeline.
+#' @seealso [ffm_run()] to compile and run in one step, and [ffm_batch()] to
 #'   compile over many files.
 #' @family pipeline functions
 #' @examples
@@ -1511,22 +1523,23 @@ n_files <- function(x) {
 #' Run the FFmpeg Pipeline
 #' 
 #' Compile the instructions in the pipeline and run them all through FFmpeg.
-#' 
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param verify An optional named list of expected output properties, passed to
-#'   \code{\link{verify_media}} (e.g. \code{list(width = 1920, video_codec =
-#'   "h264")}). After a successful run the output is probed and, if any check
-#'   fails, \code{ffm_run()} aborts with the failed checks (mirroring how it
-#'   aborts on a non-zero FFmpeg exit). \code{NULL} (default) skips verification.
-#' @return A character vector of FFmpeg's standard output (with a
-#'   \code{status} attribute on a non-zero exit), invisibly; called for its
-#'   side effect of writing the output file. The pipeline is executed as an
-#'   argument vector (never through a shell), so paths containing spaces or
-#'   special characters are safe.
+#' @param verify An optional named list of the properties you expect the output
+#'   to have, for example \code{list(width = 1920, video_codec = "h264")}. It is
+#'   passed to \code{\link{verify_media}}. After a successful run, the output is
+#'   probed. If a check fails, \code{ffm_run()} gives an error with the failed
+#'   checks. It also gives an error when FFmpeg exits non-zero. \code{NULL} (the
+#'   default) skips the checks.
+#' @return FFmpeg's standard output as a character vector, returned invisibly.
+#'   On a non-zero exit it has a \code{status} attribute. You call
+#'   \code{ffm_run()} to write the output file, not for its return value. The
+#'   pipeline runs as a vector of arguments and never through a shell. So paths
+#'   with spaces or special characters are safe.
 #' @section When FFmpeg exits non-zero:
-#' A run FFmpeg refuses aborts with a condition of class
-#' \code{tidymedia_ffmpeg_exit}, so a caller can catch a failed run without
+#' If FFmpeg refuses a run, \code{ffm_run()} gives an error of class
+#' \code{tidymedia_ffmpeg_exit}. A caller can catch a failed run without
 #' reading the error text:
 #'
 #' \preformatted{
@@ -1536,35 +1549,43 @@ n_files <- function(x) {
 #' )
 #' }
 #'
-#' The \code{tm_status} field is a length-one integer holding the exit status
-#' exactly as \code{system2()} reported it — including, for a
-#' signal-terminated FFmpeg, the shell's 128-plus-signal number passed through
-#' unchanged, which encodes the signal rather than anything FFmpeg chose to
-#' return. Two other paths raise this class and carry this field, so one handler
-#' covers all three: the \code{loudnorm} analysis pass behind
-#' \code{normalize_audio(two_pass = TRUE)} when FFmpeg exits non-zero, and the
-#' multi-track diagnostic \code{\link{separate_audio_video}} adds to a failed
-#' audio output. Each of those two names a second, narrower class ahead of this
-#' one — \code{tidymedia_loudnorm_no_measurement} and
-#' \code{tidymedia_multitrack_separation} respectively — which is what to catch
-#' when it is that failure in particular you want.
+#' The \code{tm_status} field is one integer, the exit status exactly as
+#' \code{system2()} reported it. If a signal stopped FFmpeg, the field holds
+#' the shell's number, 128 plus the signal number, unchanged. That number
+#' stands for the signal, not for a status FFmpeg chose to return.
 #'
-#' Two paths in the same family do \strong{not} raise this class, each for its
-#' own reason. \code{normalize_audio(two_pass = TRUE)} also
-#' aborts when the analysis pass exits zero and prints no parseable measurement
-#' block; no non-zero exit happened there, so that abort is
-#' \code{tidymedia_loudnorm_no_measurement} alone, with no
-#' \code{tm_status}. And \code{normalize_audio_batch(two_pass = TRUE)} reports
-#' every offending row of its analysis phase in one error, firing for rows that
-#' exited zero as well as for rows FFmpeg refused — so an exit is one of its
-#' causes rather than the fact it reports, and no single status could stand for
-#' the mix. It too raises
-#' \code{tidymedia_loudnorm_no_measurement} alone — carrying \code{tm_rows},
-#' the 1-indexed offending rows, and \code{tm_row_status}, their exit statuses
-#' aligned to it, with \code{NA} where the row exited zero. That shared class is
-#' therefore the one handler that covers the analysis pass in both forms.
+#' Two other paths give this class and carry this field, so one handler covers
+#' all three:
+#' \itemize{
+#'   \item the \code{loudnorm} analysis pass of
+#'     \code{normalize_audio(two_pass = TRUE)}, when FFmpeg exits non-zero.
+#'   \item the error about several audio tracks that
+#'     \code{\link{separate_audio_video}} adds to a failed audio output.
+#' }
+#' Each of those two paths also gives a second, narrower class before this one.
+#' In the same order, they are \code{tidymedia_loudnorm_no_measurement} and
+#' \code{tidymedia_multitrack_separation}. Catch that class when you want only
+#' that failure.
+#'
+#' Two related paths do \strong{not} give this class, each for its own reason:
+#' \itemize{
+#'   \item \code{normalize_audio(two_pass = TRUE)} also gives an error when the
+#'     analysis pass exits zero and prints no measurement block that can be
+#'     read. FFmpeg did not exit non-zero there. So that error has only the
+#'     class \code{tidymedia_loudnorm_no_measurement}, and no \code{tm_status}.
+#'   \item \code{normalize_audio_batch(two_pass = TRUE)} reports in one error
+#'     every row that failed in its analysis phase. The failed rows can include
+#'     rows that exited zero and rows that FFmpeg refused. So a non-zero exit is
+#'     one of its causes, not the fact it reports, and no single status can
+#'     stand for the mix. It also has only the class
+#'     \code{tidymedia_loudnorm_no_measurement}. It carries \code{tm_rows}, the
+#'     failed rows counted from 1. It also carries \code{tm_row_status}, their
+#'     exit statuses in the same order, with \code{NA} where a row exited zero.
+#' }
+#' So \code{tidymedia_loudnorm_no_measurement} is the one class that covers
+#' the analysis pass in both forms.
 #' @seealso [ffm_compile()] to get the command without running it, [ffm_batch()]
-#'   for the many-file runner, and [verify_media()] for the \code{verify =} spec.
+#'   to run many files, and [verify_media()] for the \code{verify} list.
 #' @family pipeline functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

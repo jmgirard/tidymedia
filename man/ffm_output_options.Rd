@@ -7,23 +7,25 @@
 ffm_output_options(object, ...)
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{...}{One or more strings, each a whitespace-separated option group
-(e.g. \code{"-q:v 1"}, \code{"-frames:v 1"}). Added in the order given.
-At execution time each whitespace-separated token becomes one FFmpeg
-argument, so option values themselves must not contain spaces.}
+\item{...}{One or more strings. Each string is a group of options separated
+by white space, for example \code{"-q:v 1"} or \code{"-frames:v 1"}. They
+are added in the order given. When the command runs, each word between
+white space becomes one FFmpeg argument. So an option value must not
+contain spaces.}
 }
 \value{
 \code{object} with the added output options.
 }
 \description{
-Append one or more raw FFmpeg output options (the flags that sit after the
-input and before the output file) to the pipeline. This is a controlled
-escape hatch for options that lack a dedicated verb: \code{ffm_compile()}
-still owns where they are placed and how the rest of the command is quoted,
-so this is not the same as gluing a command string yourself.
+Add one or more raw FFmpeg output options to the pipeline, after any added
+before. Output options are the flags after the input and before the output
+file. Use this function for an option that has no pipeline function of its
+own. \code{ffm_compile()} still decides where the options go and how the rest
+of the command is quoted. So this is not the same as writing the command
+string yourself.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -33,8 +35,8 @@ ffm_files(video, "frame.png") |>
   ffm_compile()
 }
 \seealso{
-\code{\link[=ffmpeg]{ffmpeg()}} for the full Layer 0 escape hatch, and \code{\link[=ffm_compile]{ffm_compile()}},
-which places these options.
+\code{\link[=ffmpeg]{ffmpeg()}}, the direct command that takes any FFmpeg arguments, and
+\code{\link[=ffm_compile]{ffm_compile()}}, which places these options.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

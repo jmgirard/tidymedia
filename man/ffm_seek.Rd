@@ -7,37 +7,40 @@
 ffm_seek(object, start = NULL, end = NULL, reencode = TRUE)
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{start}{The start of the kept section, in seconds or FFmpeg time
-duration syntax. \code{NULL} keeps from the beginning.}
+\item{start}{The start of the kept section, in seconds or in FFmpeg time
+duration syntax. \code{NULL} keeps the section from the beginning.}
 
-\item{end}{The end of the kept section, in seconds or FFmpeg time duration
-syntax. \code{NULL} keeps to the end.}
+\item{end}{The end of the kept section, in seconds or in FFmpeg time duration
+syntax. \code{NULL} keeps the section to the end.}
 
-\item{reencode}{A logical: re-encode for a frame-accurate cut (\code{TRUE},
-default) or fast copy-safe seek that snaps to keyframes (\code{FALSE}).}
+\item{reencode}{A logical. \code{TRUE} (the default) re-encodes for a
+frame-accurate cut. \code{FALSE} makes a fast seek that is safe to copy,
+and its cut points move to keyframes.}
 }
 \value{
-\code{object} with the added instruction to seek-cut the input.
+\code{object} with an added instruction to cut the input by seeking.
 }
 \description{
-Keep one continuous section of the input using FFmpeg's fast \code{-ss}/
-\code{-to} seek options, rather than the \code{trim} \emph{filter} (see
-\code{\link{ffm_trim}}). Unlike the filter, seeking can stream-copy, so it is
-the tool for fast, lossless cutting.
+Keep one continuous section of the input with FFmpeg's fast \code{-ss} and
+\code{-to} seek options. It does not use the \code{trim} \emph{filter} of
+\code{\link{ffm_trim}}. Unlike the filter, seeking can use stream copy, so it
+is the tool for fast, lossless cuts. The glossary in
+\code{vignette("tidymedia")} explains media terms such as keyframe,
+re-encode and stream copy.
 }
 \details{
 The \code{reencode} argument trades accuracy against speed:
 \itemize{
-\item \code{reencode = TRUE} (default) is \strong{frame-accurate}: the
-section is re-encoded so it begins and ends on the exact requested
-frames. This is the safe default.
-\item \code{reencode = FALSE} is a \strong{fast, lossless copy}, but the cut
-points snap to the nearest keyframes, so the output duration can differ
-from the request by up to one group-of-pictures. Pair it with
-\code{\link{ffm_copy}} for the fastest path.
+\item \code{reencode = TRUE} (the default) is \strong{frame-accurate}. The
+section is re-encoded, so it starts and ends on the exact frames you ask
+for. This is the safe default.
+\item \code{reencode = FALSE} is a \strong{fast, lossless copy}. But the
+cut points move to the nearest keyframes. So the output duration can
+differ from the request by up to the gap between two keyframes. Use it
+with \code{\link{ffm_copy}} for the fastest path.
 }
 }
 \examples{
@@ -52,8 +55,8 @@ ffm_files(video, "output.mp4") |>
 https://ffmpeg.org/ffmpeg.html#Main-options
 }
 \seealso{
-\code{\link[=ffm_trim]{ffm_trim()}} for the filter-based alternative, \code{\link[=ffm_copy]{ffm_copy()}} for the
-fast copy path, and \code{\link[=segment_video]{segment_video()}}, the task verb built on it.
+\code{\link[=ffm_trim]{ffm_trim()}} for the filter that cuts, \code{\link[=ffm_copy]{ffm_copy()}} for the fast
+copy path, and \code{\link[=segment_video]{segment_video()}}, the task function built on it.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

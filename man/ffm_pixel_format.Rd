@@ -7,17 +7,18 @@
 ffm_pixel_format(object, format)
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{format}{A string indicating the pixel format for the output file.}
+\item{format}{A string that names the pixel format of the output file.}
 }
 \value{
-\code{object} with the added pixel-format instruction.
+\code{object} with an added instruction to set the pixel format.
 }
 \description{
-Set the output pixel format via FFmpeg's \code{-pix_fmt} option (for example
-\code{"yuv420p"} for broad player compatibility).
+Set the pixel format of the output with FFmpeg's \code{-pix_fmt} option. For
+example, use \code{"yuv420p"} for broad player compatibility. The glossary in
+\code{vignette("tidymedia")} explains media terms such as pixel format.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -26,8 +27,8 @@ ffm_files(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
-\code{\link[=standardize_video]{standardize_video()}} and \code{\link[=format_for_web]{format_for_web()}}, the task verbs that
-set the pixel format via this builder.
+\code{\link[=standardize_video]{standardize_video()}} and \code{\link[=format_for_web]{format_for_web()}}, the task functions
+that use \code{ffm_pixel_format()} to set the pixel format.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

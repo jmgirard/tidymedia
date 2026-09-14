@@ -7,13 +7,14 @@
 ffm_files(input, output, overwrite = TRUE)
 }
 \arguments{
-\item{input}{A character vector containing strings that indicate the input
-media file for the pipeline (provide more than one for stacking).}
+\item{input}{A character vector of paths to the input media files of the
+pipeline. Give more than one path for stacking.}
 
-\item{output}{A string indicating the output media file for the pipeline.}
+\item{output}{A string with the path of the output media file of the
+pipeline.}
 
-\item{overwrite}{A logical indicating whether the output media file should be
-overwritten if it already exists. (default = \code{TRUE})}
+\item{overwrite}{A logical. If \code{TRUE} (the default), an output media
+file that already exists is overwritten.}
 }
 \value{
 An FFmpeg pipeline object.
@@ -27,9 +28,9 @@ ffm_files(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
-\code{\link[=ffm_compile]{ffm_compile()}} to render the pipeline and \code{\link[=ffm_run]{ffm_run()}} to execute
-it; the Layer-2 task verbs (e.g. \code{\link[=standardize_video]{standardize_video()}}, \code{\link[=segment_video]{segment_video()}})
-wrap this engine.
+\code{\link[=ffm_compile]{ffm_compile()}} to build the command and \code{\link[=ffm_run]{ffm_run()}} to run it. The
+task functions, such as \code{\link[=standardize_video]{standardize_video()}} and \code{\link[=segment_video]{segment_video()}}, are
+built on the pipeline functions.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

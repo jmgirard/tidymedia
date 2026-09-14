@@ -7,24 +7,26 @@
 ffm_codec(object, audio = NULL, video = NULL)
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{audio}{A string indicating which audio codec to use or \code{NULL} to
-only set the video codec (default = \code{NULL}). See
-\code{\link{audio_stream}} for the two things the bare name \code{audio}
-means at Layer 1, and for the input index \code{audio_input}.}
+\item{audio}{A string that names the audio codec, or \code{NULL} to set only
+the video codec. The default is \code{NULL}. See
+\code{\link{audio_stream}} for the two things that the name \code{audio}
+means in the pipeline functions, and for the input index
+\code{audio_input}.}
 
-\item{video}{A string indicating which video codec to use or \code{NULL} to
-only set the audio codec. default = \code{NULL}}
+\item{video}{A string that names the video codec, or \code{NULL} to set only
+the audio codec. The default is \code{NULL}.}
 }
 \value{
-\code{object} but with the added instruction to change the codec(s).
+\code{object} with an added instruction to change the codecs.
 }
 \description{
-Set the audio and/or video codecs for the output file. Note that you can use
-the command \code{ffmpeg_codecs()} to see a list of the codecs included in your
-FFmpeg version.
+Set the audio codec, the video codec, or both, for the output file. Use
+\code{ffmpeg_codecs()} to see a list of the codecs in your FFmpeg version.
+The glossary in \code{vignette("tidymedia")} explains media terms such as
+codec and stream copy.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -36,8 +38,9 @@ ffm_files(video, "output.mp4") |>
 https://ffmpeg.org/ffmpeg-codecs.html
 }
 \seealso{
-\code{\link[=ffm_copy]{ffm_copy()}} for the stream-copy shortcut, \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}} to list
-available codecs, and \code{\link[=standardize_video]{standardize_video()}}, a task verb built on it.
+\code{\link[=ffm_copy]{ffm_copy()}}, the shortcut for stream copy, \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}} to
+list the codecs you can use, and \code{\link[=standardize_video]{standardize_video()}}, a task function
+built on it.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

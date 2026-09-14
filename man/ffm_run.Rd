@@ -7,29 +7,30 @@
 ffm_run(object, verify = NULL)
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{verify}{An optional named list of expected output properties, passed to
-\code{\link{verify_media}} (e.g. \code{list(width = 1920, video_codec =
-"h264")}). After a successful run the output is probed and, if any check
-fails, \code{ffm_run()} aborts with the failed checks (mirroring how it
-aborts on a non-zero FFmpeg exit). \code{NULL} (default) skips verification.}
+\item{verify}{An optional named list of the properties you expect the output
+to have, for example \code{list(width = 1920, video_codec = "h264")}. It is
+passed to \code{\link{verify_media}}. After a successful run, the output is
+probed. If a check fails, \code{ffm_run()} gives an error with the failed
+checks. It also gives an error when FFmpeg exits non-zero. \code{NULL} (the
+default) skips the checks.}
 }
 \value{
-A character vector of FFmpeg's standard output (with a
-\code{status} attribute on a non-zero exit), invisibly; called for its
-side effect of writing the output file. The pipeline is executed as an
-argument vector (never through a shell), so paths containing spaces or
-special characters are safe.
+FFmpeg's standard output as a character vector, returned invisibly.
+On a non-zero exit it has a \code{status} attribute. You call
+\code{ffm_run()} to write the output file, not for its return value. The
+pipeline runs as a vector of arguments and never through a shell. So paths
+with spaces or special characters are safe.
 }
 \description{
 Compile the instructions in the pipeline and run them all through FFmpeg.
 }
 \section{When FFmpeg exits non-zero}{
 
-A run FFmpeg refuses aborts with a condition of class
-\code{tidymedia_ffmpeg_exit}, so a caller can catch a failed run without
+If FFmpeg refuses a run, \code{ffm_run()} gives an error of class
+\code{tidymedia_ffmpeg_exit}. A caller can catch a failed run without
 reading the error text:
 
 \preformatted{
@@ -39,33 +40,41 @@ tryCatch(
 )
 }
 
-The \code{tm_status} field is a length-one integer holding the exit status
-exactly as \code{system2()} reported it — including, for a
-signal-terminated FFmpeg, the shell's 128-plus-signal number passed through
-unchanged, which encodes the signal rather than anything FFmpeg chose to
-return. Two other paths raise this class and carry this field, so one handler
-covers all three: the \code{loudnorm} analysis pass behind
-\code{normalize_audio(two_pass = TRUE)} when FFmpeg exits non-zero, and the
-multi-track diagnostic \code{\link{separate_audio_video}} adds to a failed
-audio output. Each of those two names a second, narrower class ahead of this
-one — \code{tidymedia_loudnorm_no_measurement} and
-\code{tidymedia_multitrack_separation} respectively — which is what to catch
-when it is that failure in particular you want.
+The \code{tm_status} field is one integer, the exit status exactly as
+\code{system2()} reported it. If a signal stopped FFmpeg, the field holds
+the shell's number, 128 plus the signal number, unchanged. That number
+stands for the signal, not for a status FFmpeg chose to return.
 
-Two paths in the same family do \strong{not} raise this class, each for its
-own reason. \code{normalize_audio(two_pass = TRUE)} also
-aborts when the analysis pass exits zero and prints no parseable measurement
-block; no non-zero exit happened there, so that abort is
-\code{tidymedia_loudnorm_no_measurement} alone, with no
-\code{tm_status}. And \code{normalize_audio_batch(two_pass = TRUE)} reports
-every offending row of its analysis phase in one error, firing for rows that
-exited zero as well as for rows FFmpeg refused — so an exit is one of its
-causes rather than the fact it reports, and no single status could stand for
-the mix. It too raises
-\code{tidymedia_loudnorm_no_measurement} alone — carrying \code{tm_rows},
-the 1-indexed offending rows, and \code{tm_row_status}, their exit statuses
-aligned to it, with \code{NA} where the row exited zero. That shared class is
-therefore the one handler that covers the analysis pass in both forms.
+Two other paths give this class and carry this field, so one handler covers
+all three:
+\itemize{
+\item the \code{loudnorm} analysis pass of
+\code{normalize_audio(two_pass = TRUE)}, when FFmpeg exits non-zero.
+\item the error about several audio tracks that
+\code{\link{separate_audio_video}} adds to a failed audio output.
+}
+Each of those two paths also gives a second, narrower class before this one.
+In the same order, they are \code{tidymedia_loudnorm_no_measurement} and
+\code{tidymedia_multitrack_separation}. Catch that class when you want only
+that failure.
+
+Two related paths do \strong{not} give this class, each for its own reason:
+\itemize{
+\item \code{normalize_audio(two_pass = TRUE)} also gives an error when the
+analysis pass exits zero and prints no measurement block that can be
+read. FFmpeg did not exit non-zero there. So that error has only the
+class \code{tidymedia_loudnorm_no_measurement}, and no \code{tm_status}.
+\item \code{normalize_audio_batch(two_pass = TRUE)} reports in one error
+every row that failed in its analysis phase. The failed rows can include
+rows that exited zero and rows that FFmpeg refused. So a non-zero exit is
+one of its causes, not the fact it reports, and no single status can
+stand for the mix. It also has only the class
+\code{tidymedia_loudnorm_no_measurement}. It carries \code{tm_rows}, the
+failed rows counted from 1. It also carries \code{tm_row_status}, their
+exit statuses in the same order, with \code{NA} where a row exited zero.
+}
+So \code{tidymedia_loudnorm_no_measurement} is the one class that covers
+the analysis pass in both forms.
 }
 
 \examples{
@@ -80,7 +89,7 @@ ffm_files(video, out) |>
 }
 \seealso{
 \code{\link[=ffm_compile]{ffm_compile()}} to get the command without running it, \code{\link[=ffm_batch]{ffm_batch()}}
-for the many-file runner, and \code{\link[=verify_media]{verify_media()}} for the \code{verify =} spec.
+to run many files, and \code{\link[=verify_media]{verify_media()}} for the \code{verify} list.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

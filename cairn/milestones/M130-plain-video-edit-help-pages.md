@@ -55,6 +55,8 @@ The M130 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-14: [O] claim audit reader (fresh, wrote none of the lines) read every added roxygen line against the code and the base text. It found no branch-added false claim. It found 3 changed sentences that did not make the base claim, which were put back, and the same reader confirmed all 3. It found 4 base claims false, which are ledger rows and the M130 follow-up candidate row in `cairn/ROADMAP.md`.
 - claim audit: 70 claims read, 3 corrected — R/ffmpeg.R, man/crop_video_batch.Rd, man/standardize_video_batch.Rd, man/strip_metadata.Rd, man/strip_metadata_batch.Rd
 - 2026-09-14: T4 done. No test pinned changed wording, so no test changed. Sweep over the 8 pages exits 0 with no finding. All 8 name the glossary. No AC4 identifiers at base. `git diff --name-only 9353ac4f -- man/` lists only the 8 domain pages. `devtools::document()` leaves `man/` unchanged. `devtools::check()`: 0 errors, 0 warnings, 0 notes. `devtools::test()`: 0 failed, 0 errors, 5 skipped. `pkgdown::check_pkgdown()`: no problems. Ledger filled.
+- 2026-09-14: review found no failing criterion and no return. The user chose the recommended triage.
+- step-7 approval: m130-plain-video-edit-help-pages approved for merge (2026-09-14)
 
 ## Decisions
 

@@ -14,7 +14,7 @@ _Last hygiene check: 2026-09-14 (M128 done and archived. PR #133 squash-merged w
 | M131 | The filter and multi-input pipeline help pages read as plain English | planned | M129 | high | milestones/M131-plain-pipeline-filter-help-pages.md |
 | M132 | The FFmpeg-capability, frame and audio conversion help pages read as plain English | planned | M129 | high | milestones/M132-plain-capability-frame-audio-help-pages.md |
 | M133 | The separate-audio-video and normalize-audio help pages read as plain English | planned | M129 | high | milestones/M133-plain-separate-normalize-help-pages.md |
-| M130 | The crop, web-format, standardize and strip-metadata help pages read as plain English | planned | M129 | high | milestones/M130-plain-video-edit-help-pages.md |
+| M130 | The crop, web-format, standardize and strip-metadata help pages read as plain English | in-progress | M129 | high | milestones/M130-plain-video-edit-help-pages.md |
 | M134 | The anonymize, segment, concatenate, compare and picture-in-picture help pages read as plain English | planned | M129 | high | milestones/M134-plain-video-composition-help-pages.md |
 
 ## Candidates

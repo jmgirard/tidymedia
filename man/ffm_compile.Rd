@@ -2,21 +2,21 @@
 % Please edit documentation in R/ffm.R
 \name{ffm_compile}
 \alias{ffm_compile}
-\title{Compile the tidymedia pipeline into FFmpeg command}
+\title{Compile the tidymedia pipeline into an FFmpeg command}
 \usage{
 ffm_compile(object)
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 }
 \value{
-A string containing the FFmpeg command needed to execute all the
-instructions provided to the tidymedia pipeline.
+A string with the FFmpeg command that carries out all the
+instructions in the tidymedia pipeline.
 }
 \description{
-Compile all the instructions into a string representing the FFmpeg command
-needed to run it.
+Compile all the instructions into one string, the FFmpeg command that runs
+them.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -28,7 +28,7 @@ ffm_files(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
-\code{\link[=ffm_run]{ffm_run()}} to compile and execute in one step, and \code{\link[=ffm_batch]{ffm_batch()}} to
+\code{\link[=ffm_run]{ffm_run()}} to compile and run in one step, and \code{\link[=ffm_batch]{ffm_batch()}} to
 compile over many files.
 
 Other pipeline functions:

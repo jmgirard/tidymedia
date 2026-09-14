@@ -497,21 +497,24 @@ ffm_loudnorm <- function(object,
 
 #' Set Codecs in an FFmpeg Pipeline
 #'
-#' Set the audio and/or video codecs for the output file. Note that you can use
-#' the command \code{ffmpeg_codecs()} to see a list of the codecs included in your
-#' FFmpeg version.
+#' Set the audio codec, the video codec, or both, for the output file. Use
+#' \code{ffmpeg_codecs()} to see a list of the codecs in your FFmpeg version.
+#' The glossary in \code{vignette("tidymedia")} explains media terms such as
+#' codec and stream copy.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param audio A string indicating which audio codec to use or \code{NULL} to
-#'   only set the video codec (default = \code{NULL}). See
-#'   \code{\link{audio_stream}} for the two things the bare name \code{audio}
-#'   means at Layer 1, and for the input index \code{audio_input}.
-#' @param video A string indicating which video codec to use or \code{NULL} to
-#'   only set the audio codec. default = \code{NULL}
-#' @return \code{object} but with the added instruction to change the codec(s).
-#' @seealso [ffm_copy()] for the stream-copy shortcut, [ffmpeg_codecs()] to list
-#'   available codecs, and [standardize_video()], a task verb built on it.
+#' @param audio A string that names the audio codec, or \code{NULL} to set only
+#'   the video codec. The default is \code{NULL}. See
+#'   \code{\link{audio_stream}} for the two things that the name \code{audio}
+#'   means in the pipeline functions, and for the input index
+#'   \code{audio_input}.
+#' @param video A string that names the video codec, or \code{NULL} to set only
+#'   the audio codec. The default is \code{NULL}.
+#' @return \code{object} with an added instruction to change the codecs.
+#' @seealso [ffm_copy()], the shortcut for stream copy, [ffmpeg_codecs()] to
+#'   list the codecs you can use, and [standardize_video()], a task function
+#'   built on it.
 #' @references https://ffmpeg.org/ffmpeg-codecs.html
 #' @family pipeline functions
 #' @examples
@@ -729,15 +732,16 @@ check_copy_map_conflict <- function(map, call = rlang::caller_env()) {
 
 #' Set the Pixel Format in an FFmpeg Pipeline
 #'
-#' Set the output pixel format via FFmpeg's \code{-pix_fmt} option (for example
-#' \code{"yuv420p"} for broad player compatibility).
+#' Set the pixel format of the output with FFmpeg's \code{-pix_fmt} option. For
+#' example, \code{"yuv420p"} works with most players. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as pixel format.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param format A string indicating the pixel format for the output file.
-#' @return \code{object} with the added pixel-format instruction.
-#' @seealso [standardize_video()] and [format_for_web()], the task verbs that
-#'   set the pixel format via this builder.
+#' @param format A string that names the pixel format of the output file.
+#' @return \code{object} with an added instruction to set the pixel format.
+#' @seealso [standardize_video()] and [format_for_web()], the task functions
+#'   that use \code{ffm_pixel_format()} to set the pixel format.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -1093,21 +1097,23 @@ ffm_drawbox <- function(object,
 
 #' Add Raw Output Options to an FFmpeg Pipeline
 #'
-#' Append one or more raw FFmpeg output options (the flags that sit after the
-#' input and before the output file) to the pipeline. This is a controlled
-#' escape hatch for options that lack a dedicated verb: \code{ffm_compile()}
-#' still owns where they are placed and how the rest of the command is quoted,
-#' so this is not the same as gluing a command string yourself.
+#' Add one or more raw FFmpeg output options to the end of the pipeline's
+#' options. Output options are the flags after the input and before the output
+#' file. Use this function for an option that has no pipeline function of its
+#' own. \code{ffm_compile()} still decides where the options go and how the rest
+#' of the command is quoted. So this is not the same as writing the command
+#' string yourself.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param ... One or more strings, each a whitespace-separated option group
-#'   (e.g. \code{"-q:v 1"}, \code{"-frames:v 1"}). Added in the order given.
-#'   At execution time each whitespace-separated token becomes one FFmpeg
-#'   argument, so option values themselves must not contain spaces.
+#' @param ... One or more strings. Each string is a group of options separated
+#'   by white space, for example \code{"-q:v 1"} or \code{"-frames:v 1"}. They
+#'   are added in the order given. When the command runs, each word between
+#'   white space becomes one FFmpeg argument. So an option value must not
+#'   contain spaces.
 #' @return \code{object} with the added output options.
-#' @seealso [ffmpeg()] for the full Layer 0 escape hatch, and [ffm_compile()],
-#'   which places these options.
+#' @seealso [ffmpeg()], the direct command that takes any FFmpeg arguments, and
+#'   [ffm_compile()], which places these options.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -1142,16 +1148,16 @@ ffm_output_options <- function(object, ...) {
 
 # ffm_compile() ----------------------------------------------------------------
 
-#' Compile the tidymedia pipeline into FFmpeg command
+#' Compile the tidymedia pipeline into an FFmpeg command
 #'
-#' Compile all the instructions into a string representing the FFmpeg command
-#' needed to run it.
+#' Compile all the instructions into one string, the FFmpeg command that runs
+#' them.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @return A string containing the FFmpeg command needed to execute all the
-#'   instructions provided to the tidymedia pipeline.
-#' @seealso [ffm_run()] to compile and execute in one step, and [ffm_batch()] to
+#' @return A string with the FFmpeg command that carries out all the
+#'   instructions in the tidymedia pipeline.
+#' @seealso [ffm_run()] to compile and run in one step, and [ffm_batch()] to
 #'   compile over many files.
 #' @family pipeline functions
 #' @examples
@@ -1517,22 +1523,23 @@ n_files <- function(x) {
 #' Run the FFmpeg Pipeline
 #' 
 #' Compile the instructions in the pipeline and run them all through FFmpeg.
-#' 
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#'
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param verify An optional named list of expected output properties, passed to
-#'   \code{\link{verify_media}} (e.g. \code{list(width = 1920, video_codec =
-#'   "h264")}). After a successful run the output is probed and, if any check
-#'   fails, \code{ffm_run()} aborts with the failed checks (mirroring how it
-#'   aborts on a non-zero FFmpeg exit). \code{NULL} (default) skips verification.
-#' @return A character vector of FFmpeg's standard output (with a
-#'   \code{status} attribute on a non-zero exit), invisibly; called for its
-#'   side effect of writing the output file. The pipeline is executed as an
-#'   argument vector (never through a shell), so paths containing spaces or
-#'   special characters are safe.
+#' @param verify An optional named list of the properties you expect the output
+#'   to have, for example \code{list(width = 1920, video_codec = "h264")}. It is
+#'   passed to \code{\link{verify_media}}. After a successful run, the output is
+#'   probed. If a check fails, \code{ffm_run()} gives an error with the failed
+#'   checks. It does the same when FFmpeg exits non-zero. \code{NULL} (the
+#'   default) skips the checks.
+#' @return FFmpeg's standard output as a character vector, returned invisibly.
+#'   On a non-zero exit it has a \code{status} attribute. You call
+#'   \code{ffm_run()} to write the output file, not for its return value. The
+#'   pipeline runs as a vector of arguments and never through a shell. So paths
+#'   with spaces or special characters are safe.
 #' @section When FFmpeg exits non-zero:
-#' A run FFmpeg refuses aborts with a condition of class
-#' \code{tidymedia_ffmpeg_exit}, so a caller can catch a failed run without
+#' If FFmpeg refuses a run, \code{ffm_run()} gives an error of class
+#' \code{tidymedia_ffmpeg_exit}. A caller can catch a failed run without
 #' reading the error text:
 #'
 #' \preformatted{
@@ -1542,35 +1549,43 @@ n_files <- function(x) {
 #' )
 #' }
 #'
-#' The \code{tm_status} field is a length-one integer holding the exit status
-#' exactly as \code{system2()} reported it — including, for a
-#' signal-terminated FFmpeg, the shell's 128-plus-signal number passed through
-#' unchanged, which encodes the signal rather than anything FFmpeg chose to
-#' return. Two other paths raise this class and carry this field, so one handler
-#' covers all three: the \code{loudnorm} analysis pass behind
-#' \code{normalize_audio(two_pass = TRUE)} when FFmpeg exits non-zero, and the
-#' multi-track diagnostic \code{\link{separate_audio_video}} adds to a failed
-#' audio output. Each of those two names a second, narrower class ahead of this
-#' one — \code{tidymedia_loudnorm_no_measurement} and
-#' \code{tidymedia_multitrack_separation} respectively — which is what to catch
-#' when it is that failure in particular you want.
+#' The \code{tm_status} field is one integer, the exit status exactly as
+#' \code{system2()} reported it. If a signal stopped FFmpeg, the field holds
+#' the shell's number, 128 plus the signal number, unchanged. That number
+#' stands for the signal, not for a status FFmpeg chose to return.
 #'
-#' Two paths in the same family do \strong{not} raise this class, each for its
-#' own reason. \code{normalize_audio(two_pass = TRUE)} also
-#' aborts when the analysis pass exits zero and prints no parseable measurement
-#' block; no non-zero exit happened there, so that abort is
-#' \code{tidymedia_loudnorm_no_measurement} alone, with no
-#' \code{tm_status}. And \code{normalize_audio_batch(two_pass = TRUE)} reports
-#' every offending row of its analysis phase in one error, firing for rows that
-#' exited zero as well as for rows FFmpeg refused — so an exit is one of its
-#' causes rather than the fact it reports, and no single status could stand for
-#' the mix. It too raises
-#' \code{tidymedia_loudnorm_no_measurement} alone — carrying \code{tm_rows},
-#' the 1-indexed offending rows, and \code{tm_row_status}, their exit statuses
-#' aligned to it, with \code{NA} where the row exited zero. That shared class is
-#' therefore the one handler that covers the analysis pass in both forms.
+#' Two other paths give this class and carry this field, so one handler covers
+#' all three:
+#' \itemize{
+#'   \item the \code{loudnorm} analysis pass of
+#'     \code{normalize_audio(two_pass = TRUE)}, when FFmpeg exits non-zero.
+#'   \item the message about several audio tracks that
+#'     \code{\link{separate_audio_video}} adds to a failed audio output.
+#' }
+#' Each of those two paths also gives a second, narrower class before this one:
+#' \code{tidymedia_loudnorm_no_measurement} and
+#' \code{tidymedia_multitrack_separation}. Catch that class when you want only
+#' that failure.
+#'
+#' Two related paths do \strong{not} give this class, each for its own reason:
+#' \itemize{
+#'   \item \code{normalize_audio(two_pass = TRUE)} also gives an error when the
+#'     analysis pass exits zero and prints no measurement block that can be
+#'     read. FFmpeg did not exit non-zero there. So that error has only the
+#'     class \code{tidymedia_loudnorm_no_measurement}, and no \code{tm_status}.
+#'   \item \code{normalize_audio_batch(two_pass = TRUE)} reports in one error
+#'     every row that failed in its analysis phase. That includes rows that
+#'     exited zero and rows that FFmpeg refused. So a non-zero exit is one of
+#'     its causes, not the fact it reports, and no single status can stand for
+#'     the mix. It also has only the class
+#'     \code{tidymedia_loudnorm_no_measurement}. It carries \code{tm_rows}, the
+#'     failed rows counted from 1. It also carries \code{tm_row_status}, their
+#'     exit statuses in the same order, with \code{NA} where a row exited zero.
+#' }
+#' So \code{tidymedia_loudnorm_no_measurement} is the one class that covers
+#' the analysis pass in both forms.
 #' @seealso [ffm_compile()] to get the command without running it, [ffm_batch()]
-#'   for the many-file runner, and [verify_media()] for the \code{verify =} spec.
+#'   to run many files, and [verify_media()] for the \code{verify} list.
 #' @family pipeline functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

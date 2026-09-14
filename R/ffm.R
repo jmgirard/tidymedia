@@ -57,28 +57,29 @@ ffm_files <- function(input, output, overwrite = TRUE) {
 
 #' Trim the Duration of the FFmpeg Pipeline
 #'
-#' Trim the input so that the output contains one continuous subpart of the
-#' input. Note that, if \code{start=NULL}, then the kept section will start at
-#' the beginning of the input. If both \code{end=NULL} and \code{duration=NULL},
-#' the kept section will end at the end of the input.
+#' Trim the input so that the output keeps one continuous part of the input. If
+#' \code{start} is \code{NULL}, the kept section starts at the beginning of the
+#' input. If both \code{end} and \code{duration} are \code{NULL}, the kept
+#' section ends at the end of the input. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as stream copy.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param start The time of the start of the kept section (i.e., this will be
-#'   the first frame in the output) given in \code{units}.
-#' @param end The time of the first frame that will be dropped (i.e., the frame
-#'   immediately preceding this will be the last frame in the output), given in
-#'   \code{units}.
-#' @param duration The maximum duration of the output given in time duration
+#' @param start The time of the start of the kept section, given in
+#'   \code{units}. The frame at this time is the first frame of the output.
+#' @param end The time of the first frame that is dropped, given in
+#'   \code{units}. The frame just before it is the last frame of the output.
+#' @param duration The maximum duration of the output, given in time duration
 #'   syntax.
-#' @param units A string indicating whether the \code{start} and/or \code{end}
-#'   are given time duration syntax ("tds"), timebase units ("pts"), or frame
-#'   number ("frame"). default = \code{"tds"}
-#' @param setpts A logical indicating whether the output timestamps should be
-#'   modified to start at zero. If TRUE, will add a setpts filter after trim.
-#' @return \code{object} but will added instructions to trim the duration.
-#' @seealso [ffm_seek()], the faster seek-based cut that can stream-copy (this
-#'   is the frame-exact *filter*).
+#' @param units A string that says how \code{start} and \code{end} are given:
+#'   time duration syntax (\code{"tds"}), timebase units (\code{"pts"}) or frame
+#'   numbers (\code{"frame"}). The default is \code{"tds"}.
+#' @param setpts A logical that says whether the output timestamps change to
+#'   start at zero. If \code{TRUE}, a \code{setpts} filter is added after the
+#'   trim.
+#' @return \code{object} with added instructions to trim the duration.
+#' @seealso [ffm_seek()], the faster cut by seeking, which can use stream copy.
+#'   \code{ffm_trim()} is the filter that cuts on exact frames.
 #' @references https://ffmpeg.org/ffmpeg-filters.html#trim
 #' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 #' @family pipeline functions
@@ -246,23 +247,23 @@ ffm_drop <- function(object,
 
 #' Crop Frames in an FFmpeg Pipeline
 #'
-#' Decrease the size of the video's frames by cropping it.
+#' Make the video's frames smaller by cropping them.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param width The width of the output video (in pixels). Either a positive
-#'   real number or a string that contains an FFMPEG expression.
-#' @param height The height of the output video (in pixels). Either a positive
-#'   real number or a string that contains an FFMPEG expression.
-#' @param x The horizontal position, in the input video, of the left edge of the
-#'   output video (in pixels). Either a positive real number or a string that
-#'   contains an FFMPEG expression. (default = \code{"(in_w-out_w)/2"})
-#' @param y The vertical position, in the input video, of the top edge of the
-#'   output video (in pixels). Either a positive real number or a string that
-#'   contains an FFMPEG expression. (default = \code{"(in_h-out_h)/2"})
-#' @return \code{object} but with the added instruction to crop the image(s).
-#' @seealso [ffm_scale()] to resize instead of crop; [crop_video()] and
-#'   [format_for_web()] are the task verbs built on it.
+#' @param width The width of the output video, in pixels. Give a positive real
+#'   number or a string that contains an FFmpeg expression.
+#' @param height The height of the output video, in pixels. Give a positive
+#'   real number or a string that contains an FFmpeg expression.
+#' @param x The horizontal position of the left edge of the output video, in
+#'   pixels of the input video. Give a positive real number or a string that
+#'   contains an FFmpeg expression. The default is \code{"(in_w-out_w)/2"}.
+#' @param y The vertical position of the top edge of the output video, in pixels
+#'   of the input video. Give a positive real number or a string that contains
+#'   an FFmpeg expression. The default is \code{"(in_h-out_h)/2"}.
+#' @return \code{object} with an added instruction to crop the frames.
+#' @seealso [ffm_scale()] to resize instead of crop. [crop_video()] and
+#'   [format_for_web()] are the task functions built on \code{ffm_crop()}.
 #' @references https://ffmpeg.org/ffmpeg-filters.html#crop
 #' @family pipeline functions
 #' @examples
@@ -292,20 +293,20 @@ ffm_crop <- function(object,
 
 # ffm_scale() ------------------------------------------------------------------
 
-#' Scale (Resize) Frames in a FFmpeg Pipeline
+#' Scale (Resize) Frames in an FFmpeg Pipeline
 #'
-#' Scale (resize) the input video's frames to either a specific width and height
-#' (in pixels) or using an FFmpeg expression.
+#' Scale (resize) the input video's frames to a width and height in pixels, or
+#' with an FFmpeg expression.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param width The width of the output video (in pixels). Either (1) a positive
-#'   real number or (2) a string that contains an FFmpeg expression.
-#' @param height The height of the output video (in pixels). Either (1) a
-#'   positive real number or (2) a string that contains an FFmpeg expression.
-#' @return \code{object} but with the added instruction to resize the image(s).
-#' @seealso [ffm_crop()] to crop instead of resize; [standardize_video()] is the
-#'   task verb built on it.
+#' @param width The width of the output video, in pixels. Give a positive real
+#'   number or a string that contains an FFmpeg expression.
+#' @param height The height of the output video, in pixels. Give a positive
+#'   real number or a string that contains an FFmpeg expression.
+#' @return \code{object} with an added instruction to resize the frames.
+#' @seealso [ffm_crop()] to crop instead of resize. [standardize_video()] is the
+#'   task function built on \code{ffm_scale()}.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -329,19 +330,19 @@ ffm_scale <- function(object, width, height) {
 
 #' Set the Frame Rate in an FFmpeg Pipeline
 #'
-#' Resample the video to a constant frame rate via FFmpeg's \code{fps} filter,
-#' duplicating or dropping frames as needed. Appended to the video filter chain
-#' like the other single-input sequential filters.
+#' Resample the video to a constant frame rate with FFmpeg's \code{fps} filter.
+#' The filter duplicates or drops frames as needed. It is added to the end of
+#' the video filters, like the other filters that take one input. The glossary
+#' in \code{vignette("tidymedia")} explains media terms such as frame rate.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param fps The target frame rate. Either (1) a positive real number of
-#'   frames per second or (2) a string that contains an FFmpeg framerate
-#'   expression (for example \code{"30000/1001"} for NTSC).
-#' @return \code{object} but with the added instruction to resample the frame
-#'   rate.
-#' @seealso [standardize_video()], the task verb that sets frame rate via this
-#'   builder.
+#' @param fps The target frame rate. Give a positive real number of frames per
+#'   second, or a string that contains an FFmpeg frame rate expression. For
+#'   example, \code{"30000/1001"} is the NTSC rate.
+#' @return \code{object} with an added instruction to resample the frame rate.
+#' @seealso [standardize_video()], the task function that uses \code{ffm_fps()}
+#'   to set the frame rate.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -364,54 +365,59 @@ ffm_fps <- function(object, fps) {
 
 #' Normalize Loudness in an FFmpeg Pipeline
 #'
-#' Append FFmpeg's \code{loudnorm} (EBU R128) audio filter, normalizing the
+#' Add FFmpeg's \code{loudnorm} (EBU R128) audio filter. It normalizes the
 #' input's perceived loudness toward a target integrated loudness, true-peak
-#' ceiling, and loudness range. This is the first builder function to write the
-#' pipeline's audio filter chain, so it compiles to \code{-af} (or joins an
-#' existing audio filter chain in application order).
+#' ceiling and loudness range. The filter compiles to \code{-af}, or joins an
+#' existing audio filter chain in the order the filters were added. The glossary
+#' in \code{vignette("tidymedia")} explains media terms such as LUFS and true
+#' peak.
 #'
 #' @details
-#' This is single-pass (dynamic) \code{loudnorm}: one reproducible command, no
-#' measurement pass. The defaults follow EBU Recommendation R 128 (2014) —
-#' \code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP, loudness
-#' measured per ITU-R BS.1770-4 — with \code{loudness_range = 7} (FFmpeg's own
-#' \code{loudnorm} default, EBU R128 not prescribing a single value).
+#' This is single-pass (dynamic) \code{loudnorm}. The pipeline stays one
+#' reproducible command, with no measurement pass. The defaults follow EBU
+#' Recommendation R 128 (2014): \code{target_loudness = -23} LUFS and
+#' \code{true_peak = -1} dBTP. Loudness is measured per ITU-R BS.1770-4. The
+#' default
+#' \code{loudness_range = 7} is FFmpeg's own \code{loudnorm} default. EBU
+#' R128 does not prescribe a single value.
 #'
-#' Two filters are appended, not one: \code{loudnorm} is followed by
-#' \code{asetnsamples}, which re-chunks the filtered audio into 4096-sample
-#' frames without padding the last one. Dynamic \code{loudnorm} resamples to
-#' 192 kHz and emits 192000-sample frames, which encoders that accept whatever
-#' frame they are handed — FLAC and Vorbis among them — refuse to open at all.
+#' Two filters are added, not one. \code{loudnorm} is followed by
+#' \code{asetnsamples}, which regroups the filtered audio into frames of 4096
+#' samples and does not pad the last one. Dynamic \code{loudnorm} resamples to
+#' 192 kHz and gives frames of 192000 samples. Some encoders accept whatever
+#' frame they are given, FLAC and Vorbis among them. Even those encoders refuse
+#' to open at all on frames of 192000 samples.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
 #' @param target_loudness The target integrated loudness, in LUFS
-#'   (`r loudnorm_bounds_rd("target_loudness")`; default \code{-23}, the EBU
-#'   R128 target).
+#'   (`r loudnorm_bounds_rd("target_loudness")`). The default, \code{-23}, is
+#'   the EBU R128 target.
 #' @param true_peak The maximum true peak, in dBTP
-#'   (`r loudnorm_bounds_rd("true_peak")`; default \code{-1}, the EBU R128
-#'   ceiling).
+#'   (`r loudnorm_bounds_rd("true_peak")`). The default, \code{-1}, is the EBU
+#'   R128 ceiling.
 #' @param loudness_range The target loudness range, in LU
-#'   (`r loudnorm_bounds_rd("loudness_range")`; default \code{7}).
+#'   (`r loudnorm_bounds_rd("loudness_range")`). The default is \code{7}.
 #' @param measured_i,measured_tp,measured_lra,measured_thresh Measured input
-#'   values from a prior \code{loudnorm} analysis pass (integrated loudness,
-#'   true peak, loudness range, and threshold). Supplied together to drive an
-#'   accurate two-pass (linear) correction; all five of these plus \code{offset}
-#'   must be given as a set, or none (\code{NULL}, default, for single-pass
-#'   dynamic normalization). These map to FFmpeg's \code{measured_I},
-#'   \code{measured_TP}, \code{measured_LRA}, and \code{measured_thresh} options.
-#' @param offset The \code{target_offset} (offset gain) reported by the analysis
-#'   pass, part of the measured set (see \code{measured_i}). \code{NULL} by
-#'   default.
-#' @param linear A logical: when \code{TRUE}, request linear normalization
+#'   values from an earlier \code{loudnorm} analysis pass: integrated loudness,
+#'   true peak, loudness range and threshold. Give them together for an accurate
+#'   two-pass (linear) correction. Give these values and \code{offset} as one
+#'   set, or give none of them. \code{NULL}, the default, gives single-pass
+#'   dynamic normalization. These map to FFmpeg's \code{measured_I},
+#'   \code{measured_TP}, \code{measured_LRA} and \code{measured_thresh} options.
+#' @param offset The \code{target_offset} (offset gain) that the analysis pass
+#'   reports. It is part of the measured set (see \code{measured_i}). The
+#'   default is \code{NULL}.
+#' @param linear A logical. \code{TRUE} requests linear normalization
 #'   (\code{linear=true}), which needs the measured values to hit the target
-#'   precisely. \code{FALSE} (default) omits the option entirely, leaving
-#'   single-pass dynamic behavior untouched.
-#' @param print_format The measurement report format for an analysis pass, one
-#'   of \code{"json"}, \code{"summary"}, or \code{"none"}. \code{NULL} (default)
-#'   omits the option. Use \code{"json"} for a machine-parseable analysis pass.
-#' @return \code{object} but with the added instruction to normalize loudness.
-#' @seealso [normalize_audio()], the task verb built on this filter.
+#'   precisely. \code{FALSE} (the default) leaves out the option, so the
+#'   single-pass dynamic behavior does not change.
+#' @param print_format The format of the measurement report for an analysis
+#'   pass: \code{"json"}, \code{"summary"} or \code{"none"}. \code{NULL} (the
+#'   default) leaves out the option. Use \code{"json"} for an analysis pass that
+#'   a program can parse.
+#' @return \code{object} with an added instruction to normalize loudness.
+#' @seealso [normalize_audio()], the task function built on this filter.
 #' @references
 #' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
 #' maximum level of audio signals}; ITU-R BS.1770-4.
@@ -764,21 +770,21 @@ ffm_pixel_format <- function(object, format) {
 
 #' Horizontally Stack Multiple Videos in an FFmpeg Pipeline
 #'
-#' Add a complex video filter to stack multiple videos horizontally
-#' (side-by-side) and, optionally, resize them to have the same height.
+#' Add a complex video filter that stacks several videos horizontally (side by
+#' side). It can also resize the videos to the same height.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param shortest A logical indicating whether to trim the duration of all
-#'   videos to that of the shortest video (default = \code{FALSE})
-#' @param resize A logical indicating whether to resize the height of the input
-#'   videos to match (takes longer and currently only works with two inputs).
-#'   Resizing conforms both inputs to the same aspect ratio, so it assumes the
+#' @param shortest A logical that says whether to trim the duration of all
+#'   videos to that of the shortest video. The default is \code{FALSE}.
+#' @param resize A logical that says whether to resize the input videos to the
+#'   same height. Resizing takes longer, and for now it works only with two
+#'   inputs. It fits both inputs to the same aspect ratio, so it assumes the
 #'   inputs share one.
-#' @return \code{object} but with the added instruction to apply horizontal
-#'   stacking.
-#' @seealso [ffm_vstack()] for vertical stacking and [compare_videos()], the
-#'   task verb built on both.
+#' @return \code{object} with an added instruction to stack the videos
+#'   horizontally.
+#' @seealso [ffm_vstack()] for vertical stacking, and [compare_videos()], the
+#'   task function built on both.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -829,24 +835,26 @@ ffm_hstack <- function(object,
 
 #' Vertically Stack Multiple Videos in an FFmpeg Pipeline
 #'
-#' Add a complex video filter to stack multiple videos vertically (one above the
-#' other) and, optionally, resize them to have the same width. This is the
-#' vertical companion to \code{\link{ffm_hstack}}; both are blessed multi-input
-#' verbs that force the \code{-filter_complex} path and manage their own stream
-#' labels internally.
+#' Add a complex video filter that stacks several videos vertically (one above
+#' the other). It can also resize the videos to the same width.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' This is the vertical form of \code{\link{ffm_hstack}}. Both are pipeline
+#' functions for several inputs. They force the \code{-filter_complex} path and
+#' manage their own stream labels internally. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as stream.
+#'
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param shortest A logical indicating whether to trim the duration of all
-#'   videos to that of the shortest video (default = \code{FALSE})
-#' @param resize A logical indicating whether to resize the width of the input
-#'   videos to match (takes longer and currently only works with two inputs).
-#'   Resizing conforms both inputs to the same aspect ratio, so it assumes the
+#' @param shortest A logical that says whether to trim the duration of all
+#'   videos to that of the shortest video. The default is \code{FALSE}.
+#' @param resize A logical that says whether to resize the input videos to the
+#'   same width. Resizing takes longer, and for now it works only with two
+#'   inputs. It fits both inputs to the same aspect ratio, so it assumes the
 #'   inputs share one.
-#' @return \code{object} but with the added instruction to apply vertical
-#'   stacking.
-#' @seealso [ffm_hstack()] for horizontal stacking and [compare_videos()], the
-#'   task verb built on both.
+#' @return \code{object} with an added instruction to stack the videos
+#'   vertically.
+#' @seealso [ffm_hstack()] for horizontal stacking, and [compare_videos()], the
+#'   task function built on both.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -896,37 +904,42 @@ ffm_vstack <- function(object,
 
 #' Overlay One Video on Another in an FFmpeg Pipeline
 #'
-#' Composite the second input (the overlay) on top of the first (the main
-#' video) at position \code{x}/\code{y}. This is a blessed multi-input verb (like
-#' \code{\link{ffm_hstack}}): it forces the \code{-filter_complex} path and
-#' manages its own stream labels internally. Exactly two inputs are required —
-#' the first is the background, the second is drawn over it.
+#' Draw the second input (the overlay) on top of the first input (the main
+#' video) at position \code{x} and \code{y}. Like \code{\link{ffm_hstack}}, this
+#' is a pipeline function for several inputs. It forces the
+#' \code{-filter_complex} path and manages its own stream labels internally. It
+#' needs exactly two inputs. The first is the background, and the second is
+#' drawn over it. The glossary in \code{vignette("tidymedia")} explains media
+#' terms such as stream.
 #'
-#' \code{x} and \code{y} accept plain numbers (pixels from the top-left of the
-#' main video) or FFmpeg overlay expressions, where \code{main_w}/\code{main_h}
-#' are the main video's dimensions and \code{overlay_w}/\code{overlay_h} are the
-#' overlay's. For example, \code{x = "main_w-overlay_w-16"} pins the overlay 16
-#' pixels from the right edge. When \code{scale} is set, the overlay is first
-#' resized to a fraction of the main video's width (aspect preserved), which is
-#' what the Layer-2 \code{\link{picture_in_picture}} verb uses. Otherwise, to
-#' resize the overlay yourself, filter it in a separate pipeline first.
+#' \code{x} and \code{y} accept plain numbers or FFmpeg overlay expressions. A
+#' plain number counts pixels from the top-left of the main video. In an
+#' expression, \code{main_w} and \code{main_h} are the main video's dimensions.
+#' \code{overlay_w} and \code{overlay_h} are the overlay's dimensions. For
+#' example, \code{x = "main_w-overlay_w-16"} puts the overlay 16 pixels from the
+#' right edge.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' When \code{scale} is set, the overlay is first resized to a fraction of the
+#' main video's width, and its aspect ratio is kept. The task function
+#' \code{\link{picture_in_picture}} uses this resize. Otherwise, to resize the
+#' overlay yourself, filter it in a separate pipeline first.
+#'
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()} with exactly two input files.
 #' @param x The horizontal position of the overlay's left edge, as a number of
-#'   pixels or an FFmpeg expression. (default = \code{0})
+#'   pixels or an FFmpeg expression. The default is \code{0}.
 #' @param y The vertical position of the overlay's top edge, as a number of
-#'   pixels or an FFmpeg expression. (default = \code{0})
-#' @param shortest A logical indicating whether to end the output when the
-#'   shorter input ends (default = \code{FALSE}).
-#' @param scale An optional fraction (\code{0 < scale <= 1}) to resize the
-#'   overlay to \code{scale} times the main video's width before compositing
-#'   (aspect preserved); \code{NULL} (default) overlays at native size. When set,
-#'   \code{overlay_w}/\code{overlay_h} in \code{x}/\code{y} refer to the resized
-#'   overlay.
-#' @return \code{object} with the added instruction to overlay the second input
-#'   on the first.
-#' @seealso [picture_in_picture()], the task verb built on this verb.
+#'   pixels or an FFmpeg expression. The default is \code{0}.
+#' @param shortest A logical that says whether to end the output when the
+#'   shorter input ends. The default is \code{FALSE}.
+#' @param scale An optional fraction (\code{0 < scale <= 1}). Before the overlay
+#'   is drawn, it is resized to \code{scale} times the main video's width, and
+#'   its aspect ratio is kept. \code{NULL} (the default) draws the overlay at its
+#'   own size. When \code{scale} is set, \code{overlay_w} and \code{overlay_h} in
+#'   \code{x} and \code{y} refer to the resized overlay.
+#' @return \code{object} with an added instruction to draw the second input on
+#'   the first.
+#' @seealso [picture_in_picture()], the task function built on this function.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -980,23 +993,27 @@ ffm_overlay <- function(object,
 
 #' Concatenate Multiple Inputs in an FFmpeg Pipeline
 #'
-#' Join the pipeline's input files one after another using FFmpeg's
-#' [concat demuxer](https://ffmpeg.org/ffmpeg-formats.html#concat-1). This is a
-#' blessed multi-input verb (like \code{\link{ffm_hstack}}): it stream-copies,
-#' so it is fast and lossless but requires that every input share the same
-#' parameters (codec, resolution, frame rate, ...). To concatenate inputs with
-#' differing parameters you must re-encode via the concat filter (not yet
-#' wrapped; use the Layer 0 escape hatch).
+#' Join the pipeline's input files one after another with FFmpeg's
+#' [concat demuxer](https://ffmpeg.org/ffmpeg-formats.html#concat-1). Like
+#' \code{\link{ffm_hstack}}, this is a pipeline function for several inputs. It
+#' uses stream copy, so it is fast and lossless. But every input must share the
+#' same parameters, such as codec, resolution and frame rate. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec, re-encode
+#' and stream copy.
 #'
-#' The demuxer needs a list file naming the inputs; \code{ffm_concat()} writes
-#' one to a temporary path immediately and stores it in the pipeline, so the
-#' compiled command can reference it. It also copies codecs and maps all
-#' streams (as \code{\link{ffm_copy}} would).
+#' To join inputs with different parameters, you must re-encode with the concat
+#' filter. The package does not wrap that filter yet, so use
+#' \code{\link{ffmpeg}}.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' The demuxer needs a list file that names the inputs. When you call
+#' \code{ffm_concat()}, it writes one to a temporary path and stores it in the
+#' pipeline, so the compiled command can refer to it. It also copies codecs and
+#' maps all streams, as \code{\link{ffm_copy}} would.
+#'
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()} with more than one input file.
-#' @return \code{object} with the added instruction to concatenate the inputs.
-#' @seealso [concatenate_videos()], the task verb built on this verb.
+#' @return \code{object} with an added instruction to concatenate the inputs.
+#' @seealso [concatenate_videos()], the task function built on this function.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -1036,31 +1053,31 @@ ffm_concat <- function(object) {
 
 #' Draw a Colored Box on the Videos in an FFmpeg Pipeline
 #'
-#' Add a video filter to draw a colored rectangle on the input video.
+#' Add a video filter that draws a colored rectangle on the input video.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param x The horizontal position, in the input video, of the left edge of the
-#'   box (in pixels). Either a nonnegative real number or a string that contains
-#'   an FFMPEG expression. (default = 0)
-#' @param y The vertical position, in the input video, of the top edge of the
-#'   box (in pixels). Either a nonnegative real number or a string that contains
-#'   an FFMPEG expression. (default = 0)
-#' @param width The width of the box (in pixels). Either a positive real number
-#'   or a string that contains an FFmpeg expression. (default = \code{"in_w"})
-#' @param height The height of the box (in pixels). Either a positive real
-#'   number or a string that contains an FFmpeg expression. (default =
-#'   \code{"in_h"})
-#' @param color A string containing the color of the box in FFmpeg color syntax,
-#'   see reference link below for more details. If the special value
-#'   \code{"invert"} is used, the box color is the same as the video with
-#'   inverted luma. (default = \code{"black"})
-#' @param thickness A thickness of the box edge (in pixels). A value of
-#'   \code{"fill"} will create a filled box. (default = \code{"fill"})
-#' @return \code{object} but with the added instruction to apply the drawbox
+#' @param x The horizontal position of the left edge of the box, in pixels of
+#'   the input video. Give a nonnegative real number or a string that contains
+#'   an FFmpeg expression. The default is \code{0}.
+#' @param y The vertical position of the top edge of the box, in pixels of the
+#'   input video. Give a nonnegative real number or a string that contains an
+#'   FFmpeg expression. The default is \code{0}.
+#' @param width The width of the box, in pixels. Give a positive real number or
+#'   a string that contains an FFmpeg expression. The default is \code{"in_w"}.
+#' @param height The height of the box, in pixels. Give a positive real number
+#'   or a string that contains an FFmpeg expression. The default is
+#'   \code{"in_h"}.
+#' @param color A string with the color of the box, in FFmpeg color syntax. The
+#'   reference link below explains that syntax. With the special value
+#'   \code{"invert"}, the box has the color of the video with inverted luma. The
+#'   default is \code{"black"}.
+#' @param thickness The thickness of the box edge, in pixels. The value
+#'   \code{"fill"} draws a filled box. The default is \code{"fill"}.
+#' @return \code{object} with an added instruction to apply the \code{drawbox}
 #'   filter.
-#' @seealso [anonymize_video()], the task verb that fills regions via this
-#'   builder.
+#' @seealso [anonymize_video()], the task function that uses
+#'   \code{ffm_drawbox()} to fill regions.
 #' @references https://ffmpeg.org/ffmpeg-filters.html#drawbox
 #' @references https://ffmpeg.org/ffmpeg-utils.html#color-syntax
 #' @family pipeline functions

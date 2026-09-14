@@ -7,21 +7,21 @@
 ffm_fps(object, fps)
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{fps}{The target frame rate. Either (1) a positive real number of
-frames per second or (2) a string that contains an FFmpeg framerate
-expression (for example \code{"30000/1001"} for NTSC).}
+\item{fps}{The target frame rate. Give a positive real number of frames per
+second, or a string that contains an FFmpeg frame rate expression. For
+example, \code{"30000/1001"} is the NTSC rate.}
 }
 \value{
-\code{object} but with the added instruction to resample the frame
-rate.
+\code{object} with an added instruction to resample the frame rate.
 }
 \description{
-Resample the video to a constant frame rate via FFmpeg's \code{fps} filter,
-duplicating or dropping frames as needed. Appended to the video filter chain
-like the other single-input sequential filters.
+Resample the video to a constant frame rate with FFmpeg's \code{fps} filter.
+The filter duplicates or drops frames as needed. It is added to the end of
+the video filters, like the other filters that take one input. The glossary
+in \code{vignette("tidymedia")} explains media terms such as frame rate.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -30,8 +30,8 @@ ffm_files(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
-\code{\link[=standardize_video]{standardize_video()}}, the task verb that sets frame rate via this
-builder.
+\code{\link[=standardize_video]{standardize_video()}}, the task function that uses \code{ffm_fps()}
+to set the frame rate.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

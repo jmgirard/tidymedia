@@ -393,7 +393,7 @@ test_that("a clean `audio_input` column still compiles every row", {
 
 # --- AC6: the sentence the docs and the changelog pin -------------------------
 
-# The claim these verbs make to the user, in one wording, in three places. It is
+# The claim these verbs make to the user, pinned in the wordings below. It is
 # pinned rather than paraphrased because it is quantified twice -- over the four
 # values and over the two forms -- and a rewrite that widens either quantifier
 # would claim behavior no cell measures. The enumeration test below is what

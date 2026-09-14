@@ -35,8 +35,8 @@ used for any row without its own \code{color} (default \code{"black"}).}
 output container's default encoder decide. \code{NULL} is how you opt out
 of the H.264 default for a container that does not hold it. For a
 \code{.webm} output, pass \code{video_codec = NULL} \emph{and}
-\code{audio_codec = NULL}. Otherwise the default
-\code{audio_codec = "copy"} would carry a codec WebM cannot hold.}
+\code{audio_codec = NULL}, because the default \code{audio_codec = "copy"}
+would otherwise carry a codec WebM cannot hold.}
 
 \item{audio_codec}{A string naming the output audio codec. The default
 \code{"copy"} stream-copies the source audio unchanged. Name a real

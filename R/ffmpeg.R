@@ -1640,8 +1640,8 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #'   output container's default encoder decide. \code{NULL} is how you opt out
 #'   of the H.264 default for a container that does not hold it. For a
 #'   \code{.webm} output, pass \code{video_codec = NULL} \emph{and}
-#'   \code{audio_codec = NULL}. Otherwise the default
-#'   \code{audio_codec = "copy"} would carry a codec WebM cannot hold.
+#'   \code{audio_codec = NULL}, because the default \code{audio_codec = "copy"}
+#'   would otherwise carry a codec WebM cannot hold.
 #' @param audio_codec A string naming the output audio codec. The default
 #'   \code{"copy"} stream-copies the source audio unchanged. Name a real
 #'   encoder, such as \code{"aac"}, when the source audio codec cannot be copied
@@ -5638,7 +5638,7 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #' @param audio_stream `r audio_stream_param("take", "takes", "first", batch = TRUE)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
-#' @param parallel A logical: run the jobs in parallel with \pkg{furrr}
+#' @param parallel A logical: process the jobs in parallel with \pkg{furrr}
 #'   (\code{TRUE}) or one at a time (\code{FALSE}, default). See
 #'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
 #' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.

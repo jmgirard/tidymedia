@@ -63,6 +63,7 @@ Text repeated across the task function help pages is written once, in plain Engl
 - 2026-09-14: claim audit: 34 claims read, 7 corrected — `R/task-doc.R`, `tools/roxygen_repeats.R`, `tools/doc_prose_report.R`
 - 2026-09-14: T5 claim audit detail. A fresh [O] reader also compared each changed sentence with base. Two help sentences had moved from the base claim ("for example" widened the contradiction sentence, "only when" narrowed the FFprobe sentence) and were put back. Five tools/ header statements were wrong and were corrected, with a block-name fix in `roxygen_repeats.R`. The same reader re-read the corrections once and found all four groups true. It also found one base claim false (a timed-out probe warns instead of staying silent). That claim has a ledger row and is item (h) of the M127 help-text follow-up row. The earlier "no follow-up row" line is superseded by this.
 - 2026-09-14: T5 done, status set to review. At `75245894`: `devtools::document()` writes nothing, `devtools::check()` gives 0 errors, 0 warnings and 0 notes, `pkgdown::check_pkgdown()` finds no problems, and `devtools::test()` gives 0 failures, 13866 passes and 5 skips with no other R session running. Both tools/ plant tests pass, the repeats script exits 0, and the sweep comparison finds no problem. The ledger results section is filled.
+- 2026-09-14: step-7 approval: m129-sweep-shared-task-help approved for merge
 
 ## Decisions
 

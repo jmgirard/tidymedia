@@ -1,6 +1,6 @@
 # M127: ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** M126
 - **Driving RR:** —
@@ -85,6 +85,7 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: AC3 fixed: `?with_timeout` names the glossary, and the ledger has a `with_timeout` row. R3-4 is in the same sentence: the check asks FFmpeg only with no option set and no stored answer (read from `hardware_encoder_available()`).
 - 2026-09-13: the four unconfirmed findings were checked, and all four hold. R3-2 was read from R's `?system`, and a mid-command `2>&1` was measured on macOS. R3-10 was read from `check_hardware_available()`. R3-13 was read from the test. R3-16 was measured: a missing parameter prints one empty line, which gives `""` with `typed = FALSE`.
 - 2026-09-13: R3-1 measured with withr 3.0.3: `with_options()` restores under `on.exit(NULL)`, and `local_options()` does not. R3-1 to R3-16 fixed in R/, tests and the `audio_stream` generator. The claim audit was not re-run, because each new claim was measured or read against the code. Sweep over 28 pages exits 0. `?tidymedia` renders 78 lines. Full suite running.
+- 2026-09-13: on `82b7c72d`: `devtools::test()` gives 1738 tests, 0 failed, 5 skipped. `devtools::check()` gives 0 errors, 0 warnings, 0 notes, with spelling OK. `devtools::document()` leaves `man/` unchanged. `pkgdown::check_pkgdown()` finds no problems. Status set to review.
 
 ## Decisions
 

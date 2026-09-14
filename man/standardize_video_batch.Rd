@@ -21,56 +21,55 @@ standardize_video_batch(
 )
 }
 \arguments{
-\item{jobs}{A data frame with one row per input and (at least) an
-\code{input} column (source path). An optional \code{output} column names
-the destination; when absent, one is derived per row by appending
-\code{_standardized} to each input's basename, keeping the input's
-extension (e.g. \code{clip.mkv} becomes \code{clip_standardized.mkv}).
+\item{jobs}{A data frame with one row per input. It needs at least an
+\code{input} column, the source path. An optional \code{output} column
+names the destination. Without it, each row's output name adds
+\code{_standardized} to the input's base name and keeps its extension.
+For example, \code{clip.mkv} becomes \code{clip_standardized.mkv}.
 Two rows naming the same output path are refused before any row runs. That is a path repeated in the \code{output} column, or a repeated \code{input} when there is no \code{output} column.
-Each of the six standardization knobs — \code{width}, \code{height},
-\code{fps}, \code{video_codec}, \code{audio_codec}, \code{pixel_format} —
-may also appear as a
-column to override the corresponding argument on a per-row basis; rows (or
-knobs) that omit the column fall back to the argument's value. In either
-codec column, \code{NA} leaves that row's codec unset (the column form of
-\code{video_codec = NULL} / \code{audio_codec = NULL}); in a \code{width},
-\code{height}, \code{fps} or \code{pixel_format} column it is an error.
-\code{pixel_format} has no unset state to express; \code{width},
-\code{height} and \code{fps} do accept \code{NULL} as arguments, but their
-columns have no \code{NA} spelling for it. An \code{audio_stream} column
-overrides the \code{audio_stream} argument per row, where \code{NA} keeps
-that row on every audio track. Any other columns are ignored.}
+A column can override any of the six format arguments for each row:
+\code{width}, \code{height}, \code{fps}, \code{video_codec},
+\code{audio_codec} and \code{pixel_format}. An argument with no column
+applies its value to every row. In either codec column, \code{NA} leaves
+that row's codec unset. That is the column form of
+\code{video_codec = NULL} or \code{audio_codec = NULL}. In a
+\code{width}, \code{height}, \code{fps} or \code{pixel_format} column,
+\code{NA} is an error. \code{pixel_format} has no unset state to express.
+\code{width}, \code{height} and \code{fps} do accept \code{NULL} as
+arguments, but their columns have no \code{NA} form for it. An
+\code{audio_stream} column overrides the \code{audio_stream} argument for
+each row, and \code{NA} keeps that row on every audio track. Any other
+columns are ignored.}
 
-\item{width, height}{Optional target dimensions applied to every row, unless
-\code{jobs} carries a column of the same name (see \code{jobs}). When only
-one is given the other is derived to preserve aspect ratio; when neither is
-given the frame is floor-cropped to even dimensions so odd-sized sources
+\item{width, height}{Optional target dimensions for every row, unless
+\code{jobs} has a column of the same name (see \code{jobs}). When only one
+is given, the other is derived to keep the aspect ratio. When neither is
+given, the frame is floor-cropped to even dimensions, so odd-sized sources
 encode. (default = \code{NULL})}
 
 \item{fps}{Optional target frame rate applied to every row, unless
 \code{jobs} carries an \code{fps} column. (default = \code{NULL}, i.e.
 leave the frame rate unchanged)}
 
-\item{video_codec}{A string naming the video codec applied to every row,
-unless \code{jobs} carries a \code{video_codec} column, in which case
-\code{NA} in a cell leaves that row's codec unset.
+\item{video_codec}{A string naming the video codec for every row, unless
+\code{jobs} has a \code{video_codec} column. In that column, \code{NA}
+leaves that row's codec unset.
 The default is \code{"libx264"}. \code{NULL} emits no \code{-codec:v} and lets the output container's default encoder decide. For a \code{.webm} output, pass \code{audio_codec = NULL} too, because the default \code{"copy"} would otherwise carry a codec WebM cannot hold.}
 
-\item{audio_codec}{A string naming the audio codec applied to every row,
-unless \code{jobs} carries an \code{audio_codec} column, in which case
-\code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
-stream-copies the audio through untouched; name an encoder (e.g.
-\code{"aac"}) when the source audio cannot be copied into the output
-container.}
+\item{audio_codec}{A string naming the audio codec for every row, unless
+\code{jobs} has an \code{audio_codec} column. In that column, \code{NA}
+leaves that row's codec unset. \code{"copy"} (default) stream-copies the
+audio through untouched. Name an encoder, such as \code{"aac"}, when the
+source audio cannot be copied into the output container.}
 
 \item{pixel_format}{A string naming the pixel format applied to every row,
 unless \code{jobs} carries a \code{pixel_format} column.
 (default = \code{"yuv420p"})}
 
-\item{hardware}{The encoder backend applied to every row: \code{"none"}
-(default), \code{"nvenc"} for NVIDIA GPU encoding (H.264, HEVC and
-AV1), or \code{"videotoolbox"} for Apple GPU encoding (H.264 and
-HEVC). Batch-wide (not a per-row column). See
+\item{hardware}{The encoder backend for every row. \code{"none"} is the
+default. \code{"nvenc"} uses NVIDIA GPU encoding (H.264, HEVC and AV1),
+and \code{"videotoolbox"} uses Apple GPU encoding (H.264 and HEVC). It
+applies to the whole batch and is not read as a column. See
 \code{\link{standardize_video}} and \code{\link{has_hardware_encoder}}.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.}
 
@@ -95,12 +94,13 @@ time and warns. Set a plan first, e.g.
 The \link[tibble:tibble-package]{tibble} returned by \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column. When \code{output} was derived, it also has the resolved \code{output} column. When \code{run = TRUE}, it has a \code{success} column, plus any columns the forwarded arguments add, such as \code{verified}.
 }
 \description{
-Re-encode many input files to a reproducible format from a single jobs tibble
-— the \strong{batch} (table-driven) sibling of \code{\link[=standardize_video]{standardize_video()}} for when you
-have
-more than one video to standardize. Each row is one input; the only required
-column names its source. This is a thin wrapper over \code{\link{ffm_batch}}:
-one reproducible compiled command per input.
+Re-encode many files to a reproducible format, using one jobs table. This is
+the \strong{batch} form of \code{\link[=standardize_video]{standardize_video()}}, for when you have more than one
+video to standardize. Each row is one input, and the only required column
+names its source. The function is a thin wrapper over
+\code{\link{ffm_batch}}. It builds one reproducible command for each input.
+The glossary in \code{vignette("tidymedia")} explains media terms such as
+codec, pixel format and frame rate.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -115,8 +115,8 @@ standardize_video_batch(jobs, run = FALSE)
 \seealso{
 \code{\link[=standardize_video]{standardize_video()}} for the single-input form; \code{\link[=ffm_batch]{ffm_batch()}} for
 the batch runner and the arguments forwarded through \code{...};
-\code{\link[=segment_video_batch]{segment_video_batch()}} and \code{\link[=extract_frame_batch]{extract_frame_batch()}} for the other
-table-driven siblings.
+\code{\link[=segment_video_batch]{segment_video_batch()}} and \code{\link[=extract_frame_batch]{extract_frame_batch()}} for other batch task
+functions.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

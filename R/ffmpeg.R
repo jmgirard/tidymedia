@@ -1558,36 +1558,39 @@ strip_metadata_pipeline <- function(input, output) {
 
 #' Strip identifying metadata from a media file
 #'
-#' Remove a media file's container and global metadata tags (creation time,
-#' GPS/location, device make and model, title, comment, and the like) together
-#' with any chapters, writing a de-identified copy — the front door for
-#' IRB/de-identification of research recordings. The audio and video streams are
-#' **stream-copied**, not re-encoded, so the operation is lossless and fast and
-#' the picture and sound are bit-for-bit unchanged (including any rotation
-#' display matrix, which is stream side data, not a metadata tag).
+#' Remove a media file's container and global metadata tags, together with any
+#' chapters, and write a de-identified copy. The tags include creation time,
+#' GPS location, device make and model, title and comment. This is the task
+#' function for IRB de-identification of research recordings. The audio and
+#' video streams are **stream-copied**, not re-encoded. So the operation is
+#' lossless and fast, and the picture and sound are bit-for-bit unchanged. That
+#' includes any rotation display matrix, which is stream side data and not a
+#' metadata tag. The glossary in \code{vignette("tidymedia")} explains media
+#' terms such as container, stream and stream copy.
 #'
 #' @details
-#' The output is muxed bit-exactly (\code{-fflags +bitexact}) so FFmpeg does not
-#' re-stamp the container with a fresh \code{creation_time} or an
-#' \code{encoder} tag naming its own version — either of which would defeat
+#' The output is written bit-exactly (\code{-fflags +bitexact}). So FFmpeg does
+#' not stamp the container again with a fresh \code{creation_time}, or with an
+#' \code{encoder} tag that names its own version. Either tag would defeat
 #' de-identification and reproducibility.
 #'
-#' Because the streams are copied rather than re-encoded, identifiers embedded
-#' **inside** the encoded bitstream, and per-stream metadata such as
-#' \code{handler_name} or \code{language}, are not removed. Removing those would
-#' require re-encoding (out of scope; use the \code{\link{ffmpeg}} escape hatch)
-#' or per-stream metadata mapping that must probe the file first.
+#' Because the streams are copied and not re-encoded, some data is not removed.
+#' That is identifiers **inside** the encoded bitstream, and per-stream metadata
+#' such as \code{handler_name} or \code{language}. Removing them would require
+#' re-encoding, which this function does not do. For that, use the direct
+#' command \code{\link{ffmpeg}}. The other way is per-stream metadata mapping
+#' that must probe the file first.
 #'
 #' @inheritParams extract_audio
 #' @param outfile A string containing the path of the de-identified file to
 #'   write. Use the same container extension as \code{infile} so the copied
 #'   streams remux cleanly.
 #' @return `r command_return()`
-#' @seealso [anonymize_video()] to remove faces or regions from the picture (the
-#'   visual de-identification sibling); [probe_container()] and
-#'   [mediainfo_query()] to inspect a file's metadata before and after;
-#'   [ffm_copy()] and [ffm_output_options()], the builders it wraps;
-#'   [strip_metadata_batch()] for the many-file form.
+#' @seealso [anonymize_video()] removes faces or regions from the picture, for
+#'   visual de-identification. [probe_container()] and [mediainfo_query()]
+#'   inspect a file's metadata before and after. [ffm_copy()] and
+#'   [ffm_output_options()] are the pipeline functions it wraps.
+#'   [strip_metadata_batch()] is the many-file form.
 #' @family task functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -1611,28 +1614,35 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 
 #' Standardize a video to a reproducible format
 #'
-#' Re-encode a video to a consistent, reproducible format for analysis
-#' pipelines: a single video codec, pixel format, and (optionally) resolution
-#' and frame rate, with \code{+faststart} for smooth playback. Unlike
-#' \code{\link{format_for_web}} (a fixed web-delivery recipe), every part of the
-#' standard is a parameter, so a lab can pin its own house format once and apply
-#' it across a dataset.
+#' Re-encode a video to a consistent, reproducible format for analysis. The
+#' format is one video codec and pixel format, and optionally a resolution and
+#' frame rate, with \code{+faststart} for smooth playback.
+#' \code{\link{format_for_web}} uses a fixed recipe for web delivery. Here,
+#' every part of the standard is an argument. So a lab can set its own house
+#' format once and apply it across a dataset. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec, pixel format
+#' and frame rate.
 #'
 #' @details
-#' The default standard \code{standardize_video(infile, outfile)} re-encodes to
-#' H.264 video (\code{video_codec = "libx264"}) with \code{pixel_format = "yuv420p"}
-#' and \code{-movflags +faststart}, keeping the source resolution and frame
-#' rate. Audio is stream-copied unchanged (\code{-c:a copy}) unless
-#' \code{audio_codec} names an encoder; loudness standardization stays out of
-#' scope (see \code{\link{normalize_audio}}). The same input therefore always
-#' compiles to a byte-identical command.
+#' The default standard, \code{standardize_video(infile, outfile)}, re-encodes
+#' to H.264 video (\code{video_codec = "libx264"}) with
+#' \code{pixel_format = "yuv420p"} and \code{-movflags +faststart}. It keeps
+#' the source resolution and frame rate. Audio is stream-copied unchanged
+#' (\code{-c:a copy}) unless \code{audio_codec} names an encoder. The same
+#' input therefore always compiles to a byte-identical command. Loudness
+#' standardization is out of scope. For that, see
+#' \code{\link{normalize_audio}}.
 #'
-#' Resolution follows \code{width}/\code{height}: supplying both forces exact
-#' output dimensions; supplying only one preserves the aspect ratio and rounds
-#' the other to the nearest even number (FFmpeg's \code{-2}); supplying neither
-#' keeps the source resolution but rounds odd dimensions down to the nearest
-#' even value (a \code{yuv420p}/\code{libx264} requirement, and a no-op for
-#' already-even input) so the output always encodes.
+#' Resolution follows \code{width} and \code{height}:
+#' \itemize{
+#'   \item With both, the output has exactly those dimensions.
+#'   \item With only one, the aspect ratio is kept, and the other dimension is
+#'     rounded to the nearest even number (FFmpeg's \code{-2}).
+#'   \item With neither, the source resolution is kept, but odd dimensions are
+#'     rounded down to the nearest even value. \code{yuv420p} and
+#'     \code{libx264} require this, and it changes nothing for input that is
+#'     already even. So the output always encodes.
+#' }
 #'
 #' @inheritParams crop_video
 #' @param width The output width in pixels (a positive number), or \code{NULL}
@@ -1661,7 +1671,7 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @return `r command_return()`
 #' @seealso [ffm_scale()], [ffm_codec()], and [ffm_pixel_format()], among the
-#'   builders it wraps; [has_hardware_encoder()] for the \code{hardware}
+#'   pipeline functions it wraps; [has_hardware_encoder()] for the \code{hardware}
 #'   toggle;
 #'   [standardize_video_batch()] for the many-file form.
 #' @family task functions
@@ -4388,57 +4398,57 @@ derive_standardized_names <- function(input) {
 
 #' Standardize Many Videos From a Jobs Table
 #'
-#' Re-encode many input files to a reproducible format from a single jobs tibble
-#' — the **batch** (table-driven) sibling of [standardize_video()] for when you
-#' have
-#' more than one video to standardize. Each row is one input; the only required
-#' column names its source. This is a thin wrapper over \code{\link{ffm_batch}}:
-#' one reproducible compiled command per input.
+#' Re-encode many files to a reproducible format, using one jobs table. This is
+#' the **batch** form of [standardize_video()], for when you have more than one
+#' video to standardize. Each row is one input, and the only required column
+#' names its source. The function is a thin wrapper over
+#' \code{\link{ffm_batch}}. It builds one reproducible command for each input.
+#' The glossary in \code{vignette("tidymedia")} explains media terms such as
+#' codec, pixel format and frame rate.
 #'
-#' @param jobs A data frame with one row per input and (at least) an
-#'   \code{input} column (source path). An optional \code{output} column names
-#'   the destination; when absent, one is derived per row by appending
-#'   \code{_standardized} to each input's basename, keeping the input's
-#'   extension (e.g. \code{clip.mkv} becomes \code{clip_standardized.mkv}).
+#' @param jobs A data frame with one row per input. It needs at least an
+#'   \code{input} column, the source path. An optional \code{output} column
+#'   names the destination. Without it, each row's output name adds
+#'   \code{_standardized} to the input's base name and keeps its extension.
+#'   For example, \code{clip.mkv} becomes \code{clip_standardized.mkv}.
 #'   `r duplicate_output_sentences()`
-#'   Each of the six standardization knobs — \code{width}, \code{height},
-#'   \code{fps}, \code{video_codec}, \code{audio_codec}, \code{pixel_format} —
-#'   may also appear as a
-#'   column to override the corresponding argument on a per-row basis; rows (or
-#'   knobs) that omit the column fall back to the argument's value. In either
-#'   codec column, \code{NA} leaves that row's codec unset (the column form of
-#'   \code{video_codec = NULL} / \code{audio_codec = NULL}); in a \code{width},
-#'   \code{height}, \code{fps} or \code{pixel_format} column it is an error.
-#'   \code{pixel_format} has no unset state to express; \code{width},
-#'   \code{height} and \code{fps} do accept \code{NULL} as arguments, but their
-#'   columns have no \code{NA} spelling for it. An \code{audio_stream} column
-#'   overrides the \code{audio_stream} argument per row, where \code{NA} keeps
-#'   that row on every audio track. Any other columns are ignored.
-#' @param width,height Optional target dimensions applied to every row, unless
-#'   \code{jobs} carries a column of the same name (see \code{jobs}). When only
-#'   one is given the other is derived to preserve aspect ratio; when neither is
-#'   given the frame is floor-cropped to even dimensions so odd-sized sources
+#'   A column can override any of the six format arguments for each row:
+#'   \code{width}, \code{height}, \code{fps}, \code{video_codec},
+#'   \code{audio_codec} and \code{pixel_format}. An argument with no column
+#'   applies its value to every row. In either codec column, \code{NA} leaves
+#'   that row's codec unset. That is the column form of
+#'   \code{video_codec = NULL} or \code{audio_codec = NULL}. In a
+#'   \code{width}, \code{height}, \code{fps} or \code{pixel_format} column,
+#'   \code{NA} is an error. \code{pixel_format} has no unset state to express.
+#'   \code{width}, \code{height} and \code{fps} do accept \code{NULL} as
+#'   arguments, but their columns have no \code{NA} form for it. An
+#'   \code{audio_stream} column overrides the \code{audio_stream} argument for
+#'   each row, and \code{NA} keeps that row on every audio track. Any other
+#'   columns are ignored.
+#' @param width,height Optional target dimensions for every row, unless
+#'   \code{jobs} has a column of the same name (see \code{jobs}). When only one
+#'   is given, the other is derived to keep the aspect ratio. When neither is
+#'   given, the frame is floor-cropped to even dimensions, so odd-sized sources
 #'   encode. (default = \code{NULL})
 #' @param fps Optional target frame rate applied to every row, unless
 #'   \code{jobs} carries an \code{fps} column. (default = \code{NULL}, i.e.
 #'   leave the frame rate unchanged)
-#' @param video_codec A string naming the video codec applied to every row,
-#'   unless \code{jobs} carries a \code{video_codec} column, in which case
-#'   \code{NA} in a cell leaves that row's codec unset.
+#' @param video_codec A string naming the video codec for every row, unless
+#'   \code{jobs} has a \code{video_codec} column. In that column, \code{NA}
+#'   leaves that row's codec unset.
 #'   `r batch_libx264_sentences()`
-#' @param audio_codec A string naming the audio codec applied to every row,
-#'   unless \code{jobs} carries an \code{audio_codec} column, in which case
-#'   \code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
-#'   stream-copies the audio through untouched; name an encoder (e.g.
-#'   \code{"aac"}) when the source audio cannot be copied into the output
-#'   container.
+#' @param audio_codec A string naming the audio codec for every row, unless
+#'   \code{jobs} has an \code{audio_codec} column. In that column, \code{NA}
+#'   leaves that row's codec unset. \code{"copy"} (default) stream-copies the
+#'   audio through untouched. Name an encoder, such as \code{"aac"}, when the
+#'   source audio cannot be copied into the output container.
 #' @param pixel_format A string naming the pixel format applied to every row,
 #'   unless \code{jobs} carries a \code{pixel_format} column.
 #'   (default = \code{"yuv420p"})
-#' @param hardware The encoder backend applied to every row: \code{"none"}
-#'   (default), \code{"nvenc"} for NVIDIA GPU encoding (H.264, HEVC and
-#'   AV1), or \code{"videotoolbox"} for Apple GPU encoding (H.264 and
-#'   HEVC). Batch-wide (not a per-row column). See
+#' @param hardware The encoder backend for every row. \code{"none"} is the
+#'   default. \code{"nvenc"} uses NVIDIA GPU encoding (H.264, HEVC and AV1),
+#'   and \code{"videotoolbox"} uses Apple GPU encoding (H.264 and HEVC). It
+#'   applies to the whole batch and is not read as a column. See
 #'   \code{\link{standardize_video}} and \code{\link{has_hardware_encoder}}.
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
 #' @param fallback `r fallback_param("video_codec")`
@@ -4453,8 +4463,8 @@ derive_standardized_names <- function(input) {
 #' @return `r batch_return("output")`
 #' @seealso [standardize_video()] for the single-input form; [ffm_batch()] for
 #'   the batch runner and the arguments forwarded through \code{...};
-#'   [segment_video_batch()] and [extract_frame_batch()] for the other
-#'   table-driven siblings.
+#'   [segment_video_batch()] and [extract_frame_batch()] for other batch task
+#'   functions.
 #' @family task functions
 #' @family audio selection functions
 #' @examples
@@ -4682,22 +4692,24 @@ derive_stripped_names <- function(input) {
 
 #' Strip Metadata From Many Files From a Jobs Table
 #'
-#' De-identify many input files from a single jobs tibble — the **batch**
-#' (table-driven) sibling of [strip_metadata()] for when you have more than one
-#' file to scrub. Each row is one input; the only required column names its
-#' source. This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible
-#' stream-copy strip command per input, sharing the same pipeline (and its
-#' bit-exact, metadata-dropping behavior) as the scalar verb.
+#' De-identify many files, using one jobs table. This is the **batch** form of
+#' [strip_metadata()], for when you have more than one file to scrub. Each row
+#' is one input, and the only required column names its source. The function
+#' is a thin wrapper over \code{\link{ffm_batch}}. It builds one reproducible
+#' stream-copy strip command for each input. Each command uses the same steps
+#' as \code{strip_metadata()}, so it is bit-exact and drops the same metadata.
+#' The glossary in \code{vignette("tidymedia")} explains media terms such as
+#' stream and stream copy.
 #'
-#' @param jobs A data frame with one row per input and (at least) an
-#'   \code{input} column (source path). An optional \code{output} column names
-#'   the destination; when absent, one is derived per row by appending
-#'   \code{_stripped} to each input's basename, keeping the input's extension
-#'   (e.g. \code{clip.mkv} becomes \code{clip_stripped.mkv}). Any two rows that
-#'   resolve to the **same** output path — a duplicated \code{input} with no
-#'   \code{output} column, or a repeated explicit \code{output} — are rejected
-#'   so one file cannot silently overwrite another. Any other columns are
-#'   ignored (the scrub has no per-row knobs).
+#' @param jobs A data frame with one row per input. It needs at least an
+#'   \code{input} column, the source path. An optional \code{output} column
+#'   names the destination. Without it, each row's output name adds
+#'   \code{_stripped} to the input's base name and keeps its extension. For
+#'   example, \code{clip.mkv} becomes \code{clip_stripped.mkv}. Any two rows
+#'   with the **same** output path are rejected, so one file cannot silently
+#'   overwrite another. That happens with a duplicated \code{input} and no
+#'   \code{output} column, or with a repeated explicit \code{output}. Any other
+#'   columns are ignored, because the scrub has no per-row settings.
 #' @inheritParams anonymize_video_batch
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: scrub in
 #'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
@@ -4708,8 +4720,8 @@ derive_stripped_names <- function(input) {
 #' @return `r batch_return("output")`
 #' @seealso [strip_metadata()] for the single-input form; [ffm_batch()] for the
 #'   batch runner and the arguments forwarded through \code{...};
-#'   [standardize_video_batch()] and [anonymize_video_batch()] for the other
-#'   table-driven siblings.
+#'   [standardize_video_batch()] and [anonymize_video_batch()] for other batch
+#'   task functions.
 #' @family task functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

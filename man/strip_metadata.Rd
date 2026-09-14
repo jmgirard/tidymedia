@@ -20,36 +20,39 @@ or return the compiled command without running it (\code{FALSE}).}
 The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
-Remove a media file's container and global metadata tags (creation time,
-GPS/location, device make and model, title, comment, and the like) together
-with any chapters, writing a de-identified copy — the front door for
-IRB/de-identification of research recordings. The audio and video streams are
-\strong{stream-copied}, not re-encoded, so the operation is lossless and fast and
-the picture and sound are bit-for-bit unchanged (including any rotation
-display matrix, which is stream side data, not a metadata tag).
+Remove a media file's container and global metadata tags, together with any
+chapters, and write a de-identified copy. The tags include creation time,
+GPS location, device make and model, title and comment. This is the task
+function for IRB de-identification of research recordings. The audio and
+video streams are \strong{stream-copied}, not re-encoded. So the operation is
+lossless and fast, and the picture and sound are bit-for-bit unchanged. That
+includes any rotation display matrix, which is stream side data and not a
+metadata tag. The glossary in \code{vignette("tidymedia")} explains media
+terms such as container, stream and stream copy.
 }
 \details{
-The output is muxed bit-exactly (\code{-fflags +bitexact}) so FFmpeg does not
-re-stamp the container with a fresh \code{creation_time} or an
-\code{encoder} tag naming its own version — either of which would defeat
+The output is written bit-exactly (\code{-fflags +bitexact}). So FFmpeg does
+not stamp the container again with a fresh \code{creation_time}, or with an
+\code{encoder} tag that names its own version. Either tag would defeat
 de-identification and reproducibility.
 
-Because the streams are copied rather than re-encoded, identifiers embedded
-\strong{inside} the encoded bitstream, and per-stream metadata such as
-\code{handler_name} or \code{language}, are not removed. Removing those would
-require re-encoding (out of scope; use the \code{\link{ffmpeg}} escape hatch)
-or per-stream metadata mapping that must probe the file first.
+Because the streams are copied and not re-encoded, some data is not removed.
+That is identifiers \strong{inside} the encoded bitstream, and per-stream metadata
+such as \code{handler_name} or \code{language}. Removing them would require
+re-encoding, which this function does not do. For that, use the direct
+command \code{\link{ffmpeg}}. The other way is per-stream metadata mapping
+that must probe the file first.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 strip_metadata(video, "clean.mp4", run = FALSE)
 }
 \seealso{
-\code{\link[=anonymize_video]{anonymize_video()}} to remove faces or regions from the picture (the
-visual de-identification sibling); \code{\link[=probe_container]{probe_container()}} and
-\code{\link[=mediainfo_query]{mediainfo_query()}} to inspect a file's metadata before and after;
-\code{\link[=ffm_copy]{ffm_copy()}} and \code{\link[=ffm_output_options]{ffm_output_options()}}, the builders it wraps;
-\code{\link[=strip_metadata_batch]{strip_metadata_batch()}} for the many-file form.
+\code{\link[=anonymize_video]{anonymize_video()}} removes faces or regions from the picture, for
+visual de-identification. \code{\link[=probe_container]{probe_container()}} and \code{\link[=mediainfo_query]{mediainfo_query()}}
+inspect a file's metadata before and after. \code{\link[=ffm_copy]{ffm_copy()}} and
+\code{\link[=ffm_output_options]{ffm_output_options()}} are the pipeline functions it wraps.
+\code{\link[=strip_metadata_batch]{strip_metadata_batch()}} is the many-file form.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

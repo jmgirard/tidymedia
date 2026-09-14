@@ -64,28 +64,35 @@ or return the compiled command without running it (\code{FALSE}).}
 The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
-Re-encode a video to a consistent, reproducible format for analysis
-pipelines: a single video codec, pixel format, and (optionally) resolution
-and frame rate, with \code{+faststart} for smooth playback. Unlike
-\code{\link{format_for_web}} (a fixed web-delivery recipe), every part of the
-standard is a parameter, so a lab can pin its own house format once and apply
-it across a dataset.
+Re-encode a video to a consistent, reproducible format for analysis. The
+format is one video codec and pixel format, and optionally a resolution and
+frame rate, with \code{+faststart} for smooth playback.
+\code{\link{format_for_web}} uses a fixed recipe for web delivery. Here,
+every part of the standard is an argument. So a lab can set its own house
+format once and apply it across a dataset. The glossary in
+\code{vignette("tidymedia")} explains media terms such as codec, pixel format
+and frame rate.
 }
 \details{
-The default standard \code{standardize_video(infile, outfile)} re-encodes to
-H.264 video (\code{video_codec = "libx264"}) with \code{pixel_format = "yuv420p"}
-and \code{-movflags +faststart}, keeping the source resolution and frame
-rate. Audio is stream-copied unchanged (\code{-c:a copy}) unless
-\code{audio_codec} names an encoder; loudness standardization stays out of
-scope (see \code{\link{normalize_audio}}). The same input therefore always
-compiles to a byte-identical command.
+The default standard, \code{standardize_video(infile, outfile)}, re-encodes
+to H.264 video (\code{video_codec = "libx264"}) with
+\code{pixel_format = "yuv420p"} and \code{-movflags +faststart}. It keeps
+the source resolution and frame rate. Audio is stream-copied unchanged
+(\code{-c:a copy}) unless \code{audio_codec} names an encoder. The same
+input therefore always compiles to a byte-identical command. Loudness
+standardization is out of scope. For that, see
+\code{\link{normalize_audio}}.
 
-Resolution follows \code{width}/\code{height}: supplying both forces exact
-output dimensions; supplying only one preserves the aspect ratio and rounds
-the other to the nearest even number (FFmpeg's \code{-2}); supplying neither
-keeps the source resolution but rounds odd dimensions down to the nearest
-even value (a \code{yuv420p}/\code{libx264} requirement, and a no-op for
-already-even input) so the output always encodes.
+Resolution follows \code{width} and \code{height}:
+\itemize{
+\item With both, the output has exactly those dimensions.
+\item With only one, the aspect ratio is kept, and the other dimension is
+rounded to the nearest even number (FFmpeg's \code{-2}).
+\item With neither, the source resolution is kept, but odd dimensions are
+rounded down to the nearest even value. \code{yuv420p} and
+\code{libx264} require this, and it changes nothing for input that is
+already even. So the output always encodes.
+}
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -99,7 +106,7 @@ standardize_video(video, "std.mp4", audio_stream = 1, run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_scale]{ffm_scale()}}, \code{\link[=ffm_codec]{ffm_codec()}}, and \code{\link[=ffm_pixel_format]{ffm_pixel_format()}}, among the
-builders it wraps; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware}
+pipeline functions it wraps; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware}
 toggle;
 \code{\link[=standardize_video_batch]{standardize_video_batch()}} for the many-file form.
 

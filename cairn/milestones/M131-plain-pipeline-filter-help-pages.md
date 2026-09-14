@@ -1,13 +1,13 @@
 # M131: The filter and multi-input pipeline help pages read as plain English
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** M129
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — shipped help pages for exported functions
-- **Branch/PR:** —
+- **Branch/PR:** `m131-plain-pipeline-filter-help-pages`
 
 ## Goal
 
@@ -39,7 +39,7 @@ The M131 help-page domain uses plain English for an R user who does not know FFm
 
 ## Tasks
 
-- [ ] T1: Record in a new M131 ledger section the base commit, the domain page list, the AC4 identifiers and the sweep output over the domain at the base commit.
+- [x] T1: Record in a new M131 ledger section the base commit, the domain page list, the AC4 identifiers and the sweep output over the domain at the base commit.
 - [ ] T2: Rewrite `ffm_trim()`, `ffm_crop()`, `ffm_scale()`, `ffm_fps()`, `ffm_drawbox()` and `ffm_loudnorm()`.
 - [ ] T3: Rewrite `ffm_hstack()`, `ffm_vstack()`, `ffm_overlay()` and `ffm_concat()`.
 - [ ] T4: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words, and a sentence that names the glossary stays. A base claim found false gets a ledger row and a line in the follow-up candidate row. Fill the ledger. Run the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
@@ -47,6 +47,8 @@ The M131 help-page domain uses plain English for an R user who does not know FFm
 ## Work log
 
 - 2026-09-13: created by /milestone-plan (re-cut of M128 under D093). The criteria audit and re-audit lines are in M129's work log, and cover this template.
+- 2026-09-14: implement started on `m131-plain-pipeline-filter-help-pages` from `08a4df26`. No question gate, because the plan and the M128 and M130 ledgers settle every choice.
+- 2026-09-14: T1 done. Base sweep over the 10 pages: 220 sentences, 14 findings (9 words, 5 term, no dash). `tidymedia_ffm` is the only AC4 identifier. Ledger section `### M131` added.
 
 ## Decisions
 

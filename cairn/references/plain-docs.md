@@ -409,3 +409,24 @@ Each claim keeps its meaning at head. All are items of the M130 follow-up row in
 | `format_for_web_batch` | The command has no per-row settings. | The function reads an `audio_stream` column for each row with `pick("audio_stream", audio_stream)` (`R/ffmpeg.R`). |
 | `crop_video_batch`, `format_for_web_batch` | See Also: each wraps its single-file function. | Each calls `crop_video_pipeline()` or `format_for_web_pipeline()`, not `crop_video()` or `format_for_web()`. |
 | `standardize_video_batch`, `strip_metadata_batch` | See Also: two named functions are "the other" batch task functions. | `R/ffmpeg.R` defines 17 `*_batch` functions. |
+
+### M131
+
+The base commit is `08a4df26`. At that commit, the domain is the 10 `man/*.Rd` files whose header names `R/ffm.R` and whose base name matches the M131 filter: `ffm_concat`, `ffm_crop`, `ffm_drawbox`, `ffm_fps`, `ffm_hstack`, `ffm_loudnorm`, `ffm_overlay`, `ffm_scale`, `ffm_trim` and `ffm_vstack`.
+
+#### Sweep output at the base commit (AC1, AC2, AC3, AC4)
+
+The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` over the 10 files that `git show 08a4df26:man/<page>.Rd` wrote to a temporary folder. It read 220 sentences and exited 1 with 14 findings: 9 `[<n> words]`, 5 `[term …]` and no `[dash in Rd source]`. The same command gives the full output again. Stems are the glossary stems in each page's `--prose` output. The only AC4 identifier is `tidymedia_ffm`, on all 10 pages. No page named the glossary. `?ffm_overlay` also says "Layer-2", which the term pattern `\bLayer [012]\b` does not match.
+
+| Page | Words | Term | Dash | Stems (AC3) | Result |
+|---|---|---|---|---|---|
+| ffm_concat | 2 | 2 | 0 | `codec`, `encod`, `frame rate`, `stream` | |
+| ffm_crop | 0 | 0 | 0 | — | |
+| ffm_drawbox | 0 | 0 | 0 | — | |
+| ffm_fps | 0 | 0 | 0 | `frame rate` | |
+| ffm_hstack | 0 | 0 | 0 | — | |
+| ffm_loudnorm | 4 | 2 | 0 | `encod`, `LUFS`, `true peak` | |
+| ffm_overlay | 2 | 1 | 0 | `stream` | |
+| ffm_scale | 0 | 0 | 0 | — | |
+| ffm_trim | 1 | 0 | 0 | `stream` | |
+| ffm_vstack | 0 | 0 | 0 | `stream` | |

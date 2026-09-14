@@ -59,6 +59,7 @@ The M128 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-14: T4 done. `devtools::test()` 0 failures (13866 passed, 5 skipped). `devtools::check()` 0 errors, 0 warnings, 0 notes. `pkgdown::check_pkgdown()` no problems. `devtools::document()` at head writes nothing. No test pinned changed wording. Status set to review.
 - 2026-09-14: review checkpoint, half done: AC1-AC5 evidence recorded and ticked, and `cairn_validate` passes. The AC6 run and the three reviewers are still running.
 - 2026-09-14: review pre-gate checkpoint: all six criteria verified at `3d8e0518`, and 4 introduced wording slips fixed and read by a fresh reader. roxygen2 was updated to 8.1.0 by user choice. The T4 line's `document()` result had rested on a roxygen2 version stop. No return.
+- 2026-09-14: step-7 approval: m128-plain-pipeline-io-help-pages approved for merge
 
 ## Decisions
 

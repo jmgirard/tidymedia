@@ -146,7 +146,7 @@ tracks the output will not, the verb warns \strong{once} for the whole batch,
 naming every affected row. Naming a track silences it -- the
 \code{audio_stream} argument, or an \code{audio_stream} cell on every row --
 as does \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
-The check costs \strong{one FFprobe call per distinct input} it has to probe. A repeated input is probed once, and a row that names a track is not probed at all. The warning is given only when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. Those probes run \strong{one at a time, before any row starts}, so \code{parallel} does not reach them. A sweep long enough to look like a hang reports its progress. The check never runs under
+The check costs \strong{one FFprobe call per distinct input} it has to probe. A repeated input is probed once, and a row that names a track is not probed at all. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. Those probes run \strong{one at a time, before any row starts}, so \code{parallel} does not reach them. A sweep long enough to look like a hang reports its progress. The check never runs under
 \code{run = FALSE}, never changes any compiled command, and is skipped
 entirely when every row names a track. Under \code{two_pass = TRUE} it lands
 \emph{before} Phase 1, so it arrives while adding \code{audio_stream} can

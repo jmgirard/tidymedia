@@ -50,7 +50,7 @@ applied to every row lacking an \code{audio_codec} column. \code{"copy"}
 
 \item{hardware, fallback}{The encoder backend and its fallback behavior, applied to the whole batch. They are a property of the machine, not of a row, so neither is read as a \code{jobs} column. See \code{\link[=picture_in_picture]{picture_in_picture()}}.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
-A call can also contradict itself, for example by naming an \code{audio_codec} with no audio carried into the output. Such a call is refused for the contradiction first, whether or not this machine has the encoder.
+A call can also contradict itself by naming an \code{audio_codec} with no audio carried into the output. Such a call is refused for the contradiction first, whether or not this machine has the encoder.
 A per-row value error — a negative \code{margin}, an \code{audio_input} index
 outside the two inputs, a \code{position} outside the five accepted values
 — likewise reports ahead of the encoder check.

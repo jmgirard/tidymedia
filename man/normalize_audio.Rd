@@ -119,7 +119,7 @@ tracks the output will not, the verb warns -- the same warning
 \code{\link{extract_audio}} and \code{\link{convert_audio}} emit. Naming a
 track with \code{audio_stream} silences it, as does
 \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
-The check costs \strong{one FFprobe call per distinct input}, which is one call here, because this function takes a single \code{infile}. The warning is given only when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. It never runs under \code{run = FALSE},
+The check costs \strong{one FFprobe call per distinct input}, which is one call here, because this function takes a single \code{infile}. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. It never runs under \code{run = FALSE},
 and never changes the compiled command. Under \code{two_pass = TRUE} it lands
 \emph{before} the analysis pass, so it arrives while adding
 \code{audio_stream} can still save that pass.

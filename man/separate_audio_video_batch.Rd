@@ -53,7 +53,7 @@ conflicts with any row whose video codec resolves to \code{"copy"} —
 including the default — so a jobs table mixing copied and re-encoded
 video must be split into separate calls.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
-A call can also contradict itself, for example by asking for GPU encoding alongside a stream copy. Such a call is refused for the contradiction first, whether or not this machine has the encoder.
+A call can also contradict itself by asking for GPU encoding alongside a stream copy. Such a call is refused for the contradiction first, whether or not this machine has the encoder.
 The stream-copy conflict above is caught first, so such a call aborts
 without probing.}
 

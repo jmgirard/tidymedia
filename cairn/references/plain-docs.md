@@ -229,3 +229,88 @@ Each row is one page whose `--prose` output has a glossary stem. "Names the glos
 #### Tests (T7)
 
 No test was removed. These tests now pin new wording of the same property. `test-package-topic.R` checks that the `tidymedia_ffmpeg_exit` item says "exited non-zero" before it names the `loudnorm` pass. `test-check-tracks-docs.R` reads the dropped-track item on `?with_timeout`. `test-runtime-timeout.R` reads the reached-limit error and the 40 s arithmetic on `?with_timeout`, and the 42.0 s timing in `NEWS.md`. `test-timeout-silence.R` reads "never silent" on `?with_timeout`, and the call-graph note in `NEWS.md`. `helper-rd.R` now reads `?with_timeout`. `test-audio-index-docs.R` pins two rewritten phrases of the generated `audio_input` text. After review return 1, three guards changed so that they can fail. Each went red on a planted defect. The "never silent" guard pins the error to its `tidymedia_timeout` class. The M69 disclosure guard also reads `?tidymedia`. The `loudnorm` check finds no full stop between its two phrases.
+
+### M129
+
+The base commit is `db460d58`. At that commit, the domain is the 34 `man/*.Rd` files whose header names `R/ffmpeg.R`: `anonymize_video`, `anonymize_video_batch`, `compare_videos`, `compare_videos_batch`, `concatenate_videos`, `concatenate_videos_batch`, `convert_audio`, `convert_audio_batch`, `crop_video`, `crop_video_batch`, `extract_audio`, `extract_audio_batch`, `extract_frame`, `extract_frame_batch`, `ffmpeg`, `ffmpeg_codecs`, `ffmpeg_encoders`, `format_for_web`, `format_for_web_batch`, `hardware_encoder`, `normalize_audio`, `normalize_audio_batch`, `picture_in_picture`, `picture_in_picture_batch`, `sample_frames`, `sample_frames_batch`, `segment_video`, `segment_video_batch`, `separate_audio_video`, `separate_audio_video_batch`, `standardize_video`, `standardize_video_batch`, `strip_metadata` and `strip_metadata_batch`.
+
+#### Sweep output at the base commit (AC2, AC3, AC5)
+
+The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` over the 34 files that `git show db460d58:man/<page>.Rd` wrote to a temporary folder. It exited 1 with 393 findings: 256 `[<n> words]`, 118 `[term …]` and 19 `[dash in Rd source]`. The same command gives the full output again. 35 finding sentences are printed for two or more pages, 132 findings in all. Identifiers are the AC4 matches in each page.
+
+| Page | Words | Term | Dash | Identifiers (AC4) |
+|---|---|---|---|---|
+| anonymize_video | 9 | 1 | 1 | — |
+| anonymize_video_batch | 17 | 6 | 0 | — |
+| compare_videos | 9 | 2 | 0 | — |
+| compare_videos_batch | 10 | 6 | 0 | — |
+| concatenate_videos | 1 | 1 | 0 | — |
+| concatenate_videos_batch | 3 | 3 | 0 | — |
+| convert_audio | 1 | 4 | 2 | `tidymedia.check_tracks`, `tidymedia_dropped_audio` |
+| convert_audio_batch | 6 | 5 | 1 | `tidymedia.check_tracks`, `tidymedia_dropped_audio` |
+| crop_video | 6 | 1 | 0 | — |
+| crop_video_batch | 11 | 5 | 2 | — |
+| extract_audio | 2 | 2 | 2 | `tidymedia.check_tracks`, `tidymedia_dropped_audio` |
+| extract_audio_batch | 7 | 4 | 1 | `tidymedia.check_tracks`, `tidymedia_dropped_audio` |
+| extract_frame | 0 | 0 | 0 | — |
+| extract_frame_batch | 5 | 1 | 0 | — |
+| ffmpeg | 1 | 2 | 0 | — |
+| ffmpeg_codecs | 0 | 2 | 0 | — |
+| ffmpeg_encoders | 0 | 2 | 0 | — |
+| format_for_web | 4 | 0 | 0 | — |
+| format_for_web_batch | 9 | 3 | 0 | — |
+| hardware_encoder | 4 | 1 | 0 | `tidymedia.hardware_encoders` |
+| normalize_audio | 12 | 4 | 5 | `tidymedia.check_tracks`, `tidymedia_dropped_audio`, `tidymedia_ffmpeg_exit`, `tidymedia_loudnorm_no_measurement`, `tm_status` |
+| normalize_audio_batch | 17 | 10 | 3 | `tidymedia.check_tracks`, `tidymedia_dropped_audio`, `tidymedia_ffmpeg_exit`, `tidymedia_loudnorm_no_measurement`, `tm_row_status`, `tm_rows`, `tm_status` |
+| picture_in_picture | 7 | 1 | 0 | — |
+| picture_in_picture_batch | 9 | 5 | 0 | — |
+| sample_frames | 3 | 3 | 0 | — |
+| sample_frames_batch | 4 | 2 | 0 | — |
+| segment_video | 11 | 3 | 1 | — |
+| segment_video_batch | 13 | 4 | 0 | — |
+| separate_audio_video | 22 | 11 | 0 | `tidymedia_ffmpeg_exit`, `tidymedia_multitrack_separation`, `tidymedia_timeout`, `tm_status`, `tm_video_error` |
+| separate_audio_video_batch | 21 | 13 | 1 | `tidymedia_ffmpeg_exit`, `tidymedia_multitrack_separation`, `tm_status` |
+| standardize_video | 9 | 1 | 0 | — |
+| standardize_video_batch | 15 | 4 | 0 | — |
+| strip_metadata | 4 | 4 | 0 | — |
+| strip_metadata_batch | 4 | 2 | 0 | — |
+
+#### Repeated paragraphs at the base commit (AC1)
+
+`Rscript tools/roxygen_repeats.R R/ffmpeg.R` at the base commit read 405 paragraphs in 34 blocks and listed 33. Each row gives the paragraph's first words and the blocks that held it. The Result column is filled at T5.
+
+| Row | Blocks | First words | Held by | Result |
+|---|---|---|---|---|
+| R1 | 12 | A logical: run the command through FFmpeg | `extract_frame`, `sample_frames`, `extract_audio`, `convert_audio`, `crop_video`, `format_for_web`, `strip_metadata`, `standardize_video`, `anonymize_video`, `concatenate_videos`, `compare_videos`, `picture_in_picture` | |
+| R2 | 12 | The compiled FFmpeg command (invisibly | the same 12 as R1 | |
+| R3 | 8 | A logical: map over jobs in parallel | `extract_audio_batch`, `convert_audio_batch`, `crop_video_batch`, `format_for_web_batch`, `separate_audio_video_batch`, `concatenate_videos_batch`, `compare_videos_batch`, `picture_in_picture_batch` | |
+| R4 | 8 | A logical: run each command through FFmpeg | the same 8 as R3 | |
+| R5 | 8 | Additional arguments forwarded to `ffm_batch` (e.g. | the same 8 as R3 | |
+| R6 | 7 | A string containing the path to a video file. | `extract_frame`, `sample_frames`, `crop_video`, `format_for_web`, `standardize_video`, `anonymize_video`, `segment_video` | |
+| R7 | 7 | Additional arguments forwarded to `ffm_batch`, such as | `anonymize_video_batch`, `segment_video_batch`, `extract_frame_batch`, `sample_frames_batch`, `standardize_video_batch`, `strip_metadata_batch`, `normalize_audio_batch` | |
+| R8 | 7 | The `jobs` tibble with an added `command` column | R3's 8 less `separate_audio_video_batch` | |
+| R9 | 5 | A string containing the path of the video file to write. | `separate_audio_video`, `crop_video`, `format_for_web`, `standardize_video`, `anonymize_video` | |
+| R10 | 5 | The tibble returned by `ffm_batch`: `jobs` with | `anonymize_video_batch`, `segment_video_batch`, `extract_frame_batch`, `standardize_video_batch`, `strip_metadata_batch` | |
+| R11 | 4 | A logical: run each input's command | `anonymize_video_batch`, `sample_frames_batch`, `standardize_video_batch`, `strip_metadata_batch` | |
+| R12 | 4 | A logical: when a non-`"none"` `hardware` … encode in software | `crop_video`, `segment_video`, `compare_videos`, `picture_in_picture` | |
+| R13 | 4 | A string containing the path to a media file. | `extract_audio`, `separate_audio_video`, `convert_audio`, `strip_metadata` | |
+| R14 | 3 | A string containing the path of the audio file to write. | `extract_audio`, `separate_audio_video`, `convert_audio` | |
+| R15 | 3 | A string naming the output video codec, applied to every row | `crop_video_batch`, `compare_videos_batch`, `picture_in_picture_batch` | |
+| R16 | 3 | A string naming the output video codec, or `NULL` | `crop_video`, `compare_videos`, `picture_in_picture` | |
+| R17 | 3 | https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax | `segment_video`, `segment_video_batch`, `extract_frame_batch` | |
+| R18 | 3 | Switch the check off, and skip its FFprobe call | `extract_audio`, `convert_audio`, `normalize_audio` | |
+| R19 | 3 | Switch the check off, and skip the whole sweep | `normalize_audio_batch`, `extract_audio_batch`, `convert_audio_batch` | |
+| R20 | 3 | The encoder backend: … the H.264 family is assumed | `crop_video`, `compare_videos`, `picture_in_picture` | |
+| R21 | 2 | A logical indicating whether the tibble should be sorted | `ffmpeg_codecs`, `ffmpeg_encoders` | |
+| R22 | 2 | A logical passed to `ffm_batch`: cut segments in parallel | `segment_video`, `segment_video_batch` | |
+| R23 | 2 | A logical: … re-encode with software libx264 | `format_for_web`, `format_for_web_batch` | |
+| R24 | 2 | A logical: … re-encode with the software `video_codec` | `standardize_video`, `anonymize_video` | |
+| R25 | 2 | A string naming the codec for the carried audio track, applied to every row | `compare_videos_batch`, `picture_in_picture_batch` | |
+| R26 | 2 | A string naming the codec for the carried audio track. | `compare_videos`, `picture_in_picture` | |
+| R27 | 2 | A string naming the output audio codec (default `"copy"` | `standardize_video`, `anonymize_video` | |
+| R28 | 2 | A string naming the output pixel format | `standardize_video`, `anonymize_video` | |
+| R29 | 2 | A string naming the output video codec (default `"libx264"`) | `standardize_video`, `anonymize_video` | |
+| R30 | 2 | EBU Recommendation R 128 (2014) | `normalize_audio`, `normalize_audio_batch` | |
+| R31 | 2 | The encoder backend: … Applies to video only | `standardize_video`, `anonymize_video` | |
+| R32 | 2 | When a row names no `audio_stream` | `extract_audio_batch`, `convert_audio_batch` | |
+| R33 | 2 | When no `audio_stream` is named | `extract_audio`, `convert_audio` | |

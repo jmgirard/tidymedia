@@ -1,7 +1,7 @@
 # Get the duration of a media file
 
-Use MediaInfo to quickly look up the duration of different sections of a
-media file in various units.
+`get_duration()` uses the MediaInfo program to look up the duration of a
+media file. You choose the section of the file and the unit.
 
 ## Usage
 
@@ -17,7 +17,7 @@ get_duration(
 
 - file:
 
-  A character vector of one or more media-file paths.
+  A character vector of one or more media file paths.
 
 - section:
 
@@ -38,19 +38,19 @@ section in the specified units.
 
 ## Details
 
-This **MediaInfo**-backed helper returns a **single value per file** (a
-numeric scalar), unlike the tibble-returning `probe_*()`,
-[`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md),
+The function returns one number for each file. The `probe_*()`
+functions,
+[`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
 and
 [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
-readers.
+return tibbles instead.
 
 ## See also
 
 [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md)
 for arbitrary MediaInfo fields, and
 [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
-for the FFprobe backend.
+to read information with FFprobe.
 
 Other metadata functions:
 [`get_frame_rate()`](https://jmgirard.github.io/tidymedia/reference/get_frame_rate.md),

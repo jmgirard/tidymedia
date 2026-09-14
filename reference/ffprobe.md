@@ -1,10 +1,7 @@
 # Send a command to the FFprobe program
 
-Probe a media file for information. This is the Layer 0 escape hatch:
-the `command` string is passed to FFprobe verbatim, so you are
-responsible for quoting it. For structured, tibble-returning output use
-[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
-and the `probe_*()` shortcuts, which quote their arguments safely.
+`ffprobe()` runs the FFprobe program with the arguments in `command` and
+returns its output. FFprobe reads information about media files.
 
 ## Usage
 
@@ -16,18 +13,30 @@ ffprobe(command)
 
 - command:
 
-  A string containing the command to send to FFprobe.
+  A string with the arguments to give FFprobe.
 
 ## Value
 
-A string containing the text output by FFprobe.
+A character vector with the text that FFprobe writes to standard output,
+one element for each line. Messages on standard error, such as FFprobe's
+banner and errors, are not returned. On macOS and Linux, a shell
+redirect such as `2>&1` in `command` returns them too.
+
+## Details
+
+`ffprobe()` is a direct command. The package passes `command` to FFprobe
+exactly as you wrote it, so you must add any quotes that it needs. To
+get tibbles instead, use
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+and the other `probe_*()` functions. These functions quote their
+arguments for you.
 
 ## See also
 
 [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
-and the `probe_*()` shortcuts for structured, tibble-returning output.
+and the other `probe_*()` functions, which return tibbles.
 
-Other escape hatch functions:
+Other direct command functions:
 [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md),
 [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)
 

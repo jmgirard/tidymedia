@@ -1,7 +1,9 @@
 # Get the video frame rate of a media file
 
-Use MediaInfo to quickly look up the video frame rate of a media file in
-frames per second (fps).
+`get_frame_rate()` uses the MediaInfo program to look up the video frame
+rate of a media file, in frames per second (fps). The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as frame rate.
 
 ## Usage
 
@@ -13,7 +15,7 @@ get_frame_rate(file)
 
 - file:
 
-  A character vector of one or more media-file paths.
+  A character vector of one or more media file paths.
 
 ## Value
 
@@ -21,19 +23,19 @@ A double vector (one per file) giving the video frame rate in fps.
 
 ## Details
 
-This **MediaInfo**-backed helper returns a **single value per file** (a
-numeric scalar), unlike the tibble-returning `probe_*()`,
-[`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md),
+The function returns one number for each file. The `probe_*()`
+functions,
+[`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
 and
 [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
-readers.
+return tibbles instead.
 
 ## See also
 
 [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md)
 for arbitrary MediaInfo fields, and
 [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
-for the FFprobe backend.
+to read information with FFprobe.
 
 Other metadata functions:
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),

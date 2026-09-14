@@ -1,43 +1,47 @@
 # Audio track and audio input indices
 
-tidymedia has two 0-based audio arguments that count different things.
-This page says which is which, so that meeting one after the other is
-not a trap.
+Two audio arguments in this package count different things:
+`audio_stream` and `audio_input`. Both count from `0`, so `0` means the
+first one. This page explains which is which.
+
+The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as stream, container and codec.
 
 ## The two indices
 
-`audio_stream` counts **one input's audio streams**. On
-[`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
-`audio_stream = 1` is that file's second audio track, whatever position
-it holds among the file's streams overall (it is not the `index` column
-of
-[`probe_audio`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
-which counts every stream, audio or not).
+`audio_stream` counts **the audio tracks of one input file**. On
+[`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
+`audio_stream = 1` is the second audio track of the file. Where that
+track sits among all the streams of the file does not matter. So
+`audio_stream` is not the `index` column of
+[`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
+which counts every stream, audio or not.
 
-`audio_input` counts **a verb's inputs**. On
-[`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
+`audio_input` counts **the input files of a function**. The functions
+[`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
 and
-[`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
-which combine several files into one output and must choose whose sound
-to keep, `audio_input = 1` is the second *file*, and says nothing about
-which of its tracks is taken.
+[`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
+combine several files into one output, so they must choose whose sound
+to keep. On these functions, `audio_input = 1` is the second *file*. It
+says nothing about which track of that file is used.
 
-Neither can be computed from the other, which is why they stay separate
-names rather than one argument meaning two things depending on the
-verb's arity.
+You cannot work out one index from the other. So the package keeps two
+names, rather than one argument whose meaning depends on how many inputs
+a function takes.
 
-## What `NULL` means, and it is not the same thing
+## What `NULL` means
 
-`audio_stream = NULL` is a selection rather than an absence: the verb
-still emits a stream map. What differs is how much it selects.
+`audio_stream = NULL` still selects audio. It does not mean "no audio".
+How much audio it selects depends on the function.
 
-- The first-track family reads `NULL` this way –
+- The first-track family reads `NULL` as the first audio track only:
   [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
   [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
   and
   [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
-  plus their `_batch` siblings. The every-track family keeps them all
-  instead:
+  and their `_batch` forms. The every-track family reads it as every
+  audio track:
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
   [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
   [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
@@ -45,61 +49,63 @@ still emits a stream map. What differs is how much it selects.
   [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
   and
   [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
-  plus theirs.
+  and their `_batch` forms.
 
-- The two readings exist because a verb that writes one audio stream by
-  construction must pick one track when you name none, while a verb that
-  carries audio through can keep whatever its container holds.
+- The two readings have a reason. A function that writes one audio
+  stream must pick one track when you name none. A function that carries
+  audio through can keep all the tracks its container holds.
 
-- On the verbs that pass video through, the every-track map is written
-  so that it matches nothing rather than failing, so an input with no
-  audio at all simply yields an output with none. On
-  [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+- On the functions that pass video through, an input with no audio gives
+  an output with no audio, not an error. On
+  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
   and
-  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
-  whose product *is* audio, that same case is an FFmpeg error.
+  [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
+  whose output *is* audio, that input gives an FFmpeg error.
 
-`audio_input = NULL` is different in kind: it emits no audio map at all,
-so the output carries **no audio**. A silent output is the default for
-[`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
+`audio_input = NULL` is different: it selects no audio at all, so the
+output has **no audio**. A silent output is the default for
+[`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
 and
-[`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
-because there is no non-arbitrary answer to which of several inputs
-should be heard.
+[`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md).
+With several inputs, no choice of which one to hear is better than
+another.
 
-Out of range, the two also fail differently. An `audio_input` beyond the
-inputs you passed is an R error raised before FFmpeg runs; an
-`audio_stream` beyond the input's tracks is an FFmpeg error, because the
-track count is a property of the file rather than of the call.
+The two arguments also fail in different ways when a number is too
+large. An `audio_input` that names an input you did not pass gives an R
+error, before FFmpeg runs. An `audio_stream` that names a track the
+input does not have gives an FFmpeg error. The reason is that the number
+of tracks is a fact about the file, not about the call.
 
 ## In a `_batch` jobs table
 
-Both arguments follow one rule on a `_batch` verb: the scalar argument
-is the default, and a `jobs` column of the same name overrides it row by
-row. (This is how these two behave; it is not a claim about every
-`_batch` argument — `hardware`, `parallel` and `two_pass` are batch-wide
-and read no column.) An **absent column** means the scalar argument
-applies to every row. A **present column** overrides it row by row, and
-an `NA` cell is that column's spelling of `NULL` – it does not fall back
-to the scalar argument. So `audio_stream = 2` with an `audio_stream`
-column holding `NA` puts that row on its family's `NULL` reading, not on
-track 2.
+On a `_batch` function, both arguments follow one rule. The argument you
+pass is the default, and a `jobs` column with the same name overrides it
+row by row.
 
-## The bare name `audio` is not an index
+This rule is about these two arguments only. The arguments `hardware`,
+`parallel` and `two_pass` apply to the whole batch, and the function
+reads no column for them.
 
-Layer 1 keeps `audio` for two things that count nothing:
+If the column is absent, the argument applies to every row. If the
+column is present, each row uses its own cell. An `NA` cell means `NULL`
+for that row. It does not fall back to the argument. So
+`audio_stream = 2` with an `NA` cell in an `audio_stream` column gives
+that row the `NULL` reading of its family, not track 2.
 
-- an audio *codec* string on
-  [`ffm_codec`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
+## The name `audio` alone is not an index
+
+The pipeline functions use `audio` for two things that are not counts:
+
+- an audio codec name on
+  [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
   where `audio = "aac"` names an encoder;
 
-- a *logical* on
-  [`ffm_copy`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md),
-  where `audio = TRUE` stream-copies the audio instead of re-encoding
-  it.
+- a logical on
+  [`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md),
+  where `audio = TRUE` copies the audio stream without re-encoding it.
 
-The input index is `audio_input`, so that its name says what it counts,
-as `audio_stream` does.
+The input index is called `audio_input`, so that its name says what it
+counts, as `audio_stream` does.
 
 ## See also
 
@@ -107,7 +113,7 @@ as `audio_stream` does.
 [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
 and
 [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
-for the first-track reading;
+read `NULL` as the first audio track.
 [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
 [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
 [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
@@ -115,13 +121,13 @@ for the first-track reading;
 [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
 and
 [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
-for the every-track one;
-[`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
+read it as every audio track.
+[`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
 and
-[`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
-for the input index;
-[`probe_audio`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
-to see what tracks a file actually holds.
+[`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
+take the input index.
+[`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
+shows which audio tracks a file has.
 
 Other audio selection functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

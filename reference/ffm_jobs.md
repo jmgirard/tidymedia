@@ -1,10 +1,9 @@
 # Build a Jobs Table From a Directory
 
-List the media files in a directory and return them as the jobs table
-[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-takes: a tibble with one row per file and an `input` column of full
-paths. This is the batch entry point's companion — the batch story
-starts here rather than with a hand-rolled
+List the media files in a directory and return them as a jobs table for
+[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+The table is a tibble with one row per file and an `input` column of
+full paths. Start a batch here, instead of with your own
 [`list.files()`](https://rdrr.io/r/base/list.files.html) call.
 
 ## Usage
@@ -21,17 +20,16 @@ ffm_jobs(directory, type, extension = NULL, recursive = FALSE)
 
 - type:
 
-  The media category to list: `"video"`, `"audio"`, or `"image"`.
-  Required — it has no default, since any default would be one of the
-  three (D079).
+  The media category to list, one of `"video"`, `"audio"` or `"image"`.
+  You must give it, because it has no default.
 
 - extension:
 
   An optional character vector of file extensions narrowing the search
   within `type`, with or without a leading dot (`"mp4"` and `".mp4"`
-  both work). Each must be one of the extensions `type` covers; the
-  refusal lists them. `NULL` (the default) lists every extension of that
-  type.
+  both work). Each must be one of the extensions `type` covers, and the
+  error message lists them. `NULL` (the default) lists every extension
+  of that type.
 
 - recursive:
 
@@ -41,48 +39,59 @@ ffm_jobs(directory, type, extension = NULL, recursive = FALSE)
 ## Value
 
 A [tibble](https://tibble.tidyverse.org/reference/tibble-package.html)
-with one row per matching file whose name does not start with a dot, and
-a single character column, `input`, holding each file's full path. Rows
-are in the order [`list.files`](https://rdrr.io/r/base/list.files.html)
-returns them. Every row is a path that exists and is not a directory: a
-subdirectory whose own name ends in a listed extension is never a row,
-nor — on macOS and Linux — is a symbolic link whose target is gone.
+with one row per matching file and one character column, `input`, with
+each file's full path. Files whose names start with a dot are left out.
+Rows are in the order
+[`list.files`](https://rdrr.io/r/base/list.files.html) returns them.
+
+Every row is a path that exists and is not a directory. A subdirectory
+whose own name ends in a listed extension is never a row. On macOS and
+Linux, a symbolic link whose target is gone is never a row either.
 Windows reports such a link as existing, so there it can still be a row.
-The call aborts rather than returning zero rows when nothing matches.
+The call gives an error, instead of zero rows, when nothing matches.
 With `recursive = TRUE` the search follows a symbolic link to a
 directory, so a row can name a file outside `directory`.
 
 ## Details
 
-The returned tibble carries `input` and nothing else, deliberately:
+The table has only the `input` column.
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-passes every column of the jobs table to `.f` by name, so a column `.f`
-has no argument for stops the batch with R's "unused argument" error
-unless `.f` takes `...`.
+passes every column of the jobs table to `.f` by name. So if `.f` has no
+argument for a column, and no `...` argument, the batch stops with R's
+"unused argument" error.
+
+Add the columns your pipeline needs with the usual data-frame tools.
+Some `*_batch()` task functions need an `output` column. Others need
+columns for their task, such as `start` and `end`. The examples below
+make an `output` column from `input`.
+
 [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)
 and
 [`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md)
-return a column they do not read unchanged — other than one named like a
-column
-[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-adds (see its Value section): a `command` column, for one, is replaced
-by the compiled command — and they read a column named like one of their
-per-row arguments (each help page lists which) in place of that
-argument, row by row: a `width` column in
-[`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md),
-an `audio_codec` column in
-[`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md).
-Add the columns your pipeline needs with the usual data-frame tools —
-some `*_batch()` verbs want an `output` column, others a task-specific
-one such as `start` and `end` — as the examples below derive an `output`
-from `input`.
+handle the other columns of the table as follows:
+
+- They read a column named like one of their per-row arguments in place
+  of that argument, row by row. Each help page lists these arguments.
+  Examples are a `width` column in
+  [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)
+  and an `audio_codec` column in
+  [`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md).
+
+- They replace a column named like one that
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+  adds. For example, the compiled command replaces a `command` column.
+  The Value section of
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+  lists the added columns.
+
+- They return every other column unchanged.
 
 ## See also
 
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 which consumes the returned table.
 
-Other builder functions:
+Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),

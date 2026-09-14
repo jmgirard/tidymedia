@@ -1,7 +1,7 @@
 # Forget what tidymedia remembers about your FFmpeg build
 
-Discard the session-scoped record of which encoders your FFmpeg build
-provides, so the next capability query asks FFmpeg again.
+Discard the package's record of which encoders your FFmpeg build has.
+The next query then asks FFmpeg again.
 
 ## Usage
 
@@ -15,61 +15,70 @@ refresh_ffmpeg_capabilities()
 
 ## Details
 
-The first hardware-encoding call in an R session – `hardware = "nvenc"`
-or `hardware = "videotoolbox"`, whichever comes first – asks FFmpeg
-which encoders it has; later calls reuse that answer rather than
-starting a new FFmpeg process per call, which is what makes a large
-batch practical. The answer is remembered for the rest of the session,
-so a build that changes underneath you – a fresh FFmpeg install, a new
-GPU driver, a different binary – is not seen until the record is
-discarded. There are three ways to discard it:
+The first call in an R session that uses `hardware = "nvenc"` or
+`hardware = "videotoolbox"` asks FFmpeg which encoders it has. The
+package remembers that answer for the rest of the session. Later calls
+reuse it and do not start FFmpeg again each time, so a large batch stays
+fast.
 
-- call `refresh_ffmpeg_capabilities()` yourself, at any time;
+So the package does not see a change to your FFmpeg build until you
+discard the record. Examples of a change are a new FFmpeg install, a new
+graphics card (GPU) driver, or a different FFmpeg program. There are
+three ways to discard the record:
 
-- call
+- Call `refresh_ffmpeg_capabilities()` yourself, at any time.
+
+- Call
   [`set_program`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
   (or
-  [`set_ffmpeg`](https://jmgirard.github.io/tidymedia/reference/set_program.md)),
-  which discards it for you, since pointing tidymedia at a different
-  binary invalidates everything remembered about the old one;
+  [`set_ffmpeg`](https://jmgirard.github.io/tidymedia/reference/set_program.md)).
+  It discards the record for you, because the record describes the old
+  program.
 
-- call
+- Call
   [`unset_program`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
-  and have it remove something, for the same reason: forgetting a
-  remembered location can change which binary tidymedia resolves to. A
-  call that removed nothing leaves the record alone, since nothing about
-  the resolved binary changed – and a call that removed one remembered
-  file before failing on another discards it, because the file it did
-  remove may be the one your lookups were answered from.
+  and have it remove something. When it forgets a saved location, the
+  package can find a different program. A call that removed nothing
+  keeps the record, because the program in use did not change. A call
+  that removed one saved file and then failed on another discards the
+  record. The file it removed may have named the program that the record
+  came from.
 
-The record is per R process, and it does not travel to a worker. So
-unless you have set `tidymedia.hardware_encoders` yourself, a batch
-running on `W` workers asks FFmpeg `W` times rather than once, and
-discarding the record in the parent does not reach them.
+The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as encoder and hardware encoder.
 
-Setting that option is different: the value you set is carried into each
-worker for the duration of the call, and the worker's own value is put
-back afterwards. A batch built under your override therefore asks FFmpeg
-for no encoder list at all, and every worker answers as the parent
-would.
+## Parallel workers
+
+Each R process keeps its own record, and a worker does not get the
+record of your session. So in a batch on `W` workers, each worker asks
+FFmpeg once. Your session can also ask once, before the jobs start.
+Discarding the record in your session does not reach the workers.
+
+The `tidymedia.hardware_encoders` option works in a different way. The
+package copies your value into each worker for the duration of the call,
+and then puts back the worker's own value. So a batch under your setting
+does not ask FFmpeg for an encoder list at all. Every worker gives the
+same answer as your session.
+
+## Functions that never use the record
 
 [`ffmpeg_encoders`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
 and
 [`ffmpeg_codecs`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
-are never remembered: they query FFmpeg on every call, so they always
-report the build as it is now, whether or not this function has been
-called.
+ask FFmpeg on every call. So they always show the build as it is now,
+whether or not you called this function.
 
 ## See also
 
 [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-and
+uses the remembered answer.
 [`hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the queries that use the remembered answer,
+gives the encoder name without asking FFmpeg.
 [`ffmpeg_encoders`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
-for an always-fresh encoder list, and
+always gives a fresh encoder list.
 [`set_program`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
-to point tidymedia at a different binary.
+points the package at a different FFmpeg program.
 
 Other capability functions:
 [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md),

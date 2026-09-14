@@ -48,7 +48,7 @@ to list available codecs, and
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
 a task verb built on it.
 
-Other builder functions:
+Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),
 [`ffm_concat()`](https://jmgirard.github.io/tidymedia/reference/ffm_concat.md),

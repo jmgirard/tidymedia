@@ -48,19 +48,20 @@ convert_audio_batch(
 
 - audio_stream:
 
-  The 0-based index of the audio track to take, counted *among that
-  row's input's audio streams* – `0` is the first audio track, `1` the
-  second, whatever their positions among the file's streams. `NULL`
-  (default) takes the **first** audio track. The argument applies to
-  every row lacking an `audio_stream` column; an `NA` cell in that
-  column means the same as `NULL` for that row, rather than falling back
-  to the argument. The first-track family reads `NULL` this way –
+  The audio track to take, as a number that counts from `0` among the
+  *audio tracks* of each row's input. `0` is the first audio track and
+  `1` is the second. Other streams in the file, such as video, do not
+  count. `NULL` (default) takes the **first** audio track. Without an
+  `audio_stream` column, the argument applies to every row. An `NA` cell
+  in that column means `NULL` for that row. It does not fall back to the
+  argument. The first-track family reads `NULL` as the first audio track
+  only:
   [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
   [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
   and
   [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
-  plus their `_batch` siblings. The every-track family keeps them all
-  instead:
+  and their `_batch` forms. The every-track family reads it as every
+  audio track:
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
   [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
   [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
@@ -68,8 +69,8 @@ convert_audio_batch(
   [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
   and
   [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
-  plus theirs. Naming a track the input does not have is an FFmpeg
-  error, not an R one. See
+  and their `_batch` forms. A track the input does not have gives an
+  FFmpeg error, not an R one. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
   for how this differs from `audio_input`, the input index on
   [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
@@ -131,7 +132,7 @@ the batch runner;
 [`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md)
 to stream-copy audio in batch.
 
-Other task verb functions:
+Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),

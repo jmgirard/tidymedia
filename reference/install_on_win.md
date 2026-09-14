@@ -1,10 +1,26 @@
 # Install FFmpeg on Windows
 
-Downloads an FFmpeg archive, extracts it, and updates the package's user
-config files to point to the component executable files. Because the
-call downloads a third-party build and overwrites remembered program
-locations, it asks for confirmation first and does nothing at all until
-it has it.
+`install_on_win()` downloads a Windows build of FFmpeg and unpacks it.
+Then it saves the locations of `ffmpeg`, `ffprobe` and `ffplay`, as
+[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+does. After that, the package can find these programs.
+
+By default, the call downloads the latest "essentials" build from
+gyan.dev. It unpacks the build into the `ffmpeg` folder under
+`tools::R_user_dir("tidymedia", "data")`.
+
+By default, the call asks you to confirm before it does anything. The
+question names each file it will download and the folder it will unpack
+into. It also names the saved program locations that the install can
+replace. If you say no, the call returns `FALSE` and changes nothing.
+
+This function works on Windows only. On any other system, it gives an
+error before it asks, writes or downloads anything. The error names the
+system it found. On macOS, you can install FFmpeg with
+`brew install ffmpeg`. On Linux, you can use
+`sudo apt-get install ffmpeg`. On any system,
+[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+tells the package where an installed FFmpeg is.
 
 ## Usage
 
@@ -21,125 +37,133 @@ install_on_win(
 
 - download_url:
 
-  A string indicating the location of the FFmpeg installation archive.
-  If `NULL`, will default to the latest static essentials release from
-  gyan.dev, a `.7z` archive.
+  A string with the address of the FFmpeg archive. If `NULL`, the call
+  uses the latest "essentials" build from gyan.dev, a `.7z` archive.
 
 - install_dir:
 
-  A string indicating a directory to install FFmpeg to. If `NULL`, will
-  default to the `ffmpeg` subdirectory of
-  `tools::R_user_dir("tidymedia", "data")`, the user data directory CRAN
-  policy sanctions.
+  A string with the folder to install FFmpeg into. If `NULL`, the call
+  uses the `ffmpeg` folder under
+  `tools::R_user_dir("tidymedia", "data")`. CRAN allows packages to keep
+  user data in that place.
 
 - confirm:
 
-  A logical indicating whether to ask for confirmation before
-  downloading and installing anything. Defaults to `TRUE`. The prompt
-  names the archive to be downloaded, the directory it will be unpacked
-  into, and the remembered program locations it may overwrite. Where
-  there is no one to ask, the call aborts rather than assume consent,
-  naming those same items; pass `confirm = FALSE` to install without
-  being asked.
+  `TRUE` or `FALSE`. Whether to ask before the call downloads or
+  installs anything. Defaults to `TRUE`. In a session where no one can
+  answer, `TRUE` gives an error that names the same items as the
+  question. Pass `confirm = FALSE` to install without the question.
 
 - archive_checksum:
 
-  A string giving the archive's expected SHA-256 digest as 64
-  hexadecimal characters, in either case. Defaults to `NULL`. A digest
-  supplied here is used on every source, and no digest is fetched. Where
-  it is `NULL` and `download_url` is not the package's own default,
-  nothing is verified and the call says so.
+  A string with the expected SHA-256 checksum of the archive, as 64
+  hexadecimal characters in upper or lower case. Defaults to `NULL`. If
+  you give a checksum, the call uses it for any source and downloads no
+  checksum. If it is `NULL` and `download_url` is not the default
+  source, the call checks nothing and says so.
 
 ## Value
 
-A logical indicating whether the installation was successful. `FALSE` is
-returned by a declined confirmation and by a failure to create the
-install directory. Eight other outcomes abort with a condition of their
-own rather than returning: a call made on a platform this function does
-not install for (`tidymedia_wrong_platform`), a confirmation that could
-not be asked for because the session has no one to ask
-(`tidymedia_confirmation_unavailable`), a download that did not deliver
-(`tidymedia_download_unavailable`), a published digest that could not be
-fetched or read (`tidymedia_checksum_unavailable`), a digest that did
-not match the downloaded archive (`tidymedia_checksum_mismatch`), an
-archive that could not be unpacked (`tidymedia_archive_unreadable`), a
-required program that is not at the path it would be installed to
-(`tidymedia_program_not_extracted`), and a required program the archive
-produced in a form that cannot be used (`tidymedia_program_unusable`).
-Every one of these aims to leave the install directory as the call found
-it, except the last two, which leave the files the archive did unpack –
-and `tidymedia_program_not_extracted` is back inside the rule where none
-of the archive's files are there. Removal is best-effort: on Windows a
-partly-written file cannot be deleted while the extraction library still
-holds it, and the error names what it could not remove. See Details.
+`TRUE` when the install finished. `FALSE` when you said no to the
+question, or when the call could not create the install folder. Other
+failures give an error. The section "Errors" lists the error classes the
+call gives. A wrong argument gives an error before any of these.
 
 ## Details
 
-This call installs on Windows only. On any other platform it refuses
-before it says, asks, writes, or downloads anything, and the error names
-the platform it found. Elsewhere FFmpeg comes from the system's own
-package manager – `brew install ffmpeg` on macOS,
-`sudo apt-get install ffmpeg` on Linux – and
-[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
-points tidymedia at a build that is already installed, on every
-platform.
+Before the call unpacks the archive, it checks the archive against a
+SHA-256 checksum. A checksum is a fingerprint of the file's contents.
+For the default source, the call downloads the checksum that gyan.dev
+publishes next to each build. That file has the archive's address with
+`.sha256` added. For any other source, give the checksum in
+`archive_checksum`.
 
-The archive is checked against a SHA-256 digest before anything is
-unpacked, and no program location is remembered unless the extraction
-actually produced that program. For the package's own default source the
-digest is fetched from `<download_url>.sha256`, which is what gyan.dev
-publishes beside each build; for any other source, pass
-`archive_checksum`. Because the digest travels from the same host over
-the same connection as the archive, this catches a corrupted or
-truncated download, not a compromised source.
+The published checksum comes from the same site as the archive, over the
+same connection. So the check finds a damaged or incomplete download. It
+does not find a source that someone has tampered with.
 
-Every program the extraction produced is checked before any location is
-remembered: the path has to resolve the way an executable does, and what
-is there has to be a file rather than a directory, and not be empty. The
-program itself is never run, so a build that unpacks and then cannot
-execute – the wrong architecture, say – passes this check. Where a
-required program fails it, nothing at all is registered and the error
-names each failed program and its full path; where an optional one fails
-it, the install completes and says which program it skipped.
+After the unpack, the call checks each program before it saves any
+location. The path must be one that R finds as a program. It must be a
+file, not a folder, and the file must not be empty. The call does not
+run the program. So a build for the wrong type of processor can pass
+this check.
 
-A refusal leaves the install directory as the call found it. Files a
-failed extraction wrote are removed, a directory the call created is
-removed again, and anything already in the directory is left alone –
-with one deliberate exception: a file of yours the failed extraction
-wrote over is removed with the rest of the debris, because what it holds
-after a failed extraction is nothing you put there. The error names that
-file by full path, so a refusal never reports a directory as untouched
-when it took something of yours out of it.
+The package needs `ffmpeg` and `ffprobe`. If either one fails the check,
+the call saves no location and gives an error. The error names each
+failed program and its full path. If `ffplay` is missing or fails the
+check, the install finishes. A message says that the call did not save
+`ffplay`.
 
-Removal is best-effort, and on Windows it does not always succeed. Where
-an extraction fails part-way, the library that was writing the file is
-still holding it open, and Windows will not delete a file something
-holds. Those entries are named in the error by full path, so a refusal
-on Windows can leave files behind – the error tells you which. A
-directory this call created and could not remove again is named the same
-way.
+## What a failed install leaves behind
 
-Two refusals sit outside that rule, both of them below a successful
-extraction: `tidymedia_program_not_extracted`, where a required program
-is not at the path it would be installed to, and
-`tidymedia_program_unusable`, where a file is at that path and cannot be
-used. Each says so, and the unpacked files stay where they are. What the
-extraction produced is read from the archive's own file list and from
-the install directory together, so a path the archive listed and did not
-leave behind – an unpacked program an antivirus quarantined, say – is
-refused as a program that is not there rather than as one that cannot be
-used, and the error says the extraction reported writing it. It is the
-unpacked files that put these refusals outside the rule, so where none
-of them are there the rule applies to `tidymedia_program_not_extracted`
-like any other: a directory this call created is removed again, and the
-error says so instead.
+When the call gives an error, it tries to leave the install folder as it
+found it. It removes the files that a failed unpack wrote. It removes a
+folder that the call created. It does not touch the files that were
+already in the folder, with one exception.
+
+The exception is a file of yours that the failed unpack wrote over. The
+call removes that file too, because the file no longer holds what you
+put there.
+
+On Windows, the removal can fail. After a failed unpack, the unpack
+library can still hold a file open. Windows does not delete a file that
+is open.
+
+The error names by full path the entries of the first case below that
+applies:
+
+- each unpacked file that the call could not remove
+
+- each folder that the call created and could not remove
+
+- each file of yours that the call removed
+
+Two errors come after a successful unpack:
+`tidymedia_program_not_extracted` and `tidymedia_program_unusable`.
+These errors leave the unpacked files in the folder, and they say so.
+
+The call learns which files the unpack made from the archive's own list
+and from the folder. A program that the list names but that is not in
+the folder counts as not unpacked. For example, antivirus software can
+remove a program right after the unpack. The error then says that the
+unpack reported writing that file.
+
+If none of the unpacked files are in the folder,
+`tidymedia_program_not_extracted` follows the usual rule. The call
+removes a folder that it created, and the error says so.
+
+## Errors
+
+The call gives an error of its own class in these cases:
+
+- `tidymedia_wrong_platform`: the session is not running on Windows.
+
+- `tidymedia_confirmation_unavailable`: the call must ask you to
+  confirm, but no one can answer in this session.
+
+- `tidymedia_download_unavailable`: the archive did not download, or
+  nothing readable arrived.
+
+- `tidymedia_checksum_unavailable`: the call could not download or read
+  the published checksum.
+
+- `tidymedia_checksum_mismatch`: the downloaded archive does not match
+  its checksum.
+
+- `tidymedia_archive_unreadable`: the call could not unpack the archive.
+
+- `tidymedia_program_not_extracted`: `ffmpeg` or `ffprobe` is not at the
+  path where the install would put it.
+
+- `tidymedia_program_unusable`: the archive made `ffmpeg` or `ffprobe`,
+  but the file cannot be used.
 
 ## See also
 
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
-to register an existing binary, and
+to save the location of a program you already have, and
 [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
-to check what is currently configured.
+to check where the package finds a program.
 
 Other program management functions:
 [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md),

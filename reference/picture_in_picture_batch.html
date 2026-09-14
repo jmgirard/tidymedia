@@ -108,7 +108,7 @@ values, per row. See <code><a href="picture_in_picture.html">picture_in_picture(
 
 
 <dt id="arg-audio-input">audio_input<a class="anchor" aria-label="anchor" href="#arg-audio-input"></a></dt>
-<dd><p>The 0-based index of the <em>input</em> whose audio to keep – <code>0</code> is the first file passed in, <code>1</code> the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from <code>audio_stream</code> on the single-input verbs. <code>NULL</code> (default) maps no audio at all, so the output is silent – unlike <code>audio_stream = NULL</code>, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. Applied to every row lacking an <code>audio_input</code> column; an <code>NA</code> cell in that column means the same as <code>NULL</code> for that row, dropping that output's audio. See <code><a href="audio_stream.html">audio_stream</a></code>. (default = <code>NULL</code>)</p></dd>
+<dd><p>The input file whose audio to keep, as a number that counts from <code>0</code>. <code>0</code> is the first file you pass and <code>1</code> is the second. This counts the function's inputs, not the audio tracks of one input. So it is a different index from <code>audio_stream</code> on the functions that take one input. <code>NULL</code> (default) selects no audio at all, so the output is silent. This differs from <code>audio_stream = NULL</code>, which still selects audio. An input number the call does not have gives an R error, before FFmpeg runs. Without an <code>audio_input</code> column, the argument applies to every row. An <code>NA</code> cell in that column means <code>NULL</code> for that row, so that output has no audio. See <code><a href="audio_stream.html">audio_stream</a></code>. (default = <code>NULL</code>)</p></dd>
 
 
 <dt id="arg-video-codec">video_codec<a class="anchor" aria-label="anchor" href="#arg-video-codec"></a></dt>
@@ -177,7 +177,7 @@ provenance manifest when requested via <code>...</code>). See
 batch runner; <code><a href="hardware_encoder.html">has_hardware_encoder()</a></code> for the <code>hardware</code> toggle;
 <code><a href="concatenate_videos_batch.html">concatenate_videos_batch()</a></code> and <code><a href="compare_videos_batch.html">compare_videos_batch()</a></code>,
 the other fan-in batch siblings.</p>
-<p>Other task verb functions:
+<p>Other task functions:
 <code><a href="anonymize_video.html">anonymize_video()</a></code>,
 <code><a href="anonymize_video_batch.html">anonymize_video_batch()</a></code>,
 <code><a href="compare_videos.html">compare_videos()</a></code>,

@@ -38,16 +38,16 @@ convert_audio(
 
 - audio_stream:
 
-  The 0-based index of the audio track to take, counted *among the
-  input's audio streams* – `0` is the first audio track, `1` the second,
-  whatever their positions among the file's streams. `NULL` (default)
-  takes the **first** audio track. The first-track family reads `NULL`
-  this way –
+  The audio track to take, as a number that counts from `0` among the
+  *audio tracks* of the input. `0` is the first audio track and `1` is
+  the second. Other streams in the file, such as video, do not count.
+  `NULL` (default) takes the **first** audio track. The first-track
+  family reads `NULL` this way:
   [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
   `convert_audio` and
   [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
-  plus their `_batch` siblings. The every-track family keeps them all
-  instead:
+  and their `_batch` forms. The every-track family reads it as every
+  audio track:
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
   [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
   [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
@@ -55,8 +55,8 @@ convert_audio(
   [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
   and
   [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
-  plus theirs. Naming a track the input does not have is an FFmpeg
-  error, not an R one. See
+  and their `_batch` forms. A track the input does not have gives an
+  FFmpeg error, not an R one. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
   for how this differs from `audio_input`, the input index on
   [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
@@ -103,7 +103,7 @@ to copy audio without re-encoding;
 [`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md)
 for the many-file form.
 
-Other task verb functions:
+Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),

@@ -32,7 +32,7 @@ ffm_fps(object, fps)
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
 the task verb that sets frame rate via this builder.
 
-Other builder functions:
+Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),

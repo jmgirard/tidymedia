@@ -1,8 +1,9 @@
 # Report which dependency programs tidymedia can find
 
-Looks up all four programs tidymedia knows about and returns one row for
-each: where it resolved to, and what version it reported. Nothing is
-installed, written, or changed by the call.
+`program_status()` looks for the four programs that the package uses:
+`ffmpeg`, `ffprobe`, `ffplay` and `mediainfo`. It returns a table with
+one row for each program. The row shows where the program is and which
+version it reports. The call does not install, write or change anything.
 
 ## Usage
 
@@ -12,48 +13,61 @@ program_status()
 
 ## Value
 
-A tibble with one row per program and three columns: `program`, the
-program's name; `location`, the resolved path or `NA`; and `version`,
-the version the binary reported or `NA`.
+A tibble with one row for each program and three columns:
+
+- `program`, the name of the program.
+
+- `location`, the path to the program, or `NA`.
+
+- `version`, the version that the program reported, or `NA`.
 
 ## Details
 
-A program that was never configured and is not installed gets `NA` in
-both columns rather than a warning, so the answer for four programs
-arrives as one table instead of a pile of messages. The lookup is
-[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
-and its siblings': the `PATH` first, then a location remembered by
-[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md),
-and finally a location a version of tidymedia before 0.2.0 remembered
-under `rappdirs::user_config_dir("tidymedia", "R")`.
+The call looks in the same places as
+[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md).
+First it looks on the `PATH`, then at a location saved by
+[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md).
+For locations saved by versions before 0.2.0, see the section "Locations
+saved by earlier versions" in
+[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md).
 
-A remembered location that cannot be used still warns, because there the
-`NA` would look exactly like a program you never had. Both cases name a
-file you can repair: a remembered location whose binary is gone
-(`tidymedia_location_gone`), and a config file that does not hold one
-location (`tidymedia_location_unreadable`). The unreadable case is
-raised from whichever file the lookup above reached, so it names the
-pre-0.2.0 file as readily as the current one. Either is cleared with
+A program that is not installed and has no saved location gets `NA` in
+both columns. This case gives no warning, so four missing programs give
+one table and not four warnings.
+
+A saved location that cannot be used still gives a warning. Without it,
+the `NA` would look like a program you never had. Each warning names the
+saved location or the file that holds it, so you can fix it. There are
+two cases:
+
+- `tidymedia_location_gone`: no program is at the saved location now.
+
+- `tidymedia_location_unreadable`: the file that stores the location
+  does not hold exactly one location.
+
+In both cases, the row has `NA` in both columns.
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
-or replaced with
-[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md);
-the row is `NA` in both columns either way.
+forgets the location, and
+[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+replaces it.
 
-The version is whatever the binary reports for its own version flag, so
-it is the FFmpeg build number for `ffmpeg`, `ffprobe` and `ffplay`, and
-the MediaInfo library version for `mediainfo`. A program that resolves
-but cannot be asked – because the call fails, or because
-`options(tidymedia.timeout = )` ended it – has a location and an `NA`
-version.
+The version is what the program reports about itself. For `ffmpeg`,
+`ffprobe` and `ffplay`, it is the FFmpeg build number. For `mediainfo`,
+it is the MediaInfo library version.
+
+Sometimes the call finds a program but cannot get its version. Then the
+row has a location and an `NA` version. This happens when the program
+call fails. It also happens when the time limit in
+`options(tidymedia.timeout = )` stops it.
 
 ## See also
 
 [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
-and its siblings for one program at a time,
+and the other `find_*()` functions to look up one program.
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
-to point tidymedia at a binary in a non-standard location, and
+to save the location of a program that is not on the `PATH`.
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
-to forget one it remembered.
+to forget a saved location.
 
 Other program management functions:
 [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md),

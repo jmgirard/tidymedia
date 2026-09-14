@@ -31,7 +31,7 @@ print(x, ...)
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),
 which produces the printed command.
 
-Other builder functions:
+Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),

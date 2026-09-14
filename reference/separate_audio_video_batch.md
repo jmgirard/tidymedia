@@ -89,13 +89,14 @@ separate_audio_video_batch(
 
 - audio_stream:
 
-  The 0-based index of the audio track to write to each `audiofile`,
-  counted *among that row's input's audio streams* – `0` is the first
-  audio track, `1` the second, whatever their positions among the file's
-  streams. `NULL` (default) keeps **every** audio track. The argument
-  applies to every row lacking an `audio_stream` column; an `NA` cell in
-  that column means the same as `NULL` for that row, rather than falling
-  back to the argument. The every-track family reads `NULL` this way –
+  The audio track to write to each `audiofile`, as a number that counts
+  from `0` among the *audio tracks* of each row's input. `0` is the
+  first audio track and `1` is the second. Other streams in the file,
+  such as video, do not count. `NULL` (default) keeps **every** audio
+  track. Without an `audio_stream` column, the argument applies to every
+  row. An `NA` cell in that column means `NULL` for that row. It does
+  not fall back to the argument. The every-track family reads `NULL` as
+  every audio track:
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
   [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
   [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
@@ -103,23 +104,24 @@ separate_audio_video_batch(
   [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
   and
   [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
-  plus their `_batch` siblings. The first-track family takes one track
-  only:
+  and their `_batch` forms. The first-track family reads it as the first
+  audio track only:
   [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
   [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
   and
   [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
-  plus theirs. A container that holds several audio streams (`.mka`,
-  `.m4a`) receives them all, while a single-stream container (`.aac`,
-  `.mp3`, `.wav`) makes FFmpeg fail – name a track to write one of
-  those. Count among the input's *audio* streams, not the `index` column
-  of
+  and their `_batch` forms. A container that holds several audio streams
+  (`.mka`, `.m4a`) gets them all. A container for one stream only
+  (`.aac`, `.mp3`, `.wav`) makes FFmpeg fail, so name a track to write
+  one of those. Count only the input's *audio* streams. Do not use the
+  `index` column of
   [`probe_audio`](https://jmgirard.github.io/tidymedia/reference/probe_container.md),
-  which counts every stream. Unlike the verbs that pass video through,
-  an input carrying no audio at all is an FFmpeg error here, because
-  this verb's product is the audio file. `videofile` is never affected.
-  Naming a track the input does not have is an FFmpeg error, not an R
-  one. See
+  which counts every stream. An input with no audio at all is an FFmpeg
+  error here, because this function writes an audio file. Functions that
+  write only a video file, such as
+  [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+  do not fail in that case. `videofile` is never affected. A track the
+  input does not have gives an FFmpeg error, not an R one. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
   for how this differs from `audio_input`, the input index on
   [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
@@ -220,7 +222,7 @@ for the `hardware` toggle;
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
 for the other fan-out batch verb.
 
-Other task verb functions:
+Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),

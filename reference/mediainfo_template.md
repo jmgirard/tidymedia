@@ -1,11 +1,8 @@
 # Describe media files by applying a MediaInfo template
 
-Create a tibble describing one or more media files by applying a
-MediaInfo template, which can pull multiple parameters from multiple
-sections. Two templates ship with the package (`"brief"` and
-`"extended"`); a custom template file can also be supplied. `file` may
-be a vector of several files; results are stacked with a leading `file`
-column.
+`mediainfo_template()` uses the MediaInfo program to describe media
+files, and returns a tibble. It applies a MediaInfo template, which can
+read many parameters from many sections.
 
 ## Usage
 
@@ -22,45 +19,53 @@ mediainfo_template(
 
 - file:
 
-  A character vector of one or more media-file paths.
+  A character vector of one or more media file paths.
 
 - template:
 
-  A string naming the template to apply: a built-in (`"brief"` or
-  `"extended"`) or `"custom"` to apply the file given in `templatefile`.
+  A string. Use `"brief"` or `"extended"` for a template that comes with
+  the package. Use `"custom"` to apply the file in `templatefile`.
 
 - templatefile:
 
-  Either the path to a MediaInfo template (.txt) file formatted to
-  output comma-separated values (required when `template` is `"custom"`)
-  or `NULL` (default).
+  The path to your own MediaInfo template, a `.txt` file that makes
+  MediaInfo print comma-separated values. Give it when `template` is
+  `"custom"`, and only then. The default is `NULL`.
 
 - typed:
 
-  A logical. When `TRUE` (default) numeric columns are typed and empty
-  values become `NA`; when `FALSE` columns stay strings.
+  A logical. If `TRUE` (the default), numeric columns become numbers and
+  empty values become `NA`. If `FALSE`, all columns stay strings.
 
 ## Value
 
-A tibble with one row per input file. The columns (and their
-names/order) are determined by the template; custom-template column
-names are used verbatim.
+A tibble with one row for each input file. The template sets the
+columns, their names and their order. The function keeps the column
+names of a custom template, but removes spaces at their start and end.
+
+A file that the function could not read gets a row of `NA` values. The
+function reads the other files, and then gives one warning that names
+the files it could not read. A file that reaches the time limit counts
+as not read; see
+[`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md).
 
 ## Details
 
-This **MediaInfo**-backed reader returns a **tibble**; the FFprobe
-counterpart is the `probe_*()` family.
+The package comes with two templates, `"brief"` and `"extended"`. You
+can also give your own template file. Give several files in `file` to
+get one row for each file. The first column, `file`, names the input
+file. The `probe_*()` functions read similar information with FFprobe.
 
 ## See also
 
 [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
-for a single section,
+to read one section.
 [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md)
-for a single value,
+to read a single value.
 [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
-for the FFprobe backend, and
+to read information with FFprobe.
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md)
-and friends for single scalar values.
+and the other `get_*()` functions for common single values.
 
 Other metadata functions:
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),

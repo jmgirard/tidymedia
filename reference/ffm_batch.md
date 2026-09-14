@@ -2,7 +2,7 @@
 
 Apply a pipeline-building function to every row of a jobs table and
 compile (and optionally run) the resulting FFmpeg command for each. This
-is tidymedia's batch-processing entry point: one reproducible compiled
+is the package's main batch function. It gives one reproducible compiled
 command per job, collected back into a tibble.
 
 ## Usage
@@ -45,26 +45,26 @@ ffm_batch(
 - parallel:
 
   A logical: map over jobs in parallel with furrr (`TRUE`) or
-  sequentially (`FALSE`, default). Parallelism follows the
+  sequentially (`FALSE`, default). Parallel runs follow the
   [`future`](https://future.futureverse.org/reference/plan.html) plan
-  the caller has set; with `TRUE` but the default sequential plan, jobs
-  still run one at a time and a warning is issued. Set a plan first,
-  e.g. `future::plan(future::multisession)`.
+  that you set. With `TRUE` and the default sequential plan, jobs still
+  run one at a time, and you get a warning. Set a plan first, for
+  example `future::plan(future::multisession)`.
 
 - verify:
 
   An optional output check applied to each job (only when `run = TRUE`).
-  Either a named list of expected properties (the same spec for every
-  job, e.g. `list(width = 1920)`) or a function of the job columns
-  (called
-  [`pmap`](https://purrr.tidyverse.org/reference/pmap.html)-style, like
-  `.f`) that returns such a list per job. Each job's output is passed to
-  [`verify_media`](https://jmgirard.github.io/tidymedia/reference/verify_media.md);
-  unlike
+  Give a named list of expected properties, or a function. A list, for
+  example `list(width = 1920)`, applies the same checks to every job. A
+  function takes the job columns like `.f` (called
+  [`pmap`](https://purrr.tidyverse.org/reference/pmap.html)-style) and
+  returns such a list for each job. Each job's output is passed to
+  [`verify_media`](https://jmgirard.github.io/tidymedia/reference/verify_media.md).
+  Unlike
   [`ffm_run`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md),
-  a failed check is *recorded*, not aborted. Adds a logical `verified`
-  column (all checks passed), `NA` for jobs that did not run
-  successfully.
+  a failed check is *recorded*, and does not stop the call. Adds a
+  logical `verified` column (all checks passed), `NA` for jobs that did
+  not run successfully.
 
 - progress:
 
@@ -74,9 +74,10 @@ ffm_batch(
 
 - manifest:
 
-  A logical: when `TRUE` (and `run = TRUE`), record a provenance
-  manifest (per-job command, FFmpeg/FFprobe versions, timestamp, output
-  size) and attach it to the result, readable with
+  A logical. When `TRUE` (and `run = TRUE`), the batch records a
+  provenance manifest and attaches it to the result. The manifest has
+  each job's command, the FFmpeg and FFprobe versions, a timestamp and
+  the output size. Read it with
   [`ffm_manifest`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md).
   (default = `FALSE`)
 
@@ -90,10 +91,11 @@ ffm_batch(
 
 `jobs` as a
 [tibble](https://tibble.tidyverse.org/reference/tibble-package.html)
-with an added `command` column (the compiled FFmpeg command for each
-job) and, when `run = TRUE`, a logical `success` column (plus a
-`verified` column when `verify` is supplied). When `manifest = TRUE` a
-provenance manifest is attached as an attribute; read it with
+with an added `command` column, which holds the compiled FFmpeg command
+for each job. When `run = TRUE`, it also has a logical `success` column.
+When `verify` is supplied, it also has a `verified` column. When
+`manifest = TRUE`, a provenance manifest is attached as an attribute;
+read it with
 [`ffm_manifest`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md).
 
 ## Details
@@ -101,7 +103,7 @@ provenance manifest is attached as an attribute; read it with
 Each column of `jobs` is passed by name to `.f` (as
 [`purrr::pmap()`](https://purrr.tidyverse.org/reference/pmap.html)
 does), so a job table with columns `input`, `output` and `start` calls
-`.f(input = ..., output = ..., start = ...)`. `.f` must return an ffm
+`.f(input = ..., output = ..., start = ...)`. `.f` must return a
 pipeline (see
 [`ffm_files`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md)).
 Give `.f` a `...` argument if `jobs` carries columns it does not use.
@@ -109,8 +111,13 @@ Give `.f` a `...` argument if `jobs` carries columns it does not use.
 Two jobs whose pipelines write to the same `output` path are refused
 before any job runs, under `run = FALSE` as well as `run = TRUE`. Paths
 are compared exactly as written. An output that writes no file may
-repeat: `-` (standard output), a `pipe:` URL, or an output whose last
-`-f` option is `-f null`, as `ffm_output_options("-f null")` gives.
+repeat. Such outputs are `-` (standard output), a `pipe:` URL, and an
+output whose last `-f` option is `-f null`, as
+`ffm_output_options("-f null")` gives.
+
+[`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md)
+explains how to limit how long R waits for each program in a job, and
+what happens when a program reaches the limit.
 
 ## See also
 
@@ -121,7 +128,7 @@ for the verification spec and
 [`ffm_manifest()`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md)
 for the provenance manifest.
 
-Other builder functions:
+Other pipeline functions:
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),
 [`ffm_concat()`](https://jmgirard.github.io/tidymedia/reference/ffm_concat.md),
@@ -153,7 +160,7 @@ jobs <- tibble::tibble(
   input  = c(video, video),
   output = c("a.mp3", "b.mp3")
 )
-# run = FALSE compiles one reproducible command per job without calling FFmpeg
+# run = FALSE compiles one command per job without calling FFmpeg
 ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
   ffm_files(input, output) |>
     ffm_drop("video") |>

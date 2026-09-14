@@ -1,14 +1,11 @@
 # Forget the location of a dependency program
 
-Removes the location
+`unset_program()` forgets the location that
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
-remembered for a program, so that
+saved for a program. After that,
 [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
-and its siblings go back to answering from the `PATH`. Both places a
-location can live are cleared: the file under
-`tools::R_user_dir("tidymedia", "config")` and, where one is still
-there, the file a version of tidymedia before 0.2.0 wrote under
-`rappdirs::user_config_dir("tidymedia", "R")`.
+and the other `find_*()` functions look for the program on the `PATH`
+only.
 
 ## Usage
 
@@ -20,37 +17,35 @@ unset_program(program)
 
 - program:
 
-  A string naming which program to forget the location for: one of
-  `"ffmpeg"`, `"ffprobe"`, `"ffplay"` or `"mediainfo"`. There is no
-  default: the call deletes a file, and D079's rule for this package
-  keeps a member of the set out of the default position, so a call that
-  names no program refuses rather than picking one.
+  A string naming the program to forget. One of `"ffmpeg"`, `"ffprobe"`,
+  `"ffplay"` or `"mediainfo"`. There is no default, because the call
+  deletes a file. A call that names no program gives an error.
 
 ## Value
 
-Invisibly, `TRUE` where a remembered location was removed and `FALSE`
-where there was none to remove.
+Invisibly, `TRUE` when the call removed a saved location, and `FALSE`
+when there was none to remove.
 
 ## Details
 
-Forgetting a location does not remove the program itself, and it does
-not change what is on the `PATH`. A program tidymedia found on the
-`PATH` is still found afterwards. A location remembered by a version
-before 0.2.0 is cleared as well, so it is not left behind for
-[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
-and its siblings to answer with once the current file is gone.
+The call deletes the file that holds the location. It does not ask you
+to confirm first. It does not remove the program, and it does not change
+the `PATH`. A program on the `PATH` is still found afterwards.
 
-There is nothing to confirm: deleting the remembered location is the
-whole of what the call does. Calling it for a program with nothing
-remembered warns and returns `FALSE` rather than failing – the state you
-asked for is already the state you have.
+If no location is saved for the program, the call gives a warning and
+returns `FALSE`. It does not give an error, because the program is
+already forgotten.
+
+The call also clears a location saved by a version before 0.2.0. See the
+section "Locations saved by earlier versions" in
+[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md).
 
 ## See also
 
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
-to remember a location, and
+to save a location, and
 [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)
-to see what tidymedia currently finds.
+to see where the package finds each program.
 
 Other program management functions:
 [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md),

@@ -54,7 +54,7 @@ and
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
 are the task verbs built on it.
 
-Other builder functions:
+Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),

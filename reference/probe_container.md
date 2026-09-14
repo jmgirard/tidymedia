@@ -1,13 +1,11 @@
 # Shortcut functions for probing specific information
 
-Return just the `container` tibble via `probe_container()`, just the
-`streams` tibble via `probe_streams()`, or just the video/audio stream
-rows via `probe_video()` / `probe_audio()`. Each takes **either** the
-output of
+These functions return one part of what
 [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
-(via `probe`) **or** one or more file locations (via `infile`); passing
-`infile` reprobes, so reuse a `probe` object when working with large
-files.
+returns. `probe_container()` returns the `container` tibble, and
+`probe_streams()` returns the `streams` tibble. `probe_video()` and
+`probe_audio()` return only the video rows or the audio rows of
+`streams`.
 
 ## Usage
 
@@ -25,48 +23,61 @@ probe_audio(probe = NULL, infile = NULL, typed = TRUE, parallel = FALSE)
 
 - probe:
 
-  A list object created by
+  A list made by
   [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md).
-  Must be `NULL` if `infile` is supplied.
+  Must be `NULL` if you give `infile`.
 
 - infile:
 
-  A character vector of one or more media-file locations. Must be `NULL`
-  if `probe` is supplied.
+  A character vector of one or more media files. Must be `NULL` if you
+  give `probe`.
 
 - typed:
 
-  A logical passed to
+  A logical that the function passes to
   [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
-  when `infile` is used (default `TRUE`); ignored when `probe` is
-  supplied.
+  when you give `infile`. The default is `TRUE`. The function ignores it
+  when you give `probe`.
 
 - parallel:
 
-  A logical passed to
+  A logical that the function passes to
   [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
-  when `infile` is used: probe the files in parallel with furrr (`TRUE`)
-  or one at a time (`FALSE`, the default). Ignored when `probe` is
-  supplied, since a probe object has nothing left to probe.
+  when you give `infile`. If `TRUE`, it probes the files in parallel
+  with furrr. If `FALSE` (the default), it probes them one at a time.
+  The function ignores it when you give `probe`, because nothing is left
+  to probe.
 
 ## Value
 
-A tibble containing only the requested information.
+A tibble with only the requested information. When you give `infile`, a
+file that could not be probed gives a warning, as in
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md).
 
 ## Details
 
-These **FFprobe**-backed shortcuts return **tibbles**; the **MediaInfo**
-readers (`mediainfo_*()`) and the scalar `get_*()` helpers are the
-alternatives.
+Give each function either the output of
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+in `probe`, or one or more files in `infile`. Give exactly one of the
+two, or the function gives an error. With `infile`, the function probes
+the files again. For large files, probe once with
+[`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
+and reuse the result.
+
+These functions use FFprobe and return tibbles. The MediaInfo functions,
+`mediainfo_*()`, and the `get_*()` functions are the other ways to read
+information. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as container and stream.
 
 ## See also
 
 [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
-for the full probe;
+for the full probe.
 [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
-for the MediaInfo backend;
+to read information with MediaInfo.
 [`get_width()`](https://jmgirard.github.io/tidymedia/reference/get_width.md)
-and friends for single scalar values.
+and the other `get_*()` functions for single values.
 
 Other metadata functions:
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),

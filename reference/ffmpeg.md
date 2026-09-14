@@ -31,7 +31,7 @@ for structured capability queries, and the `ffm_*` pipeline builders
 [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md))
 for a safer command layer.
 
-Other escape hatch functions:
+Other direct command functions:
 [`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md),
 [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)
 

@@ -31,7 +31,7 @@ the output file when run.
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
 the task verb that drops the video stream via this builder.
 
-Other builder functions:
+Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),

@@ -1,10 +1,9 @@
 # Query multiple parameters from a single MediaInfo section
 
-Create a tibble containing multiple parameters from a single MediaInfo
-section. To query parameters from multiple sections at once, use
+`mediainfo_query()` uses the MediaInfo program to read several
+parameters from one section, and returns a tibble. To read parameters
+from more than one section in one call, use
 [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md).
-`file` may be a vector of several files; results are stacked with a
-leading `file` column.
 
 ## Usage
 
@@ -16,49 +15,55 @@ mediainfo_query(file, section, parameters, names = parameters, typed = TRUE)
 
 - file:
 
-  A character vector of one or more media-file paths.
+  A character vector of one or more media file paths.
 
 - section:
 
-  A string indicating the MediaInfo section from which to query the
-  `parameters`.
+  A string. The name of the MediaInfo section to read `parameters` from.
 
 - parameters:
 
-  A character vector of one or more MediaInfo parameters to query from
+  A character vector of one or more MediaInfo parameters to read from
   `section`.
 
 - names:
 
-  A character vector naming the returned columns; must be the same
-  length as `parameters` (default = `parameters`). Supplied names are
-  used verbatim.
+  A character vector of column names, one for each element of
+  `parameters`. The default is `parameters`. The function keeps the
+  names as you give them, but removes spaces at their start and end.
 
 - typed:
 
-  A logical. When `TRUE` (default) numeric columns are typed and empty
-  values become `NA`; when `FALSE` columns stay strings.
+  A logical. If `TRUE` (the default), numeric columns become numbers and
+  empty values become `NA`. If `FALSE`, all columns stay strings.
 
 ## Value
 
-A tibble with one row per input file, leading with a `file` column and
-one column per requested parameter.
+A tibble with one row for each input file. The first column is `file`,
+and then there is one column for each parameter.
+
+A file that the function could not read gets a row of `NA` values. The
+function reads the other files, and then gives one warning that names
+the files it could not read. A file that reaches the time limit counts
+as not read; see
+[`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md).
 
 ## Details
 
-This **MediaInfo**-backed reader returns a **tibble**; the FFprobe
-counterpart is the `probe_*()` family.
+Give several files in `file` to get one row for each file. The first
+column, `file`, names the input file. The `probe_*()` functions read
+similar information with FFprobe.
 
 ## See also
 
 [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md)
-for a single value,
+to read a single value.
 [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
-for a whole template,
+to apply a whole template.
 [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)
-for the FFprobe backend, and
+to read information with FFprobe.
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md)
-and friends for single scalar values.
+and the other `get_*()` functions for common single values.
 
 Other metadata functions:
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),

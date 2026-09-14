@@ -55,7 +55,7 @@ which it wraps;
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
 uses it for fast copy cuts.
 
-Other builder functions:
+Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),

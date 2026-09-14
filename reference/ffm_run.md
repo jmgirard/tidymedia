@@ -83,7 +83,7 @@ for the many-file runner, and
 [`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md)
 for the `verify =` spec.
 
-Other builder functions:
+Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md),

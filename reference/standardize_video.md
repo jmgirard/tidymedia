@@ -102,11 +102,11 @@ standardize_video(
 
 - audio_stream:
 
-  The 0-based index of the audio track to carry into the output, counted
-  *among the input's audio streams* – `0` is the first audio track, `1`
-  the second, whatever their positions among the file's streams. `NULL`
-  (default) carries **every** audio track. The every-track family reads
-  `NULL` this way –
+  The audio track to carry into the output, as a number that counts from
+  `0` among the *audio tracks* of the input. `0` is the first audio
+  track and `1` is the second. Other streams in the file, such as video,
+  do not count. `NULL` (default) carries **every** audio track. The
+  every-track family reads `NULL` this way:
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
   `standardize_video`,
   [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
@@ -114,15 +114,15 @@ standardize_video(
   [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
   and
   [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
-  plus their `_batch` siblings. The first-track family takes one track
-  only:
+  and their `_batch` forms. The first-track family reads it as the first
+  audio track only:
   [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
   [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
   and
   [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
-  plus theirs. Subtitle and data streams are not carried either way.
-  Naming a track the input does not have is an FFmpeg error, not an R
-  one. See
+  and their `_batch` forms. The function does not carry subtitle or data
+  streams in either case. A track the input does not have gives an
+  FFmpeg error, not an R one. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
   for how this differs from `audio_input`, the input index on
   [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
@@ -169,7 +169,7 @@ for the `hardware` toggle;
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
 for the many-file form.
 
-Other task verb functions:
+Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),

@@ -109,15 +109,15 @@ normalize_audio(
 
 - audio_stream:
 
-  The 0-based index of the audio track to normalize, counted *among the
-  input's audio streams* – `0` is the first audio track, `1` the second,
-  whatever their positions among the file's streams. `NULL` (default)
-  normalizes the **first** audio track. The first-track family reads
-  `NULL` this way –
+  The audio track to normalize, as a number that counts from `0` among
+  the *audio tracks* of the input. `0` is the first audio track and `1`
+  is the second. Other streams in the file, such as video, do not count.
+  `NULL` (default) normalizes the **first** audio track. The first-track
+  family reads `NULL` this way:
   [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
   [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
-  and `normalize_audio`, plus their `_batch` siblings. The every-track
-  family keeps them all instead:
+  and `normalize_audio`, and their `_batch` forms. The every-track
+  family reads it as every audio track:
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
   [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
   [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
@@ -125,16 +125,16 @@ normalize_audio(
   [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
   and
   [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
-  plus theirs. This verb reads `NULL` the first-track way because the
-  two-pass analysis produces one measurement per audio track while the
-  correction takes a single set, so normalizing several tracks at once
-  would apply one track's measurements to all of them. Under
-  `two_pass = TRUE` the analysis pass measures this same track. Only the
-  named track reaches the output, and no video does – whatever the
-  container, so an output name that keeps a video extension yields a
-  video file carrying audio alone. An input with no audio at all is an
-  FFmpeg error. Naming a track the input does not have is an FFmpeg
-  error, not an R one. See
+  and their `_batch` forms. This function reads `NULL` as the first
+  track only. The two-pass analysis measures each audio track, but the
+  correction uses one set of measurements. Normalizing several tracks at
+  once would apply one track's measurements to all of them. Under
+  `two_pass = TRUE`, the analysis pass measures this same track. Only
+  the named track reaches the output, and no video does, whatever the
+  container. So an output name with a video extension gives a video file
+  that holds only audio. An input with no audio at all is an FFmpeg
+  error. A track the input does not have gives an FFmpeg error, not an R
+  one. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
   for how this differs from `audio_input`, the input index on
   [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
@@ -206,7 +206,7 @@ and
 [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
 the other verbs whose output is one audio stream.
 
-Other task verb functions:
+Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),

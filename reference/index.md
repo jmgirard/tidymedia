@@ -23,9 +23,9 @@ Set a time limit on one call, or on the rest of a function. A program
 that hangs then stops that call, not the R session.
 
 - [`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md)
-  : Bound one call's wall-clock time
+  : Set a time limit for one call
 - [`local_timeout()`](https://jmgirard.github.io/tidymedia/reference/local_timeout.md)
-  : Bound the rest of a function's wall-clock time
+  : Set a time limit for the rest of a function
 
 ## Direct commands
 
@@ -37,7 +37,7 @@ anything that tidymedia does not cover.
 - [`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md)
   : Send a command to the FFprobe program
 - [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)
-  : Run MediaInfo CLI
+  : Run a MediaInfo command
 
 ## Pipeline functions
 
@@ -192,7 +192,7 @@ Read container and stream metadata into tibbles.
 - [`get_height()`](https://jmgirard.github.io/tidymedia/reference/get_height.md)
   : Get the video height of a media file
 - [`get_sample_rate()`](https://jmgirard.github.io/tidymedia/reference/get_sample_rate.md)
-  : Get the audio sampling rate of a media file
+  : Get the audio sample rate of a media file
 
 ## FFmpeg capabilities
 

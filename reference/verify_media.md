@@ -2,10 +2,10 @@
 
 Probe a media file and check its structural metadata against a set of
 expectations, returning a tidy pass/fail tibble with one row per checked
-property. This turns "the command is reproducible" into "the *result* is
-what I asked for": use it after an encode to confirm the output really
-has the duration, dimensions, codecs, and so on that the pipeline was
-meant to produce.
+property. A reproducible command tells you what ran. This function tells
+you whether the *result* is what you asked for. Use it after a
+conversion to confirm that the output has the duration, dimensions,
+codecs and other properties the pipeline was meant to produce.
 
 ## Usage
 
@@ -63,6 +63,10 @@ with one row per checked property and columns `file`, `check`,
 
 ## Details
 
+The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, stream and keyframe.
+
 Checks are structural (drawn from FFprobe metadata), not perceptual:
 this does not measure visual or audio quality. The named arguments cover
 the most common properties; pass any other FFprobe field by name through
@@ -70,12 +74,12 @@ the most common properties; pass any other FFprobe field by name through
 names are resolved against the probe columns in the order container,
 then video stream, then audio stream, and the first match wins.
 
-Numeric checks pass when `abs(actual - expected) <= tolerance`; with the
-default `tolerance` of `0.1` this means integer properties (width,
-height, sample rate) must match exactly while `duration` is allowed a
-little slack (e.g. for keyframe-snapped cuts). String checks (the
-codecs) must match exactly. A property whose stream or column is absent
-yields an `NA` actual value and a failing check.
+Numeric checks pass when `abs(actual - expected) <= tolerance`. With the
+default `tolerance` of `0.1`, whole-number properties (width, height,
+sample rate) must match exactly. The `duration` check allows a small
+difference, for example for cuts that snap to a keyframe. String checks
+(the codecs) must match exactly. A property whose stream or column is
+absent yields an `NA` actual value and a failing check.
 
 ## See also
 

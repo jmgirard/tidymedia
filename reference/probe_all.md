@@ -1,9 +1,8 @@
 # Look up information about media files using FFprobe
 
-Probe one or more media files and return their container- and
-stream-level metadata as tibbles. `infile` may be a vector of several
-files: the results are stacked and keyed by a leading `file` column, so
-the output is ready for `dplyr` joins and filters over a whole batch.
+`probe_all()` uses the FFprobe program to read information about media
+files. It returns two tibbles. One describes each file as a whole, and
+one describes each stream in the files.
 
 ## Usage
 
@@ -15,49 +14,61 @@ probe_all(infile, typed = TRUE, parallel = FALSE)
 
 - infile:
 
-  A character vector of one or more media-file locations (file paths or
-  web links) to probe.
+  A character vector of one or more media files to probe, as file paths
+  or web links.
 
 - typed:
 
-  A logical. When `TRUE` (default) numeric columns are converted to
-  integers/doubles and FFprobe's `"N/A"` becomes `NA`; fractions,
-  ratios, hex identifiers, and text stay as strings. When `FALSE` every
-  value is returned as an unconverted string.
+  A logical. If `TRUE` (the default), numeric columns become integers or
+  doubles, and FFprobe's `"N/A"` becomes `NA`. Fractions, ratios, hex
+  identifiers and text stay as strings. If `FALSE`, every value stays a
+  string.
 
 - parallel:
 
-  A logical: probe the files in parallel with furrr (`TRUE`) or one at a
-  time (`FALSE`, the default). The parallel path honors the active
-  [`future::plan()`](https://future.futureverse.org/reference/plan.html)
-  and warns when that plan is sequential, since it would then give no
-  speedup. Output is identical either way, rows included and in the same
-  order. Requires the optional furrr package, which is checked for only
-  when `parallel` is `TRUE`.
+  A logical. If `TRUE`, the function probes the files in parallel with
+  furrr. If `FALSE` (the default), it probes them one at a time. A
+  parallel run uses the active
+  [`future::plan()`](https://future.futureverse.org/reference/plan.html).
+  It warns when that plan is sequential, because the run is then no
+  faster. The output is the same either way, with the same rows in the
+  same order. `parallel = TRUE` needs the furrr package, and only then
+  does the function check for it.
 
 ## Value
 
-A list of two tibbles: `container` (one row per input file) and
-`streams` (one row per stream, or a single `NA` row for a file with no
-readable streams). Both lead with a `file` column identifying the input.
-Files that cannot be probed yield an all-`NA` row and a warning rather
-than aborting the call.
+A list of two tibbles. `container` has one row for each input file.
+`streams` has one row for each stream. Both tibbles start with a `file`
+column that names the input file. A file with no readable streams gets
+one row in `streams`, with `NA` in every other column.
+
+The function does not stop at a file that it could not probe. That file
+gets a row of `NA` values in both tibbles, and the function gives a
+warning. A file that reaches the time limit counts as not probed; see
+[`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md).
 
 ## Details
 
-This is tidymedia's **FFprobe** metadata reader, returning **tibbles**
-(one row per file or per stream) — distinct from the **MediaInfo**
-readers (`mediainfo_*()`, which return tibbles or values) and the scalar
-`get_*()` helpers (which return a single value per file).
+Give several files in `infile` to read them all in one call. The
+function stacks the rows, and the first column, `file`, names the input
+file. So you can join and filter the results for a whole batch with
+`dplyr`.
+
+The MediaInfo functions, `mediainfo_*()`, return tibbles or values. The
+`get_*()` functions return one value for each file.
+
+The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as container and stream.
 
 ## See also
 
 [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md)
 and
 [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
-for the MediaInfo backend, and
+to read information with MediaInfo.
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md)
-and friends for single scalar values.
+and the other `get_*()` functions for single values.
 
 Other metadata functions:
 [`get_duration()`](https://jmgirard.github.io/tidymedia/reference/get_duration.md),

@@ -55,15 +55,16 @@ picture_in_picture_batch(
 
 - audio_input:
 
-  The 0-based index of the *input* whose audio to keep – `0` is the
-  first file passed in, `1` the second. This counts the verb's inputs,
-  not one input's audio streams, so it is a different index from
-  `audio_stream` on the single-input verbs. `NULL` (default) maps no
-  audio at all, so the output is silent – unlike `audio_stream = NULL`,
-  which always maps something. Naming an input the call does not have is
-  an R error, raised before FFmpeg runs. Applied to every row lacking an
-  `audio_input` column; an `NA` cell in that column means the same as
-  `NULL` for that row, dropping that output's audio. See
+  The input file whose audio to keep, as a number that counts from `0`.
+  `0` is the first file you pass and `1` is the second. This counts the
+  function's inputs, not the audio tracks of one input. So it is a
+  different index from `audio_stream` on the functions that take one
+  input. `NULL` (default) selects no audio at all, so the output is
+  silent. This differs from `audio_stream = NULL`, which still selects
+  audio. An input number the call does not have gives an R error, before
+  FFmpeg runs. Without an `audio_input` column, the argument applies to
+  every row. An `NA` cell in that column means `NULL` for that row, so
+  that output has no audio. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md).
   (default = `NULL`)
 
@@ -142,7 +143,7 @@ and
 [`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md),
 the other fan-in batch siblings.
 
-Other task verb functions:
+Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),

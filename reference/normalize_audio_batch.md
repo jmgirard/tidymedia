@@ -194,16 +194,16 @@ normalize_audio_batch(
 The [tibble](https://tibble.tidyverse.org/reference/tibble-package.html)
 returned by
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-`jobs` with an added `command` column (and, when `output` was derived,
-the resolved `output` column; when `run = TRUE`, a `success` column,
-plus any columns the forwarded arguments add, e.g. `verified`). Under
-`two_pass = TRUE` the result also carries the five measured columns
-(`measured_I` etc.) and a logical `silent` column, and the `command`
-column holds the linear correction commands (`NA` for silent rows, which
-carry `NA` measurements and are not normalized). The two-pass result's
-schema is independent of how many rows are silent: the opt-in `verified`
-column (under `verify`) and provenance manifest (under `manifest`, read
-with
+`jobs` with an added `command` column. When `output` was derived, it
+also has the resolved `output` column. When `run = TRUE`, it has a
+`success` column, plus any columns the forwarded arguments add, such as
+`verified`. Under `two_pass = TRUE` the result also carries the five
+measured columns (`measured_I` etc.) and a logical `silent` column, and
+the `command` column holds the linear correction commands (`NA` for
+silent rows, which carry `NA` measurements and are not normalized). The
+two-pass result's schema is independent of how many rows are silent: the
+opt-in `verified` column (under `verify`) and provenance manifest (under
+`manifest`, read with
 [`ffm_manifest`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md))
 are present whenever requested, even when *every* row is silent – silent
 rows simply carry `NA` for those outputs.
@@ -215,19 +215,19 @@ tracks the output will not, the verb warns **once** for the whole batch,
 naming every affected row. Naming a track silences it – the
 `audio_stream` argument, or an `audio_stream` cell on every row – as
 does `suppressWarnings(classes = "tidymedia_dropped_audio")`. The check
-is **best-effort** and costs **one FFprobe call per distinct input** it
-has to probe, so a repeated input is probed once and a row that names a
-track is not probed at all: it is emitted when FFprobe is available and
-the input can be probed, and skipped silently otherwise. Those probes
-run **serially at the front door**, before the fan-out starts, so
-`parallel` does not reach them; a sweep long enough to look like a hang
-reports its progress. The check never runs under `run = FALSE`, never
-changes any compiled command, and is skipped entirely when every row
-names a track. Under `two_pass = TRUE` it lands *before* Phase 1, so it
-arrives while adding `audio_stream` can still save the analysis pass.
+costs **one FFprobe call per distinct input** it has to probe. A
+repeated input is probed once, and a row that names a track is not
+probed at all. The warning is given when FFprobe is available and the
+input can be probed. Otherwise the check is skipped silently. Those
+probes run **one at a time, before any row starts**, so `parallel` does
+not reach them. A sweep long enough to look like a hang reports its
+progress. The check never runs under `run = FALSE`, never changes any
+compiled command, and is skipped entirely when every row names a track.
+Under `two_pass = TRUE` it lands *before* Phase 1, so it arrives while
+adding `audio_stream` can still save the analysis pass.
 
-Switch the check off – and skip the whole sweep – with
-`options(tidymedia.check_tracks = FALSE)` for the session, or
+To switch the check off and skip the whole sweep, use
+`options(tidymedia.check_tracks = FALSE)` for the session. Use
 `withr::local_options(tidymedia.check_tracks = FALSE)` for the rest of
 one function.
 

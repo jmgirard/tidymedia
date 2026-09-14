@@ -100,24 +100,11 @@ video, AAC audio). For per-row codecs use a verb that exposes them, such as
 (default, software libx264), <code>"nvenc"</code> for NVIDIA GPU H.264
 encoding, or <code>"videotoolbox"</code> for Apple GPU H.264 encoding.
 Batch-wide (not a per-row column). See <code><a href="hardware_encoder.html">has_hardware_encoder</a></code>.
-Resolving a hardware backend asks this FFmpeg build which encoders it has,
-so the first such call that re-encodes the video runs the binary
-while the command is built, even under <code>run = FALSE</code>. The answer is
-remembered for the rest of the R session; see
-<code><a href="refresh_ffmpeg_capabilities.html">refresh_ffmpeg_capabilities</a></code> to discard it.
-Availability is checked at this verb's own front door, before any row
-runs, so an unavailable encoder aborts naming this function rather than
-the internal fan-out it would otherwise be reported against.</p></dd>
+Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under <code>run = FALSE</code>. The answer is remembered for the rest of the R session. See <code><a href="refresh_ffmpeg_capabilities.html">refresh_ffmpeg_capabilities</a></code> to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.</p></dd>
 
 
 <dt id="arg-fallback">fallback<a class="anchor" aria-label="anchor" href="#arg-fallback"></a></dt>
-<dd><p>A logical: when a non-<code>"none"</code> <code>hardware</code> is
-requested but its encoder is unavailable, re-encode with software
-libx264 and a message (<code>TRUE</code>) instead of aborting (<code>FALSE</code>,
-default).
-A <code>video_codec</code> in a family that backend has no encoder for is a
-wrong argument rather than an absent encoder, so it aborts whatever
-<code>fallback</code> says.</p></dd>
+<dd><p>A logical. When a <code>hardware</code> other than <code>"none"</code> is requested but its encoder is unavailable, <code>TRUE</code> re-encodes with software libx264 and a message. <code>FALSE</code> (default) aborts instead. A <code>video_codec</code> in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever <code>fallback</code> says.</p></dd>
 
 
 <dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>
@@ -130,8 +117,8 @@ or only compile them for inspection (<code>FALSE</code>).</p></dd>
 
 
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
-<dd><p>A logical: map over jobs in parallel with <span class="pkg">furrr</span>
-(<code>TRUE</code>) or sequentially (<code>FALSE</code>, default). See
+<dd><p>A logical: process the jobs in parallel with <span class="pkg">furrr</span>
+(<code>TRUE</code>) or one at a time (<code>FALSE</code>, default). See
 <code><a href="ffm_batch.html">ffm_batch</a></code> for the <span class="pkg">future</span> plan requirement.</p></dd>
 
 
@@ -142,10 +129,7 @@ or only compile them for inspection (<code>FALSE</code>).</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The <code>jobs</code> tibble with an added <code>command</code> column and, when
-<code>run = TRUE</code>, a <code>success</code> column (plus <code>verified</code> /
-provenance manifest when requested via <code>...</code>). See
-<code><a href="ffm_batch.html">ffm_batch</a></code>.</p>
+    <p>The <code>jobs</code> tibble with an added <code>command</code> column. When <code>run = TRUE</code>, it also has a <code>success</code> column, plus <code>verified</code> or a provenance manifest, each when requested through <code>...</code>. See <code><a href="ffm_batch.html">ffm_batch</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

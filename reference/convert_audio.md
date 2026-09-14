@@ -78,17 +78,17 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 When `infile` carries more than one audio track, `audio_stream` names
 which one to take; with no selector the **first** one is taken.
 
-When no `audio_stream` is named and the input turns out to carry tracks
-the output will not, the verb warns. That check is **best-effort** and
-costs **one FFprobe call per distinct input** – one, here, since this
-verb takes a single `infile`: it is emitted when FFprobe is available
-and the input can be probed, and is skipped silently otherwise. It never
-runs under `run = FALSE`, and never changes the compiled command.
+When no `audio_stream` is named and the input has tracks that the output
+will not carry, the function warns. The check costs **one FFprobe call
+per distinct input**, which is one call here, because this function
+takes a single `infile`. The warning is given when FFprobe is available
+and the input can be probed. Otherwise the check is skipped silently. It
+never runs under `run = FALSE`, and never changes the compiled command.
 Suppress it by naming a track with `audio_stream`, or by class with
 `suppressWarnings(classes = "tidymedia_dropped_audio")`.
 
-Switch the check off – and skip its FFprobe call – with
-`options(tidymedia.check_tracks = FALSE)` for the session, or
+To switch the check off and skip its FFprobe call, use
+`options(tidymedia.check_tracks = FALSE)` for the session. Use
 `withr::local_options(tidymedia.check_tracks = FALSE)` for the rest of
 one function.
 

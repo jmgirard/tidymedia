@@ -89,9 +89,7 @@ one reproducible compiled command per input.</p>
 the destination; when absent, one is derived per row by appending
 <code>_standardized</code> to each input's basename, keeping the input's
 extension (e.g. <code>clip.mkv</code> becomes <code>clip_standardized.mkv</code>).
-Two rows naming the same output path are refused before any row runs:
-a path repeated in the <code>output</code> column, or a repeated <code>input</code>
-when there is no <code>output</code> column.
+Two rows naming the same output path are refused before any row runs. That is a path repeated in the <code>output</code> column, or a repeated <code>input</code> when there is no <code>output</code> column.
 Each of the six standardization knobs — <code>width</code>, <code>height</code>,
 <code>fps</code>, <code>video_codec</code>, <code>audio_codec</code>, <code>pixel_format</code> —
 may also appear as a
@@ -124,11 +122,8 @@ leave the frame rate unchanged)</p></dd>
 <dt id="arg-video-codec">video_codec<a class="anchor" aria-label="anchor" href="#arg-video-codec"></a></dt>
 <dd><p>A string naming the video codec applied to every row,
 unless <code>jobs</code> carries a <code>video_codec</code> column, in which case
-<code>NA</code> in a cell leaves that row's codec unset. Default
-<code>"libx264"</code>; <code>NULL</code> emits no <code>-codec:v</code> and lets the output
-container's default encoder decide (for a <code>.webm</code> output, pass
-<code>audio_codec = NULL</code> too — the default <code>"copy"</code> would otherwise
-carry a codec WebM cannot hold).</p></dd>
+<code>NA</code> in a cell leaves that row's codec unset.
+The default is <code>"libx264"</code>. <code>NULL</code> emits no <code>-codec:v</code> and lets the output container's default encoder decide. For a <code>.webm</code> output, pass <code>audio_codec = NULL</code> too, because the default <code>"copy"</code> would otherwise carry a codec WebM cannot hold.</p></dd>
 
 
 <dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>
@@ -152,24 +147,11 @@ unless <code>jobs</code> carries a <code>pixel_format</code> column.
 AV1), or <code>"videotoolbox"</code> for Apple GPU encoding (H.264 and
 HEVC). Batch-wide (not a per-row column). See
 <code><a href="standardize_video.html">standardize_video</a></code> and <code><a href="hardware_encoder.html">has_hardware_encoder</a></code>.
-Resolving a hardware backend asks this FFmpeg build which encoders it has,
-so the first such call that re-encodes the video runs the binary
-while the command is built, even under <code>run = FALSE</code>. The answer is
-remembered for the rest of the R session; see
-<code><a href="refresh_ffmpeg_capabilities.html">refresh_ffmpeg_capabilities</a></code> to discard it.
-Availability is checked at this verb's own front door, before any row
-runs, so an unavailable encoder aborts naming this function rather than
-the internal fan-out it would otherwise be reported against.</p></dd>
+Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under <code>run = FALSE</code>. The answer is remembered for the rest of the R session. See <code><a href="refresh_ffmpeg_capabilities.html">refresh_ffmpeg_capabilities</a></code> to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.</p></dd>
 
 
 <dt id="arg-fallback">fallback<a class="anchor" aria-label="anchor" href="#arg-fallback"></a></dt>
-<dd><p>A logical: when a non-<code>"none"</code> <code>hardware</code> is
-requested but its encoder is unavailable, re-encode with the software
-<code>video_codec</code> and a message (<code>TRUE</code>) instead of aborting
-(<code>FALSE</code>, default).
-A <code>video_codec</code> in a family that backend has no encoder for is a
-wrong argument rather than an absent encoder, so it aborts whatever
-<code>fallback</code> says.</p></dd>
+<dd><p>A logical. When a <code>hardware</code> other than <code>"none"</code> is requested but its encoder is unavailable, <code>TRUE</code> re-encodes with the software <code>video_codec</code> and a message. <code>FALSE</code> (default) aborts instead. A <code>video_codec</code> in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever <code>fallback</code> says.</p></dd>
 
 
 <dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>
@@ -197,11 +179,7 @@ time and warns. Set a plan first, e.g.
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The <a href="https://tibble.tidyverse.org/reference/tibble-package.html" class="external-link">tibble</a> returned by
-<code><a href="ffm_batch.html">ffm_batch</a></code>: <code>jobs</code> with an added <code>command</code> column
-(and, when <code>output</code> was derived, the resolved <code>output</code> column;
-when <code>run = TRUE</code>, a <code>success</code> column, plus any columns the
-forwarded arguments add, e.g. <code>verified</code>).</p>
+    <p>The <a href="https://tibble.tidyverse.org/reference/tibble-package.html" class="external-link">tibble</a> returned by <code><a href="ffm_batch.html">ffm_batch</a></code>: <code>jobs</code> with an added <code>command</code> column. When <code>output</code> was derived, it also has the resolved <code>output</code> column. When <code>run = TRUE</code>, it has a <code>success</code> column, plus any columns the forwarded arguments add, such as <code>verified</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

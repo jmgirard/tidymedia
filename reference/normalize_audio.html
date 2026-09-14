@@ -199,23 +199,16 @@ rate.</p>
 tracks the output will not, the verb warns – the same warning
 <code><a href="extract_audio.html">extract_audio</a></code> and <code><a href="convert_audio.html">convert_audio</a></code> emit. Naming a
 track with <code>audio_stream</code> silences it, as does
-<code>suppressWarnings(classes = "tidymedia_dropped_audio")</code>. The check is
-<strong>best-effort</strong> and costs <strong>one FFprobe call per distinct input</strong>
-– one, here, since this verb takes a single <code>infile</code>: it is emitted
-when FFprobe is available and the input can be probed, and skipped silently
-otherwise. It never runs under <code>run = FALSE</code>, and never changes the
-compiled command. Under <code>two_pass = TRUE</code> it lands <em>before</em> the
-analysis pass, so it arrives while adding <code>audio_stream</code> can still save
-that pass.</p>
-<p>Switch the check off – and skip its FFprobe call – with
-<code>options(tidymedia.check_tracks = FALSE)</code> for the session, or
-<code>withr::local_options(tidymedia.check_tracks = FALSE)</code> for the rest of
-one function.</p>
+<code>suppressWarnings(classes = "tidymedia_dropped_audio")</code>.
+The check costs <strong>one FFprobe call per distinct input</strong>, which is one call here, because this function takes a single <code>infile</code>. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. It never runs under <code>run = FALSE</code>,
+and never changes the compiled command. Under <code>two_pass = TRUE</code> it lands
+<em>before</em> the analysis pass, so it arrives while adding
+<code>audio_stream</code> can still save that pass.</p>
+<p>To switch the check off and skip its FFprobe call, use <code>options(tidymedia.check_tracks = FALSE)</code> for the session. Use <code>withr::local_options(tidymedia.check_tracks = FALSE)</code> for the rest of one function.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>EBU Recommendation R 128 (2014), <em>Loudness normalisation and permitted
-maximum level of audio signals</em>; ITU-R BS.1770-4.</p>
+    <p>EBU Recommendation R 128 (2014), <em>Loudness normalisation and permitted maximum level of audio signals</em>; ITU-R BS.1770-4.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -35,8 +35,8 @@ concatenate_videos_batch(jobs, run = TRUE, parallel = FALSE, ...)
 
 - parallel:
 
-  A logical: map over jobs in parallel with furrr (`TRUE`) or
-  sequentially (`FALSE`, default). See
+  A logical: process the jobs in parallel with furrr (`TRUE`) or one at
+  a time (`FALSE`, default). See
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
   for the future plan requirement.
 
@@ -48,9 +48,9 @@ concatenate_videos_batch(jobs, run = TRUE, parallel = FALSE, ...)
 
 ## Value
 
-The `jobs` tibble with an added `command` column and, when `run = TRUE`,
-a `success` column (plus `verified` / provenance manifest when requested
-via `...`). See
+The `jobs` tibble with an added `command` column. When `run = TRUE`, it
+also has a `success` column, plus `verified` or a provenance manifest,
+each when requested through `...`. See
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
 
 ## See also
@@ -104,5 +104,5 @@ concatenate_videos_batch(jobs, run = FALSE)
 #> # A tibble: 1 × 3
 #>   inputs    output     command                                                  
 #>   <list>    <chr>      <chr>                                                    
-#> 1 <chr [2]> joined.mp4 "-y -f concat -safe 0 -i \"/tmp/RtmpDBVju4/ffm-concat1f0…
+#> 1 <chr [2]> joined.mp4 "-y -f concat -safe 0 -i \"/tmp/RtmpuGnqZP/ffm-concat1f1…
 ```

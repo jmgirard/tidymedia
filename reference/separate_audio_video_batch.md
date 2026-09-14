@@ -75,17 +75,17 @@ separate_audio_video_batch(
   resolves to `"copy"` — including the default — so a jobs table mixing
   copied and re-encoded video must be split into separate calls.
   Resolving a hardware backend asks this FFmpeg build which encoders it
-  has, so the first such call that re-encodes the video runs the binary
+  has. So the first such call that re-encodes the video runs FFmpeg
   while the command is built, even under `run = FALSE`. The answer is
-  remembered for the rest of the R session; see
+  remembered for the rest of the R session. See
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
-  to discard it. Availability is checked at this verb's own front door,
-  before any row runs, so an unavailable encoder aborts naming this
-  function rather than the internal fan-out it would otherwise be
-  reported against. A call that also contradicts itself — asking for GPU
-  encoding alongside a stream copy — is refused for the contradiction
-  first, whether or not this machine has the encoder. The stream-copy
-  conflict above is caught first, so such a call aborts without probing.
+  to discard it. This function checks that the encoder is available
+  before any row runs. So an unavailable encoder aborts naming this
+  function, not the internal step that runs the rows. A call can also
+  contradict itself by asking for GPU encoding alongside a stream copy.
+  Such a call is refused for the contradiction first, whether or not
+  this machine has the encoder. The stream-copy conflict above is caught
+  first, so such a call aborts without probing.
 
 - audio_stream:
 
@@ -136,8 +136,8 @@ separate_audio_video_batch(
 
 - parallel:
 
-  A logical: map over jobs in parallel with furrr (`TRUE`) or
-  sequentially (`FALSE`, default). See
+  A logical: process the jobs in parallel with furrr (`TRUE`) or one at
+  a time (`FALSE`, default). See
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
   for the future plan requirement.
 

@@ -52,22 +52,21 @@ format_for_web_batch(
   for Apple GPU H.264 encoding. Batch-wide (not a per-row column). See
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md).
   Resolving a hardware backend asks this FFmpeg build which encoders it
-  has, so the first such call that re-encodes the video runs the binary
+  has. So the first such call that re-encodes the video runs FFmpeg
   while the command is built, even under `run = FALSE`. The answer is
-  remembered for the rest of the R session; see
+  remembered for the rest of the R session. See
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
-  to discard it. Availability is checked at this verb's own front door,
-  before any row runs, so an unavailable encoder aborts naming this
-  function rather than the internal fan-out it would otherwise be
-  reported against.
+  to discard it. This function checks that the encoder is available
+  before any row runs. So an unavailable encoder aborts naming this
+  function, not the internal step that runs the rows.
 
 - fallback:
 
-  A logical: when a non-`"none"` `hardware` is requested but its encoder
-  is unavailable, re-encode with software libx264 and a message (`TRUE`)
-  instead of aborting (`FALSE`, default). A `video_codec` in a family
-  that backend has no encoder for is a wrong argument rather than an
-  absent encoder, so it aborts whatever `fallback` says.
+  A logical. When a `hardware` other than `"none"` is requested but its
+  encoder is unavailable, `TRUE` re-encodes with software libx264 and a
+  message. `FALSE` (default) aborts instead. A `video_codec` in a family
+  that the backend has no encoder for is a wrong argument, not an absent
+  encoder. So it aborts whatever `fallback` says.
 
 - audio_stream:
 
@@ -109,8 +108,8 @@ format_for_web_batch(
 
 - parallel:
 
-  A logical: map over jobs in parallel with furrr (`TRUE`) or
-  sequentially (`FALSE`, default). See
+  A logical: process the jobs in parallel with furrr (`TRUE`) or one at
+  a time (`FALSE`, default). See
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
   for the future plan requirement.
 
@@ -122,9 +121,9 @@ format_for_web_batch(
 
 ## Value
 
-The `jobs` tibble with an added `command` column and, when `run = TRUE`,
-a `success` column (plus `verified` / provenance manifest when requested
-via `...`). See
+The `jobs` tibble with an added `command` column. When `run = TRUE`, it
+also has a `success` column, plus `verified` or a provenance manifest,
+each when requested through `...`. See
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
 
 ## See also

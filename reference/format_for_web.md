@@ -36,19 +36,19 @@ format_for_web(
   `fallback = TRUE`. See
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md).
   Resolving a hardware backend asks this FFmpeg build which encoders it
-  has, so the first such call that re-encodes the video runs the binary
+  has. So the first such call that re-encodes the video runs FFmpeg
   while the command is built, even under `run = FALSE`. The answer is
-  remembered for the rest of the R session; see
+  remembered for the rest of the R session. See
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
   to discard it.
 
 - fallback:
 
-  A logical: when a non-`"none"` `hardware` is requested but its encoder
-  is unavailable, re-encode with software libx264 and a message (`TRUE`)
-  instead of aborting (`FALSE`, default). A `video_codec` in a family
-  that backend has no encoder for is a wrong argument rather than an
-  absent encoder, so it aborts whatever `fallback` says.
+  A logical. When a `hardware` other than `"none"` is requested but its
+  encoder is unavailable, `TRUE` re-encodes with software libx264 and a
+  message. `FALSE` (default) aborts instead. A `video_codec` in a family
+  that the backend has no encoder for is a wrong argument, not an absent
+  encoder. So it aborts whatever `fallback` says.
 
 - audio_stream:
 

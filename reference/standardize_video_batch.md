@@ -38,15 +38,15 @@ standardize_video_batch(
   absent, one is derived per row by appending `_standardized` to each
   input's basename, keeping the input's extension (e.g. `clip.mkv`
   becomes `clip_standardized.mkv`). Two rows naming the same output path
-  are refused before any row runs: a path repeated in the `output`
-  column, or a repeated `input` when there is no `output` column. Each
-  of the six standardization knobs — `width`, `height`, `fps`,
-  `video_codec`, `audio_codec`, `pixel_format` — may also appear as a
-  column to override the corresponding argument on a per-row basis; rows
-  (or knobs) that omit the column fall back to the argument's value. In
-  either codec column, `NA` leaves that row's codec unset (the column
-  form of `video_codec = NULL` / `audio_codec = NULL`); in a `width`,
-  `height`, `fps` or `pixel_format` column it is an error.
+  are refused before any row runs. That is a path repeated in the
+  `output` column, or a repeated `input` when there is no `output`
+  column. Each of the six standardization knobs — `width`, `height`,
+  `fps`, `video_codec`, `audio_codec`, `pixel_format` — may also appear
+  as a column to override the corresponding argument on a per-row basis;
+  rows (or knobs) that omit the column fall back to the argument's
+  value. In either codec column, `NA` leaves that row's codec unset (the
+  column form of `video_codec = NULL` / `audio_codec = NULL`); in a
+  `width`, `height`, `fps` or `pixel_format` column it is an error.
   `pixel_format` has no unset state to express; `width`, `height` and
   `fps` do accept `NULL` as arguments, but their columns have no `NA`
   spelling for it. An `audio_stream` column overrides the `audio_stream`
@@ -71,10 +71,10 @@ standardize_video_batch(
 
   A string naming the video codec applied to every row, unless `jobs`
   carries a `video_codec` column, in which case `NA` in a cell leaves
-  that row's codec unset. Default `"libx264"`; `NULL` emits no
-  `-codec:v` and lets the output container's default encoder decide (for
-  a `.webm` output, pass `audio_codec = NULL` too — the default `"copy"`
-  would otherwise carry a codec WebM cannot hold).
+  that row's codec unset. The default is `"libx264"`. `NULL` emits no
+  `-codec:v` and lets the output container's default encoder decide. For
+  a `.webm` output, pass `audio_codec = NULL` too, because the default
+  `"copy"` would otherwise carry a codec WebM cannot hold.
 
 - audio_codec:
 
@@ -99,22 +99,21 @@ standardize_video_batch(
   and
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md).
   Resolving a hardware backend asks this FFmpeg build which encoders it
-  has, so the first such call that re-encodes the video runs the binary
+  has. So the first such call that re-encodes the video runs FFmpeg
   while the command is built, even under `run = FALSE`. The answer is
-  remembered for the rest of the R session; see
+  remembered for the rest of the R session. See
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
-  to discard it. Availability is checked at this verb's own front door,
-  before any row runs, so an unavailable encoder aborts naming this
-  function rather than the internal fan-out it would otherwise be
-  reported against.
+  to discard it. This function checks that the encoder is available
+  before any row runs. So an unavailable encoder aborts naming this
+  function, not the internal step that runs the rows.
 
 - fallback:
 
-  A logical: when a non-`"none"` `hardware` is requested but its encoder
-  is unavailable, re-encode with the software `video_codec` and a
-  message (`TRUE`) instead of aborting (`FALSE`, default). A
-  `video_codec` in a family that backend has no encoder for is a wrong
-  argument rather than an absent encoder, so it aborts whatever
+  A logical. When a `hardware` other than `"none"` is requested but its
+  encoder is unavailable, `TRUE` re-encodes with the software
+  `video_codec` and a message. `FALSE` (default) aborts instead. A
+  `video_codec` in a family that the backend has no encoder for is a
+  wrong argument, not an absent encoder. So it aborts whatever
   `fallback` says.
 
 - audio_stream:
@@ -176,9 +175,10 @@ standardize_video_batch(
 The [tibble](https://tibble.tidyverse.org/reference/tibble-package.html)
 returned by
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-`jobs` with an added `command` column (and, when `output` was derived,
-the resolved `output` column; when `run = TRUE`, a `success` column,
-plus any columns the forwarded arguments add, e.g. `verified`).
+`jobs` with an added `command` column. When `output` was derived, it
+also has the resolved `output` column. When `run = TRUE`, it has a
+`success` column, plus any columns the forwarded arguments add, such as
+`verified`.
 
 ## See also
 

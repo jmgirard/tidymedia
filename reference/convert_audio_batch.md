@@ -85,8 +85,8 @@ convert_audio_batch(
 
 - parallel:
 
-  A logical: map over jobs in parallel with furrr (`TRUE`) or
-  sequentially (`FALSE`, default). See
+  A logical: process the jobs in parallel with furrr (`TRUE`) or one at
+  a time (`FALSE`, default). See
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
   for the future plan requirement.
 
@@ -98,28 +98,28 @@ convert_audio_batch(
 
 ## Value
 
-The `jobs` tibble with an added `command` column and, when `run = TRUE`,
-a `success` column (plus `verified` / provenance manifest when requested
-via `...`). See
+The `jobs` tibble with an added `command` column. When `run = TRUE`, it
+also has a `success` column, plus `verified` or a provenance manifest,
+each when requested through `...`. See
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
 
 ## Details
 
-When a row names no `audio_stream` and its input turns out to carry
-tracks the output will not, the verb warns **once** for the whole batch,
-naming every affected row. That check is **best-effort** and costs **one
-FFprobe call per distinct input** it has to probe, so a repeated input
-is probed once and a row that names a track is not probed at all: it is
-emitted when FFprobe is available and the input can be probed, and is
-skipped silently otherwise. Those probes run **serially at the front
-door**, before the fan-out starts, so `parallel` does not reach them; a
-sweep long enough to look like a hang reports its progress. The check
-never runs under `run = FALSE`, never changes any compiled command, and
-is skipped entirely when every row names a track. Suppress it by class
-with `suppressWarnings(classes = "tidymedia_dropped_audio")`.
+When a row names no `audio_stream` and its input has tracks that the
+output will not carry, the function warns **once** for the whole batch.
+The warning names every affected row. The check costs **one FFprobe call
+per distinct input** it has to probe. A repeated input is probed once,
+and a row that names a track is not probed at all. The warning is given
+when FFprobe is available and the input can be probed. Otherwise the
+check is skipped silently. Those probes run **one at a time, before any
+row starts**, so `parallel` does not reach them. A sweep long enough to
+look like a hang reports its progress. The check never runs under
+`run = FALSE`, never changes any compiled command, and is skipped
+entirely when every row names a track. Suppress it by class with
+`suppressWarnings(classes = "tidymedia_dropped_audio")`.
 
-Switch the check off – and skip the whole sweep – with
-`options(tidymedia.check_tracks = FALSE)` for the session, or
+To switch the check off and skip the whole sweep, use
+`options(tidymedia.check_tracks = FALSE)` for the session. Use
 `withr::local_options(tidymedia.check_tracks = FALSE)` for the rest of
 one function.
 

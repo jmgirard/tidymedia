@@ -56,9 +56,10 @@ strip_metadata_batch(jobs, run = TRUE, parallel = FALSE, ...)
 The [tibble](https://tibble.tidyverse.org/reference/tibble-package.html)
 returned by
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-`jobs` with an added `command` column (and, when `output` was derived,
-the resolved `output` column; when `run = TRUE`, a `success` column,
-plus any columns the forwarded arguments add, e.g. `verified`).
+`jobs` with an added `command` column. When `output` was derived, it
+also has the resolved `output` column. When `run = TRUE`, it has a
+`success` column, plus any columns the forwarded arguments add, such as
+`verified`.
 
 ## See also
 

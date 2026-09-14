@@ -66,8 +66,8 @@ crop_video_batch(
 - video_codec:
 
   A string naming the output video codec, applied to every row lacking a
-  `video_codec` column, or `NULL` (default) to leave it unset so each
-  output keeps its container's default encoder.
+  `video_codec` column. `NULL` (default) leaves it unset, so each output
+  keeps its container's default encoder.
 
 - audio_codec:
 
@@ -79,21 +79,20 @@ crop_video_batch(
 - hardware, fallback:
 
   The encoder backend and its fallback behavior, applied to the whole
-  batch (a property of the machine, not of a row, so neither is read as
-  a `jobs` column). See
+  batch. They are a property of the machine, not of a row, so neither is
+  read as a `jobs` column. See
   [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md).
   Resolving a hardware backend asks this FFmpeg build which encoders it
-  has, so the first such call that re-encodes the video runs the binary
+  has. So the first such call that re-encodes the video runs FFmpeg
   while the command is built, even under `run = FALSE`. The answer is
-  remembered for the rest of the R session; see
+  remembered for the rest of the R session. See
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
-  to discard it. Availability is checked at this verb's own front door,
-  before any row runs, so an unavailable encoder aborts naming this
-  function rather than the internal fan-out it would otherwise be
-  reported against. A call that is also wrong about a per-row value — a
-  `width` or `height` that is neither a positive number nor an FFmpeg
-  expression — is refused for the value first, whether or not this
-  machine has the encoder.
+  to discard it. This function checks that the encoder is available
+  before any row runs. So an unavailable encoder aborts naming this
+  function, not the internal step that runs the rows. A call that is
+  also wrong about a per-row value — a `width` or `height` that is
+  neither a positive number nor an FFmpeg expression — is refused for
+  the value first, whether or not this machine has the encoder.
 
 - audio_stream:
 
@@ -135,8 +134,8 @@ crop_video_batch(
 
 - parallel:
 
-  A logical: map over jobs in parallel with furrr (`TRUE`) or
-  sequentially (`FALSE`, default). See
+  A logical: process the jobs in parallel with furrr (`TRUE`) or one at
+  a time (`FALSE`, default). See
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
   for the future plan requirement.
 
@@ -148,9 +147,9 @@ crop_video_batch(
 
 ## Value
 
-The `jobs` tibble with an added `command` column and, when `run = TRUE`,
-a `success` column (plus `verified` / provenance manifest when requested
-via `...`). See
+The `jobs` tibble with an added `command` column. When `run = TRUE`, it
+also has a `success` column, plus `verified` or a provenance manifest,
+each when requested through `...`. See
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
 
 ## See also

@@ -90,8 +90,8 @@ or only compile them for inspection (<code>FALSE</code>).</p></dd>
 
 
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
-<dd><p>A logical: map over jobs in parallel with <span class="pkg">furrr</span>
-(<code>TRUE</code>) or sequentially (<code>FALSE</code>, default). See
+<dd><p>A logical: process the jobs in parallel with <span class="pkg">furrr</span>
+(<code>TRUE</code>) or one at a time (<code>FALSE</code>, default). See
 <code><a href="ffm_batch.html">ffm_batch</a></code> for the <span class="pkg">future</span> plan requirement.</p></dd>
 
 
@@ -102,10 +102,7 @@ or only compile them for inspection (<code>FALSE</code>).</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The <code>jobs</code> tibble with an added <code>command</code> column and, when
-<code>run = TRUE</code>, a <code>success</code> column (plus <code>verified</code> /
-provenance manifest when requested via <code>...</code>). See
-<code><a href="ffm_batch.html">ffm_batch</a></code>.</p>
+    <p>The <code>jobs</code> tibble with an added <code>command</code> column. When <code>run = TRUE</code>, it also has a <code>success</code> column, plus <code>verified</code> or a provenance manifest, each when requested through <code>...</code>. See <code><a href="ffm_batch.html">ffm_batch</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -152,7 +149,7 @@ the other fan-in batch siblings.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 3</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   inputs    output     command                                                  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">&lt;chr [2]&gt;</span> joined.mp4 <span style="color: #949494;">"</span>-y -f concat -safe 0 -i \"/tmp/RtmpDBVju4/ffm-concat1f0…</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> <span style="color: #949494;">&lt;chr [2]&gt;</span> joined.mp4 <span style="color: #949494;">"</span>-y -f concat -safe 0 -i \"/tmp/RtmpuGnqZP/ffm-concat1f1…</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

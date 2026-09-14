@@ -72,45 +72,45 @@ picture_in_picture(
 - video_codec:
 
   A string naming the output video codec, or `NULL` (default) to leave
-  it unset, so the output container's default encoder is used and the
-  compiled command is unchanged from one that never named a codec.
+  it unset. Then the output container's default encoder is used, and the
+  compiled command is the same as one that never named a codec.
 
 - audio_codec:
 
   A string naming the codec for the carried audio track. `"copy"`
-  (default) stream-copies it through untouched; name an encoder (e.g.
-  `"aac"`) to transcode it, or pass `NULL` to leave the codec unset so
-  the output container's default encoder is used. Nothing is emitted
-  when `audio_input` is `NULL`, since no audio reaches the output;
-  naming an encoder in that case is an error.
+  (default) stream-copies it through untouched. Name an encoder, such as
+  `"aac"`, to transcode it. `NULL` leaves the codec unset, so the output
+  container's default encoder is used. When `audio_input` is `NULL`, no
+  audio reaches the output, so nothing is emitted. Naming an encoder in
+  that case is an error.
 
 - hardware:
 
-  The encoder backend: `"none"` (default, the software `video_codec`),
-  `"nvenc"` for NVIDIA GPU encoding (H.264, HEVC and AV1), or
-  `"videotoolbox"` for Apple GPU encoding (H.264 and HEVC). Uses that
-  backend's encoder for `video_codec`'s family (e.g. `"libx264"` becomes
-  `"h264_nvenc"` or `"h264_videotoolbox"`); with the default
-  `video_codec = NULL` the H.264 family is assumed, so a non-H.264
-  container (e.g. `.webm`) needs an explicit HEVC- or AV1-family
-  `video_codec` (AV1 only under `"nvenc"`). See
+  The encoder backend. `"none"` (default) uses the software
+  `video_codec`. `"nvenc"` uses NVIDIA GPU encoding (H.264, HEVC and
+  AV1), and `"videotoolbox"` uses Apple GPU encoding (H.264 and HEVC). A
+  backend uses its own encoder for the family of `video_codec`. For
+  example, `"libx264"` becomes `"h264_nvenc"` or `"h264_videotoolbox"`.
+  With the default `video_codec = NULL`, the H.264 family is assumed. So
+  a non-H.264 container, such as `.webm`, needs an explicit HEVC- or
+  AV1-family `video_codec` (AV1 only under `"nvenc"`). See
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
   for availability and its caveats. Resolving a hardware backend asks
-  this FFmpeg build which encoders it has, so the first such call that
-  re-encodes the video runs the binary while the command is built, even
+  this FFmpeg build which encoders it has. So the first such call that
+  re-encodes the video runs FFmpeg while the command is built, even
   under `run = FALSE`. The answer is remembered for the rest of the R
-  session; see
+  session. See
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
   to discard it.
 
 - fallback:
 
-  A logical: when a non-`"none"` `hardware` is requested but its encoder
-  is unavailable, encode in software with a message (`TRUE`) instead of
-  aborting (`FALSE`, default). With `video_codec = NULL` the fallback
-  leaves the codec unset rather than picking one, so the codec never
-  changes silently. A `video_codec` in a family that backend has no
-  encoder for is a wrong argument rather than an absent encoder, so it
+  A logical. When a `hardware` other than `"none"` is requested but its
+  encoder is unavailable, `TRUE` encodes in software with a message.
+  `FALSE` (default) aborts instead. With `video_codec = NULL`, the
+  fallback leaves the codec unset rather than picking one, so the codec
+  never changes silently. A `video_codec` in a family that the backend
+  has no encoder for is a wrong argument, not an absent encoder. So it
   aborts whatever `fallback` says.
 
 - run:

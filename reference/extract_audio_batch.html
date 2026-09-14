@@ -111,8 +111,8 @@ or only compile them for inspection (<code>FALSE</code>).</p></dd>
 
 
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
-<dd><p>A logical: map over jobs in parallel with <span class="pkg">furrr</span>
-(<code>TRUE</code>) or sequentially (<code>FALSE</code>, default). See
+<dd><p>A logical: process the jobs in parallel with <span class="pkg">furrr</span>
+(<code>TRUE</code>) or one at a time (<code>FALSE</code>, default). See
 <code><a href="ffm_batch.html">ffm_batch</a></code> for the <span class="pkg">future</span> plan requirement.</p></dd>
 
 
@@ -123,29 +123,12 @@ or only compile them for inspection (<code>FALSE</code>).</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The <code>jobs</code> tibble with an added <code>command</code> column and, when
-<code>run = TRUE</code>, a <code>success</code> column (plus <code>verified</code> /
-provenance manifest when requested via <code>...</code>). See
-<code><a href="ffm_batch.html">ffm_batch</a></code>.</p>
+    <p>The <code>jobs</code> tibble with an added <code>command</code> column. When <code>run = TRUE</code>, it also has a <code>success</code> column, plus <code>verified</code> or a provenance manifest, each when requested through <code>...</code>. See <code><a href="ffm_batch.html">ffm_batch</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>When a row names no <code>audio_stream</code> and its input turns out to carry
-tracks the output will not, the verb warns <strong>once</strong> for the whole batch,
-naming every affected row. That check is <strong>best-effort</strong> and costs
-<strong>one FFprobe call per distinct input</strong> it has to probe, so a repeated
-input is probed once and a row that names a track is not probed at all: it
-is emitted when FFprobe is available and the input can be probed, and is
-skipped silently otherwise. Those probes run <strong>serially at the
-front door</strong>, before the fan-out starts, so <code>parallel</code> does not reach
-them; a sweep long enough to look like a hang reports its progress. The check
-never runs under <code>run = FALSE</code>, never changes any compiled command, and
-is skipped entirely when every row names a track. Suppress it by class with
-<code>suppressWarnings(classes = "tidymedia_dropped_audio")</code>.</p>
-<p>Switch the check off – and skip the whole sweep – with
-<code>options(tidymedia.check_tracks = FALSE)</code> for the session, or
-<code>withr::local_options(tidymedia.check_tracks = FALSE)</code> for the rest of
-one function.</p>
+    <p>When a row names no <code>audio_stream</code> and its input has tracks that the output will not carry, the function warns <strong>once</strong> for the whole batch. The warning names every affected row. The check costs <strong>one FFprobe call per distinct input</strong> it has to probe. A repeated input is probed once, and a row that names a track is not probed at all. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. Those probes run <strong>one at a time, before any row starts</strong>, so <code>parallel</code> does not reach them. A sweep long enough to look like a hang reports its progress. The check never runs under <code>run = FALSE</code>, never changes any compiled command, and is skipped entirely when every row names a track. Suppress it by class with <code>suppressWarnings(classes = "tidymedia_dropped_audio")</code>.</p>
+<p>To switch the check off and skip the whole sweep, use <code>options(tidymedia.check_tracks = FALSE)</code> for the session. Use <code>withr::local_options(tidymedia.check_tracks = FALSE)</code> for the rest of one function.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

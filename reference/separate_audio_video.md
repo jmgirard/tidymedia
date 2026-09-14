@@ -69,22 +69,23 @@ separate_audio_video(
   `video_codec = NULL`. See
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
   for availability and its caveats. Resolving a hardware backend asks
-  this FFmpeg build which encoders it has, so the first such call that
-  re-encodes the video runs the binary while the command is built, even
+  this FFmpeg build which encoders it has. So the first such call that
+  re-encodes the video runs FFmpeg while the command is built, even
   under `run = FALSE`. The answer is remembered for the rest of the R
-  session; see
+  session. See
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
   to discard it. The stream-copy conflict above is caught first, so such
   a call aborts without probing.
 
 - fallback:
 
-  A logical: when a non-`"none"` `hardware` is requested but its encoder
-  is unavailable, encode in software with a message (`TRUE`) instead of
-  aborting (`FALSE`, default). With `video_codec = NULL` the fallback
-  leaves the codec unset rather than injecting one. A `video_codec` in a
-  family that backend has no encoder for is a wrong argument rather than
-  an absent encoder, so it aborts whatever `fallback` says.
+  A logical. When a `hardware` other than `"none"` is requested but its
+  encoder is unavailable, `TRUE` encodes in software with a message.
+  `FALSE` (default) aborts instead. With `video_codec = NULL`, the
+  fallback leaves the codec unset rather than injecting one. A
+  `video_codec` in a family that the backend has no encoder for is a
+  wrong argument, not an absent encoder. So it aborts whatever
+  `fallback` says.
 
 - audio_stream:
 

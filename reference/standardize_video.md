@@ -55,20 +55,20 @@ standardize_video(
 
 - video_codec:
 
-  A string naming the output video codec (default `"libx264"`), or
-  `NULL` to emit no `-codec:v` and let the output container's default
-  encoder decide. `NULL` is how you opt out of the H.264 default for a
-  container that does not hold it — for a `.webm` output, pass
-  `video_codec = NULL` *and* `audio_codec = NULL`, since the default
-  `audio_codec = "copy"` would otherwise carry a codec WebM cannot hold.
+  A string naming the output video codec (default `"libx264"`). `NULL`
+  emits no `-codec:v` and lets the output container's default encoder
+  decide. `NULL` is how you opt out of the H.264 default for a container
+  that does not hold it. For a `.webm` output, pass `video_codec = NULL`
+  *and* `audio_codec = NULL`, because the default `audio_codec = "copy"`
+  would otherwise carry a codec WebM cannot hold.
 
 - audio_codec:
 
-  A string naming the output audio codec (default `"copy"`, i.e.
-  stream-copy the source audio unchanged). Name a real encoder (e.g.
-  `"aac"`) when the source audio codec cannot be copied into the output
-  container, or `NULL` to emit no `-codec:a` and let the container's
-  default encoder decide.
+  A string naming the output audio codec. The default `"copy"`
+  stream-copies the source audio unchanged. Name a real encoder, such as
+  `"aac"`, when the source audio codec cannot be copied into the output
+  container. `NULL` emits no `-codec:a` and lets the container's default
+  encoder decide.
 
 - pixel_format:
 
@@ -76,29 +76,31 @@ standardize_video(
 
 - hardware:
 
-  The encoder backend: `"none"` (default, the software `video_codec`),
-  `"nvenc"` for NVIDIA GPU encoding (H.264, HEVC and AV1), or
-  `"videotoolbox"` for Apple GPU encoding (H.264 and HEVC). Uses that
-  backend's encoder for `video_codec`'s family (e.g. `"libx264"` becomes
-  `"h264_nvenc"` or `"h264_videotoolbox"`); see
+  The encoder backend. `"none"` (default) uses the software
+  `video_codec`. `"nvenc"` uses NVIDIA GPU encoding (H.264, HEVC and
+  AV1), and `"videotoolbox"` uses Apple GPU encoding (H.264 and HEVC). A
+  backend uses its own encoder for the family of `video_codec`. For
+  example, `"libx264"` becomes `"h264_nvenc"` or `"h264_videotoolbox"`.
+  See
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-  for availability and its caveats. Applies to video only: `audio_codec`
-  is never hardware-accelerated. Resolving a hardware backend asks this
-  FFmpeg build which encoders it has, so the first such call that
-  re-encodes the video runs the binary while the command is built, even
-  under `run = FALSE`. The answer is remembered for the rest of the R
-  session; see
+  for availability and its caveats. This applies to video only.
+  `audio_codec` is never hardware-accelerated. Resolving a hardware
+  backend asks this FFmpeg build which encoders it has. So the first
+  such call that re-encodes the video runs FFmpeg while the command is
+  built, even under `run = FALSE`. The answer is remembered for the rest
+  of the R session. See
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
   to discard it.
 
 - fallback:
 
-  A logical: when a non-`"none"` `hardware` is requested but its encoder
-  is unavailable, re-encode with the software `video_codec` and a
-  message (`TRUE`) instead of aborting (`FALSE`, default). Keeps output
-  reproducible by never changing the codec silently. A `video_codec` in
-  a family that backend has no encoder for is a wrong argument rather
-  than an absent encoder, so it aborts whatever `fallback` says.
+  A logical. When a `hardware` other than `"none"` is requested but its
+  encoder is unavailable, `TRUE` re-encodes with the software
+  `video_codec` and a message. `FALSE` (default) aborts instead. This
+  keeps output reproducible by never changing the codec silently. A
+  `video_codec` in a family that the backend has no encoder for is a
+  wrong argument, not an absent encoder. So it aborts whatever
+  `fallback` says.
 
 - audio_stream:
 

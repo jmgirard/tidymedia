@@ -7,42 +7,43 @@
 ffm_map(object, mapping = "0", replace = FALSE)
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{mapping}{A character vector of one or more stream specifiers, one
-\code{-map} each.}
+\item{mapping}{A character vector of one or more stream specifiers. Each one
+adds one \code{-map}.}
 
-\item{replace}{A logical: discard any mapping already set on \code{object}
-(\code{TRUE}) or append to it (\code{FALSE}, default).}
+\item{replace}{A logical. \code{TRUE} discards any mapping already set on
+\code{object}. \code{FALSE} (the default) adds to it.}
 }
 \value{
-\code{object} with the added stream mapping instruction.
+\code{object} with an added instruction to map streams.
 }
 \description{
-Select which input streams are included in the output via FFmpeg's
-\code{-map} option. The default (\code{"0"}) maps every stream from the first
-input. \code{mapping} may be a character vector, which emits one \code{-map}
-per element in the order given — for example
-\code{ffm_map(object, c("0:v", "0:a:1"))} keeps the video and the input's
-\emph{second} audio track.
+Choose which input streams go into the output, with FFmpeg's \code{-map}
+option. The default, \code{"0"}, maps every stream from the first input. The
+glossary in \code{vignette("tidymedia")} explains media terms such as stream.
 }
 \details{
-Chaining \strong{appends}: a second \code{ffm_map()} call adds to the maps
-already set rather than replacing them. Pass \code{replace = TRUE} to discard
-them instead, which is how you narrow the all-streams map that
-\code{\link{ffm_copy}} sets — appending to that one would duplicate the
-stream in the output rather than select it.
+\code{mapping} can be a character vector. Each element adds one \code{-map},
+in the order given. For example, \code{ffm_map(object, c("0:v", "0:a:1"))}
+keeps the video and the \emph{second} audio track of the input.
 
-This is the only builder verb that accumulates; every other \code{ffm_*}
-setter, \code{\link{ffm_copy}} included, assigns. The exception is earned by
-this function's arguments being \emph{partial} selections that genuinely
-compose (keep the video, then name one audio track).
+A second \code{ffm_map()} call \strong{adds} to the maps already set. It does
+not replace them. Pass \code{replace = TRUE} to discard them instead. That is
+how you narrow the all-streams map that \code{\link{ffm_copy}} sets. Adding
+to that map puts the stream in the output twice, and does not select it.
 
-When the pipeline uses a multi-input verb (e.g.
-\code{\link{ffm_hstack}}), the explicit mapping is added \emph{alongside}
-the automatic \code{-map "[vout]"} of the filtered stream — for example,
-\code{ffm_map(object, "0:a")} keeps the first input's audio next to the
+\code{ffm_map()} is the only pipeline function that adds to earlier calls.
+Every other \code{ffm_*} function that sets a value, \code{\link{ffm_copy}}
+included, replaces it. \code{ffm_map()} is different because its arguments
+are \emph{partial} choices that combine. For example, you keep the video,
+then name one audio track.
+
+When the pipeline uses a function with several inputs, such as
+\code{\link{ffm_hstack}}, your mapping is added \emph{beside} the automatic
+\code{-map "[vout]"} of the filtered stream. For example,
+\code{ffm_map(object, "0:a")} keeps the audio of the first input next to the
 stacked video.
 }
 \examples{
@@ -57,8 +58,8 @@ ffm_files(video, "output.mkv") |>
   ffm_compile()
 }
 \seealso{
-\code{\link[=ffm_copy]{ffm_copy()}}, which maps all streams; \code{\link[=separate_audio_video]{separate_audio_video()}} is a
-task verb built on it.
+\code{\link[=ffm_copy]{ffm_copy()}}, which maps all streams, and \code{\link[=separate_audio_video]{separate_audio_video()}},
+a task function built on it.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

@@ -2,24 +2,25 @@
 % Please edit documentation in R/ffm.R
 \name{ffm_drop}
 \alias{ffm_drop}
-\title{Drop Steams from an FFmpeg Pipeline}
+\title{Drop Streams from an FFmpeg Pipeline}
 \usage{
 ffm_drop(object, streams = c("video", "audio", "subtitles", "data"))
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{streams}{A character vector containing one or more of the following
-strings: \code{"video"}, \code{"audio"}, \code{"subtitles"}, \code{"data"}}
+\item{streams}{A character vector with one or more of these strings:
+\code{"video"}, \code{"audio"}, \code{"subtitles"} and \code{"data"}.}
 }
 \value{
-\code{object} but with the added instruction to drop one or more
-streams from the output file when run.
+\code{object} with an added instruction to drop these streams from
+the output file when the pipeline runs.
 }
 \description{
-Remove one or more specified streams from the media file. For example, remove
-the video, audio, subtitles, or data stream from a media file.
+Remove one or more streams from the media file. For example, remove the
+video, audio, subtitles or data stream from a media file. The glossary in
+\code{vignette("tidymedia")} explains media terms such as stream.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -29,8 +30,8 @@ ffm_files(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
-\code{\link[=extract_audio]{extract_audio()}}, the task verb that drops the video stream via
-this builder.
+\code{\link[=extract_audio]{extract_audio()}}, the task function that uses \code{ffm_drop()} to
+drop the video stream.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

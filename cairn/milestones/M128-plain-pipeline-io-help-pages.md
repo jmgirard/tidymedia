@@ -40,7 +40,7 @@ The M128 help-page domain uses plain English for an R user who does not know FFm
 ## Tasks
 
 - [x] T1: Record in a new M128 ledger section the base commit, the domain page list, the AC4 identifiers and the sweep output over the domain at the base commit.
-- [ ] T2: Rewrite `ffm_files()`, `ffm_copy()`, `ffm_seek()`, `ffm_map()` and `ffm_drop()`.
+- [x] T2: Rewrite `ffm_files()`, `ffm_copy()`, `ffm_seek()`, `ffm_map()` and `ffm_drop()`.
 - [ ] T3: Rewrite `ffm_codec()`, `ffm_pixel_format()`, `ffm_output_options()`, `ffm_compile()` and `ffm_run()`. Move the exit-status detail in `?ffm_run` to a short end section.
 - [ ] T4: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words, and a sentence that names the glossary stays. A base claim found false gets a ledger row and a line in the follow-up candidate row. Fill the ledger. Run the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
@@ -52,6 +52,7 @@ The M128 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-13: plan gate chose about 12 pages per milestone over keeping 20 pages, because M127's 28 pages took four review rounds; falsified by a 10-page milestone under D093 that still takes more than two rounds.
 - 2026-09-14: implement started on branch `m128-plain-pipeline-io-help-pages` from `dc6cbd20`. The question gate was skipped, because the plan leaves no choice open.
 - 2026-09-14: T1 done. The base sweep over the 10 pages read 185 sentences and printed 26 findings. The ledger is `### M128` in `cairn/references/plain-docs.md`.
+- 2026-09-14: T2 done. The five pages print no sweep finding, and the four with a glossary stem name the glossary. The audio-index, ffm and D014 tests pass.
 
 ## Decisions
 

@@ -530,7 +530,7 @@ test_that("?tidymedia documents the option's name, unit, default and effect", {
                fixed = TRUE)
 })
 
-# The four assertions above are substring greps, and a substring grep is how the
+# The assertions above are substring greps, and a substring grep is how the
 # over-broad claim shipped green once already: "abort" was present the whole
 # time the doc said EVERY timed-out call aborts, which stopped being true when
 # the readers began absorbing. These two guards fence the scoped claim instead,

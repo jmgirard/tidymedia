@@ -190,11 +190,11 @@ The Result column is the author's account of what left each page. It is not a co
 
 These 27 identifiers match `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the 28 `.Rd` files: `tidymedia.check_tracks`, `tidymedia.hardware_encoders`, `tidymedia.timeout`, `tidymedia_archive_unreadable`, `tidymedia_batch_timeout`, `tidymedia_checksum_mismatch`, `tidymedia_checksum_unavailable`, `tidymedia_confirmation_unavailable`, `tidymedia_download_unavailable`, `tidymedia_dropped_audio`, `tidymedia_ffm`, `tidymedia_ffmpeg_exit`, `tidymedia_location_gone`, `tidymedia_location_unreadable`, `tidymedia_loudnorm_no_measurement`, `tidymedia_multitrack_separation`, `tidymedia_probe_timeout`, `tidymedia_program_not_extracted`, `tidymedia_program_unusable`, `tidymedia_timeout`, `tidymedia_wrong_platform`, `tm_file`, `tm_location`, `tm_program`, `tm_row_status`, `tm_rows`, `tm_status`.
 
-At head, a `\bname\b` search over `man/*.Rd` finds all 27 identifiers, so no identifier needs a row. This was found on 2026-09-13 at T7.
+At head, a whole-word search over `man/*.Rd` finds all 27 identifiers. This was found on 2026-09-13 at T7, and again with `git grep -wF` in review round 3 (corrected M127 amendment return: identifiers have no ledger rows).
 
 #### Glossary stems (AC3)
 
-Each row is one page whose `--prose` output has a glossary stem. "Names the glossary" means the page has a sentence that names the glossary in `vignette("tidymedia")`. The other 20 pages use no stem.
+Each row is one page whose `--prose` output has a glossary stem. "Names the glossary" means the page has a sentence that names the glossary in `vignette("tidymedia")`. The other 19 pages use no stem (corrected M127 review return 2: `with_timeout` gained a stem in round 2).
 
 | Page | Stems | Result |
 |---|---|---|
@@ -205,6 +205,7 @@ Each row is one page whose `--prose` output has a glossary stem. "Names the glos
 | probe_container | `container`, `stream` | Names the glossary. |
 | refresh_ffmpeg_capabilities | `encod` | Names the glossary. |
 | tidymedia-package | `encod` | Names the glossary. |
+| with_timeout | `encod` | Names the glossary. |
 | verify_media | `codec`, `container`, `key ?frame`, `sampl(e\|ing) rate`, `stream` | Names the glossary. |
 
 #### Tests (T7)

@@ -44,19 +44,26 @@ rd_verb_list <- function(verbs) {
 # sentence says what the family reads `NULL` as, rather than "this way", so it
 # stands on its own as a bullet on ?audio_stream as well as after a verb's
 # "`NULL` (default) takes ..." sentence.
-audio_stream_family_sentence <- function(reading = c("first", "every")) {
+#
+# `after_null = TRUE` is for a verb's own `@param` text, where the sentence
+# before it has just said what `NULL` gives. There the family's own reading is
+# "this way" rather than repeated word for word.
+audio_stream_family_sentence <- function(reading = c("first", "every"),
+                                         after_null = FALSE) {
   reading <- match.arg(reading)
   first <- rd_verb_list(audio_stream_families$first)
   every <- rd_verb_list(audio_stream_families$every)
-  first_s <- paste0(" as the first audio track only: ", first,
-                    ", and their \\code{_batch} forms.")
-  every_s <- paste0(" as every audio track: ", every,
-                    ", and their \\code{_batch} forms.")
+  forms <- ", and their \\code{_batch} forms."
+  first_s <- paste0(" as the first audio track only: ", first, forms)
+  every_s <- paste0(" as every audio track: ", every, forms)
+  own_s <- function(s, list) {
+    if (after_null) paste0(" this way: ", list, forms) else s
+  }
   if (identical(reading, "first")) {
-    paste0("The first-track family reads \\code{NULL}", first_s,
+    paste0("The first-track family reads \\code{NULL}", own_s(first_s, first),
            " The every-track family reads it", every_s)
   } else {
-    paste0("The every-track family reads \\code{NULL}", every_s,
+    paste0("The every-track family reads \\code{NULL}", own_s(every_s, every),
            " The first-track family reads it", first_s)
   }
 }
@@ -95,7 +102,7 @@ audio_stream_param <- function(action,
              "every row. An \\code{NA} cell in that column means \\code{NULL} ",
              "for that row. It does not fall back to the argument.")
     },
-    audio_stream_family_sentence(reading),
+    audio_stream_family_sentence(reading, after_null = TRUE),
     extra,
     paste0("A track the input does not have gives an FFmpeg error, not an ",
            "R one. See \\code{\\link{audio_stream}} for how this differs from ",
@@ -149,9 +156,9 @@ audio_stream_extras <- list(
     "track to write one of those. Count only the input's \\emph{audio} ",
     "streams. Do not use the \\code{index} column of ",
     "\\code{\\link{probe_audio}}, which counts every stream. An input with ",
-    "no audio at all is an FFmpeg error here, because the product of this function is the audio file. ",
-    "The functions that pass video through do not fail in that case. ",
-    "\\code{videofile} is never affected."
+    "no audio at all is an FFmpeg error here, because this function writes ",
+    "an audio file. The other every-track functions do not fail in that ",
+    "case. \\code{videofile} is never affected."
   ),
   normalize_one_track = paste0(
     "This function reads \\code{NULL} as the first track only. The two-pass ",

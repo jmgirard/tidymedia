@@ -82,6 +82,9 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: review round 3 checkpoint on `de5b70ba`: AC1, AC2, AC4 and AC5 pass. AC3 fails on `?with_timeout` ("encoder check", no glossary pointer). Gate (user's choice): run the three reviewers before the return. Check and reviewers still running.
 - 2026-09-13: review return 2 (defect): AC3 fails on `de5b70ba`, because `?with_timeout` says "encoder check" with no glossary pointer and no ledger row. AC1, AC2, AC4, AC5 and AC6 pass. Status back to in-progress. Defect returns: 2. Amendment returns: 1.
 - 2026-09-13: return gate (user's choice): fix AC3 and all of R3-1 to R3-16 in this pass. First check R3-2, R3-10, R3-13 and R3-16, and reject any that prove false, with the reason. A third defect return makes descope or park the recommended choice.
+- 2026-09-13: AC3 fixed: `?with_timeout` names the glossary, and the ledger has a `with_timeout` row. R3-4 is in the same sentence: the check asks FFmpeg only with no option set and no stored answer (read from `hardware_encoder_available()`).
+- 2026-09-13: the four unconfirmed findings were checked, and all four hold. R3-2 was read from R's `?system`, and a mid-command `2>&1` was measured on macOS. R3-10 was read from `check_hardware_available()`. R3-13 was read from the test. R3-16 was measured: a missing parameter prints one empty line, which gives `""` with `typed = FALSE`.
+- 2026-09-13: R3-1 measured with withr 3.0.3: `with_options()` restores under `on.exit(NULL)`, and `local_options()` does not. R3-1 to R3-16 fixed in R/, tests and the `audio_stream` generator. The claim audit was not re-run, because each new claim was measured or read against the code. Sweep over 28 pages exits 0. `?tidymedia` renders 78 lines. Full suite running.
 
 ## Decisions
 

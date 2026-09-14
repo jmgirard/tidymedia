@@ -62,8 +62,9 @@ force. Put the inner limit in a function of its own, or use only one of
 the two.
 }
 
-\code{\link[withr:local_options]{withr::local_options()}} and \code{\link[withr:with_options]{withr::with_options()}} have the same limits,
-because R's exit handlers work this way.
+The first two cases also apply to \code{\link[withr:local_options]{withr::local_options()}}, because R's exit
+handlers work this way. They do not apply to \code{\link[withr:with_options]{withr::with_options()}}, which
+puts the option back itself.
 }
 \examples{
 bounded <- function() {

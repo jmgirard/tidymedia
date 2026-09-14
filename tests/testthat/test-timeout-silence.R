@@ -681,20 +681,12 @@ test_that("both docs state that a reached limit is never silent", {
   expect_match(src$news, "call graph", fixed = TRUE)
 })
 
-test_that("M69's disclosure is gone from both docs", {
+test_that("M69's disclosure is gone from the timeout docs", {
   # The retired half. Restoring the three-way description -- or the sentence
   # that admitted it was not a partition -- reddens here.
   src <- doc_timeout_sources()
   skip_if(is.null(src$rd) || is.null(src$news), "docs not available")
-  # `?tidymedia` held the timeout text until M127 moved it, so the retired
-  # disclosure is fenced there too (M127 review O10).
-  # A missing landing topic drops only its own assertions, not the other two
-  # sources' (M127 review R2-11).
-  rd <- rd_sources()
-  landing <- rd[names(rd) %in% c("tidymedia-package.Rd", "tidymedia-package")]
-  if (length(landing) == 1L) src$landing <- landing[[1]]
-  for (nm in intersect(c("rd", "landing", "news"), names(src))) {
-    txt <- src[[nm]]
+  fence <- function(txt, nm) {
     expect_no_match(txt, "no warning", info = nm)
     expect_no_match(txt, "not a complete", info = nm)
     expect_no_match(txt, "three answers", info = nm)
@@ -703,6 +695,16 @@ test_that("M69's disclosure is gone from both docs", {
     expect_no_match(txt, "count_audio_streams", fixed = TRUE, info = nm)
     expect_no_match(txt, "tool_versions", fixed = TRUE, info = nm)
   }
+  fence(src$rd, "rd")
+  fence(src$news, "news")
+  # `?tidymedia` held the timeout text until M127 moved it, so the retired
+  # disclosure is fenced there too (M127 review O10). A missing landing topic
+  # skips with a message after the other two sources have run (M127 review
+  # R2-11 and R3-13), rather than dropping its assertions in silence.
+  rd <- rd_sources()
+  landing <- rd[names(rd) %in% c("tidymedia-package.Rd", "tidymedia-package")]
+  skip_if(length(landing) != 1L, "?tidymedia not available")
+  fence(landing[[1]], "landing")
 })
 
 test_that("the doc guard reddens on the text it fences, not on its absence", {

@@ -21,8 +21,10 @@ returns strings.}
 }
 \value{
 A vector with one value for each element of \code{file}. A value is \code{NA}
-when MediaInfo prints no single line for it, for example when \code{section}
-has no such parameter. It is also \code{NA} for a file that does not exist or
+when MediaInfo prints more than one line, for example for a \code{section} it
+does not know. A parameter that \code{section} does not have gives an empty
+value. That value is \code{NA} when \code{typed = TRUE} and \code{""} when
+\code{typed = FALSE}. A value is also \code{NA} for a file that does not exist or
 that reaches the time limit.
 
 The function does not stop at those files. It reads the other files, and

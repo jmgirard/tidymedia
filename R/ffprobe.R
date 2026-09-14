@@ -14,8 +14,8 @@
 #' @param command A string with the arguments to give FFprobe.
 #' @return A character vector with the text that FFprobe writes to standard
 #'   output, one element for each line. Messages on standard error, such as
-#'   FFprobe's banner and errors, are not returned, unless `command` ends
-#'   with a shell redirect such as `2>&1`.
+#'   FFprobe's banner and errors, are not returned. On macOS and Linux, a
+#'   shell redirect such as `2>&1` in `command` returns them too.
 #' @seealso [probe_all()] and the other `probe_*()` functions, which return
 #'   tibbles.
 #' @family direct command functions

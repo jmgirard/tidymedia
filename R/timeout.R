@@ -47,13 +47,14 @@
 #     validation too -- so a refusal the VERB itself can reach still fires first
 #     and only the blame for this one moves. Not every refusal that fired before
 #     it does: a check inside the per-row fan-out (a _batch verb argument such
-#     as anonymize_video_batch()'s pixel_format, or a wrong form of
-#     segment_video()'s outfiles that its front-door check_string() loop lets
-#     through -- tm_corrupt_dropped_master() records both) still
-#     loses to the limit, and is disclosed in NEWS.md and ?with_timeout (in
-#     ?tidymedia until M127) and carried on the ROADMAP rather than
-#     fixed (M094 review H1/H3). The OTHER class M094 disclosed -- a check
-#     sitting below the build-time nvenc probe, which reads the limit -- is
+#     as anonymize_video_batch()'s pixel_format, which
+#     tm_corrupt_dropped_master() records) still loses to the limit, and is
+#     disclosed in NEWS.md and ?with_timeout (in ?tidymedia until M127) and
+#     carried on the ROADMAP rather than fixed (M094 review H1/H3).
+#     segment_video()'s outfiles was the other example until M096 put a
+#     check_string() loop at its front door, and
+#     test-unguarded-argument-front-doors.R asserts that cell has left the
+#     census. The OTHER class M094 disclosed -- a check sitting below the build-time nvenc probe, which reads the limit -- is
 #     fixed: D075 sites that probe below every check whose answer cannot depend
 #     on it, so the argument error is reached before the limit is read (M095).
 #     Ordering it against the front door
@@ -159,8 +160,11 @@ resolve_check_tracks <- function(call = rlang::caller_env()) {
 #'
 #' A limit set with `options(tidymedia.timeout = )` follows the same rule, with
 #' one difference. `options(tidymedia.timeout = NULL)` removes the option, so
-#' it means no limit. The function you called gives the error, even when
-#' `run = FALSE`. [ffm_batch()] gives the error before it starts any job.
+#' it means no limit. A wrong value gives an error from the function you
+#' called, even when `run = FALSE`. [ffm_batch()] gives that error before it
+#' starts any job. Two calls do not read the limit, so they give no such error.
+#' One is [has_hardware_encoder()] when you set `tidymedia.hardware_encoders`.
+#' The other is a `probe_*()` function that you give a `probe` object.
 #'
 #' Most functions check their own arguments before the limit. So a wrong
 #' argument gives its own error, even when the limit is also wrong. A few
@@ -187,7 +191,7 @@ resolve_check_tracks <- function(call = rlang::caller_env()) {
 #' * the task functions whose names do not end in `_batch`, except
 #'   [segment_video()]
 #' * [ffm_run()], [ffmpeg()], [ffprobe()] and [mediainfo()]
-#' * [ffmpeg_codecs()], [ffmpeg_encoders()], and [has_hardware_encoder()] when
+#' * [ffmpeg_codecs()], [ffmpeg_encoders()] and [has_hardware_encoder()] when
 #'   it asks FFmpeg
 #' * [verify_media()], because a check with no answer is not a "no"
 #'
@@ -202,8 +206,11 @@ resolve_check_tracks <- function(call = rlang::caller_env()) {
 #'   `success = FALSE` for that job. One warning at the end says how many jobs
 #'   timed out. It has the class `tidymedia_batch_timeout`. Two steps of these
 #'   calls give an error instead. One is the analysis pass of
-#'   `normalize_audio_batch(two_pass = TRUE)`. The other is the encoder check
-#'   of a call that names a `hardware` backend.
+#'   `normalize_audio_batch(two_pass = TRUE)`. The other is the check that
+#'   FFmpeg has the hardware encoder that `hardware` names, such as `"nvenc"`.
+#'   That check asks FFmpeg only when `tidymedia.hardware_encoders` is not set
+#'   and the session has no stored answer. The glossary in
+#'   `vignette("tidymedia")` explains hardware encoders.
 #' * The dropped-track check of [extract_audio()], [convert_audio()],
 #'   [normalize_audio()] and their `_batch` forms warns that it could not check.
 #'   The track count that [separate_audio_video()] reads after a failed run
@@ -324,8 +331,9 @@ with_timeout <- function(expr, seconds) {
 #'   force. Put the inner limit in a function of its own, or use only one of
 #'   the two.
 #'
-#' [withr::local_options()] and [withr::with_options()] have the same limits,
-#' because R's exit handlers work this way.
+#' The first two cases also apply to [withr::local_options()], because R's exit
+#' handlers work this way. They do not apply to [withr::with_options()], which
+#' puts the option back itself.
 #'
 #' @seealso [with_timeout()] to set a limit for one expression.
 #'   [tidymedia-package] describes the session options.

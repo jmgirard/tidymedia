@@ -12,7 +12,8 @@ mediainfo(command)
 \value{
 A character vector with the text that MediaInfo writes to standard
 output, one element for each line. Messages on standard error are not
-returned, unless \code{command} ends with a shell redirect such as \verb{2>&1}.
+returned. On macOS and Linux, a shell redirect such as \verb{2>&1} in \code{command}
+returns them too.
 }
 \description{
 \code{mediainfo()} runs the MediaInfo program with the arguments in \code{command} and

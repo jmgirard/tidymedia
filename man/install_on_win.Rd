@@ -35,8 +35,8 @@ default source, the call checks nothing and says so.}
 \value{
 \code{TRUE} when the install finished. \code{FALSE} when you said no to the
 question, or when the call could not create the install folder. Other
-failures give an error. The section "Errors" lists the error classes of
-the install steps.
+failures give an error. The section "Errors" lists the error classes the
+call gives. A wrong argument gives an error before any of these.
 }
 \description{
 \code{install_on_win()} downloads a Windows build of FFmpeg and unpacks it. Then

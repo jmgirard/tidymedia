@@ -75,8 +75,9 @@ per job, collected back into a tibble.
 }
 \details{
 Each column of \code{jobs} is passed by name to \code{.f} (as
-\code{\link[purrr:pmap]{purrr::pmap()}} does), so a job table with columns \code{input}, \code{output}
-and \code{start} calls \code{.f(input = ..., output = ..., start = ...)}.
+\code{\link[purrr:pmap]{purrr::pmap()}} does), so a job table with columns \code{input},
+\code{output} and \code{start} calls
+\code{.f(input = ..., output = ..., start = ...)}.
 \code{.f} must return a pipeline (see \code{\link{ffm_files}}). Give
 \code{.f} a \code{...} argument if \code{jobs} carries columns it does not
 use.
@@ -97,7 +98,7 @@ jobs <- tibble::tibble(
   input  = c(video, video),
   output = c("a.mp3", "b.mp3")
 )
-# run = FALSE compiles one reproducible command per job without calling FFmpeg
+# run = FALSE compiles one command per job without calling FFmpeg
 ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
   ffm_files(input, output) |>
     ffm_drop("video") |>

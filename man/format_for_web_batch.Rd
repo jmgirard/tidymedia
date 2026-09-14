@@ -28,8 +28,8 @@ two derived names that match. For example, \code{clip.mov} and
 each row. \code{NA} keeps every audio track in that row. Any other columns
 are ignored, \code{video_codec} and \code{audio_codec} included. The
 sibling batch functions read those two columns as per-row overrides, but
-this one does not. The web recipe fixes both codecs: H.264 video and AAC
-audio. For per-row codecs, use a function that has them, such as
+this one does not. The web recipe fixes which codecs the output uses:
+H.264 video and AAC audio. For per-row codecs, use a function that has them, such as
 \code{\link{standardize_video_batch}} or \code{\link{crop_video_batch}}.}
 
 \item{hardware}{The encoder backend for every row. \code{"none"} (default)
@@ -72,9 +72,8 @@ jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"))
 format_for_web_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=format_for_web]{format_for_web()}}, the single-file function it wraps;
-\code{\link[=ffm_batch]{ffm_batch()}}, the
-batch runner; \code{\link[=standardize_video_batch]{standardize_video_batch()}} for a configurable re-encode.
+\code{\link[=format_for_web]{format_for_web()}}, the single-input form it wraps;
+\code{\link[=ffm_batch]{ffm_batch()}}, the batch runner; \code{\link[=standardize_video_batch]{standardize_video_batch()}} for a configurable re-encode.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

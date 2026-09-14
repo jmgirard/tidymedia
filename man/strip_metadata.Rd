@@ -22,9 +22,9 @@ The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 \description{
 Remove a media file's container and global metadata tags, together with any
 chapters, and write a de-identified copy. The tags include creation time,
-GPS location, device make and model, title and comment. This is the task
-function for IRB de-identification of research recordings. The audio and
-video streams are \strong{stream-copied}, not re-encoded. So the operation is
+GPS or other location, device make and model, title and comment. Use it to
+de-identify research recordings, for example for an IRB (a research ethics
+board). The audio and video streams are \strong{stream-copied}, not re-encoded. So the operation is
 lossless and fast, and the picture and sound are bit-for-bit unchanged. That
 includes any rotation display matrix, which is stream side data and not a
 metadata tag. The glossary in \code{vignette("tidymedia")} explains media
@@ -37,11 +37,11 @@ not stamp the container again with a fresh \code{creation_time}, or with an
 de-identification and reproducibility.
 
 Because the streams are copied and not re-encoded, some data is not removed.
-That is identifiers \strong{inside} the encoded bitstream, and per-stream metadata
-such as \code{handler_name} or \code{language}. Removing them would require
-re-encoding, which is out of scope for this function. For that, use the
-direct command \code{\link{ffmpeg}}. The other way is per-stream metadata
-mapping that must probe the file first.
+Those are identifiers \strong{inside} the encoded bitstream, and per-stream
+metadata such as \code{handler_name} or \code{language}. Removing them would
+require one of two things. One is re-encoding, which is out of scope for this
+function, so use the direct command \code{\link{ffmpeg}} for it. The other
+is per-stream metadata mapping that must probe the file first.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -50,8 +50,8 @@ strip_metadata(video, "clean.mp4", run = FALSE)
 \seealso{
 \code{\link[=anonymize_video]{anonymize_video()}} removes faces or regions from the picture, for
 visual de-identification. \code{\link[=probe_container]{probe_container()}} and \code{\link[=mediainfo_query]{mediainfo_query()}}
-inspect a file's metadata before and after. \code{\link[=ffm_copy]{ffm_copy()}} and
-\code{\link[=ffm_output_options]{ffm_output_options()}} are the pipeline functions it wraps.
+inspect a file's metadata before and after. This function wraps the
+pipeline functions \code{\link[=ffm_copy]{ffm_copy()}} and \code{\link[=ffm_output_options]{ffm_output_options()}}.
 \code{\link[=strip_metadata_batch]{strip_metadata_batch()}} is the many-file form.
 
 Other task functions:

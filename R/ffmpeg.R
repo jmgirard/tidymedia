@@ -1560,9 +1560,9 @@ strip_metadata_pipeline <- function(input, output) {
 #'
 #' Remove a media file's container and global metadata tags, together with any
 #' chapters, and write a de-identified copy. The tags include creation time,
-#' GPS location, device make and model, title and comment. This is the task
-#' function for IRB de-identification of research recordings. The audio and
-#' video streams are **stream-copied**, not re-encoded. So the operation is
+#' GPS or other location, device make and model, title and comment. Use it to
+#' de-identify research recordings, for example for an IRB (a research ethics
+#' board). The audio and video streams are **stream-copied**, not re-encoded. So the operation is
 #' lossless and fast, and the picture and sound are bit-for-bit unchanged. That
 #' includes any rotation display matrix, which is stream side data and not a
 #' metadata tag. The glossary in \code{vignette("tidymedia")} explains media
@@ -1575,11 +1575,11 @@ strip_metadata_pipeline <- function(input, output) {
 #' de-identification and reproducibility.
 #'
 #' Because the streams are copied and not re-encoded, some data is not removed.
-#' That is identifiers **inside** the encoded bitstream, and per-stream metadata
-#' such as \code{handler_name} or \code{language}. Removing them would require
-#' re-encoding, which is out of scope for this function. For that, use the
-#' direct command \code{\link{ffmpeg}}. The other way is per-stream metadata
-#' mapping that must probe the file first.
+#' Those are identifiers **inside** the encoded bitstream, and per-stream
+#' metadata such as \code{handler_name} or \code{language}. Removing them would
+#' require one of two things. One is re-encoding, which is out of scope for this
+#' function, so use the direct command \code{\link{ffmpeg}} for it. The other
+#' is per-stream metadata mapping that must probe the file first.
 #'
 #' @inheritParams extract_audio
 #' @param outfile A string containing the path of the de-identified file to
@@ -1588,8 +1588,8 @@ strip_metadata_pipeline <- function(input, output) {
 #' @return `r command_return()`
 #' @seealso [anonymize_video()] removes faces or regions from the picture, for
 #'   visual de-identification. [probe_container()] and [mediainfo_query()]
-#'   inspect a file's metadata before and after. [ffm_copy()] and
-#'   [ffm_output_options()] are the pipeline functions it wraps.
+#'   inspect a file's metadata before and after. This function wraps the
+#'   pipeline functions [ffm_copy()] and [ffm_output_options()].
 #'   [strip_metadata_batch()] is the many-file form.
 #' @family task functions
 #' @examples
@@ -5931,16 +5931,14 @@ derive_web_names <- function(input) {
 #'   encoder.
 #' @param hardware,fallback `r batch_hardware_param("crop_video")`
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
-#'   A call can also be wrong about a per-row \code{width} or \code{height},
-#'   one that is neither a positive number nor an FFmpeg expression. That call
-#'   is refused for the value first, whether or not this machine has the
-#'   encoder.
+#'   A call can also have a per-row \code{width} or \code{height} that is
+#'   neither a positive number nor an FFmpeg expression. Such a call is refused
+#'   for the value first, whether or not this machine has the encoder.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @inheritParams extract_audio_batch
 #' @return `r jobs_return()`
-#' @seealso [crop_video()], the single-file function it wraps; [ffm_batch()],
-#'   the batch
-#'   runner; [has_hardware_encoder()] for the \code{hardware} toggle;
+#' @seealso [crop_video()], the single-input form it wraps; [ffm_batch()],
+#'   the batch runner; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [standardize_video_batch()] to re-encode in batch.
 #' @family task functions
 #' @family audio selection functions
@@ -6091,8 +6089,8 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   each row. \code{NA} keeps every audio track in that row. Any other columns
 #'   are ignored, \code{video_codec} and \code{audio_codec} included. The
 #'   sibling batch functions read those two columns as per-row overrides, but
-#'   this one does not. The web recipe fixes both codecs: H.264 video and AAC
-#'   audio. For per-row codecs, use a function that has them, such as
+#'   this one does not. The web recipe fixes which codecs the output uses:
+#'   H.264 video and AAC audio. For per-row codecs, use a function that has them, such as
 #'   \code{\link{standardize_video_batch}} or \code{\link{crop_video_batch}}.
 #' @param hardware The encoder backend for every row. \code{"none"} (default)
 #'   uses software libx264. \code{"nvenc"} uses NVIDIA GPU H.264 encoding, and
@@ -6104,9 +6102,8 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' @inheritParams extract_audio_batch
 #' @inheritParams format_for_web
 #' @return `r jobs_return()`
-#' @seealso [format_for_web()], the single-file function it wraps;
-#'   [ffm_batch()], the
-#'   batch runner; [standardize_video_batch()] for a configurable re-encode.
+#' @seealso [format_for_web()], the single-input form it wraps;
+#'   [ffm_batch()], the batch runner; [standardize_video_batch()] for a configurable re-encode.
 #' @family task functions
 #' @family audio selection functions
 #' @examples

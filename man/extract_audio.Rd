@@ -37,19 +37,9 @@ input carries more than one audio track, \code{audio_stream} names which one
 to take; with no selector the \strong{first} audio track is taken.
 }
 \details{
-When no \code{audio_stream} is named and the input turns out to carry tracks
-the output will not, the verb warns. That check is \strong{best-effort} and
-costs \strong{one FFprobe call per distinct input} -- one, here, since this
-verb takes a single \code{infile}: it is emitted when FFprobe is available
-and the input can be probed, and is skipped silently otherwise. It never runs
-under \code{run = FALSE}, and never changes the compiled command. Suppress it
-by naming a track with \code{audio_stream}, or by class with
-\code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+When no \code{audio_stream} is named and the input has tracks that the output will not carry, the function warns. The check costs \strong{one FFprobe call per distinct input}, which is one call here, because this function takes a single \code{infile}. The warning is given only when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. It never runs under \code{run = FALSE}, and never changes the compiled command. Suppress it by naming a track with \code{audio_stream}, or by class with \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
 
-Switch the check off -- and skip its FFprobe call -- with
-\code{options(tidymedia.check_tracks = FALSE)} for the session, or
-\code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
-one function.
+To switch the check off and skip its FFprobe call, use \code{options(tidymedia.check_tracks = FALSE)} for the session. Use \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of one function.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

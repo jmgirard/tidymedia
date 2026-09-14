@@ -43,15 +43,13 @@ ffmpeg <- function(command) {
 #' Save one frame of a video to an image file, selected either by timestamp or
 #' by frame number. Provide exactly one of \code{timestamp} or \code{frame}.
 #'
-#' @param infile A string containing the path to a video file.
+#' @inheritParams crop_video
 #' @param outfile A string containing the path of the image file to write.
 #' @param timestamp Either a number of seconds, a time-duration-syntax string,
 #'   or \code{NULL}. Provide exactly one of \code{timestamp} or \code{frame}.
 #' @param frame Either an integerish frame number or \code{NULL}. Provide
 #'   exactly one of \code{timestamp} or \code{frame}.
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @return `r command_return()`
 #' @seealso [ffm_seek()], the builder it uses to grab the frame;
 #'   [extract_frame_batch()] for the many-file (batch) form.
 #' @family task functions
@@ -118,7 +116,7 @@ frame_pipeline <- function(input, output, timestamp) {
 #' \code{outdir} as \code{<prefix>_<n>.<format>}, where \code{<n>} is a
 #' zero-padded integer starting at 1.
 #'
-#' @param infile A string containing the path to a video file.
+#' @inheritParams crop_video
 #' @param outdir A string naming the directory to write the image sequence to.
 #'   It is created (recursively) if it does not exist.
 #' @param fps The sampling rate, in frames per second: either a positive number
@@ -133,9 +131,7 @@ frame_pipeline <- function(input, output, timestamp) {
 #' @param prefix A string used as the basename stem of each image, or
 #'   \code{NULL} to derive it from \code{infile}'s basename. (default =
 #'   \code{NULL})
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @return `r command_return()`
 #' @seealso [ffm_fps()], the builder it uses to set the sampling rate;
 #'   [extract_frame()] for a single frame and [extract_frame_batch()] for a
 #'   caller-enumerated set; [sample_frames_batch()] for the many-file form.
@@ -504,31 +500,20 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy",
 #' input carries more than one audio track, \code{audio_stream} names which one
 #' to take; with no selector the \strong{first} audio track is taken.
 #'
-#' When no \code{audio_stream} is named and the input turns out to carry tracks
-#' the output will not, the verb warns. That check is \strong{best-effort} and
-#' costs \strong{one FFprobe call per distinct input} -- one, here, since this
-#' verb takes a single \code{infile}: it is emitted when FFprobe is available
-#' and the input can be probed, and is skipped silently otherwise. It never runs
-#' under \code{run = FALSE}, and never changes the compiled command. Suppress it
-#' by naming a track with \code{audio_stream}, or by class with
-#' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#' `r dropped_audio_paragraph()`
 #'
-#' Switch the check off -- and skip its FFprobe call -- with
-#' \code{options(tidymedia.check_tracks = FALSE)} for the session, or
-#' \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
-#' one function.
+#' `r check_tracks_off_paragraph()`
 #'
+#' @inheritParams crop_video
 #' @param infile A string containing the path to a media file.
-#' @param outfile A string containing the path of the audio file to write.
+#' @param outfile `r write_path_param("audio")`
 #' @param audio_codec A string naming the audio codec for the output stream
 #'   (default \code{"copy"}, i.e. remux without re-encoding), or \code{NULL} to
 #'   emit no \code{-codec:a} and let the output container's default encoder
 #'   decide — useful when the source codec cannot be copied into the extension
 #'   you asked for.
 #' @param audio_stream `r audio_stream_param("take", "takes", "first")`
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @return `r command_return()`
 #' @seealso [ffm_drop()] and [ffm_codec()], the builders it wraps;
 #'   [convert_audio()] to re-encode the extracted audio;
 #'   [extract_audio_batch()] for the many-file form.
@@ -992,9 +977,9 @@ ffmpeg_exit_status <- function(cnd) {
 #' is re-encoded, \code{hardware = "nvenc"} or \code{"videotoolbox"} moves
 #' that encode onto a GPU; the audio output is never affected.
 #'
-#' @param infile A string containing the path to a media file.
-#' @param audiofile A string containing the path of the audio file to write.
-#' @param videofile A string containing the path of the video file to write.
+#' @inheritParams extract_audio
+#' @param audiofile `r write_path_param("audio")`
+#' @param videofile `r write_path_param("video")`
 #' @param audio_codec A string naming the encoder for \code{audiofile}, passed
 #'   to FFmpeg's \code{-codec:a}. The default \code{"copy"} stream-copies the
 #'   audio losslessly; a codec name (e.g. \code{"libmp3lame"}) transcodes it;
@@ -1017,21 +1002,10 @@ ffmpeg_exit_status <- function(cnd) {
 #'   \code{hardware} alongside \code{video_codec = "copy"} is an error: name
 #'   an encoder or pass \code{video_codec = NULL}. See
 #'   \code{\link{has_hardware_encoder}} for availability and its caveats.
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
+#'   `r hardware_probe_sentences()`
 #'   The stream-copy conflict above is caught first, so such a call aborts
 #'   without probing.
-#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
-#'   requested but its encoder is unavailable, encode in software with a
-#'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
-#'   \code{video_codec = NULL} the fallback leaves the codec unset rather
-#'   than injecting one.
-#'   A \code{video_codec} in a family that backend has no encoder for is a
-#'   wrong argument rather than an absent encoder, so it aborts whatever
-#'   \code{fallback} says.
+#' @param fallback `r fallback_param("software", unset = "injecting")`
 #' @param audio_stream `r audio_stream_param("write to \\code{audiofile}", "keeps", "every", extra = audio_stream_extras$separation_container)`
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
@@ -1289,22 +1263,11 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
 #' When \code{infile} carries more than one audio track, \code{audio_stream}
 #' names which one to take; with no selector the \strong{first} one is taken.
 #'
-#' When no \code{audio_stream} is named and the input turns out to carry tracks
-#' the output will not, the verb warns. That check is \strong{best-effort} and
-#' costs \strong{one FFprobe call per distinct input} -- one, here, since this
-#' verb takes a single \code{infile}: it is emitted when FFprobe is available
-#' and the input can be probed, and is skipped silently otherwise. It never runs
-#' under \code{run = FALSE}, and never changes the compiled command. Suppress it
-#' by naming a track with \code{audio_stream}, or by class with
-#' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#' `r dropped_audio_paragraph()`
 #'
-#' Switch the check off -- and skip its FFprobe call -- with
-#' \code{options(tidymedia.check_tracks = FALSE)} for the session, or
-#' \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
-#' one function.
+#' `r check_tracks_off_paragraph()`
 #'
-#' @param infile A string containing the path to a media file.
-#' @param outfile A string containing the path of the audio file to write.
+#' @inheritParams extract_audio
 #' @param audio_codec An optional string naming the output audio codec (e.g.
 #'   \code{"libmp3lame"}, \code{"aac"}, \code{"flac"}), passed to FFmpeg's
 #'   \code{-c:a}. When \code{NULL} (default), the codec is inferred from the
@@ -1312,9 +1275,7 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
 #'   other transform verbs, \code{NULL} here is \emph{not} the "leave the codec
 #'   unset" sentinel — it selects \code{-q:a 0}.
 #' @param audio_stream `r audio_stream_param("take", "takes", "first")`
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @return `r command_return()`
 #' @seealso [ffm_codec()] and [ffm_map()], the builders it wraps;
 #'   [extract_audio()] to copy audio without re-encoding;
 #'   [convert_audio_batch()] for the many-file form.
@@ -1411,50 +1372,24 @@ crop_video_pipeline <- function(input, output, width, height,
 #' Crop a video to a rectangular region
 #'
 #' @param infile A string containing the path to a video file.
-#' @param outfile A string containing the path of the video file to write.
+#' @param outfile `r write_path_param("video")`
 #' @param width The width of the output video, in pixels.
 #' @param height The height of the output video, in pixels.
 #' @param x The horizontal offset, in pixels, of the left edge of the crop.
 #'   (default = centered)
 #' @param y The vertical offset, in pixels, of the top edge of the crop.
 #'   (default = centered)
-#' @param video_codec A string naming the output video codec, or \code{NULL}
-#'   (default) to leave it unset, so the output container's default encoder is
-#'   used and the compiled command is unchanged from one that never named a
-#'   codec.
-#' @param audio_codec A string naming the output audio codec. \code{"copy"}
-#'   (default) stream-copies the audio through untouched; name an encoder (e.g.
-#'   \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec unset
-#'   so the output container's default encoder is used. Stream-copying fails if
+#' @param video_codec `r video_codec_unset_param()`
+#' @param audio_codec A string naming the output audio codec.
+#'   `r audio_codec_copy_sentences("the audio")` Stream-copying fails if
 #'   the output container cannot hold the source audio codec (e.g. FLAC in
 #'   \code{.mp4}) — name an encoder in that case.
-#' @param hardware The encoder backend: \code{"none"} (default, the
-#'   software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
-#'   (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
-#'   (H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
-#'   family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
-#'   \code{"h264_videotoolbox"}); with the default \code{video_codec = NULL}
-#'   the H.264 family is assumed, so a non-H.264 container (e.g.
-#'   \code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}
-#'   (AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}}
-#'   for availability and its caveats.
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
-#'   requested but its encoder is unavailable, encode in software with a
-#'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
-#'   \code{video_codec = NULL} the fallback leaves the codec unset rather
-#'   than picking one, so the codec never changes silently.
-#'   A \code{video_codec} in a family that backend has no encoder for is a
-#'   wrong argument rather than an absent encoder, so it aborts whatever
-#'   \code{fallback} says.
+#' @param hardware `r hardware_param(null_default = TRUE)`
+#' @param fallback `r fallback_param("software", unset = "picking")`
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @return `r command_return()`
 #' @seealso [ffm_crop()], the builder it wraps; [has_hardware_encoder()] for the
 #'   \code{hardware} toggle;
 #'   [crop_video_batch()] for the many-file form.
@@ -1550,30 +1485,17 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #' with \code{yuv420p} and \code{+faststart}, AAC audio), padding odd
 #' dimensions down to even values as required by the codec.
 #'
-#' @param infile A string containing the path to a video file.
-#' @param outfile A string containing the path of the video file to write.
+#' @inheritParams crop_video
 #' @param hardware The encoder backend: \code{"none"} (default, software
 #'   libx264), \code{"nvenc"} for NVIDIA GPU H.264 encoding
 #'   (\code{"h264_nvenc"}), or \code{"videotoolbox"} for Apple GPU H.264
 #'   encoding (\code{"h264_videotoolbox"}). The backend you name is the one
 #'   used; an unavailable one aborts unless \code{fallback = TRUE}. See
 #'   \code{\link{has_hardware_encoder}}.
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
-#'   requested but its encoder is unavailable, re-encode with software
-#'   libx264 and a message (\code{TRUE}) instead of aborting (\code{FALSE},
-#'   default).
-#'   A \code{video_codec} in a family that backend has no encoder for is a
-#'   wrong argument rather than an absent encoder, so it aborts whatever
-#'   \code{fallback} says.
+#'   `r hardware_probe_sentences()`
+#' @param fallback `r fallback_param("libx264")`
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @return `r command_return()`
 #' @seealso [ffm_codec()] and [ffm_pixel_format()], among the builders it wraps;
 #'   [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [standardize_video()] for a configurable re-encode;
@@ -1649,13 +1571,11 @@ strip_metadata_pipeline <- function(input, output) {
 #' require re-encoding (out of scope; use the \code{\link{ffmpeg}} escape hatch)
 #' or per-stream metadata mapping that must probe the file first.
 #'
-#' @param infile A string containing the path to a media file.
+#' @inheritParams extract_audio
 #' @param outfile A string containing the path of the de-identified file to
 #'   write. Use the same container extension as \code{infile} so the copied
 #'   streams remux cleanly.
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @return `r command_return()`
 #' @seealso [anonymize_video()] to remove faces or regions from the picture (the
 #'   visual de-identification sibling); [probe_container()] and
 #'   [mediainfo_query()] to inspect a file's metadata before and after;
@@ -1707,8 +1627,7 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #' even value (a \code{yuv420p}/\code{libx264} requirement, and a no-op for
 #' already-even input) so the output always encodes.
 #'
-#' @param infile A string containing the path to a video file.
-#' @param outfile A string containing the path of the video file to write.
+#' @inheritParams crop_video
 #' @param width The output width in pixels (a positive number), or \code{NULL}
 #'   (default) to leave the width unconstrained.
 #' @param height The output height in pixels (a positive number), or \code{NULL}
@@ -1717,44 +1636,23 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #'   expression such as \code{"30000/1001"}), or \code{NULL} (default) to keep
 #'   the input frame rate.
 #' @param video_codec A string naming the output video codec (default
-#'   \code{"libx264"}), or \code{NULL} to emit no \code{-codec:v} and let the
+#'   \code{"libx264"}). \code{NULL} emits no \code{-codec:v} and lets the
 #'   output container's default encoder decide. \code{NULL} is how you opt out
-#'   of the H.264 default for a container that does not hold it — for a
+#'   of the H.264 default for a container that does not hold it. For a
 #'   \code{.webm} output, pass \code{video_codec = NULL} \emph{and}
-#'   \code{audio_codec = NULL}, since the default \code{audio_codec = "copy"}
-#'   would otherwise carry a codec WebM cannot hold.
-#' @param audio_codec A string naming the output audio codec (default
-#'   \code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real
-#'   encoder (e.g. \code{"aac"}) when the source audio codec cannot be copied
-#'   into the output container, or \code{NULL} to emit no \code{-codec:a} and
-#'   let the container's default encoder decide.
+#'   \code{audio_codec = NULL}. Otherwise the default
+#'   \code{audio_codec = "copy"} would carry a codec WebM cannot hold.
+#' @param audio_codec A string naming the output audio codec. The default
+#'   \code{"copy"} stream-copies the source audio unchanged. Name a real
+#'   encoder, such as \code{"aac"}, when the source audio codec cannot be copied
+#'   into the output container. \code{NULL} emits no \code{-codec:a} and lets
+#'   the container's default encoder decide.
 #' @param pixel_format A string naming the output pixel format (default
 #'   \code{"yuv420p"}).
-#' @param hardware The encoder backend: \code{"none"} (default, the
-#'   software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
-#'   (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
-#'   (H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
-#'   family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
-#'   \code{"h264_videotoolbox"}); see \code{\link{has_hardware_encoder}} for
-#'   availability and its caveats. Applies to video only: \code{audio_codec}
-#'   is never hardware-accelerated.
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
-#'   requested but its encoder is unavailable, re-encode with the software
-#'   \code{video_codec} and a message (\code{TRUE}) instead of aborting
-#'   (\code{FALSE}, default). Keeps output reproducible by never changing the
-#'   codec silently.
-#'   A \code{video_codec} in a family that backend has no encoder for is a
-#'   wrong argument rather than an absent encoder, so it aborts whatever
-#'   \code{fallback} says.
+#' @param hardware `r hardware_param(null_default = FALSE, video_only = TRUE)`
+#' @param fallback `r fallback_param("video_codec", reproducible = TRUE)`
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @return `r command_return()`
 #' @seealso [ffm_scale()], [ffm_codec()], and [ffm_pixel_format()], among the
 #'   builders it wraps; [has_hardware_encoder()] for the \code{hardware}
 #'   toggle;
@@ -1946,52 +1844,14 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #' \code{audio_codec} names an encoder. The same input and regions therefore
 #' always compile to a byte-identical command.
 #'
-#' @param infile A string containing the path to a video file.
-#' @param outfile A string containing the path of the video file to write.
+#' @inheritParams standardize_video
 #' @param regions A data frame with one row per box and columns \code{x},
 #'   \code{y}, \code{width}, \code{height} (and optionally \code{color}); see
 #'   Details.
 #' @param color A string naming the default fill color in FFmpeg color syntax,
 #'   used for any row without its own \code{color} (default \code{"black"}).
-#' @param video_codec A string naming the output video codec (default
-#'   \code{"libx264"}), or \code{NULL} to emit no \code{-codec:v} and let the
-#'   output container's default encoder decide. \code{NULL} is how you opt out
-#'   of the H.264 default for a container that does not hold it — for a
-#'   \code{.webm} output, pass \code{video_codec = NULL} \emph{and}
-#'   \code{audio_codec = NULL}, since the default \code{audio_codec = "copy"}
-#'   would otherwise carry a codec WebM cannot hold.
-#' @param audio_codec A string naming the output audio codec (default
-#'   \code{"copy"}, i.e. stream-copy the source audio unchanged). Name a real
-#'   encoder (e.g. \code{"aac"}) when the source audio codec cannot be copied
-#'   into the output container, or \code{NULL} to emit no \code{-codec:a} and
-#'   let the container's default encoder decide.
-#' @param pixel_format A string naming the output pixel format (default
-#'   \code{"yuv420p"}).
-#' @param hardware The encoder backend: \code{"none"} (default, the
-#'   software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
-#'   (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
-#'   (H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
-#'   family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
-#'   \code{"h264_videotoolbox"}); see \code{\link{has_hardware_encoder}} for
-#'   availability and its caveats. Applies to video only: \code{audio_codec}
-#'   is never hardware-accelerated.
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
-#'   requested but its encoder is unavailable, re-encode with the software
-#'   \code{video_codec} and a message (\code{TRUE}) instead of aborting
-#'   (\code{FALSE}, default). Keeps output reproducible by never changing the
-#'   codec silently.
-#'   A \code{video_codec} in a family that backend has no encoder for is a
-#'   wrong argument rather than an absent encoder, so it aborts whatever
-#'   \code{fallback} says.
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @return `r command_return()`
 #' @seealso [ffm_drawbox()], the builder filter it wraps; [has_hardware_encoder()] for the
 #'   \code{hardware} toggle; [anonymize_video_batch()]
 #'   for the many-file (batch) form.
@@ -2219,9 +2079,7 @@ derive_anonymized_names <- function(input) {
 #'   \code{output} column names the destination; when absent, one is derived per
 #'   row by appending \code{_anonymized} to each input's basename, keeping the
 #'   input's extension (e.g. \code{clip.mkv} becomes \code{clip_anonymized.mkv}).
-#'   Two rows naming the same output path are refused before any row runs:
-#'   a path repeated in the \code{output} column, or a repeated \code{input}
-#'   when there is no \code{output} column. Each of the
+#'   `r duplicate_output_sentences()` Each of the
 #'   four encode knobs — \code{color}, \code{video_codec}, \code{audio_codec},
 #'   \code{pixel_format} — may
 #'   also appear as a column to override the corresponding argument on a per-row
@@ -2237,11 +2095,8 @@ derive_anonymized_names <- function(input) {
 #'   box supplies its own \code{color}. (default = \code{"black"})
 #' @param video_codec A string naming the output video codec applied to every
 #'   row, unless \code{jobs} carries a \code{video_codec} column, in which case
-#'   \code{NA} in a cell leaves that row's codec unset. Default
-#'   \code{"libx264"}; \code{NULL} emits no \code{-codec:v} and lets the output
-#'   container's default encoder decide (for a \code{.webm} output, pass
-#'   \code{audio_codec = NULL} too — the default \code{"copy"} would otherwise
-#'   carry a codec WebM cannot hold).
+#'   \code{NA} in a cell leaves that row's codec unset.
+#'   `r batch_libx264_sentences()`
 #' @param audio_codec A string naming the output audio codec applied to every
 #'   row, unless \code{jobs} carries an \code{audio_codec} column, in which case
 #'   \code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
@@ -2257,25 +2112,12 @@ derive_anonymized_names <- function(input) {
 #'   GPU encoding (H.264 and HEVC). Batch-wide (a machine property), not a
 #'   per-row column; a \code{hardware} column in \code{jobs} is ignored. See
 #'   \code{\link{has_hardware_encoder}}.
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#'   Availability is checked at this verb's own front door, before any row
-#'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against.
+#'   `r hardware_probe_sentences()`
+#'   `r encoder_check_sentences()`
 #'   A call that is also wrong about a per-row value — a \code{regions}
 #'   table missing a required column, say — is refused for the value first,
 #'   whether or not this machine has the encoder.
-#' @param fallback A logical applied to every row: when a non-\code{"none"}
-#'   \code{hardware} is requested but its encoder is unavailable, re-encode
-#'   with the software \code{video_codec} and a message (\code{TRUE})
-#'   instead of aborting (\code{FALSE}, default). Batch-wide, not a per-row
-#'   column.
-#'   A \code{video_codec} in a family that backend has no encoder for is a
-#'   wrong argument rather than an absent encoder, so it aborts whatever
-#'   \code{fallback} says.
+#' @param fallback `r fallback_param("video_codec", batch = TRUE)`
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}).
@@ -2287,11 +2129,7 @@ derive_anonymized_names <- function(input) {
 #'   \code{future::plan(future::multisession)}.
 #' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
 #'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
-#' @return The [tibble][tibble::tibble-package] returned by
-#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
-#'   (and, when \code{output} was derived, the resolved \code{output} column;
-#'   when \code{run = TRUE}, a \code{success} column, plus any columns the
-#'   forwarded arguments add, e.g. \code{verified}).
+#' @return `r batch_return("output")`
 #' @seealso [anonymize_video()] for the single-input form; [has_hardware_encoder()] for the
 #'   \code{hardware} toggle; [ffm_batch()] for the
 #'   batch runner and the arguments forwarded through \code{...};
@@ -2530,19 +2368,13 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #' tracks the output will not, the verb warns -- the same warning
 #' \code{\link{extract_audio}} and \code{\link{convert_audio}} emit. Naming a
 #' track with \code{audio_stream} silences it, as does
-#' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}. The check is
-#' \strong{best-effort} and costs \strong{one FFprobe call per distinct input}
-#' -- one, here, since this verb takes a single \code{infile}: it is emitted
-#' when FFprobe is available and the input can be probed, and skipped silently
-#' otherwise. It never runs under \code{run = FALSE}, and never changes the
-#' compiled command. Under \code{two_pass = TRUE} it lands \emph{before} the
-#' analysis pass, so it arrives while adding \code{audio_stream} can still save
-#' that pass.
+#' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#' `r dropped_audio_cost_sentences()` It never runs under \code{run = FALSE},
+#' and never changes the compiled command. Under \code{two_pass = TRUE} it lands
+#' \emph{before} the analysis pass, so it arrives while adding
+#' \code{audio_stream} can still save that pass.
 #'
-#' Switch the check off -- and skip its FFprobe call -- with
-#' \code{options(tidymedia.check_tracks = FALSE)} for the session, or
-#' \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
-#' one function.
+#' `r check_tracks_off_paragraph()`
 #'
 #' @param infile A string containing the path to a media file (with audio). An
 #'   input with no audio stream is an FFmpeg error, not a silent copy of the
@@ -2605,9 +2437,7 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #' @seealso [ffm_loudnorm()], the builder it wraps; [normalize_audio_batch()]
 #'   for the many-file form; [extract_audio()] and [convert_audio()], the other
 #'   verbs whose output is one audio stream.
-#' @references
-#' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
-#' maximum level of audio signals}; ITU-R BS.1770-4.
+#' @references `r ebu_r128_reference()`
 #' @family task functions
 #' @family audio selection functions
 #' @examples
@@ -2939,9 +2769,7 @@ ffmpeg_codecs <- function(sort_by_type = TRUE) {
 #' Query a list of installed encoders from FFmpeg and construct a tidy data
 #' frame containing information about these encoders.
 #'
-#' @param sort_by_type A logical indicating whether the tibble should be sorted
-#'   by type and then by name (\code{TRUE}) or just by name (\code{FALSE}).
-#'   (default = \code{TRUE})
+#' @inheritParams ffmpeg_codecs
 #' @return A [tibble][tibble::tibble-package] with the following variables:
 #'   \item{name}{A character vector including the name/code of each encoder}
 #'   \item{details}{A character vector including details about each encoder}
@@ -3703,7 +3531,7 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #' appending a suffix of an underscore (_) and an integer indicating which
 #' segment (based on the order provided in \code{start} and \code{end}).
 #'
-#' @param infile A string containing the path to a video file.
+#' @inheritParams crop_video
 #' @param start A vector containing one or more timestamps indicating the
 #'   start of each segment to create. Can be either a numeric vector indicating
 #'   seconds or a character vector with time duration syntax. Must have the same
@@ -3724,49 +3552,18 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 #'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
 #'   for the trade-off.
-#' @param video_codec A string naming the output video codec, or \code{NULL}
-#'   (default) to leave it unset, so the output container's default encoder is
-#'   used and the compiled command is unchanged from one that never named a
-#'   codec. A stream copy runs no encoder, so naming a codec (or a
-#'   \code{hardware} backend) alongside \code{reencode = FALSE} is an error.
-#' @param audio_codec A string naming the output audio codec. \code{"copy"}
-#'   (default) stream-copies the audio through untouched; name an encoder (e.g.
-#'   \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec unset
-#'   so the output container's default encoder is used. A stream copy
+#' @param video_codec `r video_codec_unset_param()` A stream copy runs no
+#'   encoder, so naming a codec (or a \code{hardware} backend) alongside
+#'   \code{reencode = FALSE} is an error.
+#' @param audio_codec A string naming the output audio codec.
+#'   `r audio_codec_copy_sentences("the audio")` A stream copy
 #'   (\code{reencode = FALSE}) always copies the audio, so any other value is an
 #'   error there. Stream-copying fails if the output container cannot hold the
 #'   source audio codec (e.g. FLAC in \code{.mp4}) — name an encoder instead.
-#' @param hardware The encoder backend: \code{"none"} (default, the
-#'   software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
-#'   (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
-#'   (H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
-#'   family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
-#'   \code{"h264_videotoolbox"}); with the default \code{video_codec = NULL}
-#'   the H.264 family is assumed, so a non-H.264 container (e.g.
-#'   \code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}
-#'   (AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}}
-#'   for availability and its caveats.
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#'   Availability is checked at this verb's own front door, before any row
-#'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against. A call that
-#'   also contradicts itself — asking for GPU encoding on a cut that stream-copies —
-#'   is refused for the contradiction first, whether or not this machine has
-#'   the encoder.
+#' @param hardware `r hardware_param(null_default = TRUE)`
+#'   `r encoder_check_sentences()` `r contradiction_sentences("cut")`
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
-#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
-#'   requested but its encoder is unavailable, encode in software with a
-#'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
-#'   \code{video_codec = NULL} the fallback leaves the codec unset rather
-#'   than picking one, so the codec never changes silently.
-#'   A \code{video_codec} in a family that backend has no encoder for is a
-#'   wrong argument rather than an absent encoder, so it aborts whatever
-#'   \code{fallback} says.
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each segment's command (\code{TRUE}, default) or
 #'   only compile them (\code{FALSE}).
@@ -3782,7 +3579,7 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #' @seealso [ffm_seek()], the builder it uses to cut; [ffm_batch()], the runner;
 #'   [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [segment_video_batch()] for the many-file form.
-#' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
+#' @references `r time_duration_reference()`
 #' @family task functions
 #' @family audio selection functions
 #' @examples
@@ -4036,47 +3833,26 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   while cutting by stream copy (\code{reencode = FALSE}, as an argument or a
 #'   column) is an error, so a jobs table mixing stream-copy rows with a
 #'   transcoding \code{audio_codec} must be split into separate calls.
-#' @param hardware,fallback The encoder backend and its fallback behavior,
-#'   applied to the whole batch (a property of the machine, not of a row, so
-#'   neither is read as a \code{jobs} column). See [segment_video()].
+#' @param hardware,fallback `r batch_hardware_param("segment_video")`
 #'   Because \code{hardware} is batch-wide, a non-\code{"none"} value
 #'   conflicts with a stream-copy row on its own — even one naming no codec —
 #'   so a jobs table mixing \code{reencode = FALSE} rows with GPU encoding
 #'   must be split into separate calls.
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#'   Availability is checked at this verb's own front door, before any row
-#'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against. A call that
-#'   also contradicts itself — asking for GPU encoding on a cut that stream-copies —
-#'   is refused for the contradiction first, whether or not this machine has
-#'   the encoder.
+#'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
+#'   `r contradiction_sentences("cut")`
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each segment's command through FFmpeg
 #'   (\code{TRUE}, default) or only compile them for inspection (\code{FALSE}).
-#' @param parallel A logical passed to \code{\link{ffm_batch}}: cut segments in
-#'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
-#'   default). Parallelism follows the active \code{\link[future:plan]{future}}
-#'   plan; \code{TRUE} under the default sequential plan runs one segment at a
-#'   time and warns. Set a plan first, e.g.
-#'   \code{future::plan(future::multisession)}.
-#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
-#'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
-#' @return The [tibble][tibble::tibble-package] returned by
-#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
-#'   (and, when \code{output} was derived, the resolved \code{output} column;
-#'   when \code{run = TRUE}, a \code{success} column, plus any columns the
-#'   forwarded arguments add, e.g. \code{verified}).
+#' @inheritParams segment_video
+#' @inheritParams anonymize_video_batch
+#' @return `r batch_return("output")`
 #' @seealso [segment_video()] for the single-input, parallel-vector form;
 #'   [ffm_batch()] for the batch runner and the arguments forwarded through
 #'   \code{...}; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [ffm_seek()] for the cut trade-off.
-#' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
+#' @references `r time_duration_reference()`
 #' @family task functions
 #' @family audio selection functions
 #' @examples
@@ -4264,17 +4040,12 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
 #'   default). Parallelism follows the active \code{\link[future:plan]{future}}
 #'   plan; \code{TRUE} under the default sequential plan runs one frame at a time
 #'   and warns.
-#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
-#'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
-#' @return The [tibble][tibble::tibble-package] returned by
-#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
-#'   (and, when \code{output} was derived, the resolved \code{output} column;
-#'   when \code{run = TRUE}, a \code{success} column, plus any columns the
-#'   forwarded arguments add, e.g. \code{verified}).
+#' @inheritParams anonymize_video_batch
+#' @return `r batch_return("output")`
 #' @seealso [extract_frame()] for the single-frame form; [ffm_batch()] for the
 #'   batch runner and the arguments forwarded through \code{...};
 #'   [segment_video_batch()] for the segment-cutting sibling.
-#' @references https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
+#' @references `r time_duration_reference()`
 #' @family task functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -4439,20 +4210,13 @@ derive_frames_dir <- function(input) {
 #'   derived. (default = \code{NULL})
 #' @param format A string giving the output image file extension, as in
 #'   [sample_frames()]. (default = \code{"png"})
-#' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
-#'   default) or only compile them for inspection (\code{FALSE}).
+#' @inheritParams anonymize_video_batch
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: sample in
 #'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
 #'   default). Parallelism follows the active \code{\link[future:plan]{future}}
 #'   plan; \code{TRUE} under the default sequential plan runs one at a time and
 #'   warns.
-#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
-#'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
-#' @return The [tibble][tibble::tibble-package] returned by
-#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
-#'   (and the resolved \code{outdir} column when it was derived; when
-#'   \code{run = TRUE}, a \code{success} column, plus any columns the forwarded
-#'   arguments add, e.g. \code{verified}).
+#' @return `r batch_return("outdir")`
 #' @seealso [sample_frames()] for the single-video form; [ffm_batch()] for the
 #'   batch runner and the arguments forwarded through \code{...};
 #'   [extract_frame_batch()] for the enumerated-frame sibling.
@@ -4629,9 +4393,7 @@ derive_standardized_names <- function(input) {
 #'   the destination; when absent, one is derived per row by appending
 #'   \code{_standardized} to each input's basename, keeping the input's
 #'   extension (e.g. \code{clip.mkv} becomes \code{clip_standardized.mkv}).
-#'   Two rows naming the same output path are refused before any row runs:
-#'   a path repeated in the \code{output} column, or a repeated \code{input}
-#'   when there is no \code{output} column.
+#'   `r duplicate_output_sentences()`
 #'   Each of the six standardization knobs — \code{width}, \code{height},
 #'   \code{fps}, \code{video_codec}, \code{audio_codec}, \code{pixel_format} —
 #'   may also appear as a
@@ -4655,11 +4417,8 @@ derive_standardized_names <- function(input) {
 #'   leave the frame rate unchanged)
 #' @param video_codec A string naming the video codec applied to every row,
 #'   unless \code{jobs} carries a \code{video_codec} column, in which case
-#'   \code{NA} in a cell leaves that row's codec unset. Default
-#'   \code{"libx264"}; \code{NULL} emits no \code{-codec:v} and lets the output
-#'   container's default encoder decide (for a \code{.webm} output, pass
-#'   \code{audio_codec = NULL} too — the default \code{"copy"} would otherwise
-#'   carry a codec WebM cannot hold).
+#'   \code{NA} in a cell leaves that row's codec unset.
+#'   `r batch_libx264_sentences()`
 #' @param audio_codec A string naming the audio codec applied to every row,
 #'   unless \code{jobs} carries an \code{audio_codec} column, in which case
 #'   \code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
@@ -4674,37 +4433,17 @@ derive_standardized_names <- function(input) {
 #'   AV1), or \code{"videotoolbox"} for Apple GPU encoding (H.264 and
 #'   HEVC). Batch-wide (not a per-row column). See
 #'   \code{\link{standardize_video}} and \code{\link{has_hardware_encoder}}.
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#'   Availability is checked at this verb's own front door, before any row
-#'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against.
-#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
-#'   requested but its encoder is unavailable, re-encode with the software
-#'   \code{video_codec} and a message (\code{TRUE}) instead of aborting
-#'   (\code{FALSE}, default).
-#'   A \code{video_codec} in a family that backend has no encoder for is a
-#'   wrong argument rather than an absent encoder, so it aborts whatever
-#'   \code{fallback} says.
+#'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
+#' @param fallback `r fallback_param("video_codec")`
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
-#' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
-#'   default) or only compile them for inspection (\code{FALSE}).
+#' @inheritParams anonymize_video_batch
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: standardize in
 #'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
 #'   default). Parallelism follows the active \code{\link[future:plan]{future}}
 #'   plan; \code{TRUE} under the default sequential plan runs one input at a
 #'   time and warns. Set a plan first, e.g.
 #'   \code{future::plan(future::multisession)}.
-#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
-#'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
-#' @return The [tibble][tibble::tibble-package] returned by
-#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
-#'   (and, when \code{output} was derived, the resolved \code{output} column;
-#'   when \code{run = TRUE}, a \code{success} column, plus any columns the
-#'   forwarded arguments add, e.g. \code{verified}).
+#' @return `r batch_return("output")`
 #' @seealso [standardize_video()] for the single-input form; [ffm_batch()] for
 #'   the batch runner and the arguments forwarded through \code{...};
 #'   [segment_video_batch()] and [extract_frame_batch()] for the other
@@ -4952,21 +4691,14 @@ derive_stripped_names <- function(input) {
 #'   \code{output} column, or a repeated explicit \code{output} — are rejected
 #'   so one file cannot silently overwrite another. Any other columns are
 #'   ignored (the scrub has no per-row knobs).
-#' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
-#'   default) or only compile them for inspection (\code{FALSE}).
+#' @inheritParams anonymize_video_batch
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: scrub in
 #'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
 #'   default). Parallelism follows the active \code{\link[future:plan]{future}}
 #'   plan; \code{TRUE} under the default sequential plan runs one input at a
 #'   time and warns. Set a plan first, e.g.
 #'   \code{future::plan(future::multisession)}.
-#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
-#'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
-#' @return The [tibble][tibble::tibble-package] returned by
-#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
-#'   (and, when \code{output} was derived, the resolved \code{output} column;
-#'   when \code{run = TRUE}, a \code{success} column, plus any columns the
-#'   forwarded arguments add, e.g. \code{verified}).
+#' @return `r batch_return("output")`
 #' @seealso [strip_metadata()] for the single-input form; [ffm_batch()] for the
 #'   batch runner and the arguments forwarded through \code{...};
 #'   [standardize_video_batch()] and [anonymize_video_batch()] for the other
@@ -5066,22 +4798,14 @@ derive_normalized_names <- function(input) {
 #' tracks the output will not, the verb warns \strong{once} for the whole batch,
 #' naming every affected row. Naming a track silences it -- the
 #' \code{audio_stream} argument, or an \code{audio_stream} cell on every row --
-#' as does \code{suppressWarnings(classes = "tidymedia_dropped_audio")}. The
-#' check is \strong{best-effort} and costs \strong{one FFprobe call per
-#' distinct input} it has to probe, so a repeated input is probed once and a
-#' row that names a track is not probed at all: it is emitted when FFprobe is
-#' available and the input can be probed, and skipped silently otherwise. Those probes run \strong{serially at the front door}, before the
-#' fan-out starts, so \code{parallel} does not reach them; a sweep long enough
-#' to look like a hang reports its progress. The check never runs under
+#' as does \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#' `r dropped_audio_cost_sentences(batch = TRUE)` The check never runs under
 #' \code{run = FALSE}, never changes any compiled command, and is skipped
 #' entirely when every row names a track. Under \code{two_pass = TRUE} it lands
 #' \emph{before} Phase 1, so it arrives while adding \code{audio_stream} can
 #' still save the analysis pass.
 #'
-#' Switch the check off -- and skip the whole sweep -- with
-#' \code{options(tidymedia.check_tracks = FALSE)} for the session, or
-#' \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
-#' one function.
+#' `r check_tracks_off_paragraph(batch = TRUE)`
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path). An optional \code{output} column names
@@ -5169,13 +4893,8 @@ derive_normalized_names <- function(input) {
 #'   plan; \code{TRUE} under the default sequential plan runs one input at a time
 #'   and warns. Set a plan first, e.g.
 #'   \code{future::plan(future::multisession)}.
-#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
-#'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
-#' @return The [tibble][tibble::tibble-package] returned by
-#'   \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
-#'   (and, when \code{output} was derived, the resolved \code{output} column;
-#'   when \code{run = TRUE}, a \code{success} column, plus any columns the
-#'   forwarded arguments add, e.g. \code{verified}). Under \code{two_pass = TRUE}
+#' @inheritParams anonymize_video_batch
+#' @return `r batch_return("output")` Under \code{two_pass = TRUE}
 #'   the result also carries the five measured columns (\code{measured_I} etc.)
 #'   and a logical \code{silent} column, and the \code{command} column holds the
 #'   linear correction commands (\code{NA} for silent rows, which carry \code{NA}
@@ -5185,9 +4904,7 @@ derive_normalized_names <- function(input) {
 #'   with \code{\link{ffm_manifest}}) are present whenever requested, even when
 #'   \emph{every} row is silent -- silent rows simply carry \code{NA} for those
 #'   outputs.
-#' @references
-#' EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
-#' maximum level of audio signals}; ITU-R BS.1770-4.
+#' @references `r ebu_r128_reference()`
 #' @seealso [normalize_audio()] for the single-input form; [ffm_batch()] for the
 #'   batch runner and the arguments forwarded through \code{...};
 #'   [standardize_video_batch()] for the video-side table-driven sibling.
@@ -5895,23 +5612,9 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #' reproducible compiled command per input, sharing the same map/drop-video
 #' pipeline as the scalar verb.
 #'
-#' When a row names no \code{audio_stream} and its input turns out to carry
-#' tracks the output will not, the verb warns \strong{once} for the whole batch,
-#' naming every affected row. That check is \strong{best-effort} and costs
-#' \strong{one FFprobe call per distinct input} it has to probe, so a repeated
-#' input is probed once and a row that names a track is not probed at all: it
-#' is emitted when FFprobe is available and the input can be probed, and is
-#' skipped silently otherwise. Those probes run \strong{serially at the
-#' front door}, before the fan-out starts, so \code{parallel} does not reach
-#' them; a sweep long enough to look like a hang reports its progress. The check
-#' never runs under \code{run = FALSE}, never changes any compiled command, and
-#' is skipped entirely when every row names a track. Suppress it by class with
-#' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#' `r dropped_audio_paragraph(batch = TRUE)`
 #'
-#' Switch the check off -- and skip the whole sweep -- with
-#' \code{options(tidymedia.check_tracks = FALSE)} for the session, or
-#' \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
-#' one function.
+#' `r check_tracks_off_paragraph(batch = TRUE)`
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path) and an \code{output} column (destination
@@ -5935,15 +5638,12 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #' @param audio_stream `r audio_stream_param("take", "takes", "first", batch = TRUE)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
-#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
-#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
+#' @param parallel A logical: run the jobs in parallel with \pkg{furrr}
+#'   (\code{TRUE}) or one at a time (\code{FALSE}, default). See
 #'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
 #' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
 #'   \code{verify}, \code{manifest}, \code{progress}).
-#' @return The \code{jobs} tibble with an added \code{command} column and, when
-#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
-#'   provenance manifest when requested via \code{...}). See
-#'   \code{\link{ffm_batch}}.
+#' @return `r jobs_return()`
 #' @seealso [extract_audio()], the scalar verb it wraps; [ffm_batch()], the batch
 #'   runner; [convert_audio_batch()] to transcode audio in batch.
 #' @family task functions
@@ -6031,23 +5731,9 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
 #' the same audio-map pipeline (and per-value \code{audio_codec} validation) as
 #' the scalar verb.
 #'
-#' When a row names no \code{audio_stream} and its input turns out to carry
-#' tracks the output will not, the verb warns \strong{once} for the whole batch,
-#' naming every affected row. That check is \strong{best-effort} and costs
-#' \strong{one FFprobe call per distinct input} it has to probe, so a repeated
-#' input is probed once and a row that names a track is not probed at all: it
-#' is emitted when FFprobe is available and the input can be probed, and is
-#' skipped silently otherwise. Those probes run \strong{serially at the
-#' front door}, before the fan-out starts, so \code{parallel} does not reach
-#' them; a sweep long enough to look like a hang reports its progress. The check
-#' never runs under \code{run = FALSE}, never changes any compiled command, and
-#' is skipped entirely when every row names a track. Suppress it by class with
-#' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#' `r dropped_audio_paragraph(batch = TRUE)`
 #'
-#' Switch the check off -- and skip the whole sweep -- with
-#' \code{options(tidymedia.check_tracks = FALSE)} for the session, or
-#' \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
-#' one function.
+#' `r check_tracks_off_paragraph(batch = TRUE)`
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path) and an \code{output} column (destination
@@ -6067,17 +5753,8 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
 #'   infers the codec from each \code{output} extension at highest VBR quality;
 #'   name a codec (e.g. \code{"aac"}, \code{"flac"}) to pin \code{-c:a}.
 #' @param audio_stream `r audio_stream_param("take", "takes", "first", batch = TRUE)`
-#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
-#'   or only compile them for inspection (\code{FALSE}).
-#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
-#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
-#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
-#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
-#'   \code{verify}, \code{manifest}, \code{progress}).
-#' @return The \code{jobs} tibble with an added \code{command} column and, when
-#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
-#'   provenance manifest when requested via \code{...}). See
-#'   \code{\link{ffm_batch}}.
+#' @inheritParams extract_audio_batch
+#' @return `r jobs_return()`
 #' @seealso [convert_audio()], the scalar verb it wraps; [ffm_batch()], the batch
 #'   runner; [extract_audio_batch()] to stream-copy audio in batch.
 #' @family task functions
@@ -6224,39 +5901,21 @@ derive_web_names <- function(input) {
 #' @param x,y The offset in pixels of the crop's left/top edge, applied to every
 #'   row unless \code{jobs} carries a column of the same name. Default: centered.
 #' @param video_codec A string naming the output video codec, applied to every
-#'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
-#'   it unset so each output keeps its container's default encoder.
+#'   row lacking a \code{video_codec} column. \code{NULL} (default) leaves it
+#'   unset, so each output keeps its container's default encoder.
 #' @param audio_codec A string naming the output audio codec, applied to every
 #'   row lacking an \code{audio_codec} column. \code{"copy"} (default)
 #'   stream-copies the audio; name an encoder to transcode it, or \code{NULL} to
 #'   leave the codec unset so each output keeps its container's default encoder.
-#' @param hardware,fallback The encoder backend and its fallback behavior,
-#'   applied to the whole batch (a property of the machine, not of a row, so
-#'   neither is read as a \code{jobs} column). See [crop_video()].
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#'   Availability is checked at this verb's own front door, before any row
-#'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against.
+#' @param hardware,fallback `r batch_hardware_param("crop_video")`
+#'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
 #'   A call that is also wrong about a per-row value — a \code{width} or
 #'   \code{height} that is neither a positive number nor an FFmpeg expression
 #'   — is refused for the value first, whether or not this machine has the
 #'   encoder.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
-#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
-#'   or only compile them for inspection (\code{FALSE}).
-#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
-#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
-#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
-#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
-#'   \code{verify}, \code{manifest}, \code{progress}).
-#' @return The \code{jobs} tibble with an added \code{command} column and, when
-#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
-#'   provenance manifest when requested via \code{...}). See
-#'   \code{\link{ffm_batch}}.
+#' @inheritParams extract_audio_batch
+#' @return `r jobs_return()`
 #' @seealso [crop_video()], the scalar verb it wraps; [ffm_batch()], the batch
 #'   runner; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [standardize_video_batch()] to re-encode in batch.
@@ -6413,33 +6072,11 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   (default, software libx264), \code{"nvenc"} for NVIDIA GPU H.264
 #'   encoding, or \code{"videotoolbox"} for Apple GPU H.264 encoding.
 #'   Batch-wide (not a per-row column). See \code{\link{has_hardware_encoder}}.
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#'   Availability is checked at this verb's own front door, before any row
-#'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against.
-#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
-#'   requested but its encoder is unavailable, re-encode with software
-#'   libx264 and a message (\code{TRUE}) instead of aborting (\code{FALSE},
-#'   default).
-#'   A \code{video_codec} in a family that backend has no encoder for is a
-#'   wrong argument rather than an absent encoder, so it aborts whatever
-#'   \code{fallback} says.
+#'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
-#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
-#'   or only compile them for inspection (\code{FALSE}).
-#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
-#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
-#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
-#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
-#'   \code{verify}, \code{manifest}, \code{progress}).
-#' @return The \code{jobs} tibble with an added \code{command} column and, when
-#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
-#'   provenance manifest when requested via \code{...}). See
-#'   \code{\link{ffm_batch}}.
+#' @inheritParams extract_audio_batch
+#' @inheritParams format_for_web
+#' @return `r jobs_return()`
 #' @seealso [format_for_web()], the scalar verb it wraps; [ffm_batch()], the
 #'   batch runner; [standardize_video_batch()] for a configurable re-encode.
 #' @family task functions
@@ -6553,27 +6190,12 @@ format_for_web_batch <- function(jobs,
 #'   conflicts with any row whose video codec resolves to \code{"copy"} —
 #'   including the default — so a jobs table mixing copied and re-encoded
 #'   video must be split into separate calls.
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#'   Availability is checked at this verb's own front door, before any row
-#'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against. A call that
-#'   also contradicts itself — asking for GPU encoding alongside a stream copy —
-#'   is refused for the contradiction first, whether or not this machine has
-#'   the encoder.
+#'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
+#'   `r contradiction_sentences("copy")`
 #'   The stream-copy conflict above is caught first, so such a call aborts
 #'   without probing.
 #' @param audio_stream `r audio_stream_param("write to each \\code{audiofile}", "keeps", "every", batch = TRUE, extra = audio_stream_extras$separation_container)`
-#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
-#'   or only compile them for inspection (\code{FALSE}).
-#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
-#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
-#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
-#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
-#'   \code{verify}, \code{manifest}, \code{progress}).
+#' @inheritParams extract_audio_batch
 #' @return A [tibble][tibble::tibble-package] with \strong{two rows per input}
 #'   (one per stream): the reshaped \code{input}, a single \code{output} path, a
 #'   \code{stream} marker (\code{"audio"} or \code{"video"}), and an added
@@ -6906,15 +6528,11 @@ concatenate_pipeline <- function(infiles, outfile) {
 #' filter](https://ffmpeg.org/ffmpeg-filters.html#concat)
 #'
 #' @param infiles A character vector containing the file paths to video files.
-#'   Every path is checked at this verb's own front door, so a path that cannot
-#'   be found or read aborts naming this function and lists every such path,
-#'   rather than being reported against the internal builder it would otherwise
-#'   reach.
+#'   `r infiles_check_sentences()`
 #' @param outfile A string containing the desired file path to write the new,
 #'   concatenated video file to.
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @inheritParams crop_video
+#' @return `r command_return()`
 #' @seealso [ffm_concat()], the builder it wraps.
 #' @family task functions
 #' @examples
@@ -7009,53 +6627,20 @@ compare_videos_pipeline <- function(infiles, outfile,
 #' Audio is dropped unless \code{audio_input} names an input to carry; a carried
 #' track is stream-copied unless \code{audio_codec} names an encoder.
 #'
-#' @param infiles A character vector of two or more video file paths. Every
-#'   path is checked at this verb's own front door, so a path that cannot be
-#'   found or read aborts naming this function and lists every such path,
-#'   rather than being reported against the internal builder it would otherwise
-#'   reach.
+#' @param infiles A character vector of two or more video file paths.
+#'   `r infiles_check_sentences()`
 #' @param outfile A string giving the path to write the comparison video to.
 #' @param direction Either \code{"horizontal"} (side-by-side, the default) or
 #'   \code{"vertical"} (stacked top to bottom).
 #' @param resize A logical indicating whether to resize the inputs to share an
 #'   edge. Only supported for exactly two inputs. (default = \code{TRUE})
 #' @param audio_input `r audio_input_param()`
-#' @param video_codec A string naming the output video codec, or \code{NULL}
-#'   (default) to leave it unset, so the output container's default encoder is
-#'   used and the compiled command is unchanged from one that never named a
-#'   codec.
 #' @param audio_codec A string naming the codec for the carried audio track.
-#'   \code{"copy"} (default) stream-copies it through untouched; name an encoder
-#'   (e.g. \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec
-#'   unset so the output container's default encoder is used. Nothing is emitted
-#'   when \code{audio_input} is \code{NULL}, since no audio reaches the output; naming
-#'   an encoder in that case is an error.
-#' @param hardware The encoder backend: \code{"none"} (default, the
-#'   software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
-#'   (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
-#'   (H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
-#'   family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
-#'   \code{"h264_videotoolbox"}); with the default \code{video_codec = NULL}
-#'   the H.264 family is assumed, so a non-H.264 container (e.g.
-#'   \code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}
-#'   (AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}}
-#'   for availability and its caveats.
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
-#'   requested but its encoder is unavailable, encode in software with a
-#'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
-#'   \code{video_codec = NULL} the fallback leaves the codec unset rather
-#'   than picking one, so the codec never changes silently.
-#'   A \code{video_codec} in a family that backend has no encoder for is a
-#'   wrong argument rather than an absent encoder, so it aborts whatever
-#'   \code{fallback} says.
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#'   `r audio_codec_copy_sentences("it")` When \code{audio_input} is
+#'   \code{NULL}, no audio reaches the output, so nothing is emitted. Naming an
+#'   encoder in that case is an error.
+#' @inheritParams crop_video
+#' @return `r command_return()`
 #' @seealso [ffm_hstack()] and [ffm_vstack()], the builders it wraps;
 #'   [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [picture_in_picture()] for insetting instead of stacking.
@@ -7189,42 +6774,8 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #' @param margin The gap in pixels between the inset and the video edges (ignored
 #'   for \code{position = "center"}). (default = \code{16})
 #' @param audio_input `r audio_input_param()`
-#' @param video_codec A string naming the output video codec, or \code{NULL}
-#'   (default) to leave it unset, so the output container's default encoder is
-#'   used and the compiled command is unchanged from one that never named a
-#'   codec.
-#' @param audio_codec A string naming the codec for the carried audio track.
-#'   \code{"copy"} (default) stream-copies it through untouched; name an encoder
-#'   (e.g. \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec
-#'   unset so the output container's default encoder is used. Nothing is emitted
-#'   when \code{audio_input} is \code{NULL}, since no audio reaches the output; naming
-#'   an encoder in that case is an error.
-#' @param hardware The encoder backend: \code{"none"} (default, the
-#'   software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
-#'   (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
-#'   (H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
-#'   family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
-#'   \code{"h264_videotoolbox"}); with the default \code{video_codec = NULL}
-#'   the H.264 family is assumed, so a non-H.264 container (e.g.
-#'   \code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}
-#'   (AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}}
-#'   for availability and its caveats.
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#' @param fallback A logical: when a non-\code{"none"} \code{hardware} is
-#'   requested but its encoder is unavailable, encode in software with a
-#'   message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
-#'   \code{video_codec = NULL} the fallback leaves the codec unset rather
-#'   than picking one, so the codec never changes silently.
-#'   A \code{video_codec} in a family that backend has no encoder for is a
-#'   wrong argument rather than an absent encoder, so it aborts whatever
-#'   \code{fallback} says.
-#' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
-#'   or return the compiled command without running it (\code{FALSE}).
-#' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}).
+#' @inheritParams compare_videos
+#' @return `r command_return()`
 #' @seealso [ffm_overlay()], the builder it wraps; [has_hardware_encoder()] for the
 #'   \code{hardware} toggle; [compare_videos()] for
 #'   side-by-side stacking.
@@ -7286,17 +6837,8 @@ picture_in_picture <- function(main, overlay, outfile,
 #'   An \code{output} column is required; this verb derives no destination. Two
 #'   rows given the same \code{output} path are refused before any row runs.
 #'   Any other columns are ignored.
-#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
-#'   or only compile them for inspection (\code{FALSE}).
-#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
-#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
-#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
-#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
-#'   \code{verify}, \code{manifest}, \code{progress}).
-#' @return The \code{jobs} tibble with an added \code{command} column and, when
-#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
-#'   provenance manifest when requested via \code{...}). See
-#'   \code{\link{ffm_batch}}.
+#' @inheritParams extract_audio_batch
+#' @return `r jobs_return()`
 #' @seealso [concatenate_videos()], the scalar verb it wraps; [ffm_batch()], the
 #'   batch runner; [compare_videos_batch()] and [picture_in_picture_batch()],
 #'   the other fan-in batch siblings.
@@ -7349,9 +6891,7 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   \code{direction}, \code{resize}, \code{audio_input}, \code{video_codec}, and
 #'   \code{audio_codec} columns override the
 #'   like-named arguments per row (a row omitting one falls back to the
-#'   argument). In an \code{audio_input} column, \code{NA} means "drop audio" (the
-#'   column's way of writing the scalar's \code{NULL}); in a \code{video_codec}
-#'   or \code{audio_codec} column it means "leave the codec unset". Two rows
+#'   argument). `r fan_in_na_sentences()` Two rows
 #'   given the same \code{output} path are refused before any row runs; other
 #'   columns are ignored.
 #' @param direction,resize Defaults applied to every row lacking the
@@ -7359,45 +6899,21 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   or \code{"vertical"}; a \code{direction} column is held to the same two
 #'   values, per row. See [compare_videos()] for their fuller meaning.
 #' @param audio_input `r audio_input_param(batch = TRUE, extra = "Each row's value is validated against that row's input count.")`
-#' @param video_codec A string naming the output video codec, applied to every
-#'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
-#'   it unset so each output keeps its container's default encoder.
 #' @param audio_codec A string naming the codec for the carried audio track,
 #'   applied to every row lacking an \code{audio_codec} column. \code{"copy"}
-#'   (default) stream-copies it; name an encoder to transcode it, or \code{NULL}
-#'   to leave the codec unset. A row carrying no audio emits no \code{-codec:a};
-#'   naming an encoder on such a row is an error.
-#' @param hardware,fallback The encoder backend and its fallback behavior,
-#'   applied to the whole batch (a property of the machine, not of a row, so
-#'   neither is read as a \code{jobs} column). See [compare_videos()].
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#'   Availability is checked at this verb's own front door, before any row
-#'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against. A call that
-#'   also contradicts itself — naming an \code{audio_codec} with no audio carried into the output —
-#'   is refused for the contradiction first, whether or not this machine has
-#'   the encoder.
+#'   (default) stream-copies it. Name an encoder to transcode it, or
+#'   \code{NULL} to leave the codec unset. A row carrying no audio emits no
+#'   \code{-codec:a}, and naming an encoder on such a row is an error.
+#' @param hardware,fallback `r batch_hardware_param("compare_videos")`
+#'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
+#'   `r contradiction_sentences("audio_codec")`
 #'   A per-row value error — an \code{audio_input} index past that row's input count,
 #'   a \code{direction} outside the two accepted values — likewise reports ahead
 #'   of the encoder check.
-#'   A value error and a contradiction resolve the same way whether the value
-#'   arrived as an argument or in a \code{jobs} column; the contradiction
-#'   reports first.
-#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
-#'   or only compile them for inspection (\code{FALSE}).
-#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
-#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
-#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
-#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
-#'   \code{verify}, \code{manifest}, \code{progress}).
-#' @return The \code{jobs} tibble with an added \code{command} column and, when
-#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
-#'   provenance manifest when requested via \code{...}). See
-#'   \code{\link{ffm_batch}}.
+#'   `r value_error_order_sentences()`
+#' @inheritParams extract_audio_batch
+#' @inheritParams crop_video_batch
+#' @return `r jobs_return()`
 #' @seealso [compare_videos()], the scalar verb it wraps; [ffm_batch()], the
 #'   batch runner; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [concatenate_videos_batch()] and [picture_in_picture_batch()],
@@ -7576,10 +7092,8 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   \code{margin}, \code{audio_input}, \code{video_codec}, and \code{audio_codec}
 #'   columns override the
 #'   like-named arguments
-#'   per row (a row omitting one falls back to the argument). In an \code{audio_input}
-#'   column, \code{NA} means "drop audio" (the column's way of writing the
-#'   scalar's \code{NULL}); in a \code{video_codec} or \code{audio_codec} column
-#'   it means "leave the codec unset". Two rows given the same \code{output}
+#'   per row (a row omitting one falls back to the argument).
+#'   `r fan_in_na_sentences()` Two rows given the same \code{output}
 #'   path are refused before any row runs; other columns are ignored.
 #' @param position,scale,margin Defaults applied to every row lacking the
 #'   corresponding column. \code{position} is one of \code{"topright"} (the
@@ -7587,45 +7101,15 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   \code{"center"}; a \code{position} column is held to those same five
 #'   values, per row. See [picture_in_picture()] for their fuller meaning.
 #' @param audio_input `r audio_input_param(batch = TRUE)`
-#' @param video_codec A string naming the output video codec, applied to every
-#'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
-#'   it unset so each output keeps its container's default encoder.
-#' @param audio_codec A string naming the codec for the carried audio track,
-#'   applied to every row lacking an \code{audio_codec} column. \code{"copy"}
-#'   (default) stream-copies it; name an encoder to transcode it, or \code{NULL}
-#'   to leave the codec unset. A row carrying no audio emits no \code{-codec:a};
-#'   naming an encoder on such a row is an error.
-#' @param hardware,fallback The encoder backend and its fallback behavior,
-#'   applied to the whole batch (a property of the machine, not of a row, so
-#'   neither is read as a \code{jobs} column). See [picture_in_picture()].
-#'   Resolving a hardware backend asks this FFmpeg build which encoders it has,
-#'   so the first such call that re-encodes the video runs the binary
-#'   while the command is built, even under \code{run = FALSE}. The answer is
-#'   remembered for the rest of the R session; see
-#'   \code{\link{refresh_ffmpeg_capabilities}} to discard it.
-#'   Availability is checked at this verb's own front door, before any row
-#'   runs, so an unavailable encoder aborts naming this function rather than
-#'   the internal fan-out it would otherwise be reported against. A call that
-#'   also contradicts itself — naming an \code{audio_codec} with no audio carried into the output —
-#'   is refused for the contradiction first, whether or not this machine has
-#'   the encoder.
+#' @param hardware,fallback `r batch_hardware_param("picture_in_picture")`
+#'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
+#'   `r contradiction_sentences("audio_codec")`
 #'   A per-row value error — a negative \code{margin}, an \code{audio_input} index
 #'   outside the two inputs, a \code{position} outside the five accepted values
 #'   — likewise reports ahead of the encoder check.
-#'   A value error and a contradiction resolve the same way whether the value
-#'   arrived as an argument or in a \code{jobs} column; the contradiction
-#'   reports first.
-#' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
-#'   or only compile them for inspection (\code{FALSE}).
-#' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
-#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). See
-#'   \code{\link{ffm_batch}} for the \pkg{future} plan requirement.
-#' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
-#'   \code{verify}, \code{manifest}, \code{progress}).
-#' @return The \code{jobs} tibble with an added \code{command} column and, when
-#'   \code{run = TRUE}, a \code{success} column (plus \code{verified} /
-#'   provenance manifest when requested via \code{...}). See
-#'   \code{\link{ffm_batch}}.
+#'   `r value_error_order_sentences()`
+#' @inheritParams compare_videos_batch
+#' @return `r jobs_return()`
 #' @seealso [picture_in_picture()], the scalar verb it wraps; [ffm_batch()], the
 #'   batch runner; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [concatenate_videos_batch()] and [compare_videos_batch()],

@@ -403,6 +403,13 @@ ordering_sentence <- paste(
   "arrived as an argument or in a jobs column; the contradiction reports first."
 )
 
+# The help pages split the same claim into two sentences (M129, plain English),
+# while the changelog keeps the one-sentence form above.
+ordering_sentence_rd <- paste(
+  "A value error and a contradiction resolve the same way whether the value",
+  "arrived as an argument or in a jobs column. The contradiction reports first."
+)
+
 # Both sources wrap the sentence across lines and mark up `jobs` differently --
 # \code{jobs} in the Rd, `jobs` in the changelog -- so the comparison is made on
 # normalized text. Markup, not wording, is what is normalized away: a changed
@@ -420,7 +427,7 @@ test_that("both `_batch` verbs' help states the ordering sentence", {
   rd <- rd_sources()
   skip_if(is.null(rd), "no Rd source available")
   carrying <- sub("\\.Rd$", "", names(rd)[
-    grepl(ordering_sentence, normalize_prose(rd), fixed = TRUE)])
+    grepl(ordering_sentence_rd, normalize_prose(rd), fixed = TRUE)])
   # Both directions at once: every topic that should carry it does, and no
   # other topic claims it. A verb whose front door was never reordered must not
   # tell its user that it was.

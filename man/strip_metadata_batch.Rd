@@ -31,11 +31,7 @@ time and warns. Set a plan first, e.g.
 \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.}
 }
 \value{
-The \link[tibble:tibble-package]{tibble} returned by
-\code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
-(and, when \code{output} was derived, the resolved \code{output} column;
-when \code{run = TRUE}, a \code{success} column, plus any columns the
-forwarded arguments add, e.g. \code{verified}).
+The \link[tibble:tibble-package]{tibble} returned by \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column. When \code{output} was derived, it also has the resolved \code{output} column. When \code{run = TRUE}, it has a \code{success} column, plus any columns the forwarded arguments add, such as \code{verified}.
 }
 \description{
 De-identify many input files from a single jobs tibble — the \strong{batch}

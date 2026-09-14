@@ -46,10 +46,7 @@ or only compile them for inspection (\code{FALSE}).}
 \code{verify}, \code{manifest}, \code{progress}).}
 }
 \value{
-The \code{jobs} tibble with an added \code{command} column and, when
-\code{run = TRUE}, a \code{success} column (plus \code{verified} /
-provenance manifest when requested via \code{...}). See
-\code{\link{ffm_batch}}.
+The \code{jobs} tibble with an added \code{command} column. When \code{run = TRUE}, it also has a \code{success} column, plus \code{verified} or a provenance manifest, each when requested through \code{...}. See \code{\link{ffm_batch}}.
 }
 \description{
 Extract or transcode the audio track of many input files from a single jobs
@@ -61,23 +58,9 @@ the same audio-map pipeline (and per-value \code{audio_codec} validation) as
 the scalar verb.
 }
 \details{
-When a row names no \code{audio_stream} and its input turns out to carry
-tracks the output will not, the verb warns \strong{once} for the whole batch,
-naming every affected row. That check is \strong{best-effort} and costs
-\strong{one FFprobe call per distinct input} it has to probe, so a repeated
-input is probed once and a row that names a track is not probed at all: it
-is emitted when FFprobe is available and the input can be probed, and is
-skipped silently otherwise. Those probes run \strong{serially at the
-front door}, before the fan-out starts, so \code{parallel} does not reach
-them; a sweep long enough to look like a hang reports its progress. The check
-never runs under \code{run = FALSE}, never changes any compiled command, and
-is skipped entirely when every row names a track. Suppress it by class with
-\code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+When a row names no \code{audio_stream} and its input has tracks that the output will not carry, the function warns \strong{once} for the whole batch. The warning names every affected row. The check costs \strong{one FFprobe call per distinct input} it has to probe. A repeated input is probed once, and a row that names a track is not probed at all. The warning is given only when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. Those probes run \strong{one at a time, before any row starts}, so \code{parallel} does not reach them. A sweep long enough to look like a hang reports its progress. The check never runs under \code{run = FALSE}, never changes any compiled command, and is skipped entirely when every row names a track. Suppress it by class with \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
 
-Switch the check off -- and skip the whole sweep -- with
-\code{options(tidymedia.check_tracks = FALSE)} for the session, or
-\code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
-one function.
+To switch the check off and skip the whole sweep, use \code{options(tidymedia.check_tracks = FALSE)} for the session. Use \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of one function.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

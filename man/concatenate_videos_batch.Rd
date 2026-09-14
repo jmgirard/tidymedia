@@ -25,10 +25,7 @@ or only compile them for inspection (\code{FALSE}).}
 \code{verify}, \code{manifest}, \code{progress}).}
 }
 \value{
-The \code{jobs} tibble with an added \code{command} column and, when
-\code{run = TRUE}, a \code{success} column (plus \code{verified} /
-provenance manifest when requested via \code{...}). See
-\code{\link{ffm_batch}}.
+The \code{jobs} tibble with an added \code{command} column. When \code{run = TRUE}, it also has a \code{success} column, plus \code{verified} or a provenance manifest, each when requested through \code{...}. See \code{\link{ffm_batch}}.
 }
 \description{
 Join clips end to end for many outputs from a single jobs tibble — the

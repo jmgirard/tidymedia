@@ -118,19 +118,13 @@ When no \code{audio_stream} is named and \code{infile} turns out to carry
 tracks the output will not, the verb warns -- the same warning
 \code{\link{extract_audio}} and \code{\link{convert_audio}} emit. Naming a
 track with \code{audio_stream} silences it, as does
-\code{suppressWarnings(classes = "tidymedia_dropped_audio")}. The check is
-\strong{best-effort} and costs \strong{one FFprobe call per distinct input}
--- one, here, since this verb takes a single \code{infile}: it is emitted
-when FFprobe is available and the input can be probed, and skipped silently
-otherwise. It never runs under \code{run = FALSE}, and never changes the
-compiled command. Under \code{two_pass = TRUE} it lands \emph{before} the
-analysis pass, so it arrives while adding \code{audio_stream} can still save
-that pass.
+\code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+The check costs \strong{one FFprobe call per distinct input}, which is one call here, because this function takes a single \code{infile}. The warning is given only when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. It never runs under \code{run = FALSE},
+and never changes the compiled command. Under \code{two_pass = TRUE} it lands
+\emph{before} the analysis pass, so it arrives while adding
+\code{audio_stream} can still save that pass.
 
-Switch the check off -- and skip its FFprobe call -- with
-\code{options(tidymedia.check_tracks = FALSE)} for the session, or
-\code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
-one function.
+To switch the check off and skip its FFprobe call, use \code{options(tidymedia.check_tracks = FALSE)} for the session. Use \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of one function.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -143,8 +137,7 @@ normalize_audio(video, "mono.wav", target_loudness = -16, channels = 1,
 normalize_audio(video, "normalized.m4a", audio_codec = "aac", run = FALSE)
 }
 \references{
-EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
-maximum level of audio signals}; ITU-R BS.1770-4.
+EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted maximum level of audio signals}; ITU-R BS.1770-4.
 }
 \seealso{
 \code{\link[=ffm_loudnorm]{ffm_loudnorm()}}, the builder it wraps; \code{\link[=normalize_audio_batch]{normalize_audio_batch()}}

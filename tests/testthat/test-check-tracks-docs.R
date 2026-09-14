@@ -72,13 +72,14 @@ test_that("every verb states the check's cost and how to switch it off", {
 
 test_that("only the batch verbs promise the serial front-door sweep", {
   # The silent case: a scalar verb takes one input, so the sentence about
-  # probes running serially before the fan-out would be false there.
+  # probes running serially before the fan-out would be false there. M129
+  # reworded "serially at the front door" as the phrase below.
   rd <- rd_sources()
   skip_if(is.null(rd), "no Rd source in this run")
   for (verb in drop_check_verbs()) {
     txt <- rd_for(rd, verb)
     batch <- grepl("_batch$", verb)
-    says <- grepl("serially at the front door", txt, fixed = TRUE)
+    says <- grepl("one at a time, before any row starts", txt, fixed = TRUE)
     expect_identical(says, batch, info = verb)
   }
 })

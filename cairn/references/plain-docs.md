@@ -277,40 +277,40 @@ The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` o
 
 #### Repeated paragraphs at the base commit (AC1)
 
-`Rscript tools/roxygen_repeats.R R/ffmpeg.R` at the base commit read 405 paragraphs in 34 blocks and listed 33. Each row gives the paragraph's first words and the blocks that held it. The Result column is filled at T5.
+`Rscript tools/roxygen_repeats.R R/ffmpeg.R` at the base commit read 405 paragraphs in 34 blocks and listed 33. Each row gives the paragraph's first words and the blocks that held it. The Result column was filled at T5. "Kept in X" means block X holds the text and the other blocks take it with `@inheritParams`. A function name in the form `f()` is a function in `R/task-doc.R` that the blocks call inline. No row has copies that differ in what they claim.
 
 | Row | Blocks | First words | Held by | Result |
 |---|---|---|---|---|
-| R1 | 12 | A logical: run the command through FFmpeg | `extract_frame`, `sample_frames`, `extract_audio`, `convert_audio`, `crop_video`, `format_for_web`, `strip_metadata`, `standardize_video`, `anonymize_video`, `concatenate_videos`, `compare_videos`, `picture_in_picture` | |
-| R2 | 12 | The compiled FFmpeg command (invisibly | the same 12 as R1 | |
-| R3 | 8 | A logical: map over jobs in parallel | `extract_audio_batch`, `convert_audio_batch`, `crop_video_batch`, `format_for_web_batch`, `separate_audio_video_batch`, `concatenate_videos_batch`, `compare_videos_batch`, `picture_in_picture_batch` | |
-| R4 | 8 | A logical: run each command through FFmpeg | the same 8 as R3 | |
-| R5 | 8 | Additional arguments forwarded to `ffm_batch` (e.g. | the same 8 as R3 | |
-| R6 | 7 | A string containing the path to a video file. | `extract_frame`, `sample_frames`, `crop_video`, `format_for_web`, `standardize_video`, `anonymize_video`, `segment_video` | |
-| R7 | 7 | Additional arguments forwarded to `ffm_batch`, such as | `anonymize_video_batch`, `segment_video_batch`, `extract_frame_batch`, `sample_frames_batch`, `standardize_video_batch`, `strip_metadata_batch`, `normalize_audio_batch` | |
-| R8 | 7 | The `jobs` tibble with an added `command` column | R3's 8 less `separate_audio_video_batch` | |
-| R9 | 5 | A string containing the path of the video file to write. | `separate_audio_video`, `crop_video`, `format_for_web`, `standardize_video`, `anonymize_video` | |
-| R10 | 5 | The tibble returned by `ffm_batch`: `jobs` with | `anonymize_video_batch`, `segment_video_batch`, `extract_frame_batch`, `standardize_video_batch`, `strip_metadata_batch` | |
-| R11 | 4 | A logical: run each input's command | `anonymize_video_batch`, `sample_frames_batch`, `standardize_video_batch`, `strip_metadata_batch` | |
-| R12 | 4 | A logical: when a non-`"none"` `hardware` … encode in software | `crop_video`, `segment_video`, `compare_videos`, `picture_in_picture` | |
-| R13 | 4 | A string containing the path to a media file. | `extract_audio`, `separate_audio_video`, `convert_audio`, `strip_metadata` | |
-| R14 | 3 | A string containing the path of the audio file to write. | `extract_audio`, `separate_audio_video`, `convert_audio` | |
-| R15 | 3 | A string naming the output video codec, applied to every row | `crop_video_batch`, `compare_videos_batch`, `picture_in_picture_batch` | |
-| R16 | 3 | A string naming the output video codec, or `NULL` | `crop_video`, `compare_videos`, `picture_in_picture` | |
-| R17 | 3 | https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax | `segment_video`, `segment_video_batch`, `extract_frame_batch` | |
-| R18 | 3 | Switch the check off, and skip its FFprobe call | `extract_audio`, `convert_audio`, `normalize_audio` | |
-| R19 | 3 | Switch the check off, and skip the whole sweep | `normalize_audio_batch`, `extract_audio_batch`, `convert_audio_batch` | |
-| R20 | 3 | The encoder backend: … the H.264 family is assumed | `crop_video`, `compare_videos`, `picture_in_picture` | |
-| R21 | 2 | A logical indicating whether the tibble should be sorted | `ffmpeg_codecs`, `ffmpeg_encoders` | |
-| R22 | 2 | A logical passed to `ffm_batch`: cut segments in parallel | `segment_video`, `segment_video_batch` | |
-| R23 | 2 | A logical: … re-encode with software libx264 | `format_for_web`, `format_for_web_batch` | |
-| R24 | 2 | A logical: … re-encode with the software `video_codec` | `standardize_video`, `anonymize_video` | |
-| R25 | 2 | A string naming the codec for the carried audio track, applied to every row | `compare_videos_batch`, `picture_in_picture_batch` | |
-| R26 | 2 | A string naming the codec for the carried audio track. | `compare_videos`, `picture_in_picture` | |
-| R27 | 2 | A string naming the output audio codec (default `"copy"` | `standardize_video`, `anonymize_video` | |
-| R28 | 2 | A string naming the output pixel format | `standardize_video`, `anonymize_video` | |
-| R29 | 2 | A string naming the output video codec (default `"libx264"`) | `standardize_video`, `anonymize_video` | |
-| R30 | 2 | EBU Recommendation R 128 (2014) | `normalize_audio`, `normalize_audio_batch` | |
-| R31 | 2 | The encoder backend: … Applies to video only | `standardize_video`, `anonymize_video` | |
-| R32 | 2 | When a row names no `audio_stream` | `extract_audio_batch`, `convert_audio_batch` | |
-| R33 | 2 | When no `audio_stream` is named | `extract_audio`, `convert_audio` | |
+| R1 | 12 | A logical: run the command through FFmpeg | `extract_frame`, `sample_frames`, `extract_audio`, `convert_audio`, `crop_video`, `format_for_web`, `strip_metadata`, `standardize_video`, `anonymize_video`, `concatenate_videos`, `compare_videos`, `picture_in_picture` | Kept in `crop_video`. |
+| R2 | 12 | The compiled FFmpeg command (invisibly | the same 12 as R1 | `command_return()`. |
+| R3 | 8 | A logical: map over jobs in parallel | `extract_audio_batch`, `convert_audio_batch`, `crop_video_batch`, `format_for_web_batch`, `separate_audio_video_batch`, `concatenate_videos_batch`, `compare_videos_batch`, `picture_in_picture_batch` | Kept in `extract_audio_batch`, reworded as "run the jobs in parallel … or one at a time". |
+| R4 | 8 | A logical: run each command through FFmpeg | the same 8 as R3 | Kept in `extract_audio_batch`. |
+| R5 | 8 | Additional arguments forwarded to `ffm_batch` (e.g. | the same 8 as R3 | Kept in `extract_audio_batch`. |
+| R6 | 7 | A string containing the path to a video file. | `extract_frame`, `sample_frames`, `crop_video`, `format_for_web`, `standardize_video`, `anonymize_video`, `segment_video` | Kept in `crop_video`. |
+| R7 | 7 | Additional arguments forwarded to `ffm_batch`, such as | `anonymize_video_batch`, `segment_video_batch`, `extract_frame_batch`, `sample_frames_batch`, `standardize_video_batch`, `strip_metadata_batch`, `normalize_audio_batch` | Kept in `anonymize_video_batch`. |
+| R8 | 7 | The `jobs` tibble with an added `command` column | R3's 8 less `separate_audio_video_batch` | `jobs_return()`. |
+| R9 | 5 | A string containing the path of the video file to write. | `separate_audio_video`, `crop_video`, `format_for_web`, `standardize_video`, `anonymize_video` | `write_path_param("video")` in `crop_video` and `separate_audio_video`, the others inherit from `crop_video`. |
+| R10 | 5 | The tibble returned by `ffm_batch`: `jobs` with | `anonymize_video_batch`, `segment_video_batch`, `extract_frame_batch`, `standardize_video_batch`, `strip_metadata_batch` | `batch_return()`, also used by `normalize_audio_batch` and, with `"outdir"`, `sample_frames_batch`. |
+| R11 | 4 | A logical: run each input's command | `anonymize_video_batch`, `sample_frames_batch`, `standardize_video_batch`, `strip_metadata_batch` | Kept in `anonymize_video_batch`. |
+| R12 | 4 | A logical: when a non-`"none"` `hardware` … encode in software | `crop_video`, `segment_video`, `compare_videos`, `picture_in_picture` | `fallback_param()` in `crop_video`. |
+| R13 | 4 | A string containing the path to a media file. | `extract_audio`, `separate_audio_video`, `convert_audio`, `strip_metadata` | Kept in `extract_audio`. |
+| R14 | 3 | A string containing the path of the audio file to write. | `extract_audio`, `separate_audio_video`, `convert_audio` | `write_path_param("audio")` in `extract_audio` and `separate_audio_video`, `convert_audio` inherits. |
+| R15 | 3 | A string naming the output video codec, applied to every row | `crop_video_batch`, `compare_videos_batch`, `picture_in_picture_batch` | Kept in `crop_video_batch`, split into two sentences. |
+| R16 | 3 | A string naming the output video codec, or `NULL` | `crop_video`, `compare_videos`, `picture_in_picture` | `video_codec_unset_param()` in `crop_video`, also used by `segment_video`. |
+| R17 | 3 | https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax | `segment_video`, `segment_video_batch`, `extract_frame_batch` | `time_duration_reference()`. |
+| R18 | 3 | Switch the check off, and skip its FFprobe call | `extract_audio`, `convert_audio`, `normalize_audio` | `check_tracks_off_paragraph()`. |
+| R19 | 3 | Switch the check off, and skip the whole sweep | `normalize_audio_batch`, `extract_audio_batch`, `convert_audio_batch` | `check_tracks_off_paragraph(batch = TRUE)`. |
+| R20 | 3 | The encoder backend: … the H.264 family is assumed | `crop_video`, `compare_videos`, `picture_in_picture` | `hardware_param()` in `crop_video`, also used by `segment_video`. |
+| R21 | 2 | A logical indicating whether the tibble should be sorted | `ffmpeg_codecs`, `ffmpeg_encoders` | Kept in `ffmpeg_codecs`. |
+| R22 | 2 | A logical passed to `ffm_batch`: cut segments in parallel | `segment_video`, `segment_video_batch` | Kept in `segment_video`. |
+| R23 | 2 | A logical: … re-encode with software libx264 | `format_for_web`, `format_for_web_batch` | `fallback_param("libx264")` in `format_for_web`. |
+| R24 | 2 | A logical: … re-encode with the software `video_codec` | `standardize_video`, `anonymize_video` | `fallback_param("video_codec", reproducible = TRUE)` in `standardize_video`. |
+| R25 | 2 | A string naming the codec for the carried audio track, applied to every row | `compare_videos_batch`, `picture_in_picture_batch` | Kept in `compare_videos_batch`. |
+| R26 | 2 | A string naming the codec for the carried audio track. | `compare_videos`, `picture_in_picture` | Kept in `compare_videos`, with `audio_codec_copy_sentences("it")`. |
+| R27 | 2 | A string naming the output audio codec (default `"copy"` | `standardize_video`, `anonymize_video` | Kept in `standardize_video`. |
+| R28 | 2 | A string naming the output pixel format | `standardize_video`, `anonymize_video` | Kept in `standardize_video`. |
+| R29 | 2 | A string naming the output video codec (default `"libx264"`) | `standardize_video`, `anonymize_video` | Kept in `standardize_video`. |
+| R30 | 2 | EBU Recommendation R 128 (2014) | `normalize_audio`, `normalize_audio_batch` | `ebu_r128_reference()`. |
+| R31 | 2 | The encoder backend: … Applies to video only | `standardize_video`, `anonymize_video` | `hardware_param(null_default = FALSE, video_only = TRUE)` in `standardize_video`. |
+| R32 | 2 | When a row names no `audio_stream` | `extract_audio_batch`, `convert_audio_batch` | `dropped_audio_paragraph(batch = TRUE)`. |
+| R33 | 2 | When no `audio_stream` is named | `extract_audio`, `convert_audio` | `dropped_audio_paragraph()`. |

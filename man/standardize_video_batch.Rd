@@ -26,9 +26,7 @@ standardize_video_batch(
 the destination; when absent, one is derived per row by appending
 \code{_standardized} to each input's basename, keeping the input's
 extension (e.g. \code{clip.mkv} becomes \code{clip_standardized.mkv}).
-Two rows naming the same output path are refused before any row runs:
-a path repeated in the \code{output} column, or a repeated \code{input}
-when there is no \code{output} column.
+Two rows naming the same output path are refused before any row runs. That is a path repeated in the \code{output} column, or a repeated \code{input} when there is no \code{output} column.
 Each of the six standardization knobs — \code{width}, \code{height},
 \code{fps}, \code{video_codec}, \code{audio_codec}, \code{pixel_format} —
 may also appear as a
@@ -55,11 +53,8 @@ leave the frame rate unchanged)}
 
 \item{video_codec}{A string naming the video codec applied to every row,
 unless \code{jobs} carries a \code{video_codec} column, in which case
-\code{NA} in a cell leaves that row's codec unset. Default
-\code{"libx264"}; \code{NULL} emits no \code{-codec:v} and lets the output
-container's default encoder decide (for a \code{.webm} output, pass
-\code{audio_codec = NULL} too — the default \code{"copy"} would otherwise
-carry a codec WebM cannot hold).}
+\code{NA} in a cell leaves that row's codec unset.
+The default is \code{"libx264"}. \code{NULL} emits no \code{-codec:v} and lets the output container's default encoder decide. For a \code{.webm} output, pass \code{audio_codec = NULL} too, because the default \code{"copy"} would otherwise carry a codec WebM cannot hold.}
 
 \item{audio_codec}{A string naming the audio codec applied to every row,
 unless \code{jobs} carries an \code{audio_codec} column, in which case
@@ -77,22 +72,9 @@ unless \code{jobs} carries a \code{pixel_format} column.
 AV1), or \code{"videotoolbox"} for Apple GPU encoding (H.264 and
 HEVC). Batch-wide (not a per-row column). See
 \code{\link{standardize_video}} and \code{\link{has_hardware_encoder}}.
-Resolving a hardware backend asks this FFmpeg build which encoders it has,
-so the first such call that re-encodes the video runs the binary
-while the command is built, even under \code{run = FALSE}. The answer is
-remembered for the rest of the R session; see
-\code{\link{refresh_ffmpeg_capabilities}} to discard it.
-Availability is checked at this verb's own front door, before any row
-runs, so an unavailable encoder aborts naming this function rather than
-the internal fan-out it would otherwise be reported against.}
+Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.}
 
-\item{fallback}{A logical: when a non-\code{"none"} \code{hardware} is
-requested but its encoder is unavailable, re-encode with the software
-\code{video_codec} and a message (\code{TRUE}) instead of aborting
-(\code{FALSE}, default).
-A \code{video_codec} in a family that backend has no encoder for is a
-wrong argument rather than an absent encoder, so it aborts whatever
-\code{fallback} says.}
+\item{fallback}{A logical. When a \code{hardware} other than \code{"none"} is requested but its encoder is unavailable, \code{TRUE} re-encodes with the software \code{video_codec} and a message. \code{FALSE} (default) aborts instead. A \code{video_codec} in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever \code{fallback} says.}
 
 \item{audio_stream}{The audio track to carry into each output, as a number that counts from \code{0} among the \emph{audio tracks} of each row's input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) carries \strong{every} audio track. Without an \code{audio_stream} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row. It does not fall back to the argument. The every-track family reads \code{NULL} as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The function does not carry subtitle or data streams in either case. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
@@ -110,11 +92,7 @@ time and warns. Set a plan first, e.g.
 \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.}
 }
 \value{
-The \link[tibble:tibble-package]{tibble} returned by
-\code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
-(and, when \code{output} was derived, the resolved \code{output} column;
-when \code{run = TRUE}, a \code{success} column, plus any columns the
-forwarded arguments add, e.g. \code{verified}).
+The \link[tibble:tibble-package]{tibble} returned by \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column. When \code{output} was derived, it also has the resolved \code{output} column. When \code{run = TRUE}, it has a \code{success} column, plus any columns the forwarded arguments add, such as \code{verified}.
 }
 \description{
 Re-encode many input files to a reproducible format from a single jobs tibble

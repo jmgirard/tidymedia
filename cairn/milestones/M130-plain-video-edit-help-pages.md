@@ -21,12 +21,12 @@ The M130 help-page domain uses plain English for an R user who does not know FFm
 
 ## Acceptance criteria
 
-- [ ] AC1: Every page on the M130 domain list exists at head, and the prose sweep over the M130 domain at head exits with status 0 or 1 and prints no `[term …]` or `[dash in Rd source]` line.
-- [ ] AC2: Every page on the M130 domain list exists at head, and the prose sweep over the M130 domain at head exits with status 0 or 1 and prints no `[<n> words]` line.
-- [ ] AC3: Each page in the M130 domain whose `--prose` output at head matches a glossary stem names the glossary.
-- [ ] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M130 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
-- [ ] AC5: For every `man/*.Rd` file outside the M130 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
-- [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
+- [x] AC1: Every page on the M130 domain list exists at head, and the prose sweep over the M130 domain at head exits with status 0 or 1 and prints no `[term …]` or `[dash in Rd source]` line.
+- [x] AC2: Every page on the M130 domain list exists at head, and the prose sweep over the M130 domain at head exits with status 0 or 1 and prints no `[<n> words]` line.
+- [x] AC3: Each page in the M130 domain whose `--prose` output at head matches a glossary stem names the glossary.
+- [x] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M130 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
+- [x] AC5: For every `man/*.Rd` file outside the M130 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
+- [x] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
 
@@ -59,3 +59,12 @@ The M130 help-page domain uses plain English for an R user who does not know FFm
 ## Decisions
 
 ## Review
+
+- AC1 (2026-09-14): the base domain list (8 pages, filter from the ledger over `git show 9353ac4f`) all exist at head, and `git diff --diff-filter=A 9353ac4f HEAD -- man/` adds none. `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R` over the 8 pages read 467 sentences, printed no finding and exited 0, so no `[term …]` or `[dash in Rd source]` line.
+- AC2 (2026-09-14): the same run printed no `[<n> words]` line and exited 0.
+- AC3 (2026-09-14): every page's `--prose` output matches a stem (`strip_metadata_batch` has only `stream`). A `tools::Rd2txt()` read finds, on all 8 pages, a sentence with `glossary` and `vignette("tidymedia")`. The same read on base `crop_video` gives FALSE, so the check can fail.
+- AC4 (2026-09-14): a regex scan of the 8 pages at `9353ac4f` finds 0 matches, so there is nothing to find at head.
+- AC5 (2026-09-14): `git diff --name-only 9353ac4f HEAD -- man/` lists only the 8 domain pages, so no page outside the domain is in scope.
+- AC6 (2026-09-14): `devtools::document()` left `git status` empty. `devtools::test()`: FAIL 0, WARN 12, SKIP 5, PASS 13866. `devtools::check()`: 0 errors, 0 warnings, 0 notes. `pkgdown::check_pkgdown()`: no problems found.
+- Consistency gate (2026-09-14): `cairn_validate` exit 0, all checks passed. No principle changed, so `cairn_impact` skipped. README.Rmd, README.md, NEWS.md and `_pkgdown.yml` are unchanged against `9353ac4f`, and scope puts no NEWS entry (D091). No new top-level file. Branch is level with `origin/master` at `9353ac4f`.
+- Independent review (2026-09-14): user-facing tier, so three lenses. [S] prior-review: no prior-review evidence, 0 findings. [S] blame-history: 2 findings (S1, S2). [O] diff-bug: no branch-added false claim, 6 branch findings (O1-O6) and 5 pre-existing false claims (P1-P5). No finding shows an acceptance criterion failing, so no return. Dispositions are recorded at the step-7 gate.

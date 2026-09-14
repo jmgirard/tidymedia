@@ -1,9 +1,10 @@
 # Set Codecs in an FFmpeg Pipeline
 
-Set the audio and/or video codecs for the output file. Note that you can
-use the command
+Set the audio codec, the video codec, or both, for the output file. Use
 [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
-to see a list of the codecs included in your FFmpeg version.
+to see a list of the codecs in your FFmpeg version. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec and stream copy.
 
 ## Usage
 
@@ -15,25 +16,25 @@ ffm_codec(object, audio = NULL, video = NULL)
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 - audio:
 
-  A string indicating which audio codec to use or `NULL` to only set the
-  video codec (default = `NULL`). See
+  A string that names the audio codec, or `NULL` to set only the video
+  codec. The default is `NULL`. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
-  for the two things the bare name `audio` means at Layer 1, and for the
-  input index `audio_input`.
+  for the two things that the name `audio` means in the pipeline
+  functions, and for the input index `audio_input`.
 
 - video:
 
-  A string indicating which video codec to use or `NULL` to only set the
-  audio codec. default = `NULL`
+  A string that names the video codec, or `NULL` to set only the audio
+  codec. The default is `NULL`.
 
 ## Value
 
-`object` but with the added instruction to change the codec(s).
+`object` with an added instruction to change the codecs.
 
 ## References
 
@@ -41,12 +42,12 @@ https://ffmpeg.org/ffmpeg-codecs.html
 
 ## See also
 
-[`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
-for the stream-copy shortcut,
+[`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md),
+the shortcut for stream copy,
 [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
-to list available codecs, and
+to list the codecs you can use, and
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
-a task verb built on it.
+a task function built on it.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

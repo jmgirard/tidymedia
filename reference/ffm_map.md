@@ -1,11 +1,10 @@
 # Set the Stream Mapping in an FFmpeg Pipeline
 
-Select which input streams are included in the output via FFmpeg's
-`-map` option. The default (`"0"`) maps every stream from the first
-input. `mapping` may be a character vector, which emits one `-map` per
-element in the order given — for example
-`ffm_map(object, c("0:v", "0:a:1"))` keeps the video and the input's
-*second* audio track.
+Choose which input streams go into the output, with FFmpeg's `-map`
+option. The default, `"0"`, maps every stream from the first input. The
+glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as stream.
 
 ## Usage
 
@@ -17,50 +16,55 @@ ffm_map(object, mapping = "0", replace = FALSE)
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 - mapping:
 
-  A character vector of one or more stream specifiers, one `-map` each.
+  A character vector of one or more stream specifiers. Each one adds one
+  `-map`.
 
 - replace:
 
-  A logical: discard any mapping already set on `object` (`TRUE`) or
-  append to it (`FALSE`, default).
+  A logical. `TRUE` discards any mapping already set on `object`.
+  `FALSE` (the default) adds to it.
 
 ## Value
 
-`object` with the added stream mapping instruction.
+`object` with an added instruction to map streams.
 
 ## Details
 
-Chaining **appends**: a second `ffm_map()` call adds to the maps already
-set rather than replacing them. Pass `replace = TRUE` to discard them
-instead, which is how you narrow the all-streams map that
-[`ffm_copy`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
-sets — appending to that one would duplicate the stream in the output
-rather than select it.
+`mapping` can be a character vector. Each element adds one `-map`, in
+the order given. For example, `ffm_map(object, c("0:v", "0:a:1"))` keeps
+the video and the *second* audio track of the input.
 
-This is the only builder verb that accumulates; every other `ffm_*`
-setter,
+A second `ffm_map()` call **adds** to the maps already set. It does not
+replace them. Pass `replace = TRUE` to discard them instead. That is how
+you narrow the all-streams map that
 [`ffm_copy`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
-included, assigns. The exception is earned by this function's arguments
-being *partial* selections that genuinely compose (keep the video, then
-name one audio track).
+sets. Adding to that map puts the stream in the output twice, and does
+not select it.
 
-When the pipeline uses a multi-input verb (e.g.
-[`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)),
-the explicit mapping is added *alongside* the automatic `-map "[vout]"`
-of the filtered stream — for example, `ffm_map(object, "0:a")` keeps the
-first input's audio next to the stacked video.
+`ffm_map()` is the only pipeline function that adds to earlier calls.
+Every other `ffm_*` function that sets a value,
+[`ffm_copy`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
+included, replaces it. `ffm_map()` is different because its arguments
+are *partial* choices that combine. For example, you keep the video,
+then name one audio track.
+
+When the pipeline uses a function with several inputs, such as
+[`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md),
+your mapping is added *beside* the automatic `-map "[vout]"` of the
+filtered stream. For example, `ffm_map(object, "0:a")` keeps the audio
+of the first input next to the stacked video.
 
 ## See also
 
 [`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md),
-which maps all streams;
-[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
-is a task verb built on it.
+which maps all streams, and
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+a task function built on `ffm_map()`.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

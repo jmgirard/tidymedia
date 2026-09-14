@@ -55,17 +55,18 @@
 
 
 <dl><dt id="arg-input">input<a class="anchor" aria-label="anchor" href="#arg-input"></a></dt>
-<dd><p>A character vector containing strings that indicate the input
-media file for the pipeline (provide more than one for stacking).</p></dd>
+<dd><p>A character vector of paths to the input media files of the
+pipeline. Give more than one path for stacking.</p></dd>
 
 
 <dt id="arg-output">output<a class="anchor" aria-label="anchor" href="#arg-output"></a></dt>
-<dd><p>A string indicating the output media file for the pipeline.</p></dd>
+<dd><p>A string with the path of the output media file of the
+pipeline.</p></dd>
 
 
 <dt id="arg-overwrite">overwrite<a class="anchor" aria-label="anchor" href="#arg-overwrite"></a></dt>
-<dd><p>A logical indicating whether the output media file should be
-overwritten if it already exists. (default = <code>TRUE</code>)</p></dd>
+<dd><p>A logical. If <code>TRUE</code> (the default), an output media
+file that already exists is overwritten.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -74,9 +75,9 @@ overwritten if it already exists. (default = <code>TRUE</code>)</p></dd>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="ffm_compile.html">ffm_compile()</a></code> to render the pipeline and <code><a href="ffm_run.html">ffm_run()</a></code> to execute
-it; the Layer-2 task verbs (e.g. <code><a href="standardize_video.html">standardize_video()</a></code>, <code><a href="segment_video.html">segment_video()</a></code>)
-wrap this engine.</p>
+    <div class="dont-index"><p><code><a href="ffm_compile.html">ffm_compile()</a></code> to build the command and <code><a href="ffm_run.html">ffm_run()</a></code> to run it. The
+task functions, such as <code><a href="standardize_video.html">standardize_video()</a></code> and <code><a href="segment_video.html">segment_video()</a></code>, are
+built on the pipeline functions.</p>
 <p>Other pipeline functions:
 <code><a href="ffm_batch.html">ffm_batch()</a></code>,
 <code><a href="ffm_codec.html">ffm_codec()</a></code>,

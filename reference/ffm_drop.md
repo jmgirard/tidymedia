@@ -1,7 +1,10 @@
-# Drop Steams from an FFmpeg Pipeline
+# Drop Streams from an FFmpeg Pipeline
 
-Remove one or more specified streams from the media file. For example,
-remove the video, audio, subtitles, or data stream from a media file.
+Remove one or more streams from the media file. For example, remove the
+video, audio, subtitles or data stream from a media file. The glossary
+in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as stream.
 
 ## Usage
 
@@ -13,23 +16,23 @@ ffm_drop(object, streams = c("video", "audio", "subtitles", "data"))
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 - streams:
 
-  A character vector containing one or more of the following strings:
-  `"video"`, `"audio"`, `"subtitles"`, `"data"`
+  A character vector with one or more of these strings: `"video"`,
+  `"audio"`, `"subtitles"` and `"data"`.
 
 ## Value
 
-`object` but with the added instruction to drop one or more streams from
-the output file when run.
+`object` with an added instruction to drop these streams from the output
+file when the pipeline runs.
 
 ## See also
 
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
-the task verb that drops the video stream via this builder.
+the task function that uses `ffm_drop()` to drop the video stream.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

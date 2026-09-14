@@ -1,7 +1,7 @@
-# Compile the tidymedia pipeline into FFmpeg command
+# Compile the tidymedia pipeline into an FFmpeg command
 
-Compile all the instructions into a string representing the FFmpeg
-command needed to run it.
+Compile all the instructions into one string, the FFmpeg command that
+runs them.
 
 ## Usage
 
@@ -13,18 +13,18 @@ ffm_compile(object)
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 ## Value
 
-A string containing the FFmpeg command needed to execute all the
-instructions provided to the tidymedia pipeline.
+A string with the FFmpeg command that carries out all the instructions
+in the tidymedia pipeline.
 
 ## See also
 
 [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
-to compile and execute in one step, and
+to compile and run in one step, and
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
 to compile over many files.
 

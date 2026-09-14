@@ -55,32 +55,33 @@
 
 
 <dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
-<dd><p>An ffmpeg pipeline (<code>ffm</code>) object created by
+<dd><p>An FFmpeg pipeline (<code>ffm</code>) object created by
 <code><a href="ffm_files.html">ffm_files()</a></code>.</p></dd>
 
 
 <dt id="arg-verify">verify<a class="anchor" aria-label="anchor" href="#arg-verify"></a></dt>
-<dd><p>An optional named list of expected output properties, passed to
-<code><a href="verify_media.html">verify_media</a></code> (e.g. <code>list(width = 1920, video_codec =
-"h264")</code>). After a successful run the output is probed and, if any check
-fails, <code>ffm_run()</code> aborts with the failed checks (mirroring how it
-aborts on a non-zero FFmpeg exit). <code>NULL</code> (default) skips verification.</p></dd>
+<dd><p>An optional named list of the properties you expect the output
+to have, for example <code>list(width = 1920, video_codec = "h264")</code>. It is
+passed to <code><a href="verify_media.html">verify_media</a></code>. After a successful run, the output is
+probed. If a check fails, <code>ffm_run()</code> gives an error with the failed
+checks. It also gives an error when FFmpeg exits non-zero. <code>NULL</code> (the
+default) skips the checks.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A character vector of FFmpeg's standard output (with a
-<code>status</code> attribute on a non-zero exit), invisibly; called for its
-side effect of writing the output file. The pipeline is executed as an
-argument vector (never through a shell), so paths containing spaces or
-special characters are safe.</p>
+    <p>FFmpeg's standard output as a character vector, returned invisibly.
+On a non-zero exit it has a <code>status</code> attribute. You call
+<code>ffm_run()</code> to write the output file, not for its return value. The
+pipeline runs as a vector of arguments and never through a shell. So paths
+with spaces or special characters are safe.</p>
     </div>
     <div class="section level2">
     <h2 id="when-ffmpeg-exits-non-zero">When FFmpeg exits non-zero<a class="anchor" aria-label="anchor" href="#when-ffmpeg-exits-non-zero"></a></h2>
 
 
-<p>A run FFmpeg refuses aborts with a condition of class
-<code>tidymedia_ffmpeg_exit</code>, so a caller can catch a failed run without
+<p>If FFmpeg refuses a run, <code>ffm_run()</code> gives an error of class
+<code>tidymedia_ffmpeg_exit</code>. A caller can catch a failed run without
 reading the error text:</p>
 <div class="sourceCode"><pre><code><span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span></span>
@@ -88,37 +89,38 @@ reading the error text:</p>
 <span>  tidymedia_ffmpeg_exit <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">cnd</span><span class="op">)</span> <span class="va">cnd</span><span class="op">$</span><span class="va">tm_status</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 
-<p>The <code>tm_status</code> field is a length-one integer holding the exit status
-exactly as <code><a href="https://rdrr.io/r/base/system2.html" class="external-link">system2()</a></code> reported it — including, for a
-signal-terminated FFmpeg, the shell's 128-plus-signal number passed through
-unchanged, which encodes the signal rather than anything FFmpeg chose to
-return. Two other paths raise this class and carry this field, so one handler
-covers all three: the <code>loudnorm</code> analysis pass behind
-<code>normalize_audio(two_pass = TRUE)</code> when FFmpeg exits non-zero, and the
-multi-track diagnostic <code><a href="separate_audio_video.html">separate_audio_video</a></code> adds to a failed
-audio output. Each of those two names a second, narrower class ahead of this
-one — <code>tidymedia_loudnorm_no_measurement</code> and
-<code>tidymedia_multitrack_separation</code> respectively — which is what to catch
-when it is that failure in particular you want.</p>
-<p>Two paths in the same family do <strong>not</strong> raise this class, each for its
-own reason. <code>normalize_audio(two_pass = TRUE)</code> also
-aborts when the analysis pass exits zero and prints no parseable measurement
-block; no non-zero exit happened there, so that abort is
-<code>tidymedia_loudnorm_no_measurement</code> alone, with no
-<code>tm_status</code>. And <code>normalize_audio_batch(two_pass = TRUE)</code> reports
-every offending row of its analysis phase in one error, firing for rows that
-exited zero as well as for rows FFmpeg refused — so an exit is one of its
-causes rather than the fact it reports, and no single status could stand for
-the mix. It too raises
-<code>tidymedia_loudnorm_no_measurement</code> alone — carrying <code>tm_rows</code>,
-the 1-indexed offending rows, and <code>tm_row_status</code>, their exit statuses
-aligned to it, with <code>NA</code> where the row exited zero. That shared class is
-therefore the one handler that covers the analysis pass in both forms.</p>
+<p>The <code>tm_status</code> field is one integer, the exit status exactly as
+<code><a href="https://rdrr.io/r/base/system2.html" class="external-link">system2()</a></code> reported it. If a signal stopped FFmpeg, the field holds
+the shell's number, 128 plus the signal number, unchanged. That number
+stands for the signal, not for a status FFmpeg chose to return.</p>
+<p>Two other paths give this class and carry this field, so one handler covers
+all three:</p><ul><li><p>the <code>loudnorm</code> analysis pass of
+<code>normalize_audio(two_pass = TRUE)</code>, when FFmpeg exits non-zero.</p></li>
+<li><p>the error about several audio tracks that
+<code><a href="separate_audio_video.html">separate_audio_video</a></code> adds to a failed audio output.</p></li>
+</ul><p>Each of those two paths also gives a second, narrower class before this one.
+In the same order, they are <code>tidymedia_loudnorm_no_measurement</code> and
+<code>tidymedia_multitrack_separation</code>. Catch that class when you want only
+that failure.</p>
+<p>Two related paths do <strong>not</strong> give this class, each for its own reason:</p><ul><li><p><code>normalize_audio(two_pass = TRUE)</code> also gives an error when the
+analysis pass exits zero and prints no measurement block that can be
+read. FFmpeg did not exit non-zero there. So that error has only the
+class <code>tidymedia_loudnorm_no_measurement</code>, and no <code>tm_status</code>.</p></li>
+<li><p><code>normalize_audio_batch(two_pass = TRUE)</code> reports in one error
+every row that failed in its analysis phase. The failed rows can include
+rows that exited zero and rows that FFmpeg refused. So a non-zero exit is
+one of its causes, not the fact it reports, and no single status can
+stand for the mix. It also has only the class
+<code>tidymedia_loudnorm_no_measurement</code>. It carries <code>tm_rows</code>, the
+failed rows counted from 1. It also carries <code>tm_row_status</code>, their
+exit statuses in the same order, with <code>NA</code> where a row exited zero.</p></li>
+</ul><p>So <code>tidymedia_loudnorm_no_measurement</code> is the one class that covers
+the analysis pass in both forms.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="ffm_compile.html">ffm_compile()</a></code> to get the command without running it, <code><a href="ffm_batch.html">ffm_batch()</a></code>
-for the many-file runner, and <code><a href="verify_media.html">verify_media()</a></code> for the <code>verify =</code> spec.</p>
+to run many files, and <code><a href="verify_media.html">verify_media()</a></code> for the <code>verify</code> list.</p>
 <p>Other pipeline functions:
 <code><a href="ffm_batch.html">ffm_batch()</a></code>,
 <code><a href="ffm_codec.html">ffm_codec()</a></code>,

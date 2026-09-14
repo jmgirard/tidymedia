@@ -12,17 +12,17 @@ ffm_files(input, output, overwrite = TRUE)
 
 - input:
 
-  A character vector containing strings that indicate the input media
-  file for the pipeline (provide more than one for stacking).
+  A character vector of paths to the input media files of the pipeline.
+  Give more than one path for stacking.
 
 - output:
 
-  A string indicating the output media file for the pipeline.
+  A string with the path of the output media file of the pipeline.
 
 - overwrite:
 
-  A logical indicating whether the output media file should be
-  overwritten if it already exists. (default = `TRUE`)
+  A logical. If `TRUE` (the default), an output media file that already
+  exists is overwritten.
 
 ## Value
 
@@ -31,12 +31,13 @@ An FFmpeg pipeline object.
 ## See also
 
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)
-to render the pipeline and
+to build the command and
 [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
-to execute it; the Layer-2 task verbs (e.g.
-[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
-[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md))
-wrap this engine.
+to run it. The task functions, such as
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+and
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+are built on the pipeline functions.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

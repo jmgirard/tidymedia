@@ -1,8 +1,11 @@
 # Copy the codecs and map all streams
 
-Stream-copy the audio and/or video (no re-encoding) and, optionally, map
-all streams from the input. This is the fast, lossless path when you
-only need to remux or cut on keyframes.
+Copy the audio, the video, or both, with stream copy and no re-encoding.
+It can also map all streams from the input. This is the fast, lossless
+path when you only need to put the streams in a new container or cut on
+keyframes. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, container, keyframe and stream copy.
 
 ## Usage
 
@@ -14,46 +17,43 @@ ffm_copy(object, audio = TRUE, video = TRUE, streams = TRUE)
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 - audio:
 
-  A logical indicating whether to copy the audio codec (default =
-  `TRUE`). See
+  A logical. `TRUE` (the default) copies the audio codec. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
-  for the two things the bare name `audio` means at Layer 1, and for the
-  input index `audio_input`.
+  for the two things that the name `audio` means in the pipeline
+  functions, and for the input index `audio_input`.
 
 - video:
 
-  A logical indicating whether to copy the video codec. (default =
-  `TRUE`)
+  A logical. `TRUE` (the default) copies the video codec.
 
 - streams:
 
-  A logical indicating whether to map all streams from the input. This
-  **sets** the mapping to the all-streams specifier `"0"` rather than
-  adding to it, so calling `ffm_copy()` twice compiles one `-map "0"`,
-  not two. If the pipeline already states a *different* mapping, that is
-  a conflict and `ffm_copy()` aborts rather than discard it silently:
-  pass `streams = FALSE` to keep the mapping you set, or call
-  `ffm_copy()` first and narrow afterwards with
-  `ffm_map(replace = TRUE)`. (default = `TRUE`)
+  A logical. `TRUE` (the default) maps all streams from the input. It
+  **sets** the mapping to the all-streams specifier `"0"`, and does not
+  add to it. So two `ffm_copy()` calls compile one `-map "0"`, not two.
+  If the pipeline already has a *different* mapping, `ffm_copy()` gives
+  an error and does not discard that mapping silently. To keep the
+  mapping you set, pass `streams = FALSE`. Or call `ffm_copy()` first,
+  and then narrow the mapping with `ffm_map(replace = TRUE)`.
 
 ## Value
 
-`object` with the added instruction to copy codecs and/or map all
-streams.
+`object` with an added instruction to copy codecs, map all streams, or
+both.
 
 ## See also
 
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)
 and
 [`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md),
-which it wraps;
-[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
-uses it for fast copy cuts.
+which `ffm_copy()` calls, and
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
+which uses it for fast copy cuts.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

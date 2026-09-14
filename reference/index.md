@@ -50,7 +50,7 @@ Build an FFmpeg command one step at a time, then compile it or run it.
 - [`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md)
   : Cut a Continuous Section from an FFmpeg Pipeline by Seeking
 - [`ffm_drop()`](https://jmgirard.github.io/tidymedia/reference/ffm_drop.md)
-  : Drop Steams from an FFmpeg Pipeline
+  : Drop Streams from an FFmpeg Pipeline
 - [`ffm_crop()`](https://jmgirard.github.io/tidymedia/reference/ffm_crop.md)
   : Crop Frames in an FFmpeg Pipeline
 - [`ffm_scale()`](https://jmgirard.github.io/tidymedia/reference/ffm_scale.md)
@@ -80,7 +80,7 @@ Build an FFmpeg command one step at a time, then compile it or run it.
 - [`ffm_output_options()`](https://jmgirard.github.io/tidymedia/reference/ffm_output_options.md)
   : Add Raw Output Options to an FFmpeg Pipeline
 - [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)
-  : Compile the tidymedia pipeline into FFmpeg command
+  : Compile the tidymedia pipeline into an FFmpeg command
 - [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
   : Run the FFmpeg Pipeline
 - [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)

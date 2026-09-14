@@ -1,7 +1,9 @@
 # Set the Pixel Format in an FFmpeg Pipeline
 
-Set the output pixel format via FFmpeg's `-pix_fmt` option (for example
-`"yuv420p"` for broad player compatibility).
+Set the pixel format of the output with FFmpeg's `-pix_fmt` option. For
+example, use `"yuv420p"` for broad player compatibility. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as pixel format.
 
 ## Usage
 
@@ -13,23 +15,24 @@ ffm_pixel_format(object, format)
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 - format:
 
-  A string indicating the pixel format for the output file.
+  A string that names the pixel format of the output file.
 
 ## Value
 
-`object` with the added pixel-format instruction.
+`object` with an added instruction to set the pixel format.
 
 ## See also
 
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
 and
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
-the task verbs that set the pixel format via this builder.
+the task functions that use `ffm_pixel_format()` to set the pixel
+format.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

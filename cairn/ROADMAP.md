@@ -11,7 +11,7 @@ _Last hygiene check: 2026-09-14 (M130 done and archived. PR #134 squash-merged w
 | M129 | The prose sweep reads help pages correctly, and text repeated across the task function pages is written once, in plain English | done | — | high | milestones/archive/M129-sweep-and-shared-task-help-text.md |
 | M128 | The input, output and run pipeline help pages read as plain English | done | M129 | high | milestones/archive/M128-plain-pipeline-io-help-pages.md |
 | M130 | The crop, web-format, standardize and strip-metadata help pages read as plain English | done | M129 | high | milestones/archive/M130-plain-video-edit-help-pages.md |
-| M131 | The filter and multi-input pipeline help pages read as plain English | in-progress | M129 | high | milestones/M131-plain-pipeline-filter-help-pages.md |
+| M131 | The filter and multi-input pipeline help pages read as plain English | review | M129 | high | milestones/M131-plain-pipeline-filter-help-pages.md |
 | M132 | The FFmpeg-capability, frame and audio conversion help pages read as plain English | planned | M129 | high | milestones/M132-plain-capability-frame-audio-help-pages.md |
 | M133 | The separate-audio-video and normalize-audio help pages read as plain English | planned | M129 | high | milestones/M133-plain-separate-normalize-help-pages.md |
 | M134 | The anonymize, segment, concatenate, compare and picture-in-picture help pages read as plain English | planned | M129 | high | milestones/M134-plain-video-composition-help-pages.md |

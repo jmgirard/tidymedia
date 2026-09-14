@@ -21,11 +21,11 @@ The M131 help-page domain uses plain English for an R user who does not know FFm
 
 ## Acceptance criteria
 
-- [ ] AC1: Every page on the M131 domain list exists at head, and the prose sweep over the M131 domain at head exits with status 0 or 1 and prints no `[term …]` or `[dash in Rd source]` line.
-- [ ] AC2: Every page on the M131 domain list exists at head, and the prose sweep over the M131 domain at head exits with status 0 or 1 and prints no `[<n> words]` line.
-- [ ] AC3: Each page in the M131 domain whose `--prose` output at head matches a glossary stem names the glossary.
-- [ ] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M131 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
-- [ ] AC5: For every `man/*.Rd` file outside the M131 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
+- [x] AC1: Every page on the M131 domain list exists at head, and the prose sweep over the M131 domain at head exits with status 0 or 1 and prints no `[term …]` or `[dash in Rd source]` line.
+- [x] AC2: Every page on the M131 domain list exists at head, and the prose sweep over the M131 domain at head exits with status 0 or 1 and prints no `[<n> words]` line.
+- [x] AC3: Each page in the M131 domain whose `--prose` output at head matches a glossary stem names the glossary.
+- [x] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M131 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
+- [x] AC5: For every `man/*.Rd` file outside the M131 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
 - [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
@@ -57,3 +57,11 @@ The M131 help-page domain uses plain English for an R user who does not know FFm
 ## Decisions
 
 ## Review
+
+Evidence gathered 2026-09-14 on branch head `5e6d75e1`. Master had not moved since the base commit `08a4df26`, so no sync was needed.
+
+- AC1: all 10 domain pages exist at head. No page was added under `man/` since the base commit. The sweep over the 10 pages at head reads 271 sentences, exits 0 and prints no `[term …]` or `[dash in Rd source]` line. The base run over the same 10 pages exits 1 with 5 term findings, so the sweep can fail on this domain.
+- AC2: the same head run prints no `[<n> words]` line. The base run prints 9.
+- AC3: the `--prose` output at head has a glossary stem on 6 pages: `ffm_concat`, `ffm_fps`, `ffm_loudnorm`, `ffm_overlay`, `ffm_trim` and `ffm_vstack`. Each of the 6 has a rendered sentence with `glossary` and `vignette("tidymedia")`. `ffm_crop`, `ffm_drawbox`, `ffm_hstack` and `ffm_scale` have no stem. The same glossary check on the base `ffm_trim` page reads false.
+- AC4: the only match at the base commit is `tidymedia_ffm`, 20 times. `git grep -lwF tidymedia_ffm HEAD -- 'man/*.Rd'` finds it in 23 files.
+- AC5: `git diff --name-only 08a4df26 HEAD -- man/` lists only the 10 domain pages, so no page outside the domain is in scope.

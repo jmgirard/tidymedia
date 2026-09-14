@@ -102,7 +102,9 @@ audio_stream_param <- function(action,
              "every row. An \\code{NA} cell in that column means \\code{NULL} ",
              "for that row. It does not fall back to the argument.")
     },
-    audio_stream_family_sentence(reading, after_null = TRUE),
+    # A `_batch` verb puts its column sentences between the `NULL` sentence and
+    # this one, so there "this way" would point at the wrong sentence.
+    audio_stream_family_sentence(reading, after_null = !batch),
     extra,
     paste0("A track the input does not have gives an FFmpeg error, not an ",
            "R one. See \\code{\\link{audio_stream}} for how this differs from ",
@@ -157,8 +159,9 @@ audio_stream_extras <- list(
     "streams. Do not use the \\code{index} column of ",
     "\\code{\\link{probe_audio}}, which counts every stream. An input with ",
     "no audio at all is an FFmpeg error here, because this function writes ",
-    "an audio file. The other every-track functions do not fail in that ",
-    "case. \\code{videofile} is never affected."
+    "an audio file. Functions that write only a video file, such as ",
+    "\\code{\\link{standardize_video}}, do not fail in that case. ",
+    "\\code{videofile} is never affected."
   ),
   normalize_one_track = paste0(
     "This function reads \\code{NULL} as the first track only. The two-pass ",

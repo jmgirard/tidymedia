@@ -54,9 +54,10 @@
 #     segment_video()'s outfiles was the other example until M096 put a
 #     check_string() loop at its front door, and
 #     test-unguarded-argument-front-doors.R asserts that cell has left the
-#     census. The OTHER class M094 disclosed -- a check sitting below the build-time nvenc probe, which reads the limit -- is
-#     fixed: D075 sites that probe below every check whose answer cannot depend
-#     on it, so the argument error is reached before the limit is read (M095).
+#     census. The OTHER class M094 disclosed -- a check sitting below the
+#     build-time nvenc probe, which reads the limit -- is fixed: D075 sites
+#     that probe below every check whose answer cannot depend on it, so the
+#     argument error is reached before the limit is read (M095).
 #     Ordering it against the front door
 #     ALONE was measured wrong (M094 review F1): four verbs deliberately keep no
 #     front-door guard for `video_codec`/`pixel_format`/`regions`, and a call
@@ -160,11 +161,12 @@ resolve_check_tracks <- function(call = rlang::caller_env()) {
 #'
 #' A limit set with `options(tidymedia.timeout = )` follows the same rule, with
 #' one difference. `options(tidymedia.timeout = NULL)` removes the option, so
-#' it means no limit. A wrong value gives an error from the function you
-#' called, even when `run = FALSE`. [ffm_batch()] gives that error before it
-#' starts any job. Two calls do not read the limit, so they give no such error.
-#' One is [has_hardware_encoder()] when you set `tidymedia.hardware_encoders`.
-#' The other is a `probe_*()` function that you give a `probe` object.
+#' it means no limit. A function that can start a program gives an error for
+#' a wrong value, even when `run = FALSE`. [ffm_batch()] gives that error
+#' before it starts any job. A function that starts no program gives no such
+#' error. For example, [has_hardware_encoder()] starts none when you set
+#' `tidymedia.hardware_encoders`. A `probe_*()` function that you give a
+#' `probe` object also starts none.
 #'
 #' Most functions check their own arguments before the limit. So a wrong
 #' argument gives its own error, even when the limit is also wrong. A few

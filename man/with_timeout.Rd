@@ -38,11 +38,12 @@ fraction, because R would read a limit below one second as no limit.
 
 A limit set with \code{options(tidymedia.timeout = )} follows the same rule, with
 one difference. \code{options(tidymedia.timeout = NULL)} removes the option, so
-it means no limit. A wrong value gives an error from the function you
-called, even when \code{run = FALSE}. \code{\link[=ffm_batch]{ffm_batch()}} gives that error before it
-starts any job. Two calls do not read the limit, so they give no such error.
-One is \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} when you set \code{tidymedia.hardware_encoders}.
-The other is a \verb{probe_*()} function that you give a \code{probe} object.
+it means no limit. A function that can start a program gives an error for
+a wrong value, even when \code{run = FALSE}. \code{\link[=ffm_batch]{ffm_batch()}} gives that error
+before it starts any job. A function that starts no program gives no such
+error. For example, \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} starts none when you set
+\code{tidymedia.hardware_encoders}. A \verb{probe_*()} function that you give a
+\code{probe} object also starts none.
 
 Most functions check their own arguments before the limit. So a wrong
 argument gives its own error, even when the limit is also wrong. A few

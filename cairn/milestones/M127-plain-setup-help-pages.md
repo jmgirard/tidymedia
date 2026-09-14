@@ -23,9 +23,9 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 
 - [x] AC1: The prose sweep over the M127 domain prints no sentence that matches a maintainer term.
 - [x] AC2: The prose sweep over the M127 domain prints no sentence over 25 words.
-- [x] AC3: For each page in the domain, take each glossary stem found in its `--prose` output. The page defines the term at its first use or names the glossary in `vignette("tidymedia")`. One ledger row per page records the stems and how each is met.
+- [ ] AC3: For each page in the domain, take each glossary stem found in its `--prose` output. The page defines the term at its first use or names the glossary in `vignette("tidymedia")`. One ledger row per page records the stems and how each is met.
 - [x] AC4: `tools::Rd2txt()` output for `man/tidymedia-package.Rd` is at most 80 lines. Its first paragraph says what the package does and names `vignette("tidymedia")` as the place to start.
-- [ ] AC5: Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the 28 domain pages at the base commit (`264afff4`) is found as a whole word in some `man/*.Rd` file at head.
+- [x] AC5: Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the 28 domain pages at the base commit (`264afff4`) is found as a whole word in some `man/*.Rd` file at head.
 - [x] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
@@ -79,6 +79,7 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: amendment executed: AC5 and Scope written as chosen at the mini gate.
 - 2026-09-13: R2-1 to R2-6 and R2-8 to R2-12 fixed. R2-1 was measured with `tm_force_timeout()`: the two-pass analysis and a `hardware` backend's encoder check both give errors on a reached limit. The `ffprobe()` redirect claim was measured with `2>&1`. The `mediainfo()` redirect claim was read from its `system()` call. R2-11: a missing landing topic now drops only its own assertions. Sweep over 28 pages exits 0. `devtools::test()`: 1738 tests, 0 failed, 5 skipped.
 - 2026-09-13: on `98e2ea71`: `devtools::check()` gives 0 errors, 0 warnings, 0 notes, with spelling OK and tests included. `devtools::document()` leaves `man/` unchanged. `pkgdown::check_pkgdown()` finds no problems. Status set to review.
+- 2026-09-13: review round 3 checkpoint on `de5b70ba`: AC1, AC2, AC4 and AC5 pass. AC3 fails on `?with_timeout` ("encoder check", no glossary pointer). Gate (user's choice): run the three reviewers before the return. Check and reviewers still running.
 
 ## Decisions
 
@@ -153,3 +154,13 @@ Three new-context reviewers ran on `629d68a4`. The prior-review reviewer found n
 - R2-11: in `test-timeout-silence.R:692`, the new `skip_if()` for the landing topic also skips the `rd` and `news` assertions.
 - R2-12: the `?with_timeout` Description says "the session's own limit is back". Inside a function that called `local_timeout()`, it is the limit that was in force.
 - Dispositions (gate, 2026-09-13): R2-7 is an amendment return on AC5. The narrowed wording is in the work log, and the three rows are added as well. R2-1 to R2-6 and R2-8 to R2-12 are fix now. None is rejected or deferred.
+
+### Review round 3
+
+Evidence is from 2026-09-13 on `de5b70ba`. That commit contains `origin/master` (`264afff4`), so no sync merge was needed. No PR exists for the branch.
+
+- AC1: `Rscript tools/doc_prose_report.R` over the 28 domain pages prints no finding and exits 0. The same sweep over the 28 pages as they were at `264afff4` prints 185 findings and exits 1. Of these, 73 are maintainer terms.
+- AC2: the same head run prints no sentence over 25 words. At `264afff4` it printed 112.
+- AC3: fails. A search for the ten glossary stems over each page's `--prose` output finds stems on 9 pages. Eight are the ledger's pages, and each names the glossary in `vignette("tidymedia")`. The ninth is `with_timeout`. Its prose line 99 says "The other is the encoder check of a call that names a backend", which matches `encod`. The page does not define the term, does not name the glossary, and has no ledger row. Commit `98e2ea71` added the sentence as the R2-1 fix. The box is unticked.
+- AC4: `tools::Rd2txt()` on `man/tidymedia-package.Rd` gives 78 lines. The Description paragraph says what the package does and ends "Start with `vignette("tidymedia")`".
+- AC5: at `264afff4` the pattern finds 27 identifiers in the 28 domain pages. At head, `git grep -wF` finds each of the 27 in `man/*.Rd`. The box is ticked.

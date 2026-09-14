@@ -23,7 +23,7 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 
 - [x] AC1: The prose sweep over the M127 domain prints no sentence that matches a maintainer term.
 - [x] AC2: The prose sweep over the M127 domain prints no sentence over 25 words.
-- [ ] AC3: For each page in the domain, take each glossary stem found in its `--prose` output. The page defines the term at its first use or names the glossary in `vignette("tidymedia")`. One ledger row per page records the stems and how each is met.
+- [x] AC3: For each page in the domain, take each glossary stem found in its `--prose` output. The page defines the term at its first use or names the glossary in `vignette("tidymedia")`. One ledger row per page records the stems and how each is met.
 - [x] AC4: `tools::Rd2txt()` output for `man/tidymedia-package.Rd` is at most 80 lines. Its first paragraph says what the package does and names `vignette("tidymedia")` as the place to start.
 - [x] AC5: Every match of `\btidymedia[._][a-z_.]+` or `\btm_[a-z_]+` in the 28 domain pages at the base commit (`264afff4`) is found as a whole word in some `man/*.Rd` file at head.
 - [x] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
@@ -193,3 +193,16 @@ Three new-context reviewers ran on `de5b70ba`. The prior-review reviewer found n
 - R3-14: the generated `audio_stream` text on `?separate_audio_video` says functions that pass video through do not fail, on a function that passes video through, and it repeats the `NULL` default sentence.
 - R3-15: the `tidymedia.check_tracks` item in `?tidymedia` no longer says that the default is `TRUE`.
 - R3-16: `?mediainfo_parameter` Value no longer says an empty value gives `NA`. The reviewer reads `R/mediainfo.R:113` as giving `""` for one empty line with `typed = FALSE`. Not confirmed.
+- Dispositions (gate, 2026-09-13): the AC3 failure and R3-1 to R3-16 are fix now. All four unconfirmed findings were checked and hold, so none is rejected.
+
+### Review round 4
+
+Evidence is from 2026-09-13 on `26ce8895`. That commit contains `origin/master` (`264afff4`), so no sync merge was needed. No PR exists for the branch.
+
+- AC1: `Rscript tools/doc_prose_report.R` over the 28 domain pages prints no finding and exits 0. At `264afff4` the same sweep printed 185 findings, 73 of them maintainer terms (round 3).
+- AC2: the same head run prints no sentence over 25 words. At `264afff4` it printed 112.
+- AC3: a search for the ten glossary stems over each page's `--prose` output finds stems on 9 pages, with the same pages and stems as the 9 rows of the ledger table. Each of the 9 rendered pages names the glossary in `vignette("tidymedia")`. On `with_timeout` that sentence is new in `82b7c72d`. The box is ticked.
+- AC4: `tools::Rd2txt()` on `man/tidymedia-package.Rd` gives 78 lines. The Description paragraph says what the package does and ends "Start with `vignette("tidymedia")`".
+- AC5: at `264afff4` the pattern finds 27 identifiers in the 28 domain pages (round 3). At head, `git grep -wF` finds each of the 27 in `man/*.Rd`.
+- AC6: `devtools::check()` on `82b7c72d` gives 0 errors, 0 warnings and 0 notes, with spelling OK and tests included. `26ce8895` differs from it only in `cairn/` files. `devtools::test()` on `82b7c72d` gives 1738 tests, 0 failed, 0 errors, 5 skipped. On `26ce8895`, `devtools::document()` leaves `man/` and `NAMESPACE` unchanged, and `pkgdown::check_pkgdown()` on `82b7c72d` found no problems.
+- Consistency gate: `cairn_validate` passes. The diff adds no top-level file and touches only `R/`, `man/`, `tests/` and `cairn/`. It changes no `README`, `NEWS.md`, `DESCRIPTION` or `DESIGN.md`. No principle changed.

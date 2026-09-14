@@ -420,13 +420,32 @@ The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` o
 
 | Page | Words | Term | Dash | Stems (AC3) | Result |
 |---|---|---|---|---|---|
-| ffm_concat | 2 | 2 | 0 | `codec`, `encod`, `frame rate`, `stream` | |
-| ffm_crop | 0 | 0 | 0 | — | |
-| ffm_drawbox | 0 | 0 | 0 | — | |
-| ffm_fps | 0 | 0 | 0 | `frame rate` | |
-| ffm_hstack | 0 | 0 | 0 | — | |
-| ffm_loudnorm | 4 | 2 | 0 | `encod`, `LUFS`, `true peak` | |
-| ffm_overlay | 2 | 1 | 0 | `stream` | |
-| ffm_scale | 0 | 0 | 0 | — | |
-| ffm_trim | 1 | 0 | 0 | `stream` | |
-| ffm_vstack | 0 | 0 | 0 | `stream` | |
+| ffm_concat | 2 | 2 | 0 | `codec`, `encod`, `frame rate`, `stream` | No finding. Names the glossary. "Layer 0 escape hatch" became "a direct command, such as `ffmpeg()`". |
+| ffm_crop | 0 | 0 | 0 | — | No finding. No stem. |
+| ffm_drawbox | 0 | 0 | 0 | — | No finding. No stem. |
+| ffm_fps | 0 | 0 | 0 | `frame rate` | No finding. Names the glossary. |
+| ffm_hstack | 0 | 0 | 0 | — | No finding. No stem. |
+| ffm_loudnorm | 4 | 2 | 0 | `encod`, `LUFS`, `true peak` | No finding. Names the glossary. Deleted: that it is the first pipeline function to write the audio filter chain (history), and the count "all five of these plus `offset`", which read as six values. The all-or-none rule stays. |
+| ffm_overlay | 2 | 1 | 0 | `stream` | No finding. Names the glossary. "Layer-2 verb" became "task function". |
+| ffm_scale | 0 | 0 | 0 | — | No finding. No stem. The title typo "a FFmpeg" is fixed. |
+| ffm_trim | 1 | 0 | 0 | `stream` | No finding. Names the glossary. |
+| ffm_vstack | 0 | 0 | 0 | `stream` | No finding. Names the glossary. |
+
+#### Results at head (T4)
+
+- AC1, AC2: the sweep over the 10 pages at head reads 271 sentences, prints no finding and exits 0.
+- AC3: the 7 pages with a stem at head each name the glossary. `ffm_crop`, `ffm_drawbox`, `ffm_hstack` and `ffm_scale` have no stem.
+- AC4: `tidymedia_ffm` is found by `git grep -wF` in `man/*.Rd` at head.
+- AC5: `git diff --name-only 08a4df26 HEAD -- man/` lists only the 10 domain pages.
+- Tests: no test pins wording that changed, so no test was changed or removed. `test-shared-range-bindings.R` still finds the three rendered loudness ranges on `?ffm_loudnorm`.
+- Claim audit: a fresh reader read about 110 claims and found no false claim that the branch added. It found 2 changed sentences, 1 dropped "internally" and 3 unclear phrases. All were put back to the base claim, and the reader found the new wording correct.
+
+#### Base claims found false
+
+Each claim keeps its meaning at head. All are items of the M131 part of the `ffm_*()` help-text follow-up row in `cairn/ROADMAP.md`.
+
+| Page | Claim | Evidence |
+|---|---|---|
+| `ffm_crop` | `x` and `y` take a positive number. | `check_dim(x, inclusive = TRUE)` accepts 0 (`R/utils.R`). |
+| `ffm_hstack`, `ffm_vstack` | `shortest` trims all videos to the shortest. | With `resize = TRUE`, the resize graph has no `shortest` term (`R/ffm.R`). |
+| `ffm_loudnorm` | The filter compiles to `-af`. | In the `complex` branch, `ffm_compile()` writes only `filter_video` and never reads `filter_audio` (`R/ffm.R`). |

@@ -31,7 +31,7 @@ ffm_files(video, "output.mp4") |>
 }
 \seealso{
 \code{\link[=ffm_crop]{ffm_crop()}} to crop instead of resize. \code{\link[=standardize_video]{standardize_video()}} is the
-task function built on it.
+task function built on \code{ffm_scale()}.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

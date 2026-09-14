@@ -18,7 +18,7 @@ ffm_trim(
 \code{ffm_files()}.}
 
 \item{start}{The time of the start of the kept section, given in
-\code{units}. This time is the first frame of the output.}
+\code{units}. The frame at this time is the first frame of the output.}
 
 \item{end}{The time of the first frame that is dropped, given in
 \code{units}. The frame just before it is the last frame of the output.}

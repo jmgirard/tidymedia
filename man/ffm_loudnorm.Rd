@@ -71,15 +71,15 @@ This is single-pass (dynamic) \code{loudnorm}. It makes one reproducible
 command, with no measurement pass. The defaults follow EBU Recommendation R
 128 (2014): \code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP.
 Loudness is measured per ITU-R BS.1770-4. The default
-\code{loudness_range = 7} is FFmpeg's own \code{loudnorm} default, because
-EBU R128 does not prescribe a single value.
+\code{loudness_range = 7} is FFmpeg's own \code{loudnorm} default. EBU
+R128 does not prescribe a single value.
 
 Two filters are added, not one. \code{loudnorm} is followed by
 \code{asetnsamples}, which regroups the filtered audio into frames of 4096
 samples and does not pad the last one. Dynamic \code{loudnorm} resamples to
 192 kHz and gives frames of 192000 samples. Some encoders accept whatever
 frame they are given, FLAC and Vorbis among them. Those encoders refuse to
-open at all on such frames.
+open at all on frames of 192000 samples.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

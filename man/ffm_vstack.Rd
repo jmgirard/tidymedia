@@ -29,8 +29,8 @@ the other). It can also resize the videos to the same width.
 \details{
 This is the vertical form of \code{\link{ffm_hstack}}. Both are pipeline
 functions for several inputs. They force the \code{-filter_complex} path and
-manage their own stream labels. The glossary in \code{vignette("tidymedia")}
-explains media terms such as stream.
+manage their own stream labels internally. The glossary in
+\code{vignette("tidymedia")} explains media terms such as stream.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

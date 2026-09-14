@@ -66,7 +66,7 @@ ffm_files <- function(input, output, overwrite = TRUE) {
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
 #' @param start The time of the start of the kept section, given in
-#'   \code{units}. This time is the first frame of the output.
+#'   \code{units}. The frame at this time is the first frame of the output.
 #' @param end The time of the first frame that is dropped, given in
 #'   \code{units}. The frame just before it is the last frame of the output.
 #' @param duration The maximum duration of the output, given in time duration
@@ -263,7 +263,7 @@ ffm_drop <- function(object,
 #'   an FFmpeg expression. The default is \code{"(in_h-out_h)/2"}.
 #' @return \code{object} with an added instruction to crop the frames.
 #' @seealso [ffm_scale()] to resize instead of crop. [crop_video()] and
-#'   [format_for_web()] are the task functions built on it.
+#'   [format_for_web()] are the task functions built on \code{ffm_crop()}.
 #' @references https://ffmpeg.org/ffmpeg-filters.html#crop
 #' @family pipeline functions
 #' @examples
@@ -306,7 +306,7 @@ ffm_crop <- function(object,
 #'   real number or a string that contains an FFmpeg expression.
 #' @return \code{object} with an added instruction to resize the frames.
 #' @seealso [ffm_crop()] to crop instead of resize. [standardize_video()] is the
-#'   task function built on it.
+#'   task function built on \code{ffm_scale()}.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -377,15 +377,15 @@ ffm_fps <- function(object, fps) {
 #' command, with no measurement pass. The defaults follow EBU Recommendation R
 #' 128 (2014): \code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP.
 #' Loudness is measured per ITU-R BS.1770-4. The default
-#' \code{loudness_range = 7} is FFmpeg's own \code{loudnorm} default, because
-#' EBU R128 does not prescribe a single value.
+#' \code{loudness_range = 7} is FFmpeg's own \code{loudnorm} default. EBU
+#' R128 does not prescribe a single value.
 #'
 #' Two filters are added, not one. \code{loudnorm} is followed by
 #' \code{asetnsamples}, which regroups the filtered audio into frames of 4096
 #' samples and does not pad the last one. Dynamic \code{loudnorm} resamples to
 #' 192 kHz and gives frames of 192000 samples. Some encoders accept whatever
 #' frame they are given, FLAC and Vorbis among them. Those encoders refuse to
-#' open at all on such frames.
+#' open at all on frames of 192000 samples.
 #'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
@@ -839,8 +839,8 @@ ffm_hstack <- function(object,
 #'
 #' This is the vertical form of \code{\link{ffm_hstack}}. Both are pipeline
 #' functions for several inputs. They force the \code{-filter_complex} path and
-#' manage their own stream labels. The glossary in \code{vignette("tidymedia")}
-#' explains media terms such as stream.
+#' manage their own stream labels internally. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as stream.
 #'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
@@ -906,10 +906,10 @@ ffm_vstack <- function(object,
 #' Draw the second input (the overlay) on top of the first input (the main
 #' video) at position \code{x} and \code{y}. Like \code{\link{ffm_hstack}}, this
 #' is a pipeline function for several inputs. It forces the
-#' \code{-filter_complex} path and manages its own stream labels. It needs
-#' exactly two inputs. The first is the background, and the second is drawn over
-#' it. The glossary in \code{vignette("tidymedia")} explains media terms such as
-#' stream.
+#' \code{-filter_complex} path and manages its own stream labels internally. It
+#' needs exactly two inputs. The first is the background, and the second is
+#' drawn over it. The glossary in \code{vignette("tidymedia")} explains media
+#' terms such as stream.
 #'
 #' \code{x} and \code{y} accept plain numbers or FFmpeg overlay expressions. A
 #' plain number counts pixels from the top-left of the main video. In an
@@ -1001,7 +1001,7 @@ ffm_overlay <- function(object,
 #' and stream copy.
 #'
 #' To join inputs with different parameters, you must re-encode with the concat
-#' filter. No pipeline function wraps that filter yet, so use a direct command,
+#' filter. The package does not wrap that filter yet, so use a direct command,
 #' such as \code{\link{ffmpeg}}.
 #'
 #' The demuxer needs a list file that names the inputs. \code{ffm_concat()}

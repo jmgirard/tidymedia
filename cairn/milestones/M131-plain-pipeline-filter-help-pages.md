@@ -51,6 +51,7 @@ The M131 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-14: T1 done. Base sweep over the 10 pages: 220 sentences, 14 findings (9 words, 5 term, no dash). `tidymedia_ffm` is the only AC4 identifier. Ledger section `### M131` added.
 - 2026-09-14: T2 done. Six pages rewritten. The sweep over them prints no finding. `ffm_trim`, `ffm_fps` and `ffm_loudnorm` name the glossary. `devtools::test()` has 0 failures.
 - 2026-09-14: T3 done. Four pages rewritten. The sweep over all 10 pages prints no finding. The 7 pages with a stem name the glossary. "Layer-2", "blessed" and "verb" are gone. `devtools::test()` has 0 failures.
+- 2026-09-14: T4 checkpoint, not done. claim audit: 110 claims read, 6 corrected — R/ffm.R (concat, loudnorm, trim, vstack, overlay, crop and scale See Also); the same reader re-read all 6 as the base claim. Three false base claims are ledger rows and the M131 part of the `ffm_*()` help-text follow-up row. `pkgdown::check_pkgdown()` found no problems. `devtools::test()` and `devtools::check()` are still running.
 
 ## Decisions
 

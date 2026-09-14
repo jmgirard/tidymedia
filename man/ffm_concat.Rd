@@ -24,7 +24,7 @@ and stream copy.
 }
 \details{
 To join inputs with different parameters, you must re-encode with the concat
-filter. No pipeline function wraps that filter yet, so use a direct command,
+filter. The package does not wrap that filter yet, so use a direct command,
 such as \code{\link{ffmpeg}}.
 
 The demuxer needs a list file that names the inputs. \code{ffm_concat()}

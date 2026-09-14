@@ -42,7 +42,7 @@ https://ffmpeg.org/ffmpeg-filters.html#crop
 }
 \seealso{
 \code{\link[=ffm_scale]{ffm_scale()}} to resize instead of crop. \code{\link[=crop_video]{crop_video()}} and
-\code{\link[=format_for_web]{format_for_web()}} are the task functions built on it.
+\code{\link[=format_for_web]{format_for_web()}} are the task functions built on \code{ffm_crop()}.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

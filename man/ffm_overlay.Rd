@@ -33,10 +33,10 @@ the first.
 Draw the second input (the overlay) on top of the first input (the main
 video) at position \code{x} and \code{y}. Like \code{\link{ffm_hstack}}, this
 is a pipeline function for several inputs. It forces the
-\code{-filter_complex} path and manages its own stream labels. It needs
-exactly two inputs. The first is the background, and the second is drawn over
-it. The glossary in \code{vignette("tidymedia")} explains media terms such as
-stream.
+\code{-filter_complex} path and manages its own stream labels internally. It
+needs exactly two inputs. The first is the background, and the second is
+drawn over it. The glossary in \code{vignette("tidymedia")} explains media
+terms such as stream.
 }
 \details{
 \code{x} and \code{y} accept plain numbers or FFmpeg overlay expressions. A

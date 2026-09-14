@@ -164,3 +164,26 @@ Evidence is from 2026-09-13 on `de5b70ba`. That commit contains `origin/master` 
 - AC3: fails. A search for the ten glossary stems over each page's `--prose` output finds stems on 9 pages. Eight are the ledger's pages, and each names the glossary in `vignette("tidymedia")`. The ninth is `with_timeout`. Its prose line 99 says "The other is the encoder check of a call that names a backend", which matches `encod`. The page does not define the term, does not name the glossary, and has no ledger row. Commit `98e2ea71` added the sentence as the R2-1 fix. The box is unticked.
 - AC4: `tools::Rd2txt()` on `man/tidymedia-package.Rd` gives 78 lines. The Description paragraph says what the package does and ends "Start with `vignette("tidymedia")`".
 - AC5: at `264afff4` the pattern finds 27 identifiers in the 28 domain pages. At head, `git grep -wF` finds each of the 27 in `man/*.Rd`. The box is ticked.
+- AC6: `devtools::check()` on `de5b70ba` gives 0 errors, 0 warnings and 0 notes, with the spelling comparison OK and tests included. After it, `devtools::document()` leaves `man/` and `NAMESPACE` unchanged. `pkgdown::check_pkgdown()` finds no problems.
+- Consistency gate: `cairn_validate` passes. The diff adds no top-level file and changes no `README`, `NEWS.md`, `DESCRIPTION` or `DESIGN.md`. No principle changed.
+
+### Review round 3 findings
+
+Three new-context reviewers ran on `de5b70ba`. The prior-review reviewer found no PR comments. Its one finding is the AC3 failure above, and it found the O-series and R2-series fixes still in place. The blame-history reviewer found no defects. It compared the statements of every changed `R/` file at base and head, and found only reordering and help-text strings. The diff-bug reviewer ranked 16 findings, listed here in its order. It found no other page that fails AC3. R3-1 and R3-3 are confirmed by this session against the source text.
+
+- R3-1: `R/timeout.R:327-328` says `withr::with_options()` has "the same limits" as all three `?local_timeout` cases. `with_options()` has no `.local_envir` and restores through its own exit handler. Measured by the reviewer: with `on.exit(NULL)` in the body, `with_options()` restores the option and `local_options()` does not. New in `98e2ea71`.
+- R3-2: the `ffprobe()` and `mediainfo()` Value sections say a command that ends with `2>&1` returns standard error. R's documentation says that `system()` runs no shell on Windows. So on Windows the redirect is not a redirect. On Unix, a redirect works anywhere in the command. Not confirmed on Windows.
+- R3-3: the comment above `resolve_timeout()` says a wrong form of `segment_video()`'s `outfiles` passes the `check_string()` loop and loses to the limit, and that `?with_timeout` says so. M096 closed that path (`test-unguarded-argument-front-doors.R:105-110`), and `?with_timeout` does not mention it. New in `98e2ea71`.
+- R3-4: `?with_timeout` uses "backend" with no definition, and does not say that the `tidymedia.hardware_encoders` option or a stored answer skips the encoder check (`R/ffmpeg.R:3204-3219`).
+- R3-5: `?with_timeout` Details says "The function you called gives the error, even when `run = FALSE`" after a sentence that names no error, and it reads as covering every function.
+- R3-6: `?refresh_ffmpeg_capabilities` See also says `hardware_encoder()` uses the stored answer. It only reads a lookup table (`R/ffmpeg.R:3119-3129`). Same at base.
+- R3-7: `R/audio-stream-doc.R:152` is a 104-character source line, new in `98e2ea71`.
+- R3-8: `R/ffm_batch.R:11` and `:76` are roxygen lines of 81 characters. Both are older than the branch.
+- R3-9: `?install_on_win` Value says the Errors section lists "the error classes of the install steps". `tidymedia_wrong_platform` and `tidymedia_confirmation_unavailable` fire before any install step, and argument errors are in neither sentence.
+- R3-10: in `?refresh_ffmpeg_capabilities` Parallel workers, "That option works in a different way" now points two sentences back. The reviewer thinks "Asks FFmpeg `W` times" is W+1 with the main-session check. The count is not confirmed.
+- R3-11: `R/timeout.R:190` uses a serial comma, and the rest of the page does not.
+- R3-12: stale test comments: `test-runtime-timeout.R:532-536` counts an `abort` assertion that is gone, and the `test-timeout-silence.R:681` title says "both docs" but reads three sources.
+- R3-13: in `test-timeout-silence.R:692-696`, a landing topic that is not found drops its assertions with no skip message. Not confirmed in practice.
+- R3-14: the generated `audio_stream` text on `?separate_audio_video` says functions that pass video through do not fail, on a function that passes video through, and it repeats the `NULL` default sentence.
+- R3-15: the `tidymedia.check_tracks` item in `?tidymedia` no longer says that the default is `TRUE`.
+- R3-16: `?mediainfo_parameter` Value no longer says an empty value gives `NA`. The reviewer reads `R/mediainfo.R:113` as giving `""` for one empty line with `typed = FALSE`. Not confirmed.

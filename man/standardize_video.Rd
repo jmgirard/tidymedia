@@ -106,8 +106,8 @@ standardize_video(video, "std.mp4", audio_stream = 1, run = FALSE)
 }
 \seealso{
 \code{\link[=ffm_scale]{ffm_scale()}}, \code{\link[=ffm_codec]{ffm_codec()}}, and \code{\link[=ffm_pixel_format]{ffm_pixel_format()}}, among the
-pipeline functions it wraps; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware}
-toggle;
+pipeline functions it wraps; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the
+\code{hardware} toggle;
 \code{\link[=standardize_video_batch]{standardize_video_batch()}} for the many-file form.
 
 Other task functions:

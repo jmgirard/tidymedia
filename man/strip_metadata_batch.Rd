@@ -52,8 +52,8 @@ strip_metadata_batch(jobs, run = FALSE)
 \seealso{
 \code{\link[=strip_metadata]{strip_metadata()}} for the single-input form; \code{\link[=ffm_batch]{ffm_batch()}} for the
 batch runner and the arguments forwarded through \code{...};
-\code{\link[=standardize_video_batch]{standardize_video_batch()}} and \code{\link[=anonymize_video_batch]{anonymize_video_batch()}} for other batch
-task functions.
+\code{\link[=standardize_video_batch]{standardize_video_batch()}} and \code{\link[=anonymize_video_batch]{anonymize_video_batch()}} for the other
+batch task functions.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

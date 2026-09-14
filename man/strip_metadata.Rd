@@ -39,9 +39,9 @@ de-identification and reproducibility.
 Because the streams are copied and not re-encoded, some data is not removed.
 That is identifiers \strong{inside} the encoded bitstream, and per-stream metadata
 such as \code{handler_name} or \code{language}. Removing them would require
-re-encoding, which this function does not do. For that, use the direct
-command \code{\link{ffmpeg}}. The other way is per-stream metadata mapping
-that must probe the file first.
+re-encoding, which is out of scope for this function. For that, use the
+direct command \code{\link{ffmpeg}}. The other way is per-stream metadata
+mapping that must probe the file first.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

@@ -1577,9 +1577,9 @@ strip_metadata_pipeline <- function(input, output) {
 #' Because the streams are copied and not re-encoded, some data is not removed.
 #' That is identifiers **inside** the encoded bitstream, and per-stream metadata
 #' such as \code{handler_name} or \code{language}. Removing them would require
-#' re-encoding, which this function does not do. For that, use the direct
-#' command \code{\link{ffmpeg}}. The other way is per-stream metadata mapping
-#' that must probe the file first.
+#' re-encoding, which is out of scope for this function. For that, use the
+#' direct command \code{\link{ffmpeg}}. The other way is per-stream metadata
+#' mapping that must probe the file first.
 #'
 #' @inheritParams extract_audio
 #' @param outfile A string containing the path of the de-identified file to
@@ -1671,8 +1671,8 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @return `r command_return()`
 #' @seealso [ffm_scale()], [ffm_codec()], and [ffm_pixel_format()], among the
-#'   pipeline functions it wraps; [has_hardware_encoder()] for the \code{hardware}
-#'   toggle;
+#'   pipeline functions it wraps; [has_hardware_encoder()] for the
+#'   \code{hardware} toggle;
 #'   [standardize_video_batch()] for the many-file form.
 #' @family task functions
 #' @family audio selection functions
@@ -4463,8 +4463,8 @@ derive_standardized_names <- function(input) {
 #' @return `r batch_return("output")`
 #' @seealso [standardize_video()] for the single-input form; [ffm_batch()] for
 #'   the batch runner and the arguments forwarded through \code{...};
-#'   [segment_video_batch()] and [extract_frame_batch()] for other batch task
-#'   functions.
+#'   [segment_video_batch()] and [extract_frame_batch()] for the other batch
+#'   task functions.
 #' @family task functions
 #' @family audio selection functions
 #' @examples
@@ -4720,8 +4720,8 @@ derive_stripped_names <- function(input) {
 #' @return `r batch_return("output")`
 #' @seealso [strip_metadata()] for the single-input form; [ffm_batch()] for the
 #'   batch runner and the arguments forwarded through \code{...};
-#'   [standardize_video_batch()] and [anonymize_video_batch()] for other batch
-#'   task functions.
+#'   [standardize_video_batch()] and [anonymize_video_batch()] for the other
+#'   batch task functions.
 #' @family task functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -5931,13 +5931,15 @@ derive_web_names <- function(input) {
 #'   encoder.
 #' @param hardware,fallback `r batch_hardware_param("crop_video")`
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
-#'   A call can also have a \code{width} or \code{height} that is neither a
-#'   positive number nor an FFmpeg expression. That call is refused for the
-#'   value first, whether or not this machine has the encoder.
+#'   A call can also be wrong about a per-row \code{width} or \code{height},
+#'   one that is neither a positive number nor an FFmpeg expression. That call
+#'   is refused for the value first, whether or not this machine has the
+#'   encoder.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @inheritParams extract_audio_batch
 #' @return `r jobs_return()`
-#' @seealso [crop_video()], the single-file function it wraps; [ffm_batch()], the batch
+#' @seealso [crop_video()], the single-file function it wraps; [ffm_batch()],
+#'   the batch
 #'   runner; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [standardize_video_batch()] to re-encode in batch.
 #' @family task functions
@@ -6102,7 +6104,8 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' @inheritParams extract_audio_batch
 #' @inheritParams format_for_web
 #' @return `r jobs_return()`
-#' @seealso [format_for_web()], the single-file function it wraps; [ffm_batch()], the
+#' @seealso [format_for_web()], the single-file function it wraps;
+#'   [ffm_batch()], the
 #'   batch runner; [standardize_video_batch()] for a configurable re-encode.
 #' @family task functions
 #' @family audio selection functions

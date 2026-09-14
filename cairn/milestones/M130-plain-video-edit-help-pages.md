@@ -1,6 +1,6 @@
 # M130: The crop, web-format, standardize and strip-metadata help pages read as plain English
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** M129
 - **Driving RR:** —
@@ -42,7 +42,7 @@ The M130 help-page domain uses plain English for an R user who does not know FFm
 - [x] T1: Record in a new M130 ledger section the base commit, the domain page list, the AC4 identifiers and the sweep output over the domain at the base commit.
 - [x] T2: Rewrite `crop_video()` and `format_for_web()`, and their batch pages.
 - [x] T3: Rewrite `standardize_video()` and `strip_metadata()`, and their batch pages.
-- [ ] T4: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words, and a sentence that names the glossary stays. A base claim found false gets a ledger row and a line in the follow-up candidate row. Fill the ledger. Run the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
+- [x] T4: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words, and a sentence that names the glossary stays. A base claim found false gets a ledger row and a line in the follow-up candidate row. Fill the ledger. Run the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
 ## Work log
 
@@ -52,6 +52,9 @@ The M130 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-14: T1 done. `### M130` ledger in `cairn/references/plain-docs.md`: base sweep over 8 pages read 380 sentences, 48 findings (31 words, 15 term, 2 dash), no AC4 identifiers, no page names the glossary.
 - 2026-09-14: T2 done. `crop_video`, `format_for_web` and their batch pages rewritten, each names the glossary, and the sweep over the 4 pages exits 0. A first draft reworded `crop_video_batch`'s `video_codec`, which is M129 shared text inherited by two M134 pages, so it was put back. `devtools::test()`: 0 failed, 0 errors, 5 skipped.
 - 2026-09-14: T3 done. `standardize_video`, `strip_metadata` and their batch pages rewritten, each names the glossary, and the sweep over the 4 pages exits 0. The `?standardize_video` resolution rules are now a three-item list. No page outside the domain changed. `devtools::test()`: 0 failed, 0 errors, 5 skipped.
+- 2026-09-14: [O] claim audit reader (fresh, wrote none of the lines) read every added roxygen line against the code and the base text. It found no branch-added false claim. It found 3 changed sentences that did not make the base claim, which were put back, and the same reader confirmed all 3. It found 4 base claims false, which are ledger rows and the M130 follow-up candidate row in `cairn/ROADMAP.md`.
+- claim audit: 70 claims read, 3 corrected — R/ffmpeg.R, man/crop_video_batch.Rd, man/standardize_video_batch.Rd, man/strip_metadata.Rd, man/strip_metadata_batch.Rd
+- 2026-09-14: T4 done. No test pinned changed wording, so no test changed. Sweep over the 8 pages exits 0 with no finding. All 8 name the glossary. No AC4 identifiers at base. `git diff --name-only 9353ac4f -- man/` lists only the 8 domain pages. `devtools::document()` leaves `man/` unchanged. `devtools::check()`: 0 errors, 0 warnings, 0 notes. `devtools::test()`: 0 failed, 0 errors, 5 skipped. `pkgdown::check_pkgdown()`: no problems. Ledger filled.
 
 ## Decisions
 

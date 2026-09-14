@@ -57,9 +57,10 @@ encoder.}
 
 \item{hardware, fallback}{The encoder backend and its fallback behavior, applied to the whole batch. They are a property of the machine, not of a row, so neither is read as a \code{jobs} column. See \code{\link[=crop_video]{crop_video()}}.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
-A call can also have a \code{width} or \code{height} that is neither a
-positive number nor an FFmpeg expression. That call is refused for the
-value first, whether or not this machine has the encoder.}
+A call can also be wrong about a per-row \code{width} or \code{height},
+one that is neither a positive number nor an FFmpeg expression. That call
+is refused for the value first, whether or not this machine has the
+encoder.}
 
 \item{audio_stream}{The audio track to carry into each output, as a number that counts from \code{0} among the \emph{audio tracks} of each row's input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) carries \strong{every} audio track. Without an \code{audio_stream} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row. It does not fall back to the argument. The every-track family reads \code{NULL} as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The function does not carry subtitle or data streams in either case. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
@@ -94,7 +95,8 @@ jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"),
 crop_video_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=crop_video]{crop_video()}}, the single-file function it wraps; \code{\link[=ffm_batch]{ffm_batch()}}, the batch
+\code{\link[=crop_video]{crop_video()}}, the single-file function it wraps; \code{\link[=ffm_batch]{ffm_batch()}},
+the batch
 runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
 \code{\link[=standardize_video_batch]{standardize_video_batch()}} to re-encode in batch.
 

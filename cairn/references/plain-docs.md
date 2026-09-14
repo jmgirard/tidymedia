@@ -381,11 +381,31 @@ The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` o
 
 | Page | Words | Term | Dash | Stems (AC3) | Result |
 |---|---|---|---|---|---|
-| crop_video | 0 | 1 | 0 | `codec`, `container`, `encod`, `stream` | |
-| crop_video_batch | 7 | 4 | 2 | `codec`, `container`, `encod`, `stream` | |
-| format_for_web | 1 | 0 | 0 | `codec`, `encod`, `stream` | |
-| format_for_web_batch | 5 | 2 | 0 | `codec`, `encod`, `stream` | |
-| standardize_video | 3 | 0 | 0 | `codec`, `container`, `encod`, `frame rate`, `pixel format`, `stream` | |
-| standardize_video_batch | 8 | 2 | 0 | `codec`, `container`, `encod`, `frame rate`, `pixel format`, `stream` | |
-| strip_metadata | 4 | 4 | 0 | `container`, `encod`, `stream` | |
-| strip_metadata_batch | 3 | 2 | 0 | `stream` | |
+| crop_video | 0 | 1 | 0 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. Gained a description, which repeats the title. |
+| crop_video_batch | 7 | 4 | 2 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. |
+| format_for_web | 1 | 0 | 0 | `codec`, `encod`, `stream` | No finding. Names the glossary. Gained the stem `pixel format` from the glossary sentence. |
+| format_for_web_batch | 5 | 2 | 0 | `codec`, `encod`, `stream` | No finding. Names the glossary. |
+| standardize_video | 3 | 0 | 0 | `codec`, `container`, `encod`, `frame rate`, `pixel format`, `stream` | No finding. Names the glossary. The resolution rules are a three-item list. |
+| standardize_video_batch | 8 | 2 | 0 | `codec`, `container`, `encod`, `frame rate`, `pixel format`, `stream` | No finding. Names the glossary. |
+| strip_metadata | 4 | 4 | 0 | `container`, `encod`, `stream` | No finding. Names the glossary. |
+| strip_metadata_batch | 3 | 2 | 0 | `stream` | No finding. Names the glossary. |
+
+#### Results at head (T4)
+
+- AC1, AC2: the sweep over the 8 pages at head reads 467 sentences, prints no finding and exits 0.
+- AC3: all 8 pages have a stem at head, and each names the glossary. The same check on the base `crop_video` page reads false.
+- AC4: no page had an identifier at the base commit, so there is nothing to find.
+- AC5: `git diff --name-only 9353ac4f HEAD -- man/` lists only the 8 domain pages. A first draft reworded the `video_codec` text of `crop_video_batch`, which `compare_videos_batch` and `picture_in_picture_batch` inherit. That text is M129's shared text, so it was put back.
+- Tests: no test pins wording that changed, so no test was changed or removed.
+- Claim audit: a fresh reader read about 70 claims and found no false claim that the branch added. It found 3 changed sentences that did not make the base claim. All 3 were put back to the base claim, and the reader found the new wording correct.
+
+#### Base claims found false
+
+Each claim keeps its meaning at head. All are items of the M130 follow-up row in `cairn/ROADMAP.md`.
+
+| Page | Claim | Evidence |
+|---|---|---|
+| `format_for_web` | Odd dimensions are padded down to even values. | `format_for_web_pipeline()` calls `ffm_crop()` with `floor(in_w/2)*2`, which removes a row or column and adds no padding (`R/ffmpeg.R`). |
+| `format_for_web_batch` | The command has no per-row settings. | The function reads an `audio_stream` column for each row with `pick("audio_stream", audio_stream)` (`R/ffmpeg.R`). |
+| `crop_video_batch`, `format_for_web_batch` | See Also: each wraps its single-file function. | Each calls `crop_video_pipeline()` or `format_for_web_pipeline()`, not `crop_video()` or `format_for_web()`. |
+| `standardize_video_batch`, `strip_metadata_batch` | See Also: two named functions are "the other" batch task functions. | `R/ffmpeg.R` defines 17 `*_batch` functions. |

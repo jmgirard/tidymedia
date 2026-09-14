@@ -327,3 +327,24 @@ The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` o
 | Pages | Claim | Evidence |
 |---|---|---|
 | `extract_audio`, `convert_audio`, `normalize_audio` and their batch forms | The dropped-track check is skipped silently when FFprobe is missing or the input cannot be probed. | A probe that reaches its limit gives a `tidymedia_probe_timeout` warning (`R/ffprobe.R:313-327`). The base text said the same. It keeps its meaning and is item (h) of the M127 help-text follow-up row in `cairn/ROADMAP.md`. |
+
+### M128
+
+The base commit is `dc6cbd20`. At that commit, the domain is the 10 `man/*.Rd` files whose header names `R/ffm.R` and whose base name matches the M128 filter: `ffm_codec`, `ffm_compile`, `ffm_copy`, `ffm_drop`, `ffm_files`, `ffm_map`, `ffm_output_options`, `ffm_pixel_format`, `ffm_run` and `ffm_seek`.
+
+#### Sweep output at the base commit (AC1, AC2, AC3, AC4)
+
+The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` over the 10 files that `git show dc6cbd20:man/<page>.Rd` wrote to a temporary folder. It read 185 sentences and exited 1 with 26 findings: 13 `[<n> words]`, 13 `[term …]` and no `[dash in Rd source]`. The same command gives the full output again. Stems are the glossary stems in each page's `--prose` output. Identifiers are the AC4 matches in each page. No page named the glossary.
+
+| Page | Words | Term | Dash | Stems (AC3) | Identifiers (AC4) | Result |
+|---|---|---|---|---|---|---|
+| ffm_codec | 0 | 1 | 0 | `codec`, `stream` | `tidymedia_ffm` | |
+| ffm_compile | 0 | 0 | 0 | — | `tidymedia_ffm` | |
+| ffm_copy | 1 | 1 | 0 | `codec`, `encod`, `key ?frame`, `stream` | `tidymedia_ffm` | |
+| ffm_drop | 0 | 0 | 0 | `stream` | `tidymedia_ffm` | |
+| ffm_files | 0 | 0 | 0 | — | `tidymedia_ffm` | |
+| ffm_map | 3 | 3 | 0 | `stream` | `tidymedia_ffm` | |
+| ffm_output_options | 1 | 3 | 0 | — | `tidymedia_ffm` | |
+| ffm_pixel_format | 0 | 0 | 0 | `pixel format` | `tidymedia_ffm` | |
+| ffm_run | 8 | 4 | 0 | `encod` | `tidymedia_ffm`, `tidymedia_ffmpeg_exit`, `tidymedia_loudnorm_no_measurement`, `tidymedia_multitrack_separation`, `tm_row_status`, `tm_rows`, `tm_status` | |
+| ffm_seek | 1 | 0 | 0 | `encod`, `key ?frame`, `stream` | `tidymedia_ffm` | |

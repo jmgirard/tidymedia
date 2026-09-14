@@ -4378,3 +4378,33 @@ constructor a `_batch` sibling.
 `ffm_batch()` — for example one whose table only a Layer 2 `*_batch()` verb
 accepts and `ffm_batch()` cannot run. That would tie the prefix to the runner
 it serves, not to the table it produces.
+
+## D093 — The rest of the plain-English help rewrite changes form, not claims (2026-09-13, from M127's review; binds the help-page milestones after M127 and leaves D091 standing)
+
+**The rule.** A help-page rewrite changes how a sentence says a fact, not what
+it claims. It may split, shorten, reorder, move or delete a claim. It adds no
+claim about what the package does that the base text did not make. A base
+claim found false is not fixed in the rewrite. It gets a ledger row with its
+evidence and goes to one follow-up candidate row for that milestone.
+
+**Review.** At review, fix now only false or unclear text that the branch
+introduced. A reworded claim that now says something different counts as
+introduced. A finding about text already wrong at base goes to the follow-up
+row. Before merge approval is asked again, a fresh reader reads each
+fix-now edit against the code.
+
+**Size.** Each milestone is cut small enough that one reviewer can read every
+changed sentence against the code, about 12 pages.
+
+**Why.** M127's criteria checked only form, so whether the text was true was
+left to review. A fix composed at one round was read only by the next full
+round, and several such fixes added new false claims. That kept the review
+going for four rounds. Holding claims fixed takes new claims, the main
+source of the findings, out of the rewrite.
+
+**What this rules out.** Correcting base claims inside a rewrite milestone,
+and fixing pre-existing findings at review.
+
+**Falsified by** a rewrite milestone under this rule whose review still finds
+false claims that the branch introduced, round after round. That would show
+the rule does not hold claims fixed, and the problem is somewhere else.

@@ -2,16 +2,15 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-09-13 (M126 done and archived; PR #130 squash-merged, CI 8/8 green, no returns. Shipped-docs candidate row gained item (o) at review. LESSONS unchanged (36 lines, 19,954/20,000); `false-greens.md` 25,996/26,000 and `guard-ordering.md` 5,451/11,000 unchanged. **`ROADMAP.md` 41,084 bytes against its 24,000-byte budget**; `/cairn-triage` remains the only remedy. M123's terminal row pruned. `cairn_validate` clean.)_
+_Last hygiene check: 2026-09-13 (M127 done and archived. PR #131 squash-merged, CI 10/10 green, 2 defect returns and 1 amendment return. D093 added. One candidate row added for 7 review findings. M124's terminal row pruned. LESSONS unchanged at 36 lines and 19,954/20,000 bytes. `false-greens.md` 25,996/26,000 and `guard-ordering.md` 5,451/11,000 unchanged. `ROADMAP.md` is 41,860 bytes against its 24,000-byte budget, and `/cairn-triage` is the remedy. `cairn_validate` clean.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M124 | The batch docs teach ffm_jobs(), and four wrong doc statements are corrected | done | — | normal | milestones/archive/M124-batch-docs-teach-ffm-jobs.md |
 | M125 | Batch runs refuse two jobs writing one output | done | — | normal | milestones/archive/M125-batch-output-collisions.md |
 | M126 | The vignettes and README read as plain English for an R user | done | — | high | milestones/archive/M126-plain-vignettes-readme.md |
-| M127 | ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English | review | M126 | high | milestones/M127-plain-setup-help-pages.md |
+| M127 | ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English | done | M126 | high | milestones/archive/M127-plain-setup-help-pages.md |
 | M128 | The pipeline function (ffm_*) help pages read as plain English | planned | M126 | high | milestones/M128-plain-pipeline-help-pages.md |
 | M129 | The audio, frame and FFmpeg-capability help pages read as plain English, and repeated text is written once | planned | M126 | high | milestones/M129-plain-audio-frame-help-pages.md |
 | M130 | The video and composition task help pages read as plain English | planned | M129 | high | milestones/M130-plain-video-help-pages.md |

@@ -314,3 +314,16 @@ The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` o
 | R31 | 2 | The encoder backend: … Applies to video only | `standardize_video`, `anonymize_video` | `hardware_param(null_default = FALSE, video_only = TRUE)` in `standardize_video`. |
 | R32 | 2 | When a row names no `audio_stream` | `extract_audio_batch`, `convert_audio_batch` | `dropped_audio_paragraph(batch = TRUE)`. |
 | R33 | 2 | When no `audio_stream` is named | `extract_audio`, `convert_audio` | `dropped_audio_paragraph()`. |
+
+#### Results at head (T5)
+
+- AC1: `Rscript tools/roxygen_repeats.R R/ffmpeg.R` read 279 paragraphs in 34 blocks and listed none.
+- AC2, AC3: the sweep over the 34 pages prints 252 findings. Against the base comparison, no page prints a finding more times, no page has more dash lines, and no finding sentence is printed for two pages.
+- AC4: each of the 11 identifiers above is found by `git grep -wF` in at least one `man/*.Rd` file.
+- AC5: no `man/*.Rd` file outside the domain changed.
+
+#### Base claim found false
+
+| Pages | Claim | Evidence |
+|---|---|---|
+| `extract_audio`, `convert_audio`, `normalize_audio` and their batch forms | The dropped-track check is skipped silently when FFprobe is missing or the input cannot be probed. | A probe that reaches its limit gives a `tidymedia_probe_timeout` warning (`R/ffprobe.R:313-327`). The base text said the same. It keeps its meaning and is item (h) of the M127 help-text follow-up row in `cairn/ROADMAP.md`. |

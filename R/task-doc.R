@@ -107,7 +107,8 @@ batch_hardware_param <- function(scalar) {
 }
 
 # A call that is refused for contradicting itself before the encoder check.
-# `example` completes "for example by ...".
+# `example` names the one contradiction the function's page describes, and
+# completes "contradict itself by ...".
 contradiction_sentences <- function(example = c("audio_codec", "cut", "copy")) {
   example <- match.arg(example)
   how <- switch(example,
@@ -116,7 +117,7 @@ contradiction_sentences <- function(example = c("audio_codec", "cut", "copy")) {
     copy = "asking for GPU encoding alongside a stream copy"
   )
   rd_sentences(
-    sprintf("A call can also contradict itself, for example by %s.", how),
+    sprintf("A call can also contradict itself by %s.", how),
     paste0("Such a call is refused for the contradiction first, whether or not ",
            "this machine has the encoder.")
   )
@@ -258,8 +259,8 @@ dropped_audio_cost_sentences <- function(batch = FALSE) {
              "which is one call here, because this function takes a single ",
              "\\code{infile}.")
     },
-    paste0("The warning is given only when FFprobe is available and the input ",
-           "can be probed."),
+    paste0("The warning is given when FFprobe is available and the input can ",
+           "be probed."),
     "Otherwise the check is skipped silently.",
     if (batch) {
       c(paste0("Those probes run \\strong{one at a time, before any row starts}, ",

@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # Reports each sentence of user-facing prose that is over 25 words or that
-# matches a maintainer term, and in `.Rmd` prose each sentence holding ` -- ` or
-# `---` outside a code span.
+# matches a maintainer term, and in the prose of a file that is not `.Rd` each
+# sentence holding ` -- ` or `---` outside a code span.
 #
 #   Rscript tools/doc_prose_report.R <files>          report mode
 #   Rscript tools/doc_prose_report.R --prose <files>  print the swept prose
@@ -30,8 +30,8 @@
 #
 # The file count of sentences goes to stderr. Exit status: 0 when nothing is
 # reported, 1 when something is, 2 when a file parses to no sentences (every
-# file is still read and every finding printed), and 3 on a usage error or a
-# missing file. So an empty parse cannot pass as a clean one.
+# file is still read and every finding printed), and 3 on a usage error, a
+# missing file, or when no UTF-8 locale is available. So an empty parse cannot pass as a clean one.
 
 MAX_WORDS <- 25
 

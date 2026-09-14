@@ -7,8 +7,8 @@
 # `.Rbuildignore`'s `^tools$`.
 #
 # A block is a run of consecutive `#'` lines. A paragraph is the text of a run
-# of `#'` lines that starts at a tag or after a blank `#'` line, and ends before
-# the next tag or blank `#'` line. The leading tag and its argument name (the
+# of `#'` lines that starts at the start of a block, at a tag or after a blank
+# `#'` line, and ends before the next tag or blank `#'` line. The leading tag and its argument name (the
 # names after `@param`, the title before the colon after `@section`) are
 # removed, and runs of white space become one space.
 #
@@ -18,9 +18,11 @@
 #
 # Output: one record per repeated paragraph, most blocks first:
 #   == <n> blocks: <text>
-#      <file>:<line> <block name>
-# Exits 0 when nothing is listed, 1 when something is, and 3 on a usage error or
-# a missing file.
+#      <file>:<block start line> <block name> (line <paragraph line>)
+# The block name is the block's `@rdname` or `@name`, else the first object
+# defined after it, skipping blank and `#` comment lines.
+# Exits 0 when nothing is listed, 1 when something is, 2 when no paragraph is
+# read, and 3 on a usage error or a missing file.
 
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
@@ -59,7 +61,9 @@ paragraphs_in <- function(path) {
     body <- sub("^\\s*#' ?", "", lines[idx])
     tag_name <- sub("^@(rdname|name)\\s+(\\S+).*$", "\\2",
                     grep("^@(rdname|name)\\s", body, value = TRUE))
-    obj <- if (i <= n) sub("^\\s*`?([^`[:space:]]+)`?\\s*(<-|=).*$", "\\1", lines[[i]]) else ""
+    j <- i
+    while (j <= n && grepl("^\\s*(#.*)?$", lines[[j]])) j <- j + 1L
+    obj <- if (j <= n) sub("^\\s*`?([^`[:space:]]+)`?\\s*(<-|=).*$", "\\1", lines[[j]]) else ""
     name <- if (length(tag_name) > 0) tag_name[[1]] else obj
     block <- sprintf("%s:%d %s", path, start, name)
 

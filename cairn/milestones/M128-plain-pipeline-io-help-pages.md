@@ -21,11 +21,11 @@ The M128 help-page domain uses plain English for an R user who does not know FFm
 
 ## Acceptance criteria
 
-- [ ] AC1: Every page on the M128 domain list exists at head, and the prose sweep over the M128 domain at head exits with status 0 or 1 and prints no `[term …]` or `[dash in Rd source]` line.
-- [ ] AC2: Every page on the M128 domain list exists at head, and the prose sweep over the M128 domain at head exits with status 0 or 1 and prints no `[<n> words]` line.
-- [ ] AC3: Each page in the M128 domain whose `--prose` output at head matches a glossary stem names the glossary.
-- [ ] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M128 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
-- [ ] AC5: For every `man/*.Rd` file outside the M128 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
+- [x] AC1: Every page on the M128 domain list exists at head, and the prose sweep over the M128 domain at head exits with status 0 or 1 and prints no `[term …]` or `[dash in Rd source]` line.
+- [x] AC2: Every page on the M128 domain list exists at head, and the prose sweep over the M128 domain at head exits with status 0 or 1 and prints no `[<n> words]` line.
+- [x] AC3: Each page in the M128 domain whose `--prose` output at head matches a glossary stem names the glossary.
+- [x] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M128 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
+- [x] AC5: For every `man/*.Rd` file outside the M128 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
 - [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
@@ -57,7 +57,16 @@ The M128 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-14: claim audit: 125 claims read, 6 corrected — R/ffm.R, man/ffm_seek.Rd, man/ffm_map.Rd, man/ffm_output_options.Rd, man/ffm_run.Rd. The same [O] reader re-read the 6 once and found them true and the same claim as base. Four base claims found false went to a new M128 follow-up row. The one-line `unset_*()` row was merged into the declined-exports row, so `ROADMAP.md` stays under 60 lines.
 - 2026-09-14: T4 checkpoint, half done: ledger filled. The full test, check and pkgdown run is not yet read.
 - 2026-09-14: T4 done. `devtools::test()` 0 failures (13866 passed, 5 skipped). `devtools::check()` 0 errors, 0 warnings, 0 notes. `pkgdown::check_pkgdown()` no problems. `devtools::document()` at head writes nothing. No test pinned changed wording. Status set to review.
+- 2026-09-14: review checkpoint, half done: AC1-AC5 evidence recorded and ticked, and `cairn_validate` passes. The AC6 run and the three reviewers are still running.
 
 ## Decisions
 
 ## Review
+
+Review run 2026-09-14 at `b2ab5add`, base `dc6cbd20`. The branch contains `origin/master`, so no sync merge was needed.
+
+- AC1: the M128 filter over `man/*.Rd` headers naming `R/ffm.R` finds all 10 domain pages at head, and no `man/*.Rd` file was added since base. `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R` over the 10 pages reads 241 sentences, prints no finding and exits 0. So it prints no `[term …]` line and no `[dash in Rd source]` line.
+- AC2: the same 10 pages exist, and the same run exits 0 with no `[<n> words]` line.
+- AC3: the glossary stems, matched without case on each page's `--prose` output at head, hit six pages: `ffm_copy`, `ffm_seek`, `ffm_map`, `ffm_drop`, `ffm_codec` and `ffm_pixel_format`. Each of the six has a `tools::Rd2txt()` sentence with `glossary` and `vignette("tidymedia")`. `ffm_files`, `ffm_output_options`, `ffm_compile` and `ffm_run` match no stem and do not name the glossary, so the check can read false.
+- AC4: the two patterns over the 10 pages at `dc6cbd20` match 7 distinct identifiers: `tidymedia_ffm`, `tidymedia_ffmpeg_exit`, `tidymedia_loudnorm_no_measurement`, `tidymedia_multitrack_separation`, `tm_row_status`, `tm_rows` and `tm_status`. `git grep -l -wF` at head finds each in 3 to 23 `man/*.Rd` files.
+- AC5: `git diff --name-only dc6cbd20 HEAD -- man/` lists exactly the 10 domain pages, so no `man/*.Rd` file outside the domain is in the set the criterion quantifies over. The criterion holds with nothing to compare.

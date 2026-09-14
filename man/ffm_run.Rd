@@ -14,8 +14,7 @@ ffm_run(object, verify = NULL)
 to have, for example \code{list(width = 1920, video_codec = "h264")}. It is
 passed to \code{\link{verify_media}}. After a successful run, the output is
 probed. If a check fails, \code{ffm_run()} gives an error with the failed
-checks. This matches the error \code{ffm_run()} gives when FFmpeg exits
-non-zero. \code{NULL} (the
+checks. It also gives an error when FFmpeg exits non-zero. \code{NULL} (the
 default) skips the checks.}
 }
 \value{
@@ -66,10 +65,10 @@ analysis pass exits zero and prints no measurement block that can be
 read. FFmpeg did not exit non-zero there. So that error has only the
 class \code{tidymedia_loudnorm_no_measurement}, and no \code{tm_status}.
 \item \code{normalize_audio_batch(two_pass = TRUE)} reports in one error
-every row that failed in its analysis phase. That includes rows that
-exited zero and rows that FFmpeg refused. So a non-zero exit is one of
-its causes, not the fact it reports, and no single status can stand for
-the mix. It also has only the class
+every row that failed in its analysis phase. The failed rows can include
+rows that exited zero and rows that FFmpeg refused. So a non-zero exit is
+one of its causes, not the fact it reports, and no single status can
+stand for the mix. It also has only the class
 \code{tidymedia_loudnorm_no_measurement}. It carries \code{tm_rows}, the
 failed rows counted from 1. It also carries \code{tm_row_status}, their
 exit statuses in the same order, with \code{NA} where a row exited zero.

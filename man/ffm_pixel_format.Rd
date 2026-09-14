@@ -17,7 +17,7 @@ ffm_pixel_format(object, format)
 }
 \description{
 Set the pixel format of the output with FFmpeg's \code{-pix_fmt} option. For
-example, \code{"yuv420p"} works with most players. The glossary in
+example, use \code{"yuv420p"} for broad player compatibility. The glossary in
 \code{vignette("tidymedia")} explains media terms such as pixel format.
 }
 \examples{

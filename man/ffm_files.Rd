@@ -8,7 +8,7 @@ ffm_files(input, output, overwrite = TRUE)
 }
 \arguments{
 \item{input}{A character vector of paths to the input media files of the
-pipeline. Give more than one path to stack videos.}
+pipeline. Give more than one path for stacking.}
 
 \item{output}{A string with the path of the output media file of the
 pipeline.}

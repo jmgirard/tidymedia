@@ -334,7 +334,7 @@ The base commit is `dc6cbd20`. At that commit, the domain is the 10 `man/*.Rd` f
 
 #### Sweep output at the base commit (AC1, AC2, AC3, AC4)
 
-The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` over the 10 files that `git show dc6cbd20:man/<page>.Rd` wrote to a temporary folder. It read 185 sentences and exited 1 with 26 findings: 13 `[<n> words]`, 13 `[term …]` and no `[dash in Rd source]`. The same command gives the full output again. Stems are the glossary stems in each page's `--prose` output. Identifiers are the AC4 matches in each page. No page named the glossary.
+The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` over the 10 files that `git show dc6cbd20:man/<page>.Rd` wrote to a temporary folder. It read 185 sentences and exited 1 with 26 findings: 14 `[<n> words]`, 12 `[term …]` and no `[dash in Rd source]` (corrected M128 review: the text said 13 and 13, and the table below was right). The same command gives the full output again. Stems are the glossary stems in each page's `--prose` output. Identifiers are the AC4 matches in each page. No page named the glossary.
 
 | Page | Words | Term | Dash | Stems (AC3) | Identifiers (AC4) | Result |
 |---|---|---|---|---|---|---|
@@ -368,3 +368,5 @@ Each claim keeps its meaning at head. All are items of the M128 follow-up row in
 | `ffm_run` | Value: the output has a `status` attribute on a non-zero exit. | `ffm_run()` gives a `tidymedia_ffmpeg_exit` error before it returns, so no caller sees the attribute. |
 | `ffm_run` | Value: the pipeline never runs through a shell. | `run_program()` calls `system2()` (`R/program_management.R`), which passes the quoted command to `sh` on Unix. |
 | `ffm_map` | A mapping is added beside `-map "[vout]"` for a function with several inputs. | `ffm_concat()` takes several inputs but sets no `[vout]` map. |
+| `ffm_seek` | `reencode = FALSE` is a fast, lossless copy. | `ffm_groups()` only moves `-ss` and `-to` before `-i` and adds `-avoid_negative_ts`. Without `ffm_copy()`, FFmpeg re-encodes. Found by M128 review. |
+| `ffm_drop` | The title says it removes streams from the media file. | It removes them from the output only. The input file is not changed. Found by M128 review. |

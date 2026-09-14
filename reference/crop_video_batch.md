@@ -1,15 +1,19 @@
 # Crop Many Videos From a Jobs Table
 
-Crop many input videos to a rectangular region from a single jobs tibble
-— the **batch** (table-driven) sibling of
-[`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
-for when you have more than one file. Each row is one input. This is a
-thin wrapper over
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per input, sharing the same crop
-pipeline as the scalar verb. Each row's geometry values are checked at
-this verb's own front door, so a bad cell is refused – naming this
-function – before any command runs.
+Crop many videos to a rectangular region, using one jobs table. This is
+the **batch** form of
+[`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
+for when you have more than one file. Each row is one input. The
+function is a thin wrapper over
+[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+It builds one reproducible command for each input, with the same crop
+steps as
+[`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md).
+This function checks each row's crop size and position before any
+command runs. So a bad cell is refused with an error that names this
+function. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, container and stream copy.
 
 ## Usage
 
@@ -35,33 +39,33 @@ crop_video_batch(
 
 - jobs:
 
-  A data frame with one row per input and (at least) an `input` column
-  (source path). An optional `output` column names the destination; when
-  absent, one is derived per row by appending `_cropped` to each input's
-  basename, keeping the input's extension (e.g. `clip.mp4` becomes
-  `clip_cropped.mp4`). Each crop dimension — `width`, `height`, `x`, `y`
-  — may also appear as a column to override the corresponding argument
-  per row; rows (or dimensions) omitting the column fall back to the
-  argument. A `video_codec` column overrides that argument per row, with
-  `NA` meaning "leave the codec unset" (the column's way of writing the
-  argument's `NULL`); an `audio_codec` column works the same way. An
-  `audio_stream` column overrides that argument per row, with `NA`
-  meaning "keep every audio track" (the column's way of writing that
-  argument's `NULL`). Two rows whose destination is the same path are
-  refused before any row runs: a repeated `output`, or a repeated
+  A data frame with one row per input. It needs at least an `input`
+  column, the source path. An optional `output` column names the
+  destination. Without it, each row's output name adds `_cropped` to the
+  input's base name and keeps its extension. For example, `clip.mp4`
+  becomes `clip_cropped.mp4`. A `width`, `height`, `x` or `y` column
+  overrides that argument for each row. A dimension with no column uses
+  the argument. A `video_codec` column overrides that argument for each
+  row, and `NA` leaves the codec unset. That is the column form of the
+  argument's `NULL`. An `audio_codec` column works the same way. An
+  `audio_stream` column overrides that argument for each row, and `NA`
+  keeps every audio track. That is the column form of that argument's
+  `NULL`. Two rows with the same destination path are refused before any
+  row runs. That happens with a repeated `output`, or with a repeated
   `input` when there is no `output` column. Any other columns are
   ignored.
 
 - width, height:
 
-  The output crop size in pixels, applied to every row unless `jobs`
-  carries a column of the same name. Required: pass each as an argument
-  or supply the column (there is no default crop size).
+  The output crop size in pixels, for every row unless `jobs` has a
+  column of the same name. Each is required: pass it as an argument or
+  as a column. There is no default crop size.
 
 - x, y:
 
-  The offset in pixels of the crop's left/top edge, applied to every row
-  unless `jobs` carries a column of the same name. Default: centered.
+  The offset in pixels of the crop's left and top edge, for every row
+  unless `jobs` has a column of the same name. The default centers the
+  crop.
 
 - video_codec:
 
@@ -71,9 +75,9 @@ crop_video_batch(
 
 - audio_codec:
 
-  A string naming the output audio codec, applied to every row lacking
-  an `audio_codec` column. `"copy"` (default) stream-copies the audio;
-  name an encoder to transcode it, or `NULL` to leave the codec unset so
+  A string naming the output audio codec, for every row when `jobs` has
+  no `audio_codec` column. `"copy"` (default) stream-copies the audio.
+  Name an encoder to transcode it. `NULL` leaves the codec unset, so
   each output keeps its container's default encoder.
 
 - hardware, fallback:
@@ -89,10 +93,10 @@ crop_video_batch(
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
   to discard it. This function checks that the encoder is available
   before any row runs. So an unavailable encoder aborts naming this
-  function, not the internal step that runs the rows. A call that is
-  also wrong about a per-row value — a `width` or `height` that is
-  neither a positive number nor an FFmpeg expression — is refused for
-  the value first, whether or not this machine has the encoder.
+  function, not the internal step that runs the rows. A call can also
+  have a per-row `width` or `height` that is neither a positive number
+  nor an FFmpeg expression. Such a call is refused for the value first,
+  whether or not this machine has the encoder.
 
 - audio_stream:
 
@@ -155,7 +159,7 @@ each when requested through `...`. See
 ## See also
 
 [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
-the scalar verb it wraps;
+the single-input form it wraps;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)

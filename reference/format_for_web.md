@@ -1,8 +1,10 @@
 # Re-encode a video for web playback
 
-Re-encode a video into a widely compatible, web-friendly form (H.264
-video with `yuv420p` and `+faststart`, AAC audio), padding odd
-dimensions down to even values as required by the codec.
+Re-encode a video into a widely compatible, web-friendly form: H.264
+video with `yuv420p` and `+faststart`, and AAC audio. Odd dimensions are
+padded down to even values, as the codec requires. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, pixel format and re-encode.
 
 ## Usage
 
@@ -29,11 +31,11 @@ format_for_web(
 
 - hardware:
 
-  The encoder backend: `"none"` (default, software libx264), `"nvenc"`
-  for NVIDIA GPU H.264 encoding (`"h264_nvenc"`), or `"videotoolbox"`
-  for Apple GPU H.264 encoding (`"h264_videotoolbox"`). The backend you
-  name is the one used; an unavailable one aborts unless
-  `fallback = TRUE`. See
+  The encoder backend. `"none"` (default) uses software libx264.
+  `"nvenc"` uses NVIDIA GPU H.264 encoding (`"h264_nvenc"`), and
+  `"videotoolbox"` uses Apple GPU H.264 encoding
+  (`"h264_videotoolbox"`). The backend you name is the one used. An
+  unavailable one aborts unless `fallback = TRUE`. See
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md).
   Resolving a hardware backend asks this FFmpeg build which encoders it
   has. So the first such call that re-encodes the video runs FFmpeg
@@ -92,7 +94,7 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)
 and
 [`ffm_pixel_format()`](https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.md),
-among the builders it wraps;
+among the pipeline functions it wraps;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 for the `hardware` toggle;
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)

@@ -1,6 +1,8 @@
 # Crop a video to a rectangular region
 
-Crop a video to a rectangular region
+Crop a video to a rectangular region. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, container and stream copy.
 
 ## Usage
 
@@ -61,8 +63,8 @@ crop_video(
   stream-copies the audio through untouched. Name an encoder, such as
   `"aac"`, to transcode it. `NULL` leaves the codec unset, so the output
   container's default encoder is used. Stream-copying fails if the
-  output container cannot hold the source audio codec (e.g. FLAC in
-  `.mp4`) — name an encoder in that case.
+  output container cannot hold the source audio codec, for example FLAC
+  in `.mp4`. In that case, name an encoder.
 
 - hardware:
 
@@ -135,7 +137,7 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 ## See also
 
 [`ffm_crop()`](https://jmgirard.github.io/tidymedia/reference/ffm_crop.md),
-the builder it wraps;
+the pipeline function it wraps;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 for the `hardware` toggle;
 [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)

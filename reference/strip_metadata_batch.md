@@ -1,14 +1,18 @@
 # Strip Metadata From Many Files From a Jobs Table
 
-De-identify many input files from a single jobs tibble — the **batch**
-(table-driven) sibling of
-[`strip_metadata()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md)
-for when you have more than one file to scrub. Each row is one input;
-the only required column names its source. This is a thin wrapper over
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible stream-copy strip command per input, sharing the same
-pipeline (and its bit-exact, metadata-dropping behavior) as the scalar
-verb.
+De-identify many files, using one jobs table. This is the **batch** form
+of
+[`strip_metadata()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md),
+for when you have more than one file to scrub. Each row is one input,
+and the only required column names its source. The function is a thin
+wrapper over
+[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+It builds one reproducible stream-copy strip command for each input.
+Each command uses the same steps as
+[`strip_metadata()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md),
+so it is bit-exact and drops the same metadata. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as stream and stream copy.
 
 ## Usage
 
@@ -20,15 +24,15 @@ strip_metadata_batch(jobs, run = TRUE, parallel = FALSE, ...)
 
 - jobs:
 
-  A data frame with one row per input and (at least) an `input` column
-  (source path). An optional `output` column names the destination; when
-  absent, one is derived per row by appending `_stripped` to each
-  input's basename, keeping the input's extension (e.g. `clip.mkv`
-  becomes `clip_stripped.mkv`). Any two rows that resolve to the
-  **same** output path — a duplicated `input` with no `output` column,
-  or a repeated explicit `output` — are rejected so one file cannot
-  silently overwrite another. Any other columns are ignored (the scrub
-  has no per-row knobs).
+  A data frame with one row per input. It needs at least an `input`
+  column, the source path. An optional `output` column names the
+  destination. Without it, each row's output name adds `_stripped` to
+  the input's base name and keeps its extension. For example, `clip.mkv`
+  becomes `clip_stripped.mkv`. Any two rows with the **same** output
+  path are rejected, so one file cannot silently overwrite another. That
+  happens with a duplicated `input` and no `output` column, or with a
+  repeated explicit `output`. Any other columns are ignored, because the
+  scrub has no per-row settings.
 
 - run:
 
@@ -70,7 +74,7 @@ for the batch runner and the arguments forwarded through `...`;
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
 and
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md)
-for the other table-driven siblings.
+for the other batch task functions.
 
 Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

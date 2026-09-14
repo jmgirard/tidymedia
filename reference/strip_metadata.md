@@ -1,13 +1,16 @@
 # Strip identifying metadata from a media file
 
-Remove a media file's container and global metadata tags (creation time,
-GPS/location, device make and model, title, comment, and the like)
-together with any chapters, writing a de-identified copy — the front
-door for IRB/de-identification of research recordings. The audio and
-video streams are **stream-copied**, not re-encoded, so the operation is
-lossless and fast and the picture and sound are bit-for-bit unchanged
-(including any rotation display matrix, which is stream side data, not a
-metadata tag).
+Remove a media file's container and global metadata tags, together with
+any chapters, and write a de-identified copy. The tags include creation
+time, GPS or other location, device make and model, title and comment.
+Use it to de-identify research recordings, for example for an IRB (a
+research ethics board). The audio and video streams are
+**stream-copied**, not re-encoded. So the operation is lossless and
+fast, and the picture and sound are bit-for-bit unchanged. That includes
+any rotation display matrix, which is stream side data and not a
+metadata tag. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as container, stream and stream copy.
 
 ## Usage
 
@@ -38,34 +41,34 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 ## Details
 
-The output is muxed bit-exactly (`-fflags +bitexact`) so FFmpeg does not
-re-stamp the container with a fresh `creation_time` or an `encoder` tag
-naming its own version — either of which would defeat de-identification
-and reproducibility.
+The output is written bit-exactly (`-fflags +bitexact`). So FFmpeg does
+not stamp the container again with a fresh `creation_time`, or with an
+`encoder` tag that names its own version. Either tag would defeat
+de-identification and reproducibility.
 
-Because the streams are copied rather than re-encoded, identifiers
-embedded **inside** the encoded bitstream, and per-stream metadata such
-as `handler_name` or `language`, are not removed. Removing those would
-require re-encoding (out of scope; use the
-[`ffmpeg`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
-escape hatch) or per-stream metadata mapping that must probe the file
+Because the streams are copied and not re-encoded, some data is not
+removed. Those are identifiers **inside** the encoded bitstream, and
+per-stream metadata such as `handler_name` or `language`. Removing them
+would require one of two things. One is re-encoding, which is out of
+scope for this function, so use the direct command
+[`ffmpeg`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md) for
+it. The other is per-stream metadata mapping that must probe the file
 first.
 
 ## See also
 
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
-to remove faces or regions from the picture (the visual
-de-identification sibling);
+removes faces or regions from the picture, for visual de-identification.
 [`probe_container()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
 and
 [`mediainfo_query()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_query.md)
-to inspect a file's metadata before and after;
+inspect a file's metadata before and after. This function wraps the
+pipeline functions
 [`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
 and
-[`ffm_output_options()`](https://jmgirard.github.io/tidymedia/reference/ffm_output_options.md),
-the builders it wraps;
+[`ffm_output_options()`](https://jmgirard.github.io/tidymedia/reference/ffm_output_options.md).
 [`strip_metadata_batch()`](https://jmgirard.github.io/tidymedia/reference/strip_metadata_batch.md)
-for the many-file form.
+is the many-file form.
 
 Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

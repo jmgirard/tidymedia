@@ -1,13 +1,15 @@
 # Standardize Many Videos From a Jobs Table
 
-Re-encode many input files to a reproducible format from a single jobs
-tibble — the **batch** (table-driven) sibling of
-[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+Re-encode many files to a reproducible format, using one jobs table.
+This is the **batch** form of
+[`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
 for when you have more than one video to standardize. Each row is one
-input; the only required column names its source. This is a thin wrapper
-over
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per input.
+input, and the only required column names its source. The function is a
+thin wrapper over
+[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+It builds one reproducible command for each input. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, pixel format and frame rate.
 
 ## Usage
 
@@ -33,32 +35,31 @@ standardize_video_batch(
 
 - jobs:
 
-  A data frame with one row per input and (at least) an `input` column
-  (source path). An optional `output` column names the destination; when
-  absent, one is derived per row by appending `_standardized` to each
-  input's basename, keeping the input's extension (e.g. `clip.mkv`
-  becomes `clip_standardized.mkv`). Two rows naming the same output path
-  are refused before any row runs. That is a path repeated in the
-  `output` column, or a repeated `input` when there is no `output`
-  column. Each of the six standardization knobs — `width`, `height`,
-  `fps`, `video_codec`, `audio_codec`, `pixel_format` — may also appear
-  as a column to override the corresponding argument on a per-row basis;
-  rows (or knobs) that omit the column fall back to the argument's
-  value. In either codec column, `NA` leaves that row's codec unset (the
-  column form of `video_codec = NULL` / `audio_codec = NULL`); in a
-  `width`, `height`, `fps` or `pixel_format` column it is an error.
-  `pixel_format` has no unset state to express; `width`, `height` and
-  `fps` do accept `NULL` as arguments, but their columns have no `NA`
-  spelling for it. An `audio_stream` column overrides the `audio_stream`
-  argument per row, where `NA` keeps that row on every audio track. Any
-  other columns are ignored.
+  A data frame with one row per input. It needs at least an `input`
+  column, the source path. An optional `output` column names the
+  destination. Without it, each row's output name adds `_standardized`
+  to the input's base name and keeps its extension. For example,
+  `clip.mkv` becomes `clip_standardized.mkv`. Two rows naming the same
+  output path are refused before any row runs. That is a path repeated
+  in the `output` column, or a repeated `input` when there is no
+  `output` column. A column can override any of the six format arguments
+  for each row: `width`, `height`, `fps`, `video_codec`, `audio_codec`
+  and `pixel_format`. An argument with no column applies its value to
+  every row. In either codec column, `NA` leaves that row's codec unset.
+  That is the column form of `video_codec = NULL` or
+  `audio_codec = NULL`. In a `width`, `height`, `fps` or `pixel_format`
+  column, `NA` is an error. `pixel_format` has no unset state to
+  express. `width`, `height` and `fps` do accept `NULL` as arguments,
+  but their columns have no `NA` form for it. An `audio_stream` column
+  overrides the `audio_stream` argument for each row, and `NA` keeps
+  that row on every audio track. Any other columns are ignored.
 
 - width, height:
 
-  Optional target dimensions applied to every row, unless `jobs` carries
-  a column of the same name (see `jobs`). When only one is given the
-  other is derived to preserve aspect ratio; when neither is given the
-  frame is floor-cropped to even dimensions so odd-sized sources encode.
+  Optional target dimensions for every row, unless `jobs` has a column
+  of the same name (see `jobs`). When only one is given, the other is
+  derived to keep the aspect ratio. When neither is given, the frame is
+  floor-cropped to even dimensions, so odd-sized sources encode.
   (default = `NULL`)
 
 - fps:
@@ -69,20 +70,20 @@ standardize_video_batch(
 
 - video_codec:
 
-  A string naming the video codec applied to every row, unless `jobs`
-  carries a `video_codec` column, in which case `NA` in a cell leaves
-  that row's codec unset. The default is `"libx264"`. `NULL` emits no
-  `-codec:v` and lets the output container's default encoder decide. For
-  a `.webm` output, pass `audio_codec = NULL` too, because the default
-  `"copy"` would otherwise carry a codec WebM cannot hold.
+  A string naming the video codec for every row, unless `jobs` has a
+  `video_codec` column. In that column, `NA` leaves that row's codec
+  unset. The default is `"libx264"`. `NULL` emits no `-codec:v` and lets
+  the output container's default encoder decide. For a `.webm` output,
+  pass `audio_codec = NULL` too, because the default `"copy"` would
+  otherwise carry a codec WebM cannot hold.
 
 - audio_codec:
 
-  A string naming the audio codec applied to every row, unless `jobs`
-  carries an `audio_codec` column, in which case `NA` in a cell leaves
-  that row's codec unset. `"copy"` (default) stream-copies the audio
-  through untouched; name an encoder (e.g. `"aac"`) when the source
-  audio cannot be copied into the output container.
+  A string naming the audio codec for every row, unless `jobs` has an
+  `audio_codec` column. In that column, `NA` leaves that row's codec
+  unset. `"copy"` (default) stream-copies the audio through untouched.
+  Name an encoder, such as `"aac"`, when the source audio cannot be
+  copied into the output container.
 
 - pixel_format:
 
@@ -91,10 +92,10 @@ standardize_video_batch(
 
 - hardware:
 
-  The encoder backend applied to every row: `"none"` (default),
-  `"nvenc"` for NVIDIA GPU encoding (H.264, HEVC and AV1), or
-  `"videotoolbox"` for Apple GPU encoding (H.264 and HEVC). Batch-wide
-  (not a per-row column). See
+  The encoder backend for every row. `"none"` is the default. `"nvenc"`
+  uses NVIDIA GPU encoding (H.264, HEVC and AV1), and `"videotoolbox"`
+  uses Apple GPU encoding (H.264 and HEVC). It applies to the whole
+  batch and is not read as a column. See
   [`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
   and
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md).
@@ -189,7 +190,7 @@ for the batch runner and the arguments forwarded through `...`;
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
 and
 [`extract_frame_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md)
-for the other table-driven siblings.
+for the other batch task functions.
 
 Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

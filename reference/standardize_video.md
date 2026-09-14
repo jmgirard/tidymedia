@@ -1,12 +1,14 @@
 # Standardize a video to a reproducible format
 
-Re-encode a video to a consistent, reproducible format for analysis
-pipelines: a single video codec, pixel format, and (optionally)
-resolution and frame rate, with `+faststart` for smooth playback. Unlike
+Re-encode a video to a consistent, reproducible format for analysis. The
+format is one video codec and pixel format, and optionally a resolution
+and frame rate, with `+faststart` for smooth playback.
 [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
-(a fixed web-delivery recipe), every part of the standard is a
-parameter, so a lab can pin its own house format once and apply it
-across a dataset.
+uses a fixed recipe for web delivery. Here, every part of the standard
+is an argument. So a lab can set its own house format once and apply it
+across a dataset. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, pixel format and frame rate.
 
 ## Usage
 
@@ -143,21 +145,26 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 ## Details
 
-The default standard `standardize_video(infile, outfile)` re-encodes to
-H.264 video (`video_codec = "libx264"`) with `pixel_format = "yuv420p"`
-and `-movflags +faststart`, keeping the source resolution and frame
-rate. Audio is stream-copied unchanged (`-c:a copy`) unless
-`audio_codec` names an encoder; loudness standardization stays out of
-scope (see
-[`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)).
-The same input therefore always compiles to a byte-identical command.
+The default standard, `standardize_video(infile, outfile)`, re-encodes
+to H.264 video (`video_codec = "libx264"`) with
+`pixel_format = "yuv420p"` and `-movflags +faststart`. It keeps the
+source resolution and frame rate. Audio is stream-copied unchanged
+(`-c:a copy`) unless `audio_codec` names an encoder. The same input
+therefore always compiles to a byte-identical command. Loudness
+standardization is out of scope. For that, see
+[`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md).
 
-Resolution follows `width`/`height`: supplying both forces exact output
-dimensions; supplying only one preserves the aspect ratio and rounds the
-other to the nearest even number (FFmpeg's `-2`); supplying neither
-keeps the source resolution but rounds odd dimensions down to the
-nearest even value (a `yuv420p`/`libx264` requirement, and a no-op for
-already-even input) so the output always encodes.
+Resolution follows `width` and `height`:
+
+- With both, the output has exactly those dimensions.
+
+- With only one, the aspect ratio is kept, and the other dimension is
+  rounded to the nearest even number (FFmpeg's `-2`).
+
+- With neither, the source resolution is kept, but odd dimensions are
+  rounded down to the nearest even value. `yuv420p` and `libx264`
+  require this, and it changes nothing for input that is already even.
+  So the output always encodes.
 
 ## See also
 
@@ -165,7 +172,7 @@ already-even input) so the output always encodes.
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
 and
 [`ffm_pixel_format()`](https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.md),
-among the builders it wraps;
+among the pipeline functions it wraps;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 for the `hardware` toggle;
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)

@@ -1,13 +1,17 @@
 # Re-encode Many Videos for the Web From a Jobs Table
 
-Re-encode many input videos into a widely compatible, web-friendly form
-from a single jobs tibble — the **batch** (table-driven) sibling of
-[`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
-for when you have more than one file. Each row is one input. This is a
-thin wrapper over
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per input, sharing the same fixed
-H.264/AAC/`+faststart` pipeline as the scalar verb (no per-row knobs).
+Re-encode many videos into a widely compatible, web-friendly form, using
+one jobs table. This is the **batch** form of
+[`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
+for when you have more than one file. Each row is one input. The
+function is a thin wrapper over
+[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+It builds one reproducible command for each input. Each command uses the
+same fixed H.264, AAC and `+faststart` steps as
+[`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
+with no per-row settings. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec and re-encode.
 
 ## Usage
 
@@ -27,29 +31,31 @@ format_for_web_batch(
 
 - jobs:
 
-  A data frame with one row per input and (at least) an `input` column
-  (source path). An optional `output` column names the destination; when
-  absent, one is derived per row by appending `_web` to each input's
-  basename with an `.mp4` extension (the web re-encode always writes
-  H.264/mp4), e.g. `clip.mkv` becomes `clip_web.mp4`. Two rows whose
-  destination is the same path are refused before any row runs: a
-  repeated `output`, or two derived names that match, as `clip.mov` and
-  `clip.mkv` both give `clip_web.mp4`. An optional numeric
-  `audio_stream` column (`NA` to keep every audio track in that row)
-  overrides the `audio_stream` argument per row. Any other columns are
-  ignored — including `video_codec` and `audio_codec`, which the sibling
-  batch verbs read as per-row overrides but this one does not: the web
-  recipe fixes both codecs by identity (H.264 video, AAC audio). For
-  per-row codecs use a verb that exposes them, such as
+  A data frame with one row per input. It needs at least an `input`
+  column, the source path. An optional `output` column names the
+  destination. Without it, each row's output name adds `_web` to the
+  input's base name, with an `.mp4` extension. The web re-encode always
+  writes H.264 in mp4. For example, `clip.mkv` becomes `clip_web.mp4`.
+  Two rows with the same destination path are refused before any row
+  runs. That happens with a repeated `output`, or with two derived names
+  that match. For example, `clip.mov` and `clip.mkv` both give
+  `clip_web.mp4`. An optional numeric `audio_stream` column overrides
+  the `audio_stream` argument for each row. `NA` keeps every audio track
+  in that row. Any other columns are ignored, `video_codec` and
+  `audio_codec` included. The sibling batch functions read those two
+  columns as per-row overrides, but this one does not. The web recipe
+  fixes which codecs the output uses: H.264 video and AAC audio. For
+  per-row codecs, use a function that has them, such as
   [`standardize_video_batch`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
   or
   [`crop_video_batch`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md).
 
 - hardware:
 
-  The encoder backend applied to every row: `"none"` (default, software
-  libx264), `"nvenc"` for NVIDIA GPU H.264 encoding, or `"videotoolbox"`
-  for Apple GPU H.264 encoding. Batch-wide (not a per-row column). See
+  The encoder backend for every row. `"none"` (default) uses software
+  libx264. `"nvenc"` uses NVIDIA GPU H.264 encoding, and
+  `"videotoolbox"` uses Apple GPU H.264 encoding. It applies to the
+  whole batch and is not read as a column. See
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md).
   Resolving a hardware backend asks this FFmpeg build which encoders it
   has. So the first such call that re-encodes the video runs FFmpeg
@@ -129,7 +135,7 @@ each when requested through `...`. See
 ## See also
 
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
-the scalar verb it wraps;
+the single-input form it wraps;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)

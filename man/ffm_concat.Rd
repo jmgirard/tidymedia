@@ -7,26 +7,30 @@
 ffm_concat(object)
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()} with more than one input file.}
 }
 \value{
-\code{object} with the added instruction to concatenate the inputs.
+\code{object} with an added instruction to concatenate the inputs.
 }
 \description{
-Join the pipeline's input files one after another using FFmpeg's
-\href{https://ffmpeg.org/ffmpeg-formats.html#concat-1}{concat demuxer}. This is a
-blessed multi-input verb (like \code{\link{ffm_hstack}}): it stream-copies,
-so it is fast and lossless but requires that every input share the same
-parameters (codec, resolution, frame rate, ...). To concatenate inputs with
-differing parameters you must re-encode via the concat filter (not yet
-wrapped; use the Layer 0 escape hatch).
+Join the pipeline's input files one after another with FFmpeg's
+\href{https://ffmpeg.org/ffmpeg-formats.html#concat-1}{concat demuxer}. Like
+\code{\link{ffm_hstack}}, this is a pipeline function for several inputs. It
+uses stream copy, so it is fast and lossless. But every input must share the
+same parameters, such as codec, resolution and frame rate. The glossary in
+\code{vignette("tidymedia")} explains media terms such as codec, re-encode
+and stream copy.
 }
 \details{
-The demuxer needs a list file naming the inputs; \code{ffm_concat()} writes
-one to a temporary path immediately and stores it in the pipeline, so the
-compiled command can reference it. It also copies codecs and maps all
-streams (as \code{\link{ffm_copy}} would).
+To join inputs with different parameters, you must re-encode with the concat
+filter. No pipeline function wraps that filter yet, so use a direct command,
+such as \code{\link{ffmpeg}}.
+
+The demuxer needs a list file that names the inputs. \code{ffm_concat()}
+writes one to a temporary path at once and stores it in the pipeline, so the
+compiled command can refer to it. It also copies codecs and maps all
+streams, as \code{\link{ffm_copy}} would.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -36,7 +40,7 @@ ffm_files(c(video, video), "output.mp4") |>
   ffm_compile()
 }
 \seealso{
-\code{\link[=concatenate_videos]{concatenate_videos()}}, the task verb built on this verb.
+\code{\link[=concatenate_videos]{concatenate_videos()}}, the task function built on this function.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

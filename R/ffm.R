@@ -769,21 +769,21 @@ ffm_pixel_format <- function(object, format) {
 
 #' Horizontally Stack Multiple Videos in an FFmpeg Pipeline
 #'
-#' Add a complex video filter to stack multiple videos horizontally
-#' (side-by-side) and, optionally, resize them to have the same height.
+#' Add a complex video filter that stacks several videos horizontally (side by
+#' side). It can also resize the videos to the same height.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param shortest A logical indicating whether to trim the duration of all
-#'   videos to that of the shortest video (default = \code{FALSE})
-#' @param resize A logical indicating whether to resize the height of the input
-#'   videos to match (takes longer and currently only works with two inputs).
-#'   Resizing conforms both inputs to the same aspect ratio, so it assumes the
+#' @param shortest A logical that says whether to trim the duration of all
+#'   videos to that of the shortest video. The default is \code{FALSE}.
+#' @param resize A logical that says whether to resize the input videos to the
+#'   same height. Resizing takes longer, and for now it works only with two
+#'   inputs. It fits both inputs to the same aspect ratio, so it assumes the
 #'   inputs share one.
-#' @return \code{object} but with the added instruction to apply horizontal
-#'   stacking.
-#' @seealso [ffm_vstack()] for vertical stacking and [compare_videos()], the
-#'   task verb built on both.
+#' @return \code{object} with an added instruction to stack the videos
+#'   horizontally.
+#' @seealso [ffm_vstack()] for vertical stacking, and [compare_videos()], the
+#'   task function built on both.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -834,24 +834,26 @@ ffm_hstack <- function(object,
 
 #' Vertically Stack Multiple Videos in an FFmpeg Pipeline
 #'
-#' Add a complex video filter to stack multiple videos vertically (one above the
-#' other) and, optionally, resize them to have the same width. This is the
-#' vertical companion to \code{\link{ffm_hstack}}; both are blessed multi-input
-#' verbs that force the \code{-filter_complex} path and manage their own stream
-#' labels internally.
+#' Add a complex video filter that stacks several videos vertically (one above
+#' the other). It can also resize the videos to the same width.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' This is the vertical form of \code{\link{ffm_hstack}}. Both are pipeline
+#' functions for several inputs. They force the \code{-filter_complex} path and
+#' manage their own stream labels. The glossary in \code{vignette("tidymedia")}
+#' explains media terms such as stream.
+#'
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param shortest A logical indicating whether to trim the duration of all
-#'   videos to that of the shortest video (default = \code{FALSE})
-#' @param resize A logical indicating whether to resize the width of the input
-#'   videos to match (takes longer and currently only works with two inputs).
-#'   Resizing conforms both inputs to the same aspect ratio, so it assumes the
+#' @param shortest A logical that says whether to trim the duration of all
+#'   videos to that of the shortest video. The default is \code{FALSE}.
+#' @param resize A logical that says whether to resize the input videos to the
+#'   same width. Resizing takes longer, and for now it works only with two
+#'   inputs. It fits both inputs to the same aspect ratio, so it assumes the
 #'   inputs share one.
-#' @return \code{object} but with the added instruction to apply vertical
-#'   stacking.
-#' @seealso [ffm_hstack()] for horizontal stacking and [compare_videos()], the
-#'   task verb built on both.
+#' @return \code{object} with an added instruction to stack the videos
+#'   vertically.
+#' @seealso [ffm_hstack()] for horizontal stacking, and [compare_videos()], the
+#'   task function built on both.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -901,37 +903,42 @@ ffm_vstack <- function(object,
 
 #' Overlay One Video on Another in an FFmpeg Pipeline
 #'
-#' Composite the second input (the overlay) on top of the first (the main
-#' video) at position \code{x}/\code{y}. This is a blessed multi-input verb (like
-#' \code{\link{ffm_hstack}}): it forces the \code{-filter_complex} path and
-#' manages its own stream labels internally. Exactly two inputs are required —
-#' the first is the background, the second is drawn over it.
+#' Draw the second input (the overlay) on top of the first input (the main
+#' video) at position \code{x} and \code{y}. Like \code{\link{ffm_hstack}}, this
+#' is a pipeline function for several inputs. It forces the
+#' \code{-filter_complex} path and manages its own stream labels. It needs
+#' exactly two inputs. The first is the background, and the second is drawn over
+#' it. The glossary in \code{vignette("tidymedia")} explains media terms such as
+#' stream.
 #'
-#' \code{x} and \code{y} accept plain numbers (pixels from the top-left of the
-#' main video) or FFmpeg overlay expressions, where \code{main_w}/\code{main_h}
-#' are the main video's dimensions and \code{overlay_w}/\code{overlay_h} are the
-#' overlay's. For example, \code{x = "main_w-overlay_w-16"} pins the overlay 16
-#' pixels from the right edge. When \code{scale} is set, the overlay is first
-#' resized to a fraction of the main video's width (aspect preserved), which is
-#' what the Layer-2 \code{\link{picture_in_picture}} verb uses. Otherwise, to
-#' resize the overlay yourself, filter it in a separate pipeline first.
+#' \code{x} and \code{y} accept plain numbers or FFmpeg overlay expressions. A
+#' plain number counts pixels from the top-left of the main video. In an
+#' expression, \code{main_w} and \code{main_h} are the main video's dimensions.
+#' \code{overlay_w} and \code{overlay_h} are the overlay's dimensions. For
+#' example, \code{x = "main_w-overlay_w-16"} puts the overlay 16 pixels from the
+#' right edge.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' When \code{scale} is set, the overlay is first resized to a fraction of the
+#' main video's width, and its aspect ratio is kept. The task function
+#' \code{\link{picture_in_picture}} uses this resize. Otherwise, to resize the
+#' overlay yourself, filter it in a separate pipeline first.
+#'
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()} with exactly two input files.
 #' @param x The horizontal position of the overlay's left edge, as a number of
-#'   pixels or an FFmpeg expression. (default = \code{0})
+#'   pixels or an FFmpeg expression. The default is \code{0}.
 #' @param y The vertical position of the overlay's top edge, as a number of
-#'   pixels or an FFmpeg expression. (default = \code{0})
-#' @param shortest A logical indicating whether to end the output when the
-#'   shorter input ends (default = \code{FALSE}).
-#' @param scale An optional fraction (\code{0 < scale <= 1}) to resize the
-#'   overlay to \code{scale} times the main video's width before compositing
-#'   (aspect preserved); \code{NULL} (default) overlays at native size. When set,
-#'   \code{overlay_w}/\code{overlay_h} in \code{x}/\code{y} refer to the resized
-#'   overlay.
-#' @return \code{object} with the added instruction to overlay the second input
-#'   on the first.
-#' @seealso [picture_in_picture()], the task verb built on this verb.
+#'   pixels or an FFmpeg expression. The default is \code{0}.
+#' @param shortest A logical that says whether to end the output when the
+#'   shorter input ends. The default is \code{FALSE}.
+#' @param scale An optional fraction (\code{0 < scale <= 1}). Before the overlay
+#'   is drawn, it is resized to \code{scale} times the main video's width, and
+#'   its aspect ratio is kept. \code{NULL} (the default) draws the overlay at its
+#'   own size. When \code{scale} is set, \code{overlay_w} and \code{overlay_h} in
+#'   \code{x} and \code{y} refer to the resized overlay.
+#' @return \code{object} with an added instruction to draw the second input on
+#'   the first.
+#' @seealso [picture_in_picture()], the task function built on this function.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -985,23 +992,27 @@ ffm_overlay <- function(object,
 
 #' Concatenate Multiple Inputs in an FFmpeg Pipeline
 #'
-#' Join the pipeline's input files one after another using FFmpeg's
-#' [concat demuxer](https://ffmpeg.org/ffmpeg-formats.html#concat-1). This is a
-#' blessed multi-input verb (like \code{\link{ffm_hstack}}): it stream-copies,
-#' so it is fast and lossless but requires that every input share the same
-#' parameters (codec, resolution, frame rate, ...). To concatenate inputs with
-#' differing parameters you must re-encode via the concat filter (not yet
-#' wrapped; use the Layer 0 escape hatch).
+#' Join the pipeline's input files one after another with FFmpeg's
+#' [concat demuxer](https://ffmpeg.org/ffmpeg-formats.html#concat-1). Like
+#' \code{\link{ffm_hstack}}, this is a pipeline function for several inputs. It
+#' uses stream copy, so it is fast and lossless. But every input must share the
+#' same parameters, such as codec, resolution and frame rate. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec, re-encode
+#' and stream copy.
 #'
-#' The demuxer needs a list file naming the inputs; \code{ffm_concat()} writes
-#' one to a temporary path immediately and stores it in the pipeline, so the
-#' compiled command can reference it. It also copies codecs and maps all
-#' streams (as \code{\link{ffm_copy}} would).
+#' To join inputs with different parameters, you must re-encode with the concat
+#' filter. No pipeline function wraps that filter yet, so use a direct command,
+#' such as \code{\link{ffmpeg}}.
 #'
-#' @param object An ffmpeg pipeline (\code{ffm}) object created by
+#' The demuxer needs a list file that names the inputs. \code{ffm_concat()}
+#' writes one to a temporary path at once and stores it in the pipeline, so the
+#' compiled command can refer to it. It also copies codecs and maps all
+#' streams, as \code{\link{ffm_copy}} would.
+#'
+#' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()} with more than one input file.
-#' @return \code{object} with the added instruction to concatenate the inputs.
-#' @seealso [concatenate_videos()], the task verb built on this verb.
+#' @return \code{object} with an added instruction to concatenate the inputs.
+#' @seealso [concatenate_videos()], the task function built on this function.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

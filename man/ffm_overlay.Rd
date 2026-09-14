@@ -7,44 +7,49 @@
 ffm_overlay(object, x = 0, y = 0, shortest = FALSE, scale = NULL)
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()} with exactly two input files.}
 
 \item{x}{The horizontal position of the overlay's left edge, as a number of
-pixels or an FFmpeg expression. (default = \code{0})}
+pixels or an FFmpeg expression. The default is \code{0}.}
 
 \item{y}{The vertical position of the overlay's top edge, as a number of
-pixels or an FFmpeg expression. (default = \code{0})}
+pixels or an FFmpeg expression. The default is \code{0}.}
 
-\item{shortest}{A logical indicating whether to end the output when the
-shorter input ends (default = \code{FALSE}).}
+\item{shortest}{A logical that says whether to end the output when the
+shorter input ends. The default is \code{FALSE}.}
 
-\item{scale}{An optional fraction (\code{0 < scale <= 1}) to resize the
-overlay to \code{scale} times the main video's width before compositing
-(aspect preserved); \code{NULL} (default) overlays at native size. When set,
-\code{overlay_w}/\code{overlay_h} in \code{x}/\code{y} refer to the resized
-overlay.}
+\item{scale}{An optional fraction (\code{0 < scale <= 1}). Before the overlay
+is drawn, it is resized to \code{scale} times the main video's width, and
+its aspect ratio is kept. \code{NULL} (the default) draws the overlay at its
+own size. When \code{scale} is set, \code{overlay_w} and \code{overlay_h} in
+\code{x} and \code{y} refer to the resized overlay.}
 }
 \value{
-\code{object} with the added instruction to overlay the second input
-on the first.
+\code{object} with an added instruction to draw the second input on
+the first.
 }
 \description{
-Composite the second input (the overlay) on top of the first (the main
-video) at position \code{x}/\code{y}. This is a blessed multi-input verb (like
-\code{\link{ffm_hstack}}): it forces the \code{-filter_complex} path and
-manages its own stream labels internally. Exactly two inputs are required —
-the first is the background, the second is drawn over it.
+Draw the second input (the overlay) on top of the first input (the main
+video) at position \code{x} and \code{y}. Like \code{\link{ffm_hstack}}, this
+is a pipeline function for several inputs. It forces the
+\code{-filter_complex} path and manages its own stream labels. It needs
+exactly two inputs. The first is the background, and the second is drawn over
+it. The glossary in \code{vignette("tidymedia")} explains media terms such as
+stream.
 }
 \details{
-\code{x} and \code{y} accept plain numbers (pixels from the top-left of the
-main video) or FFmpeg overlay expressions, where \code{main_w}/\code{main_h}
-are the main video's dimensions and \code{overlay_w}/\code{overlay_h} are the
-overlay's. For example, \code{x = "main_w-overlay_w-16"} pins the overlay 16
-pixels from the right edge. When \code{scale} is set, the overlay is first
-resized to a fraction of the main video's width (aspect preserved), which is
-what the Layer-2 \code{\link{picture_in_picture}} verb uses. Otherwise, to
-resize the overlay yourself, filter it in a separate pipeline first.
+\code{x} and \code{y} accept plain numbers or FFmpeg overlay expressions. A
+plain number counts pixels from the top-left of the main video. In an
+expression, \code{main_w} and \code{main_h} are the main video's dimensions.
+\code{overlay_w} and \code{overlay_h} are the overlay's dimensions. For
+example, \code{x = "main_w-overlay_w-16"} puts the overlay 16 pixels from the
+right edge.
+
+When \code{scale} is set, the overlay is first resized to a fraction of the
+main video's width, and its aspect ratio is kept. The task function
+\code{\link{picture_in_picture}} uses this resize. Otherwise, to resize the
+overlay yourself, filter it in a separate pipeline first.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -54,7 +59,7 @@ ffm_files(c(video, video), "output.mp4") |>
   ffm_compile()
 }
 \seealso{
-\code{\link[=picture_in_picture]{picture_in_picture()}}, the task verb built on this verb.
+\code{\link[=picture_in_picture]{picture_in_picture()}}, the task function built on this function.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

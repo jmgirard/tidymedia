@@ -1,6 +1,6 @@
 # M127: ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** M126
 - **Driving RR:** —
@@ -80,6 +80,8 @@ The M127 help-page domain, including `?tidymedia`, uses plain English for an R u
 - 2026-09-13: R2-1 to R2-6 and R2-8 to R2-12 fixed. R2-1 was measured with `tm_force_timeout()`: the two-pass analysis and a `hardware` backend's encoder check both give errors on a reached limit. The `ffprobe()` redirect claim was measured with `2>&1`. The `mediainfo()` redirect claim was read from its `system()` call. R2-11: a missing landing topic now drops only its own assertions. Sweep over 28 pages exits 0. `devtools::test()`: 1738 tests, 0 failed, 5 skipped.
 - 2026-09-13: on `98e2ea71`: `devtools::check()` gives 0 errors, 0 warnings, 0 notes, with spelling OK and tests included. `devtools::document()` leaves `man/` unchanged. `pkgdown::check_pkgdown()` finds no problems. Status set to review.
 - 2026-09-13: review round 3 checkpoint on `de5b70ba`: AC1, AC2, AC4 and AC5 pass. AC3 fails on `?with_timeout` ("encoder check", no glossary pointer). Gate (user's choice): run the three reviewers before the return. Check and reviewers still running.
+- 2026-09-13: review return 2 (defect): AC3 fails on `de5b70ba`, because `?with_timeout` says "encoder check" with no glossary pointer and no ledger row. AC1, AC2, AC4, AC5 and AC6 pass. Status back to in-progress. Defect returns: 2. Amendment returns: 1.
+- 2026-09-13: return gate (user's choice): fix AC3 and all of R3-1 to R3-16 in this pass. First check R3-2, R3-10, R3-13 and R3-16, and reject any that prove false, with the reason. A third defect return makes descope or park the recommended choice.
 
 ## Decisions
 
@@ -164,7 +166,7 @@ Evidence is from 2026-09-13 on `de5b70ba`. That commit contains `origin/master` 
 - AC3: fails. A search for the ten glossary stems over each page's `--prose` output finds stems on 9 pages. Eight are the ledger's pages, and each names the glossary in `vignette("tidymedia")`. The ninth is `with_timeout`. Its prose line 99 says "The other is the encoder check of a call that names a backend", which matches `encod`. The page does not define the term, does not name the glossary, and has no ledger row. Commit `98e2ea71` added the sentence as the R2-1 fix. The box is unticked.
 - AC4: `tools::Rd2txt()` on `man/tidymedia-package.Rd` gives 78 lines. The Description paragraph says what the package does and ends "Start with `vignette("tidymedia")`".
 - AC5: at `264afff4` the pattern finds 27 identifiers in the 28 domain pages. At head, `git grep -wF` finds each of the 27 in `man/*.Rd`. The box is ticked.
-- AC6: `devtools::check()` on `de5b70ba` gives 0 errors, 0 warnings and 0 notes, with the spelling comparison OK and tests included. After it, `devtools::document()` leaves `man/` and `NAMESPACE` unchanged. `pkgdown::check_pkgdown()` finds no problems.
+- AC6: `devtools::check()` on `de5b70ba` gives 0 errors, 0 warnings and 0 notes, with the spelling comparison OK and tests included. After it, `devtools::document()` leaves `man/` and `NAMESPACE` unchanged. `pkgdown::check_pkgdown()` finds no problems. `devtools::test()` gives 13883 expectations, 0 failed, 0 errors, 5 skipped.
 - Consistency gate: `cairn_validate` passes. The diff adds no top-level file and changes no `README`, `NEWS.md`, `DESCRIPTION` or `DESIGN.md`. No principle changed.
 
 ### Review round 3 findings

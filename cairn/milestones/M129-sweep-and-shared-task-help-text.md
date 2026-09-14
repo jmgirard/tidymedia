@@ -1,13 +1,13 @@
 # M129: The prose sweep reads help pages correctly, and text repeated across the task function pages is written once, in plain English
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — shared help text that renders on 34 task function pages
-- **Branch/PR:** —
+- **Branch/PR:** `m129-sweep-shared-task-help`
 
 ## Goal
 
@@ -39,7 +39,7 @@ Text repeated across the task function help pages is written once, in plain Engl
 
 ## Tasks
 
-- [ ] T1: Fix the six parse gaps of item (o) in `tools/doc_prose_report.R`, and add exit status 3 for a usage error or a missing file. Write `tools/test_doc_prose_report.R`, which plants each part of each gap and exits 0 only when every plant is read correctly. See each plant fail before its fix. Vary: a lowercase start with "tidymedia" and with another word; a wrapped argument line at two indents; a non-UTF-8 locale run; the empty file first, in the middle and last; no files and a missing file; ` -- ` and `---` in `.Rmd` prose and in a code span; a four-backtick fence, a `|` in a code span, and prose between `<` and `>`. Rerun the sweep over the M126 and M127 files, and send any new finding to a candidate row.
+- [x] T1: Fix the six parse gaps of item (o) in `tools/doc_prose_report.R`, and add exit status 3 for a usage error or a missing file. Write `tools/test_doc_prose_report.R`, which plants each part of each gap and exits 0 only when every plant is read correctly. See each plant fail before its fix. Vary: a lowercase start with "tidymedia" and with another word; a wrapped argument line at two indents; a non-UTF-8 locale run; the empty file first, in the middle and last; no files and a missing file; ` -- ` and `---` in `.Rmd` prose and in a code span; a four-backtick fence, a `|` in a code span, and prose between `<` and `>`. Rerun the sweep over the M126 and M127 files, and send any new finding to a candidate row.
 - [ ] T2: Write `tools/roxygen_repeats.R` to list the paragraphs AC1 defines. Before trusting a clean result, plant repeats and see each listed: in `@param` (also under two argument names), `@return`, the description and `@section`; wrapped at different points, including inside an Rd macro; ended by a tag, by a blank line and by a `#'` line of spaces; in 2 and in 3 blocks. See none listed for example code, `@examplesIf`, `@export`, `@family`, `@rdname` and `@inheritParams` lines, and an inline `r` call.
 - [ ] T3: With the sweep from T1, record in a new M129 ledger section the base commit, the domain page list, the AC4 identifiers, the sweep output over the domain at the base commit, and the repeats listed at the base commit.
 - [ ] T4: For each repeated paragraph whose copies make the same claim, keep one copy in plain English and reuse it with `@inheritParams`, `@inheritSection`, a `man-roxygen/` template, or a string in an `R/` doc file. Copies that differ in what they claim stay separate, with a ledger row. A base claim found false keeps its meaning and goes to the follow-up row. After `devtools::document()`, read the rendered shared text on each page that receives it.
@@ -54,6 +54,8 @@ Text repeated across the task function help pages is written once, in plain Engl
 - 2026-09-13: plan gate chose M129 fixing all text repeated across pages over merging identical copies only, because 35 repeated finding sentences account for 126 of the 393 findings on the 34 pages; falsified by a page milestone after M129 that must edit shared text to pass its own criteria.
 - 2026-09-13: plan gate chose fixing the sweep's parse gaps in M129 over leaving them as M127 did, because task pages are mostly argument text, which the gaps misread; falsified by the fixed sweep reporting no new finding on the 34 pages.
 - 2026-09-13: size: M129 changes rendered text on up to 34 pages, but its work is about 38 distinct paragraphs, which one reviewer can read against the code. This is its D093 size justification.
+- 2026-09-13: implement started on branch `m129-sweep-shared-task-help`, cut from `db460d58`. Implement gate (user's choices): shared argument text with the same name stays in one owner block and other blocks use `@inheritParams`; other shared text comes from functions in a new `R/task-doc.R`; a family of close variants becomes one function with arguments. `@inherit`, `@template` and `@inheritSection` lines are not used, because AC1 counts a repeated tag line as a repeated paragraph.
+- 2026-09-13: T1 done. The sweep splits before a lowercase word, switches to a UTF-8 character locale, reads an argument start only in the `Rd2txt()` label layout (a name holding a colon now reads right), exits 2 after printing every finding and 3 on a usage error or missing file, reports ` -- ` and `---` in `.Rmd` prose, closes a fence only on as many backticks, keeps `|` inside code spans in a table cell, and drops only HTML tags between `<` and `>`. `tools/test_doc_prose_report.R` passes 25 of 25 plants; the base sweep passes 10. The two wrapped-argument plants (indent 10 and 14) pass on the base sweep too, because `Rd2txt()` never wraps an argument line at an indent under 10. Base and head sweeps both report nothing on the 6 M126 files and 28 M127 pages, so no candidate row.
 
 ## Decisions
 

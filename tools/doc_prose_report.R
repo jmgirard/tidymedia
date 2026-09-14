@@ -1,6 +1,7 @@
 #!/usr/bin/env Rscript
 # Reports each sentence of user-facing prose that is over 25 words or that
-# matches a maintainer term. Exits 1 if it reports anything.
+# matches a maintainer term, and in `.Rmd` prose each sentence holding ` -- ` or
+# `---` outside a code span.
 #
 #   Rscript tools/doc_prose_report.R <files>          report mode
 #   Rscript tools/doc_prose_report.R --prose <files>  print the swept prose
@@ -19,15 +20,18 @@
 #           as dashes; each such line is reported.
 #
 # A heading, an argument item, a list item, a table cell and the end of a
-# paragraph each end a sentence, as do `.`, `?` and `!` before a capital letter,
-# a digit, a code span, an opening bracket, a double quote or an
-# underscore. A code span counts as one word.
+# paragraph each end a sentence, as do `.`, `?` and `!` before a letter, a
+# digit, a code span, an opening bracket, a double quote or an underscore,
+# unless they end "e.g.", "i.e.", "vs.", "etc." or "cf.". A code span counts as
+# one word.
 # `--prose` prints one sentence per line with its line number, code spans and
 # leading argument names removed; for an `.Rd` file the line number is the line
 # of the rendered text, not of the source.
 #
-# The file count of sentences goes to stderr, and a file with none stops the run
-# with status 2, so an empty parse cannot pass as a clean one.
+# The file count of sentences goes to stderr. Exit status: 0 when nothing is
+# reported, 1 when something is, 2 when a file parses to no sentences (every
+# file is still read and every finding printed), and 3 on a usage error or a
+# missing file. So an empty parse cannot pass as a clean one.
 
 MAX_WORDS <- 25
 
@@ -43,7 +47,26 @@ args <- commandArgs(trailingOnly = TRUE)
 prose_mode <- "--prose" %in% args
 files <- args[args != "--prose"]
 if (length(files) == 0) {
-  stop("usage: Rscript tools/doc_prose_report.R [--prose] <files>")
+  message("usage: Rscript tools/doc_prose_report.R [--prose] <files>")
+  quit(status = 3)
+}
+missing_files <- files[!file.exists(files)]
+if (length(missing_files) > 0) {
+  message("no such file: ", paste(missing_files, collapse = ", "))
+  quit(status = 3)
+}
+
+# `tools::Rd2txt()` writes code spans as curly quotes only in a UTF-8 locale, and
+# the word and term patterns read UTF-8 text. Run under a UTF-8 character
+# locale whatever the caller's locale is, so every locale gives the same result.
+if (!isTRUE(l10n_info()[["UTF-8"]])) {
+  for (loc in c("C.UTF-8", "en_US.UTF-8", "UTF-8")) {
+    if (nzchar(suppressWarnings(Sys.setlocale("LC_CTYPE", loc)))) break
+  }
+  if (!isTRUE(l10n_info()[["UTF-8"]])) {
+    message("no UTF-8 locale is available")
+    quit(status = 3)
+  }
 }
 
 # Units --------------------------------------------------------------------
@@ -105,15 +128,19 @@ rmd_units <- function(path) {
     end <- which(grepl("^---\\s*$", lines))[2]
     if (!is.na(end)) keep[seq_len(end)] <- FALSE
   }
-  # Code chunks, fenced with three or more backticks.
-  in_chunk <- FALSE
+  # Code chunks, fenced with three or more backticks. A fence closes only on a
+  # line of at least as many backticks as opened it, so a four-backtick fence
+  # can show a three-backtick chunk.
+  fence <- 0L
   for (i in seq_len(n)) {
     if (!keep[[i]]) next
-    if (grepl("^\\s*```", lines[[i]])) {
+    ticks <- nchar(sub("^\\s*(`*).*$", "\\1", lines[[i]]))
+    if (fence == 0L && ticks >= 3L) {
       keep[[i]] <- FALSE
-      in_chunk <- !in_chunk
-    } else if (in_chunk) {
+      fence <- ticks
+    } else if (fence > 0L) {
       keep[[i]] <- FALSE
+      if (ticks >= fence && grepl("^\\s*`+\\s*$", lines[[i]])) fence <- 0L
     }
   }
   # HTML comments, which may span lines.
@@ -181,9 +208,14 @@ rmd_units <- function(path) {
     if (is_table(x)) {
       flush()
       if (grepl("^[\\s|:-]+$", x, perl = TRUE)) next
-      cells <- strsplit(sub("^\\s*\\|", "", sub("\\|\\s*$", "", x)), "|",
-                        fixed = TRUE)[[1]]
-      for (cell in cells) units[[length(units) + 1]] <- new_unit(cell, ln)
+      # A `|` inside a code span or escaped as `\|` does not end a cell.
+      p <- protect_code(x, rd = FALSE)
+      row <- sub("^\\s*\\|", "", sub("\\|\\s*$", "", p$text))
+      cells <- strsplit(row, "(?<!\\\\)\\|", perl = TRUE)[[1]]
+      for (cell in cells) {
+        cell <- restore_code(cell, p$spans, drop = FALSE)
+        units[[length(units) + 1]] <- new_unit(cell, ln)
+      }
       next
     }
     if (is_item(x)) {
@@ -229,7 +261,13 @@ rd_units <- function(path) {
     }
   }
 
-  in_args <- section_name == "Arguments"
+  # `Rd2txt()` right-aligns each argument name in eight columns before ": ", and
+  # indents wrapped lines by ten or more spaces. Only a line laid out that way
+  # starts an argument, so a wrapped line holding ": " stays in its argument.
+  is_arg_line <- function(x) {
+    m <- regmatches(x, regexec("^( *)(\\S.*?): ", x, perl = TRUE))[[1]]
+    length(m) == 3L && nchar(m[[2]]) == max(0L, 8L - nchar(m[[3]]))
+  }
   units <- list()
   runs <- rle(section_name)
   starts_at <- cumsum(c(1L, head(runs$lengths, -1L)))
@@ -242,7 +280,7 @@ rd_units <- function(path) {
       starts = function(x) grepl("^\\s*(\\* |\u2022 |[0-9]+\\. )", x),
       solo = is_section,
       arg_start = function(x) {
-        arg_section && grepl("^\\s{0,9}\\S[^:]*: ", x) && !is_section(x)
+        arg_section && is_arg_line(x) && !is_section(x)
       }
     ))
   }
@@ -300,7 +338,8 @@ clean_markup <- function(text) {
   text <- gsub("!\\[[^]]*\\]\\([^)]*\\)", "", text, perl = TRUE)
   text <- gsub("\\[([^]]*)\\]\\([^)]*\\)", "\\1", text, perl = TRUE)
   text <- gsub("<(https?://[^>]+)>", "\\1", text, perl = TRUE)
-  text <- gsub("<[^>]+>", "", text, perl = TRUE)
+  # Only an HTML tag is dropped, so prose such as "a < b and c > d" stays.
+  text <- gsub("</?[A-Za-z][A-Za-z0-9-]*(\\s[^<>]*)?/?>", "", text, perl = TRUE)
   text <- gsub("**", "", text, fixed = TRUE)
   text <- gsub("(?<![\\w*])\\*(?=\\S)(.+?)(?<=\\S)\\*(?![\\w*])", "\\1", text,
                perl = TRUE)
@@ -310,7 +349,7 @@ clean_markup <- function(text) {
 ABBREV <- "(?<!\\be\\.g\\.)(?<!\\bi\\.e\\.)(?<!\\bvs\\.)(?<!\\betc\\.)(?<!\\bcf\\.)"
 
 split_sentences <- function(text) {
-  boundary <- paste0(ABBREV, "(?<=[.?!])([\"')\\]]*)\\s+(?=[A-Z0-9(\"",
+  boundary <- paste0(ABBREV, "(?<=[.?!])([\"')\\]]*)\\s+(?=[A-Za-z0-9(\"",
                      CODE_OPEN, "_])")
   marked <- gsub(boundary, "\\1\u0003", text, perl = TRUE)
   trimws(strsplit(marked, "\u0003", fixed = TRUE)[[1]])
@@ -326,8 +365,8 @@ squish <- function(x) gsub("\\s+", " ", trimws(x), perl = TRUE)
 # Main -------------------------------------------------------------------
 
 reports <- character()
+empty <- character()
 for (path in files) {
-  if (!file.exists(path)) stop("no such file: ", path)
   rd <- grepl("[.]Rd$", path, ignore.case = TRUE)
   units <- if (rd) rd_units(path) else rmd_units(path)
   if (rd) reports <- c(reports, rd_dashes(path))
@@ -337,7 +376,7 @@ for (path in files) {
   for (u in units) {
     p <- protect_code(squish(u$text), rd)
     body <- clean_markup(p$text)
-    if (u$arg) body <- sub("^[^:]*:\\s+", "", body)
+    if (u$arg) body <- sub("^.*?:\\s+", "", body, perl = TRUE)
     if (rd) body <- sub("^(\\* |• |[0-9]+\\. )", "", body)
     for (s in split_sentences(body)) {
       if (!grepl("[[:alnum:]]", restore_code(s, p$spans, drop = FALSE))) next
@@ -348,6 +387,12 @@ for (path in files) {
           "%d: %s", u$line, squish(restore_code(s, p$spans, drop = TRUE))
         ))
         next
+      }
+      # Markdown renders ` -- ` and `---` as dashes. Code spans are still
+      # placeholders in `s`, so a dash inside one is not reported.
+      if (!rd && grepl(" -- |---", squish(s), perl = TRUE)) {
+        reports <- c(reports, sprintf("%s:%d: [dash in Rmd prose] %s", path,
+                                      u$line, full))
       }
       words <- count_words(s)
       if (words > MAX_WORDS) {
@@ -367,16 +412,16 @@ for (path in files) {
   message(sprintf("%s: %d sentences", path, n_sentences))
   if (n_sentences == 0L) {
     message("no sentences read from ", path, " -- the parse is empty")
-    quit(status = 2)
+    empty <- c(empty, path)
   }
   if (prose_mode) {
     if (length(files) > 1) cat("==> ", path, " <==\n", sep = "")
-    cat(prose_lines, sep = "\n")
+    if (length(prose_lines) > 0) cat(prose_lines, sep = "\n")
   }
 }
 
-if (prose_mode) quit(status = 0)
-if (length(reports) > 0) {
-  cat(reports, sep = "\n")
-  quit(status = 1)
-}
+# An empty parse wins over findings, but the findings are still printed.
+if (!prose_mode && length(reports) > 0) cat(reports, sep = "\n")
+if (length(empty) > 0) quit(status = 2)
+if (!prose_mode && length(reports) > 0) quit(status = 1)
+quit(status = 0)

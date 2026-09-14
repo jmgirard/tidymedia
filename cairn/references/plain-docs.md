@@ -51,7 +51,7 @@ The prose sweep is `Rscript tools/doc_prose_report.R <files>`. M126 writes it.
 These definitions assume the sweep as M129 leaves it.
 
 - The prose sweep runs as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R <files>`.
-- Report mode prints each finding as `<path>:<line>: [<n> words] <sentence>` or `<path>:<line>: [term <regex>] <sentence>`, with the line of the rendered text. A dash finding prints as `<path>:<line>: [dash in Rd source] <source line>`, with the source line.
+- Report mode prints each finding as `<path>:<line>: [<n> words] <sentence>` or `<path>:<line>: [term <regex>] <sentence>`, with the line of the rendered text. A dash finding prints as `<path>:<line>: [dash in Rd source] <source line>`, with the source line. In `.Rmd` prose, a sentence with ` -- ` or `---` outside a code span prints as `<path>:<line>: [dash in Rmd prose] <sentence>`.
 - It exits 0 when it prints no finding, 1 when it prints one, 2 when a file parses to no sentences, and 3 on a usage error or a missing file.
 - A comparison with the base commit runs the head version of the sweep over each page's text at the base commit. `git show <base>:man/<page>.Rd` writes that text to a file of the same name in a temporary folder, and the outputs are paired by file name.
 - Two sweep outputs are compared per page. A `[<n> words]` or `[term …]` finding counts once each time it is printed, keyed by its kind and sentence text. Line numbers are ignored. `[dash in Rd source]` lines are compared as one count per page.

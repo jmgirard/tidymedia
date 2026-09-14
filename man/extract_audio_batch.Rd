@@ -40,8 +40,8 @@ default encoder decide.}
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}
 
-\item{parallel}{A logical: map over jobs in parallel with \pkg{furrr}
-(\code{TRUE}) or sequentially (\code{FALSE}, default). See
+\item{parallel}{A logical: run the jobs in parallel with \pkg{furrr}
+(\code{TRUE}) or one at a time (\code{FALSE}, default). See
 \code{\link{ffm_batch}} for the \pkg{future} plan requirement.}
 
 \item{...}{Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.

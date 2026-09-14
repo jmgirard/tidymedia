@@ -145,7 +145,7 @@ ffm_trim <- function(object,
 #' Cut a Continuous Section from an FFmpeg Pipeline by Seeking
 #'
 #' Keep one continuous section of the input with FFmpeg's fast \code{-ss} and
-#' \code{-to} seek options. The other way to cut is the \code{trim} *filter* in
+#' \code{-to} seek options. It does not use the \code{trim} *filter* of
 #' \code{\link{ffm_trim}}. Unlike the filter, seeking can use stream copy, so it
 #' is the tool for fast, lossless cuts. The glossary in
 #' \code{vignette("tidymedia")} explains media terms such as keyframe,
@@ -581,7 +581,7 @@ ffm_codec <- function(object,
 #'   \code{object}. \code{FALSE} (the default) adds to it.
 #' @return \code{object} with an added instruction to map streams.
 #' @seealso [ffm_copy()], which maps all streams, and [separate_audio_video()],
-#'   a task function built on it.
+#'   a task function built on \code{ffm_map()}.
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -1097,8 +1097,8 @@ ffm_drawbox <- function(object,
 
 #' Add Raw Output Options to an FFmpeg Pipeline
 #'
-#' Add one or more raw FFmpeg output options to the end of the pipeline's
-#' options. Output options are the flags after the input and before the output
+#' Add one or more raw FFmpeg output options to the pipeline, after any added
+#' before. Output options are the flags after the input and before the output
 #' file. Use this function for an option that has no pipeline function of its
 #' own. \code{ffm_compile()} still decides where the options go and how the rest
 #' of the command is quoted. So this is not the same as writing the command
@@ -1530,7 +1530,8 @@ n_files <- function(x) {
 #'   to have, for example \code{list(width = 1920, video_codec = "h264")}. It is
 #'   passed to \code{\link{verify_media}}. After a successful run, the output is
 #'   probed. If a check fails, \code{ffm_run()} gives an error with the failed
-#'   checks. It does the same when FFmpeg exits non-zero. \code{NULL} (the
+#'   checks. This matches the error \code{ffm_run()} gives when FFmpeg exits
+#'   non-zero. \code{NULL} (the
 #'   default) skips the checks.
 #' @return FFmpeg's standard output as a character vector, returned invisibly.
 #'   On a non-zero exit it has a \code{status} attribute. You call
@@ -1559,11 +1560,11 @@ n_files <- function(x) {
 #' \itemize{
 #'   \item the \code{loudnorm} analysis pass of
 #'     \code{normalize_audio(two_pass = TRUE)}, when FFmpeg exits non-zero.
-#'   \item the message about several audio tracks that
+#'   \item the error about several audio tracks that
 #'     \code{\link{separate_audio_video}} adds to a failed audio output.
 #' }
-#' Each of those two paths also gives a second, narrower class before this one:
-#' \code{tidymedia_loudnorm_no_measurement} and
+#' Each of those two paths also gives a second, narrower class before this one.
+#' In the same order, they are \code{tidymedia_loudnorm_no_measurement} and
 #' \code{tidymedia_multitrack_separation}. Catch that class when you want only
 #' that failure.
 #'

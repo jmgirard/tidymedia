@@ -25,7 +25,7 @@ and its cut points move to keyframes.}
 }
 \description{
 Keep one continuous section of the input with FFmpeg's fast \code{-ss} and
-\code{-to} seek options. The other way to cut is the \code{trim} \emph{filter} in
+\code{-to} seek options. It does not use the \code{trim} \emph{filter} of
 \code{\link{ffm_trim}}. Unlike the filter, seeking can use stream copy, so it
 is the tool for fast, lossless cuts. The glossary in
 \code{vignette("tidymedia")} explains media terms such as keyframe,

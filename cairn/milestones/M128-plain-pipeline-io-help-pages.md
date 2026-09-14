@@ -54,6 +54,8 @@ The M128 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-14: T1 done. The base sweep over the 10 pages read 185 sentences and printed 26 findings. The ledger is `### M128` in `cairn/references/plain-docs.md`.
 - 2026-09-14: T2 done. The five pages print no sweep finding, and the four with a glossary stem name the glossary. The audio-index, ffm and D014 tests pass.
 - 2026-09-14: T3 done. The sweep over the 10 pages exits 0. The exit-status detail on `?ffm_run` stays in its own section after Value, now split into two lists. The exit-condition and audio-index tests pass.
+- 2026-09-14: claim audit: 125 claims read, 6 corrected — R/ffm.R, man/ffm_seek.Rd, man/ffm_map.Rd, man/ffm_output_options.Rd, man/ffm_run.Rd. The same [O] reader re-read the 6 once and found them true and the same claim as base. Four base claims found false went to a new M128 follow-up row. The one-line `unset_*()` row was merged into the declined-exports row, so `ROADMAP.md` stays under 60 lines.
+- 2026-09-14: T4 checkpoint, half done: ledger filled. The full test, check and pkgdown run is not yet read.
 
 ## Decisions
 

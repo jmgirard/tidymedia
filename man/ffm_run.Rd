@@ -14,7 +14,8 @@ ffm_run(object, verify = NULL)
 to have, for example \code{list(width = 1920, video_codec = "h264")}. It is
 passed to \code{\link{verify_media}}. After a successful run, the output is
 probed. If a check fails, \code{ffm_run()} gives an error with the failed
-checks. It does the same when FFmpeg exits non-zero. \code{NULL} (the
+checks. This matches the error \code{ffm_run()} gives when FFmpeg exits
+non-zero. \code{NULL} (the
 default) skips the checks.}
 }
 \value{
@@ -50,11 +51,11 @@ all three:
 \itemize{
 \item the \code{loudnorm} analysis pass of
 \code{normalize_audio(two_pass = TRUE)}, when FFmpeg exits non-zero.
-\item the message about several audio tracks that
+\item the error about several audio tracks that
 \code{\link{separate_audio_video}} adds to a failed audio output.
 }
-Each of those two paths also gives a second, narrower class before this one:
-\code{tidymedia_loudnorm_no_measurement} and
+Each of those two paths also gives a second, narrower class before this one.
+In the same order, they are \code{tidymedia_loudnorm_no_measurement} and
 \code{tidymedia_multitrack_separation}. Catch that class when you want only
 that failure.
 

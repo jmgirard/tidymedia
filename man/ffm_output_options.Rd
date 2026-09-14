@@ -20,8 +20,8 @@ contain spaces.}
 \code{object} with the added output options.
 }
 \description{
-Add one or more raw FFmpeg output options to the end of the pipeline's
-options. Output options are the flags after the input and before the output
+Add one or more raw FFmpeg output options to the pipeline, after any added
+before. Output options are the flags after the input and before the output
 file. Use this function for an option that has no pipeline function of its
 own. \code{ffm_compile()} still decides where the options go and how the rest
 of the command is quoted. So this is not the same as writing the command

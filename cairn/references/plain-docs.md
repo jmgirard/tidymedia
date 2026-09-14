@@ -338,13 +338,33 @@ The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` o
 
 | Page | Words | Term | Dash | Stems (AC3) | Identifiers (AC4) | Result |
 |---|---|---|---|---|---|---|
-| ffm_codec | 0 | 1 | 0 | `codec`, `stream` | `tidymedia_ffm` | |
-| ffm_compile | 0 | 0 | 0 | — | `tidymedia_ffm` | |
-| ffm_copy | 1 | 1 | 0 | `codec`, `encod`, `key ?frame`, `stream` | `tidymedia_ffm` | |
-| ffm_drop | 0 | 0 | 0 | `stream` | `tidymedia_ffm` | |
-| ffm_files | 0 | 0 | 0 | — | `tidymedia_ffm` | |
-| ffm_map | 3 | 3 | 0 | `stream` | `tidymedia_ffm` | |
-| ffm_output_options | 1 | 3 | 0 | — | `tidymedia_ffm` | |
-| ffm_pixel_format | 0 | 0 | 0 | `pixel format` | `tidymedia_ffm` | |
-| ffm_run | 8 | 4 | 0 | `encod` | `tidymedia_ffm`, `tidymedia_ffmpeg_exit`, `tidymedia_loudnorm_no_measurement`, `tidymedia_multitrack_separation`, `tm_row_status`, `tm_rows`, `tm_status` | |
-| ffm_seek | 1 | 0 | 0 | `encod`, `key ?frame`, `stream` | `tidymedia_ffm` | |
+| ffm_codec | 0 | 1 | 0 | `codec`, `stream` | `tidymedia_ffm` | No finding. Names the glossary. |
+| ffm_compile | 0 | 0 | 0 | — | `tidymedia_ffm` | No finding. No stem. |
+| ffm_copy | 1 | 1 | 0 | `codec`, `encod`, `key ?frame`, `stream` | `tidymedia_ffm` | No finding. Names the glossary. |
+| ffm_drop | 0 | 0 | 0 | `stream` | `tidymedia_ffm` | No finding. Names the glossary. The title typo "Steams" is fixed. |
+| ffm_files | 0 | 0 | 0 | — | `tidymedia_ffm` | No finding. No stem. |
+| ffm_map | 3 | 3 | 0 | `stream` | `tidymedia_ffm` | No finding. Names the glossary. |
+| ffm_output_options | 1 | 3 | 0 | — | `tidymedia_ffm` | No finding. No stem. |
+| ffm_pixel_format | 0 | 0 | 0 | `pixel format` | `tidymedia_ffm` | No finding. Names the glossary. |
+| ffm_run | 8 | 4 | 0 | `encod` | `tidymedia_ffm`, `tidymedia_ffmpeg_exit`, `tidymedia_loudnorm_no_measurement`, `tidymedia_multitrack_separation`, `tm_row_status`, `tm_rows`, `tm_status` | No finding. No stem, because "encodes the signal" became "stands for the signal". The exit-status section is split into two lists. |
+| ffm_seek | 1 | 0 | 0 | `encod`, `key ?frame`, `stream` | `tidymedia_ffm` | No finding. Names the glossary. |
+
+#### Results at head (T4)
+
+- AC1, AC2: the sweep over the 10 pages at head reads 241 sentences, prints no finding and exits 0.
+- AC3: the six pages with a stem at head each name the glossary. `ffm_run` lost its only stem.
+- AC4: each of the 7 identifiers above is found by `git grep -wF` in at least one `man/*.Rd` file at head.
+- AC5: `git diff --name-only dc6cbd20 HEAD -- man/` lists only the 10 domain pages.
+- Tests: no test pins wording that changed, so no test was changed or removed. The exit-condition tests still find every class and field name on `?ffm_run`, and the audio-index tests still find the `audio_stream` link on `?ffm_codec` and `?ffm_copy`.
+- Claim audit: a fresh reader read 125 claims and found 6 changed sentences that did not make the base claim. All 6 were put back to the base claim, and the reader found the new wording correct.
+
+#### Base claims found false
+
+Each claim keeps its meaning at head. All are items of the M128 follow-up row in `cairn/ROADMAP.md`.
+
+| Page | Claim | Evidence |
+|---|---|---|
+| `ffm_map` | It is the only pipeline function that adds to earlier calls. | `ffm_output_options()` appends to `object$output_opts`, and the filter functions append to `filter_video` and `filter_audio` (`R/ffm.R`). |
+| `ffm_run` | Value: the output has a `status` attribute on a non-zero exit. | `ffm_run()` gives a `tidymedia_ffmpeg_exit` error before it returns, so no caller sees the attribute. |
+| `ffm_run` | Value: the pipeline never runs through a shell. | `run_program()` calls `system2()` (`R/program_management.R`), which passes the quoted command to `sh` on Unix. |
+| `ffm_map` | A mapping is added beside `-map "[vout]"` for a function with several inputs. | `ffm_concat()` takes several inputs but sets no `[vout]` map. |

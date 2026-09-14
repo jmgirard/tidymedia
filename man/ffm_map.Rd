@@ -59,7 +59,7 @@ ffm_files(video, "output.mkv") |>
 }
 \seealso{
 \code{\link[=ffm_copy]{ffm_copy()}}, which maps all streams, and \code{\link[=separate_audio_video]{separate_audio_video()}},
-a task function built on it.
+a task function built on \code{ffm_map()}.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

@@ -24,7 +24,7 @@ convert_audio(
 other transform verbs, \code{NULL} here is \emph{not} the "leave the codec
 unset" sentinel — it selects \code{-q:a 0}.}
 
-\item{audio_stream}{The 0-based index of the audio track to take, counted \emph{among the input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) takes the \strong{first} audio track. The first-track family reads \code{NULL} this way -- \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus their \code{_batch} siblings. The every-track family keeps them all instead: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus theirs. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
+\item{audio_stream}{The audio track to take, as a number that counts from \code{0} among the \emph{audio tracks} of the input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) takes the \strong{first} audio track. The first-track family reads \code{NULL} this way: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The every-track family reads it as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}
@@ -69,7 +69,7 @@ convert_audio(video, "audio.mp3", audio_stream = 1, run = FALSE)
 \code{\link[=extract_audio]{extract_audio()}} to copy audio without re-encoding;
 \code{\link[=convert_audio_batch]{convert_audio_batch()}} for the many-file form.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -125,4 +125,4 @@ Other audio selection functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{audio selection functions}
-\concept{task verb functions}
+\concept{task functions}

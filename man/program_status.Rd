@@ -7,39 +7,49 @@
 program_status()
 }
 \value{
-A tibble with one row per program and three columns: \code{program}, the
-program's name; \code{location}, the resolved path or \code{NA}; and \code{version}, the
-version the binary reported or \code{NA}.
+A tibble with one row for each program and three columns:
+\itemize{
+\item \code{program}, the name of the program.
+\item \code{location}, the path to the program, or \code{NA}.
+\item \code{version}, the version that the program reported, or \code{NA}.
+}
 }
 \description{
-Looks up all four programs tidymedia knows about and returns one row for
-each: where it resolved to, and what version it reported. Nothing is
-installed, written, or changed by the call.
+\code{program_status()} looks for the four programs that the package uses:
+\code{ffmpeg}, \code{ffprobe}, \code{ffplay} and \code{mediainfo}. It returns a table with one
+row for each program. The row shows where the program is and which version
+it reports. The call does not install, write or change anything.
 }
 \details{
-A program that was never configured and is not installed gets \code{NA} in both
-columns rather than a warning, so the answer for four programs arrives as one
-table instead of a pile of messages. The lookup is \code{\link[=find_ffmpeg]{find_ffmpeg()}} and its
-siblings': the \code{PATH} first, then a location remembered by \code{\link[=set_program]{set_program()}},
-and finally a location a version of tidymedia before 0.2.0 remembered under
-\code{rappdirs::user_config_dir("tidymedia", "R")}.
+The call looks in the same places as \code{\link[=find_ffmpeg]{find_ffmpeg()}}. First it looks on the
+\code{PATH}, then at a location saved by \code{\link[=set_program]{set_program()}}. For locations saved by
+versions before 0.2.0, see the section "Locations saved by earlier versions"
+in \code{\link[=find_ffmpeg]{find_ffmpeg()}}.
 
-A remembered location that cannot be used still warns, because there the
-\code{NA} would look exactly like a program you never had. Both cases name a file
-you can repair: a remembered location whose binary is gone
-(\code{tidymedia_location_gone}), and a config file that does not hold one
-location (\code{tidymedia_location_unreadable}). The unreadable case is raised
-from whichever file the lookup above reached, so it names the pre-0.2.0
-file as readily as the current one. Either is cleared with
-\code{\link[=unset_program]{unset_program()}} or replaced with \code{\link[=set_program]{set_program()}}; the row is \code{NA} in both
-columns either way.
+A program that is not installed and has no saved location gets \code{NA} in both
+columns. This case gives no warning, so four missing programs give one table
+and not four warnings.
 
-The version is whatever the binary reports for its own version flag, so it
-is the FFmpeg build number for \code{ffmpeg}, \code{ffprobe} and \code{ffplay}, and the
-MediaInfo library version for \code{mediainfo}. A program that resolves but
-cannot be asked -- because the call fails, or because
-\code{options(tidymedia.timeout = )} ended it -- has a location and an \code{NA}
-version.
+A saved location that cannot be used still gives a warning. Without it, the
+\code{NA} would look like a program you never had. Each warning names the saved
+location or the file that holds it, so you can fix it. There are two cases:
+\itemize{
+\item \code{tidymedia_location_gone}: no program is at the saved location now.
+\item \code{tidymedia_location_unreadable}: the file that stores the location does
+not hold exactly one location.
+}
+
+In both cases, the row has \code{NA} in both columns. \code{\link[=unset_program]{unset_program()}} forgets
+the location, and \code{\link[=set_program]{set_program()}} replaces it.
+
+The version is what the program reports about itself. For \code{ffmpeg},
+\code{ffprobe} and \code{ffplay}, it is the FFmpeg build number. For \code{mediainfo}, it is
+the MediaInfo library version.
+
+Sometimes the call finds a program but cannot get its version. Then the row
+has a location and an \code{NA} version. This happens when the program call fails.
+It also happens when the time limit in \code{options(tidymedia.timeout = )} stops
+it.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
@@ -48,10 +58,9 @@ program_status()
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=find_ffmpeg]{find_ffmpeg()}} and its siblings for one program at a time,
-\code{\link[=set_program]{set_program()}} to point tidymedia at a binary in a non-standard location,
-and
-\code{\link[=unset_program]{unset_program()}} to forget one it remembered.
+\code{\link[=find_ffmpeg]{find_ffmpeg()}} and the other \verb{find_*()} functions to look up one
+program. \code{\link[=set_program]{set_program()}} to save the location of a program that is not on
+the \code{PATH}. \code{\link[=unset_program]{unset_program()}} to forget a saved location.
 
 Other program management functions:
 \code{\link[=find_ffmpeg]{find_ffmpeg()}},

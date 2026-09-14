@@ -23,33 +23,40 @@ set_ffprobe(location, confirm = TRUE)
 set_ffplay(location, confirm = TRUE)
 }
 \arguments{
-\item{program}{A string indicating which program to set the location for.}
+\item{program}{A string naming the program to set the location for.}
 
-\item{location}{A string containing the location of the program.}
+\item{location}{A string with the location of the program.}
 
-\item{confirm}{Whether to ask before writing the remembered location.
-\code{TRUE} (the default) asks and, in a non-interactive session, refuses.
-\code{FALSE} writes without asking.}
+\item{confirm}{Whether to ask before the call writes the location. \code{TRUE},
+the default, asks. In a session where no one can answer, \code{TRUE} gives an
+error. \code{FALSE} writes without asking.}
 }
 \value{
-Invisibly, \code{TRUE} where the location was written and
-\code{FALSE} where the caller declined to write it.
+Invisibly, \code{TRUE} when the call wrote the location and \code{FALSE} when
+you said no.
 }
 \description{
-The location is remembered across sessions in a file named
-\verb{<program>_location.txt} under \code{tools::R_user_dir("tidymedia", "config")},
-which \code{\link[=find_ffmpeg]{find_ffmpeg()}} and its siblings read whenever the program is not on
-the \code{PATH}. Once this file exists, a location remembered by a version of
-tidymedia before 0.2.0 is no longer read.
+\code{set_program()} saves the location of a program, so the package can find it
+in later sessions. \code{set_ffmpeg()}, \code{set_ffprobe()}, \code{set_ffplay()} and
+\code{set_mediainfo()} do the same for one program each.
+
+The location goes in a file named after the program, such as
+\code{ffmpeg_location.txt}. The file is under
+\code{tools::R_user_dir("tidymedia", "config")}. \code{\link[=find_ffmpeg]{find_ffmpeg()}} and the other
+\verb{find_*()} functions read it when the program is not on the \code{PATH}.
 }
 \details{
-Because the call writes a file that outlives the session, it asks for
-confirmation first and writes nothing until it has it. The prompt names the
-location as you typed it -- which is what gets written -- and the full path
-of the file that would record it. Declining leaves the config directory
-exactly as it was. In a session with no one to ask, the call refuses rather
-than assume consent; pass \code{confirm = FALSE} to write without being
-asked, which is what an unattended script wants.
+The file stays after the session ends, so the call asks you to confirm
+first. It writes nothing until you agree. The question shows the location as
+you typed it, which is what the call writes. It also shows the full path of
+the file. If you say no, the call changes nothing.
+
+In a session where no one can answer, the call gives an error. Pass
+\code{confirm = FALSE} to write without the question, for example in a script
+that runs on its own.
+
+For locations saved by versions before 0.2.0, see the section "Locations
+saved by earlier versions" in \code{\link[=find_ffmpeg]{find_ffmpeg()}}.
 }
 \examples{
 \dontrun{
@@ -61,8 +68,8 @@ set_mediainfo("C:/Program Files/MediaInfo/mediainfo.exe", confirm = FALSE)
 }
 }
 \seealso{
-\code{\link[=find_ffmpeg]{find_ffmpeg()}} and its siblings to locate a configured binary, and
-\code{\link[=install_on_win]{install_on_win()}} to download FFmpeg on Windows.
+\code{\link[=find_ffmpeg]{find_ffmpeg()}} and the other \verb{find_*()} functions to find a
+program, and \code{\link[=install_on_win]{install_on_win()}} to download FFmpeg on Windows.
 
 Other program management functions:
 \code{\link[=find_ffmpeg]{find_ffmpeg()}},

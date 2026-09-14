@@ -56,7 +56,7 @@ ffm_files(c(video, video), "output.mp4") |>
 \seealso{
 \code{\link[=picture_in_picture]{picture_in_picture()}}, the task verb built on this verb.
 
-Other builder functions:
+Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},
@@ -80,4 +80,4 @@ Other builder functions:
 \code{\link[=ffm_vstack]{ffm_vstack()}},
 \code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
 }
-\concept{builder functions}
+\concept{pipeline functions}

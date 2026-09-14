@@ -7,7 +7,11 @@
 # CALL instead of the session (M69/D047). What it does not do
 # is bound the program: base R's `timeout=` bounds how long R waits, and the
 # program outlives the limit by up to 40 s -- measured at 42.0 s under a 2 s
-# limit on Linux and on macOS alike (M078/D056).
+# limit on Linux and on macOS alike (M078/D056). The FFmpeg build matters too:
+# the same blocked input that took 42.0 s against FFmpeg 6.1.1 took 2.0 s
+# against 9.0.1, which answers the first signal. A shell child that ignores
+# both signals took 42.0 s on macOS. These timings stood in ?tidymedia until
+# M127 moved user docs to plain English; ?with_timeout keeps the 40 s bound.
 #
 # The default is 0 -- base R's sentinel for "no limit" -- so every existing call
 # behaves exactly as it did. A ceiling default would abort a legitimate
@@ -42,13 +46,18 @@
 #     its pipeline before running anything, after the builder's argument
 #     validation too -- so a refusal the VERB itself can reach still fires first
 #     and only the blame for this one moves. Not every refusal that fired before
-#     it does: a check inside the per-row fan-out (segment_video()'s outfiles, a
-#     _batch job table's output column) still loses to the limit, and is
-#     disclosed in NEWS.md and ?tidymedia and carried on the ROADMAP rather than
-#     fixed (M094 review H1/H3). The OTHER class M094 disclosed -- a check
-#     sitting below the build-time nvenc probe, which reads the limit -- is
-#     fixed: D075 sites that probe below every check whose answer cannot depend
-#     on it, so the argument error is reached before the limit is read (M095).
+#     it does: a check inside the per-row fan-out (a _batch verb argument such
+#     as anonymize_video_batch()'s pixel_format, which
+#     tm_corrupt_dropped_master() records) still loses to the limit, and is
+#     disclosed in NEWS.md and ?with_timeout (in ?tidymedia until M127) and
+#     carried on the ROADMAP rather than fixed (M094 review H1/H3).
+#     segment_video()'s outfiles was the other example until M096 put a
+#     check_string() loop at its front door, and
+#     test-unguarded-argument-front-doors.R asserts that cell has left the
+#     census. The OTHER class M094 disclosed -- a check sitting below the
+#     build-time nvenc probe, which reads the limit -- is fixed: D075 sites
+#     that probe below every check whose answer cannot depend on it, so the
+#     argument error is reached before the limit is read (M095).
 #     Ordering it against the front door
 #     ALONE was measured wrong (M094 review F1): four verbs deliberately keep no
 #     front-door guard for `video_codec`/`pixel_format`/`regions`, and a call
@@ -121,50 +130,108 @@ resolve_check_tracks <- function(call = rlang::caller_env()) {
 
 # The caller's per-call limit ------------------------------------------------
 
-#' Bound one call's wall-clock time
+#' Set a time limit for one call
 #'
 #' @description
-#' Run `expr` under a wall-clock limit of your own, without changing the limit
-#' the rest of the session runs under. `seconds` bounds how long each FFmpeg,
-#' FFprobe or MediaInfo program started while `expr` is being evaluated is
-#' waited for — not how long it runs; a program that ignores the first two
-#' signals is waited for up to 40 seconds longer, described under Details. When
-#' the call ends, by any route, whatever the session had set before is back.
+#' `with_timeout()` runs `expr` with a time limit of its own. The limit applies
+#' to each FFmpeg, FFprobe or MediaInfo program that `expr` starts. When
+#' `with_timeout()` returns, or stops with an error, the limit that was in
+#' force before the call is back.
 #'
-#' The session-wide setting, `options(tidymedia.timeout = )`, answers "how long
-#' may anything in this session take". This answers "how long may *this* take" —
-#' a five-minute bound on one exploratory conversion in a session whose limit is
-#' an hour, or an hour for one long encode in a session bounded at five minutes.
+#' The session limit, `options(tidymedia.timeout = )`, applies to every call in
+#' the session. `with_timeout()` applies to one call. For example, you can give
+#' one test conversion five minutes in a session with a one-hour limit.
 #'
-#' @param expr An expression to evaluate. It is evaluated once, where you wrote
-#'   it, and its value is returned.
+#' @param expr An expression. It is run once, where you wrote it, and its value
+#'   is returned.
 #' @param seconds A whole number of seconds. `0` means no limit, so
-#'   `with_timeout(expr, 0)` lifts a session limit for one call. A value the
-#'   underlying limit could not use — a fraction of a second, a negative number,
-#'   a string — is refused before `expr` runs.
+#'   `with_timeout(expr, 0)` removes a session limit for one call. A fraction, a
+#'   negative number, a string or `NULL` gives an error before `expr` runs.
 #'
 #' @return The value of `expr`.
 #'
 #' @details
-#' The limit applies per spawned program, not per call: a `with_timeout()`
-#' around a 100-row batch waits `seconds` on each row, not on the batch. It
-#' reaches a `parallel = TRUE` fan-out as well, because the worker is handed the
-#' limit in force when the fan-out starts.
+#' The limit applies to each program, not to the whole call. In a 100-row batch
+#' inside `with_timeout(expr, 600)`, each program that a row starts gets 600
+#' seconds, plus the delay in "How long the wait can be". The workers of a
+#' `parallel = TRUE` run use the same limit.
 #'
-#' `seconds` bounds the wait, and the wait can exceed it. R asks the program to
-#' stop when the limit is reached, insists 20 seconds later and kills it 20
-#' seconds after that, so a program that answers none of the three is waited for
-#' `seconds` + 40 — measured at 42.0 s under a 2 s limit on Linux and on macOS
-#' alike. Budget for that when you choose a limit: five one-second limits over
-#' five hung files is three and a half minutes, not five seconds.
+#' The limit is a whole number of seconds. The package does not round a
+#' fraction, because R would read a limit below one second as no limit.
 #'
-#' What a reached limit does — abort or warning, by call — is described under
-#' "Bounding a run that hangs" in [tidymedia-package]; setting the limit this
-#' way changes none of it.
+#' A limit set with `options(tidymedia.timeout = )` follows the same rule, with
+#' one difference. `options(tidymedia.timeout = NULL)` removes the option, so
+#' it means no limit. A function that can start a program gives an error for
+#' a wrong value, even when `run = FALSE`. [ffm_batch()] gives that error
+#' before it starts any job. A function that starts no program gives no such
+#' error. For example, [has_hardware_encoder()] starts none when you set
+#' `tidymedia.hardware_encoders`. A `probe_*()` function that you give a
+#' `probe` object also starts none.
 #'
-#' @seealso [local_timeout()] for the statement form — bounding the rest of a
-#'   function body rather than a wrapped expression — and [tidymedia-package] for
-#'   the session-wide setting and what a reached limit does.
+#' Most functions check their own arguments before the limit. So a wrong
+#' argument gives its own error, even when the limit is also wrong. A few
+#' arguments of the `_batch` functions are checked inside each job, after the
+#' limit. An example is the `pixel_format` of [anonymize_video_batch()]. When
+#' the limit is also wrong, the error is about the limit.
+#'
+#' @section How long the wait can be:
+#' The limit sets how long R waits for a program, and the wait can be longer.
+#' When the limit is reached, R asks the program to stop. R asks again 20
+#' seconds later, and kills the program 20 seconds after that. So R can wait up
+#' to 40 seconds past the limit. For example, five hung files under a 1-second
+#' limit can take about three and a half minutes.
+#'
+#' R does not guarantee that the program stops. A program can survive the
+#' attempts to stop it. How fast a program stops also depends on its version.
+#'
+#' @section What happens when the limit is reached:
+#' A reached limit is never silent. The call gives an error or a warning.
+#'
+#' These functions give an error with the class `tidymedia_timeout`, which names
+#' the program and the limit:
+#'
+#' * the task functions whose names do not end in `_batch`, except
+#'   [segment_video()]
+#' * [ffm_run()], [ffmpeg()], [ffprobe()] and [mediainfo()]
+#' * [ffmpeg_codecs()], [ffmpeg_encoders()] and [has_hardware_encoder()] when
+#'   it asks FFmpeg
+#' * [verify_media()], because a check with no answer is not a "no"
+#'
+#' These functions give a warning instead, so that one hung file does not lose
+#' the rest of the work:
+#'
+#' * [probe_all()], the other `probe_*()` functions, [mediainfo_parameter()],
+#'   [mediainfo_query()], [mediainfo_template()] and the `get_*()` functions
+#'   give `NA` for that file. One warning at the end says how many files timed
+#'   out.
+#' * [ffm_batch()], [segment_video()] and the `_batch` task functions set
+#'   `success = FALSE` for that job. One warning at the end says how many jobs
+#'   timed out. It has the class `tidymedia_batch_timeout`. Two steps of these
+#'   calls give an error instead. One is the analysis pass of
+#'   `normalize_audio_batch(two_pass = TRUE)`. The other is the check that
+#'   FFmpeg has the hardware encoder that `hardware` names, such as `"nvenc"`.
+#'   That check asks FFmpeg only when `tidymedia.hardware_encoders` is not set
+#'   and the session has no stored answer. The glossary in
+#'   `vignette("tidymedia")` explains hardware encoders.
+#' * The dropped-track check of [extract_audio()], [convert_audio()],
+#'   [normalize_audio()] and their `_batch` forms warns that it could not check.
+#'   The track count that [separate_audio_video()] reads after a failed run
+#'   warns the same way. A batch manifest, see [ffm_manifest()], and
+#'   [program_status()] warn when they cannot read a program version. These
+#'   warnings have the class `tidymedia_probe_timeout`, and the call goes on as
+#'   it would for an unreadable input.
+#'
+#' `suppressWarnings(classes = "tidymedia_dropped_audio")` hides the
+#' dropped-track warning, but not the warning that the check timed out. To hide
+#' both, add `"tidymedia_probe_timeout"` to `classes`.
+#'
+#' The task functions and [ffm_run()] delete a part-written output file after a
+#' timeout, as they do after any failed run. [ffmpeg()] cannot tell which of
+#' your arguments is the output, so it leaves that file. Check the output of a
+#' timed-out [ffmpeg()] call yourself.
+#'
+#' @seealso [local_timeout()] to set a limit for the rest of a function.
+#'   [tidymedia-package] describes the session options.
 #'
 #' @examples
 #' # Inside the call, the limit is the one you gave.
@@ -212,90 +279,66 @@ with_timeout <- function(expr, seconds) {
   expr
 }
 
-#' Bound the rest of a function's wall-clock time
+#' Set a time limit for the rest of a function
 #'
 #' @description
-#' Set a wall-clock limit for the remainder of the function you call this from,
-#' without changing the limit the rest of the session runs under. `seconds`
-#' bounds how long each FFmpeg, FFprobe or MediaInfo program started between
-#' this call and the end of that function is waited for — not how long it runs;
-#' a program that ignores the first two signals is waited for up to 40 seconds
-#' longer, described under Details. When the function ends, by any route,
-#' whatever the caller had set before is back — unless that function discards
-#' the undo itself, which is possible and is described under Details.
+#' `local_timeout()` sets a time limit for the rest of the function that calls
+#' it. The limit applies to each FFmpeg, FFprobe or MediaInfo program that the
+#' function starts after this call. When the function returns, or stops with an
+#' error, the caller's own limit is back, except in the cases in Details.
 #'
-#' This is the statement form of [with_timeout()]. Use `with_timeout()` when
-#' there is one expression to bound and you can wrap it; use `local_timeout()`
-#' when the thing to bound is the rest of a function body, or several calls that
-#' would be awkward to wrap together.
+#' Use [with_timeout()] to set a limit on one expression. Use `local_timeout()`
+#' to set a limit on the rest of a function, or on several calls that are hard
+#' to wrap in one expression.
 #'
 #' @param seconds A whole number of seconds. `0` means no limit, so
-#'   `local_timeout(0)` lifts a session limit for the rest of the frame. A value
-#'   the underlying limit could not use — a fraction of a second, a negative
-#'   number, a string — is refused before anything is set.
-#' @param .local_envir The environment to bind the limit to. Defaults to the
-#'   calling frame, which is what you want unless you are writing your own
-#'   helper that sets a limit on behalf of *its* caller. It must be a frame that
-#'   is still on the call stack: an environment that never exits — a plain
-#'   [new.env()], or a frame that has already returned — takes the undo with it,
-#'   and the limit then stays set with no error anywhere. [withr::local_options()]
-#'   behaves the same way.
+#'   `local_timeout(0)` removes a session limit for the rest of the function. A
+#'   fraction, a negative number, a string or `NULL` gives an error, and the
+#'   limit does not change.
+#' @param .local_envir The environment that holds the limit. The default is the
+#'   function that calls `local_timeout()`. Change it only when you write a
+#'   helper that sets a limit for its own caller. Inside a function, the
+#'   environment must belong to a function that is still running. Suppose it
+#'   belongs to a function that has returned, or it is an environment such as
+#'   `new.env()`. Then the limit stays set with no error.
+#'   [withr::local_options()] works the same way. At the top level of a
+#'   script or the console, [withr::defer()] decides when the limit is undone.
 #'
-#' @return The caller's prior setting, invisibly, as the one-element list
-#'   `options()` returns — the same shape [withr::local_options()] gives back.
+#' @return The caller's earlier setting, invisibly. It is a list with one
+#'   element, the same form that [withr::local_options()] returns.
 #'
 #' @details
-#' The limit applies per spawned program, not per frame: a `local_timeout()`
-#' above a 100-row batch waits `seconds` on each row, not on the batch. It reaches
-#' a `parallel = TRUE` fan-out as well, because the worker is handed the limit in
-#' force when the fan-out starts.
+#' The limit applies to each program, not to the whole function. In a 100-row
+#' batch after `local_timeout(600)`, each program that a row starts gets 600
+#' seconds, plus the delay that [with_timeout()] describes. The workers of a
+#' `parallel = TRUE` run use the same limit.
 #'
-#' `seconds` bounds the wait, and the wait can exceed it, by the same arithmetic
-#' [with_timeout()] describes: `seconds` + 40 for a program that answers none of
-#' R's three signals, measured at 42.0 s under a 2 s limit on Linux and on macOS
-#' alike.
+#' R can wait up to 40 seconds past the limit, and [with_timeout()] explains
+#' why. It also explains what happens when a limit is reached.
 #'
-#' Two calls in one frame stack the way any pair of `local_*()` calls does: the
-#' second is in force until the frame ends, and both are undone together, back
-#' to what the caller had.
+#' Two calls in one function work like any two `local_*()` calls. The second
+#' limit applies until the function ends. Then both are undone, and the caller's
+#' limit is back.
 #'
-#' There are two ways the restore can be lost, and neither is this function
-#' failing quietly at something it could have done. The undo is registered as an
-#' exit handler on the calling frame, so a frame that writes `on.exit(...)` of
-#' its own *without* `add = TRUE` discards every handler already registered —
-#' this one included — and the limit stays set after the frame returns, silently
-#' and with no error anywhere. Write `on.exit(..., add = TRUE)` and it does not
-#' happen. The second is a `.local_envir` that is not a live frame, described
-#' under that argument above. This is not particular to this function:
-#' [withr::defer()] and [withr::local_options()] lose their undo both ways
-#' (measured 2026-08-27 on withr 2.5.0, the oldest this package accepts, and on
-#' 3.0.3, with the same result on each), because that is how R's exit handlers
-#' work. What cannot happen is the limit being set and the undo never
-#' registered: the undo goes on the frame first, and only then is the limit
-#' written.
+#' In three cases, the caller's limit is not back when the function ends, and
+#' there is no error.
 #'
-#' Written *directly inside* a [with_timeout()] expression, `local_timeout()`
-#' binds to the frame that wrote the call, not to the wrapper — `expr` is
-#' evaluated in the caller's frame — so its undo runs after the wrapper's, and
-#' the wrapper's limit is what the frame leaves behind. Put the inner limit in a
-#' function of its own, or use one form or the other. This is what `with_*()`
-#' and `local_*()` do together anywhere in R, not something particular to these
-#' two (measured 2026-08-27 against [withr::with_options()] and
-#' [withr::local_options()], which behave identically, on withr 2.5.0 and 3.0.3
-#' alike).
+#' * The function calls `on.exit()` without `add = TRUE`. That call removes the
+#'   undo step. Write `on.exit(..., add = TRUE)` instead.
+#' * The `.local_envir` belongs to a function that has returned, or it is an
+#'   environment such as `new.env()`.
+#' * `local_timeout()` is called directly inside the expression of
+#'   [with_timeout()]. There, `local_timeout()` belongs to the function around
+#'   it. So when that function ends, the limit that [with_timeout()] set is in
+#'   force. Put the inner limit in a function of its own, or use only one of
+#'   the two.
 #'
-#' `seconds` is refused by the rule `options(tidymedia.timeout = )` applies, with
-#' one deliberate exception. Setting the option to `NULL` REMOVES it, leaving the
-#' session unset and therefore unlimited; `local_timeout(NULL)` is a caller
-#' naming no limit at all, and is refused rather than read as "no limit". Write
-#' `local_timeout(0)` for that.
+#' The first two cases also apply to [withr::local_options()], because R's exit
+#' handlers work this way. They do not apply to [withr::with_options()], which
+#' puts the option back itself.
 #'
-#' What a reached limit does — abort or warning, by call — is described under
-#' "Bounding a run that hangs" in [tidymedia-package]; setting the limit this way
-#' changes none of it.
-#'
-#' @seealso [with_timeout()] for the expression form, and [tidymedia-package] for
-#'   the session-wide setting and what a reached limit does.
+#' @seealso [with_timeout()] to set a limit for one expression.
+#'   [tidymedia-package] describes the session options.
 #'
 #' @examples
 #' bounded <- function() {
@@ -370,6 +413,12 @@ local_timeout <- function(seconds, .local_envir = parent.frame()) {
   # data-raw/withr-floor.R re-runs the whole comparison -- including the withr::
   # calls the @details above compare this one to -- and D053 records what it
   # found, the one form where the two versions part included.
+  #
+  # Written directly inside a with_timeout() expression, this call binds to the
+  # frame that wrote it, so its undo runs after the wrapper's and leaves the
+  # wrapper's limit set. withr::with_options() and withr::local_options() do the
+  # same (measured 2026-08-27 on withr 2.5.0 and 3.0.3; the ?local_timeout text
+  # carried the dates until M127).
   withr::defer(options(prior), envir = .local_envir)
   options(tidymedia.timeout = as.numeric(seconds))
   invisible(prior)

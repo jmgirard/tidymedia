@@ -39,7 +39,7 @@ https://ffmpeg.org/ffmpeg-codecs.html
 \code{\link[=ffm_copy]{ffm_copy()}} for the stream-copy shortcut, \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}} to list
 available codecs, and \code{\link[=standardize_video]{standardize_video()}}, a task verb built on it.
 
-Other builder functions:
+Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_compile]{ffm_compile()}},
 \code{\link[=ffm_concat]{ffm_concat()}},
@@ -63,4 +63,4 @@ Other builder functions:
 \code{\link[=ffm_vstack]{ffm_vstack()}},
 \code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
 }
-\concept{builder functions}
+\concept{pipeline functions}

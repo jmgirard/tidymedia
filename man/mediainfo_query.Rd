@@ -7,35 +7,39 @@
 mediainfo_query(file, section, parameters, names = parameters, typed = TRUE)
 }
 \arguments{
-\item{file}{A character vector of one or more media-file paths.}
+\item{file}{A character vector of one or more media file paths.}
 
-\item{section}{A string indicating the MediaInfo section from which to query
-the \code{parameters}.}
+\item{section}{A string. The name of the MediaInfo section to read
+\code{parameters} from.}
 
 \item{parameters}{A character vector of one or more MediaInfo parameters to
-query from \code{section}.}
+read from \code{section}.}
 
-\item{names}{A character vector naming the returned columns; must be the same
-length as \code{parameters} (default = \code{parameters}). Supplied names
-are used verbatim.}
+\item{names}{A character vector of column names, one for each element of
+\code{parameters}. The default is \code{parameters}. The function keeps the names as
+you give them, but removes spaces at their start and end.}
 
-\item{typed}{A logical. When \code{TRUE} (default) numeric columns are typed
-and empty values become \code{NA}; when \code{FALSE} columns stay strings.}
+\item{typed}{A logical. If \code{TRUE} (the default), numeric columns become
+numbers and empty values become \code{NA}. If \code{FALSE}, all columns stay strings.}
 }
 \value{
-A tibble with one row per input file, leading with a \code{file}
-column and one column per requested parameter.
+A tibble with one row for each input file. The first column is
+\code{file}, and then there is one column for each parameter.
+
+A file that the function could not read gets a row of \code{NA} values. The
+function reads the other files, and then gives one warning that names the
+files it could not read. A file that reaches the time limit counts as not
+read; see \code{\link[=with_timeout]{with_timeout()}}.
 }
 \description{
-Create a tibble containing multiple parameters from a single MediaInfo
-section. To query parameters from multiple sections at once, use
-\code{mediainfo_template()}. \code{file} may be a
-vector of several files; results are stacked with a leading \code{file}
-column.
+\code{mediainfo_query()} uses the MediaInfo program to read several parameters
+from one section, and returns a tibble. To read parameters from more than
+one section in one call, use \code{\link[=mediainfo_template]{mediainfo_template()}}.
 }
 \details{
-This \strong{MediaInfo}-backed reader returns a \strong{tibble}; the FFprobe
-counterpart is the \verb{probe_*()} family.
+Give several files in \code{file} to get one row for each file. The first column,
+\code{file}, names the input file. The \verb{probe_*()} functions read similar
+information with FFprobe.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
@@ -44,9 +48,10 @@ mediainfo_query(video, section = "Video", parameters = c("Width", "Height"))
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=mediainfo_parameter]{mediainfo_parameter()}} for a single value, \code{\link[=mediainfo_template]{mediainfo_template()}}
-for a whole template, \code{\link[=probe_all]{probe_all()}} for the FFprobe backend, and
-\code{\link[=get_duration]{get_duration()}} and friends for single scalar values.
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}} to read a single value.
+\code{\link[=mediainfo_template]{mediainfo_template()}} to apply a whole template. \code{\link[=probe_all]{probe_all()}} to read
+information with FFprobe. \code{\link[=get_duration]{get_duration()}} and the other \verb{get_*()}
+functions for common single values.
 
 Other metadata functions:
 \code{\link[=get_duration]{get_duration()}},

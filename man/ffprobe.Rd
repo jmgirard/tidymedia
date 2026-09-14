@@ -7,16 +7,23 @@
 ffprobe(command)
 }
 \arguments{
-\item{command}{A string containing the command to send to FFprobe.}
+\item{command}{A string with the arguments to give FFprobe.}
 }
 \value{
-A string containing the text output by FFprobe.
+A character vector with the text that FFprobe writes to standard
+output, one element for each line. Messages on standard error, such as
+FFprobe's banner and errors, are not returned. On macOS and Linux, a
+shell redirect such as \verb{2>&1} in \code{command} returns them too.
 }
 \description{
-Probe a media file for information. This is the Layer 0 escape hatch: the
-\code{command} string is passed to FFprobe verbatim, so you are responsible for
-quoting it. For structured, tibble-returning output use \code{\link[=probe_all]{probe_all()}} and the
-\verb{probe_*()} shortcuts, which quote their arguments safely.
+\code{ffprobe()} runs the FFprobe program with the arguments in \code{command} and
+returns its output. FFprobe reads information about media files.
+}
+\details{
+\code{ffprobe()} is a direct command. The package passes \code{command} to FFprobe
+exactly as you wrote it, so you must add any quotes that it needs. To get
+tibbles instead, use \code{\link[=probe_all]{probe_all()}} and the other \verb{probe_*()} functions. These
+functions quote their arguments for you.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("ffprobe"))) withAutoprint(\{ # examplesIf}
@@ -24,11 +31,11 @@ ffprobe("-version")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=probe_all]{probe_all()}} and the \verb{probe_*()} shortcuts for structured,
-tibble-returning output.
+\code{\link[=probe_all]{probe_all()}} and the other \verb{probe_*()} functions, which return
+tibbles.
 
-Other escape hatch functions:
+Other direct command functions:
 \code{\link[=ffmpeg]{ffmpeg()}},
 \code{\link[=mediainfo]{mediainfo()}}
 }
-\concept{escape hatch functions}
+\concept{direct command functions}

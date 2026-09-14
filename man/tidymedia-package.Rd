@@ -6,209 +6,57 @@
 \alias{tidymedia-package}
 \title{tidymedia: Media File Preprocessing and Metadata for the 'tidyverse'}
 \description{
-Batch preprocessing and metadata extraction for audio, video and image files, built on the command-line programs 'FFmpeg' (\url{https://ffmpeg.org/}) and 'MediaInfo' (\url{https://mediaarea.net/en/MediaInfo}). Trim, crop, scale, convert and standardize files one at a time or across a whole directory, and read container and stream metadata back as tibbles for use with the 'tidyverse'.
+tidymedia prepares audio and video files for research. It trims, crops,
+converts and standardizes files, and reads file details back as tibbles. It
+runs the programs FFmpeg and MediaInfo. Start with \code{vignette("tidymedia")}.
 }
 \details{
-tidymedia is organized in three layers. Layer 0 passes raw arguments to the
-command-line tools: \code{\link[=ffmpeg]{ffmpeg()}}, \code{\link[=ffprobe]{ffprobe()}}, and \code{\link[=mediainfo]{mediainfo()}}. Layer 1 is the
-pipeline builder, which assembles an FFmpeg command step by step and then
-compiles or runs it: \code{\link[=ffm_files]{ffm_files()}} and the \verb{ffm_*()} functions. Layer 2 is the task
-verbs, thin wrappers over the builder for common preprocessing jobs such as
-\code{\link[=extract_audio]{extract_audio()}} and \code{\link[=segment_video]{segment_video()}}. Metadata is read by two independent
-back ends: FFprobe, through \code{\link[=probe_all]{probe_all()}} and the other \verb{probe_*()} readers,
-which return container and stream tibbles; and MediaInfo, through
-\code{\link[=mediainfo_query]{mediainfo_query()}} and the \verb{get_*()} helpers such as \code{\link[=get_duration]{get_duration()}}, which
-return a single value.
+Task functions, such as \code{\link[=extract_audio]{extract_audio()}}, do one common job in one call.
+Pipeline functions, such as \code{\link[=ffm_files]{ffm_files()}}, build an FFmpeg command one step
+at a time. Direct commands, \code{\link[=ffmpeg]{ffmpeg()}}, \code{\link[=ffprobe]{ffprobe()}} and \code{\link[=mediainfo]{mediainfo()}}, pass
+your own arguments to the programs. \code{\link[=probe_all]{probe_all()}} and \code{\link[=get_duration]{get_duration()}} read
+file details.
 
-See \code{vignette("tidymedia")} for the guided tour, \code{vignette("batch")} for
-running a verb over many files, \code{vignette("metadata")} for the readers, and
-\code{vignette("workflow")} for an end-to-end research preprocessing pipeline.
-The full function list is on the package's reference index.
+See \code{vignette("tidymedia")} for the guided tour and a glossary of media
+terms. The other vignettes are \code{"batch"}, \code{"metadata"}, \code{"verification"} and
+\code{"workflow"}.
 }
-\section{Bounding a run that hangs}{
-
-Every tidymedia call that touches FFmpeg, FFprobe or MediaInfo waits for
-that program to finish, and a program that hangs blocks the R session with
-it. Set a wall-clock limit, in whole seconds, to bound the wait:
-
-\preformatted{options(tidymedia.timeout = 600)}
-
-To bound one call rather than the whole session, wrap it in
-\code{\link[=with_timeout]{with_timeout()}}:
-
-\preformatted{with_timeout(extract_audio("in.mp4", "out.wav"), 300)}
-
-That call runs under its own limit; the session's setting, or the absence of
-one, is back when it returns.
-
-To bound the rest of a function rather than an expression you wrap, say it as
-a statement with \code{\link[=local_timeout]{local_timeout()}}:
-
-\preformatted{convert_all <- function(files) {
-  local_timeout(300)
-  for (f in files) extract_audio(f, sub("[.][^.]*$", ".wav", f))
-}}
-
-Every program that function starts is waited for at most \code{seconds} — plus
-the lag described below — and the caller's setting is back once it returns.
-
-A reached limit is never silent: every call that can start one of those
-programs either aborts or warns.
-
-It \strong{aborts}, naming the program and the limit, from the task verbs,
-\code{\link[=ffm_run]{ffm_run()}}, and the Layer 0 escape hatches \code{\link[=ffmpeg]{ffmpeg()}}, \code{\link[=ffprobe]{ffprobe()}} and
-\code{\link[=mediainfo]{mediainfo()}}. \code{\link[=verify_media]{verify_media()}} aborts as well, because a probe that never
-answered is not an answer of "no".
-
-It \strong{warns} everywhere a single hung file must not discard the rest of the
-work. \code{\link[=probe_all]{probe_all()}} and the \verb{probe_*()} accessors, \code{\link[=mediainfo_parameter]{mediainfo_parameter()}},
-\code{\link[=mediainfo_query]{mediainfo_query()}}, \code{\link[=mediainfo_template]{mediainfo_template()}} and the \verb{get_*()} helpers give
-an \code{NA} row and one warning at the end of the call, saying how many of the
-files it names timed out rather than being unreadable. \code{\link[=ffm_batch]{ffm_batch()}} and the
-\verb{_batch} verbs mark the row \code{success = FALSE}, as they do for any failed
-job, and warn once at the end of the run saying how many jobs timed out and
-did not run to completion — at \code{parallel = TRUE} no differently from
-sequentially. The dropped-track check behind \code{\link[=extract_audio]{extract_audio()}},
-\code{\link[=convert_audio]{convert_audio()}}, \code{\link[=normalize_audio]{normalize_audio()}} and their \verb{_batch} siblings warns
-that it could not check, as does the multi-track diagnostic
-\code{\link[=separate_audio_video]{separate_audio_video()}} reaches after a run has already failed; and the
-provenance manifest warns that it could not read a version. All then carry
-on as they would for any other unreadable input.
-
-To handle either outcome programmatically, the abort carries the condition
-class \code{tidymedia_timeout}; the dropped-track and version-probe warnings
-carry \code{tidymedia_probe_timeout}, and the batch warning
-\code{tidymedia_batch_timeout}. So the documented recipe for silencing the
-dropped-track check, \code{suppressWarnings(classes = "tidymedia_dropped_audio")},
-silences only the check itself — add \code{"tidymedia_probe_timeout"} to also
-silence the notice that the limit stopped it from running.
-
-Those two lists are not written from memory. A test derives the calls that
-can start one of these programs from the package's own call graph and drives
-a timeout through each of them, so a call that started absorbing one
-silently would fail the package's own checks.
-
-For the task verbs and \code{\link[=ffm_run]{ffm_run()}}, which know where their output goes, a
-partial file the killed run had written is removed just as it is after any
-other failed run. The raw \code{\link[=ffmpeg]{ffmpeg()}} escape hatch is handed an argument
-string it does not parse, so it cannot tell which of those arguments is the
-output and leaves whatever the killed run wrote in place — check the output
-of a timed-out \code{\link[=ffmpeg]{ffmpeg()}} call yourself. The default is \code{0}, which
-means no limit — every call waits as long as the program takes, which is
-what you want for a legitimate multi-hour encode. Fractional values are
-refused rather than rounded, because the underlying limit is whole seconds
-and a value below one second would otherwise be read as no limit at all.
-
-A refused value is refused by the function you called. Set the option to
-\code{0.5} and \code{extract_audio()} says so as \code{extract_audio()}, not as the builder
-underneath it. It says so on a \code{run = FALSE} call as well as a run, so a dry
-run does not hand you a command compiled under a limit it could never have
-used. An argument your call got wrong is reported first wherever the verb
-itself can see it is wrong: the limit is checked after the verb's own guards
-and after the command has been assembled, so a bad \code{regions}, \code{pixel_format}
-or \code{video_codec} reports as itself whether or not a limit is set. Asking for
-a hardware backend (\code{hardware = "nvenc"} or \code{"videotoolbox"}) no longer
-changes that: your FFmpeg build is asked what
-encoders it has after every check the verb itself makes, so a bad
-\code{audio_codec}, \code{pixel_format} or \code{audio_stream} reports as itself there too —
-whether or not a limit is set, and whether or not that build has the
-backend's encoder.
-\code{fallback} is checked where that question is asked and so moved down with it:
-a call wrong about both \code{fallback} and \code{pixel_format} now hears about the
-pixel format. Where the check runs somewhere the verb reaches only later, it
-loses to both the limit and the encoder question: a \verb{_batch} job table's
-\code{output} column and \code{\link[=anonymize_video_batch]{anonymize_video_batch()}}'s \code{pixel_format} and \code{color}
-are validated inside the per-row fan-out, so a set limit is reported instead
-of them, and so is a missing hardware encoder under a named \code{hardware}
-backend on a build without one.
-Two calls read no limit and so refuse nothing: \code{\link[=has_hardware_encoder]{has_hardware_encoder()}}
-answering from a \code{tidymedia.hardware_encoders} you set, which asks FFmpeg
-nothing, and a \verb{probe_*()} shortcut handed a \code{probe} object instead of an
-\code{infile}, which reprobes nothing.
-
-The limit applies per spawned program, not per batch: a 100-row batch with a
-600-second limit waits at most 600 seconds — plus the lag described below —
-on each row. tidymedia's own
-\code{parallel = TRUE} paths are bounded by the same limit as their sequential
-ones: the limit you set is carried into each worker for the duration of the
-call, and whatever that worker had set for itself is put back afterwards. A
-limit the underlying \verb{timeout=} could not use — a fraction of a second, a
-negative number, a string — is refused by \code{\link[=ffm_batch]{ffm_batch()}} before it dispatches
-any job, on either of its paths and whether or not it is going to run
-anything.
-
-The limit bounds the wait; it does not promise the program dies at the
-second. R asks the program to stop when the limit is reached, insists 20
-seconds later, and kills it 20 seconds after that, so a program that does not
-answer the first two is waited for up to 40 seconds past its limit. That is
-measured, not estimated: an FFmpeg blocked on an unresponsive input under a
-2-second limit returned at 42.0 seconds on Linux, and a shell child that
-ignores both signals did the same on macOS. Budget for it — five one-second
-limits over five hung files is three and a half minutes, not five seconds.
-
-Whether the program then dies is a separate question, and the answer is not
-always yes. R does not guarantee termination: a program can be written to
-survive the attempt, and one measured here did. Which FFmpeg build you have
-matters too — the same blocked input that took 42.0 seconds against
-FFmpeg 6.1.1 took 2.0 seconds against 9.0.1, because the newer build answers
-the first signal.
-
-A run that FFmpeg itself refused is a different outcome from a run the
-limit killed, and carries a different class. The abort from \code{\link[=ffm_run]{ffm_run()}}, the
-abort from the \code{loudnorm} analysis pass behind
-\code{normalize_audio(two_pass = TRUE)} when FFmpeg exits non-zero, and the
-multi-track diagnostic \code{\link[=separate_audio_video]{separate_audio_video()}} adds to a failed audio
-output are classed \code{tidymedia_ffmpeg_exit} and carry the exit status in their
-\code{tm_status} field. The last two name what failed as well as how, each
-carrying a second class ahead of that one:
-\code{tidymedia_loudnorm_no_measurement} and \code{tidymedia_multitrack_separation}.
-
-Those two names are the ones that hold across a verb's scalar and \verb{_batch}
-forms, where \code{tidymedia_ffmpeg_exit} cannot. The batch two-pass analysis
-phase reports every offending row at once and fires for rows that exited zero
-as well, so it raises \code{tidymedia_loudnorm_no_measurement} alone, carrying
-\code{tm_rows} and \code{tm_row_status} and no exit status. The scalar abort for an
-analysis pass that exited zero and printed nothing parseable raises that
-class alone as well, carrying no fields at all. The batch separation warning
-is \code{tidymedia_multitrack_separation} alone, with no exit status either.
-}
-
 \section{Session options}{
 
-Three options change how the package behaves for the rest of the session.
-Each is read where it is needed rather than at load time, so setting one
-takes effect on the next call. The first two refuse a value they cannot use,
-naming the option, at the first call that reads it.
+A new option value takes effect at the next call. The workers of a
+\code{parallel = TRUE} run use your session's values.
+\itemize{
+\item \code{options(tidymedia.timeout = 600)} sets a limit, in whole seconds, on each
+program the package starts. The default, \code{0}, means no limit. See
+\code{\link[=with_timeout]{with_timeout()}}.
+\item \code{options(tidymedia.check_tracks = FALSE)} turns off the dropped-track
+warning of \code{\link[=extract_audio]{extract_audio()}}, \code{\link[=convert_audio]{convert_audio()}}, \code{\link[=normalize_audio]{normalize_audio()}} and
+their \verb{_batch} forms. The default is \code{TRUE}. The check runs one FFprobe
+call for each different input, when \code{run = TRUE} and the call or job row
+names no \code{audio_stream}. Turning it off skips those calls. A value other
+than \code{TRUE} or \code{FALSE} gives an error that names the option, when the
+check would run.
+\item \code{options(tidymedia.hardware_encoders = "h264_nvenc")} names the hardware
+video encoders of this computer, so the package does not ask FFmpeg.
+\code{character(0)} means none.
+}
+}
 
-\preformatted{options(tidymedia.timeout = 600)}
+\section{Errors when FFmpeg fails}{
 
-A wall-clock limit, in whole seconds, on how long each spawned program is
-waited for. \code{0} (the default) means no limit. Described in full under
-\emph{Bounding a run that hangs} above, with \code{\link[=with_timeout]{with_timeout()}} and
-\code{\link[=local_timeout]{local_timeout()}} for one call and one function.
-
-\preformatted{options(tidymedia.check_tracks = FALSE)}
-
-Switches off the dropped-track check — the warning \code{\link[=extract_audio]{extract_audio()}},
-\code{\link[=convert_audio]{convert_audio()}}, \code{\link[=normalize_audio]{normalize_audio()}} and their \verb{_batch} siblings signal
-when an input carries audio tracks the output will not. The default is
-\code{TRUE}. The check costs one FFprobe call per distinct input, run before the
-work starts and, on the \verb{_batch} verbs, serially before the fan-out; that
-cost is what switching the check off buys back. It is worth declining on a
-large jobs table whose inputs you already know the tracks of. A row that
-names an \code{audio_stream} is not probed at all, so a table whose rows all name
-one pays nothing either way.
-
-\preformatted{options(tidymedia.hardware_encoders = c("h264_nvenc", "h264_videotoolbox"))}
-
-Names the hardware video encoders this machine has, instead of asking
-FFmpeg. Set it to \code{character(0)} to declare there are none. Unset (the
-default), the package asks once per session and remembers the answer.
-
-All three are carried into \code{parallel = TRUE} workers, which run under the
-settings the calling session had and hand their own back afterwards, and all
-three can be set for one call with \code{withr::with_options()} or for the rest of
-a function with \code{withr::local_options()}.
+\itemize{
+\item \code{tidymedia_ffmpeg_exit}: FFmpeg exited non-zero in \code{\link[=ffm_run]{ffm_run()}}, or in the
+\code{loudnorm} analysis pass of \code{normalize_audio(two_pass = TRUE)}. The task
+functions that run their command with \code{\link[=ffm_run]{ffm_run()}}, such as
+\code{\link[=extract_audio]{extract_audio()}} and \code{\link[=separate_audio_video]{separate_audio_video()}}, give it too. The
+\code{tm_status} field holds the exit status.
+\item \code{tidymedia_loudnorm_no_measurement}: the two-pass analysis gave no
+measurement. In the \verb{_batch} form, \code{tm_rows} holds the rows, and
+\code{tm_row_status} holds each exit status or \code{NA}.
+\item \code{tidymedia_multitrack_separation}: \code{\link[=separate_audio_video]{separate_audio_video()}} could not
+write several audio tracks into one audio file. The \verb{_batch} form gives a
+warning.
+}
 }
 
 \seealso{

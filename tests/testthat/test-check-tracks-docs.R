@@ -86,22 +86,25 @@ test_that("only the batch verbs promise the serial front-door sweep", {
 
 # The package topic and the release note (AC6) ------------------------------
 
-test_that("the package topic names the loudness verbs among the check's verbs", {
+test_that("the timeout topic names the loudness verbs among the check's verbs", {
+  # The reached-limit list stood in ?tidymedia until M127 moved it to
+  # ?with_timeout.
   rd <- rd_sources()
   skip_if(is.null(rd), "no Rd source in this run")
-  txt <- rd_for(rd, "tidymedia-package")
+  txt <- rd_for(rd, "with_timeout")
   expect_false(is.null(txt))
   sentence <- regmatches(
     txt,
-    regexpr("The dropped-track check behind.*?unreadable input\\.", txt)
+    regexpr("The dropped-track check of.*?unreadable input\\.", txt)
   )
   expect_length(sentence, 1L)
   for (verb in c("extract_audio", "convert_audio", "normalize_audio")) {
     expect_match(sentence, verb, fixed = TRUE)
   }
   # The sentence said separate_audio_video() ran this check until M082; it runs
-  # a different one, after a failed run, and the sentence now says so.
-  expect_match(sentence, "multi-track diagnostic", fixed = TRUE)
+  # a different one, a track count after a failed run, and the item says so.
+  expect_match(sentence, "separate_audio_video()}} reads after a failed run",
+               fixed = TRUE)
 })
 
 test_that("the package topic documents the seam beside the other two", {

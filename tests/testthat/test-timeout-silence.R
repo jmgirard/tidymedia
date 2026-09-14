@@ -662,22 +662,31 @@ test_that("both docs state that a reached limit is never silent", {
     txt <- src[[nm]]
     expect_match(txt, "never silent", info = nm)
     # Both halves named, because a reader acting on an NA row needs the second
-    # as much as a reader catching an abort needs the first.
-    expect_match(txt, "abort", info = nm)
+    # as much as a reader catching an abort needs the first. The help page says
+    # "error" since M127's plain-English pass; the changelog says "abort". On
+    # the help page the word is pinned to the class it names, because a bare
+    # "error" matches other sentences there (M127 review O3).
+    if (nm == "rd") {
+      expect_match(txt, "an error with the class \\code{tidymedia_timeout}",
+                   fixed = TRUE, info = nm)
+    } else {
+      expect_match(txt, "abort", info = nm)
+    }
     expect_match(txt, "warn", info = nm)
-    # And the claim that the lists are derived rather than recalled, which is
-    # the only reason the uniform rule can be stated at all.
-    expect_match(txt, "call graph", fixed = TRUE, info = nm)
   }
+  # The claim that the lists are derived rather than recalled is the only
+  # reason the uniform rule can be stated at all. It is a note about the
+  # package's tests, so M127 took it out of the help page; the changelog and
+  # helper-timeout-sweep.R keep it.
+  expect_match(src$news, "call graph", fixed = TRUE)
 })
 
-test_that("M69's disclosure is gone from both docs", {
+test_that("M69's disclosure is gone from the timeout docs", {
   # The retired half. Restoring the three-way description -- or the sentence
   # that admitted it was not a partition -- reddens here.
   src <- doc_timeout_sources()
   skip_if(is.null(src$rd) || is.null(src$news), "docs not available")
-  for (nm in c("rd", "news")) {
-    txt <- src[[nm]]
+  fence <- function(txt, nm) {
     expect_no_match(txt, "no warning", info = nm)
     expect_no_match(txt, "not a complete", info = nm)
     expect_no_match(txt, "three answers", info = nm)
@@ -686,6 +695,16 @@ test_that("M69's disclosure is gone from both docs", {
     expect_no_match(txt, "count_audio_streams", fixed = TRUE, info = nm)
     expect_no_match(txt, "tool_versions", fixed = TRUE, info = nm)
   }
+  fence(src$rd, "rd")
+  fence(src$news, "news")
+  # `?tidymedia` held the timeout text until M127 moved it, so the retired
+  # disclosure is fenced there too (M127 review O10). A missing landing topic
+  # skips with a message after the other two sources have run (M127 review
+  # R2-11 and R3-13), rather than dropping its assertions in silence.
+  rd <- rd_sources()
+  landing <- rd[names(rd) %in% c("tidymedia-package.Rd", "tidymedia-package")]
+  skip_if(length(landing) != 1L, "?tidymedia not available")
+  fence(landing[[1]], "landing")
 })
 
 test_that("the doc guard reddens on the text it fences, not on its absence", {

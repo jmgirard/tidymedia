@@ -31,7 +31,7 @@ ffm_files(video, "output.mp4") |>
 \code{\link[=ffm_run]{ffm_run()}} to compile and execute in one step, and \code{\link[=ffm_batch]{ffm_batch()}} to
 compile over many files.
 
-Other builder functions:
+Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_concat]{ffm_concat()}},
@@ -55,4 +55,4 @@ Other builder functions:
 \code{\link[=ffm_vstack]{ffm_vstack()}},
 \code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
 }
-\concept{builder functions}
+\concept{pipeline functions}

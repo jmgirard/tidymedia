@@ -11,7 +11,7 @@ get_duration(
 )
 }
 \arguments{
-\item{file}{A character vector of one or more media-file paths.}
+\item{file}{A character vector of one or more media file paths.}
 
 \item{section}{A string indicating the MediaInfo section from which to query
 the duration value. Can be either \code{"General"}, \code{"Video"}, or
@@ -26,13 +26,12 @@ A double vector (one per file) giving the duration of the specified
 section in the specified units.
 }
 \description{
-Use MediaInfo to quickly look up the duration of different sections of a
-media file in various units.
+\code{get_duration()} uses the MediaInfo program to look up the duration of a
+media file. You choose the section of the file and the unit.
 }
 \details{
-This \strong{MediaInfo}-backed helper returns a \strong{single value per file} (a
-numeric scalar), unlike the tibble-returning \verb{probe_*()}, \code{mediainfo_query()},
-and \code{mediainfo_template()} readers.
+The function returns one number for each file. The \verb{probe_*()} functions,
+\code{\link[=mediainfo_query]{mediainfo_query()}} and \code{\link[=mediainfo_template]{mediainfo_template()}} return tibbles instead.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
@@ -42,7 +41,7 @@ get_duration(video, unit = "sec")
 }
 \seealso{
 \code{\link[=mediainfo_parameter]{mediainfo_parameter()}} for arbitrary MediaInfo fields, and
-\code{\link[=probe_all]{probe_all()}} for the FFprobe backend.
+\code{\link[=probe_all]{probe_all()}} to read information with FFprobe.
 
 Other metadata functions:
 \code{\link[=get_frame_rate]{get_frame_rate()}},

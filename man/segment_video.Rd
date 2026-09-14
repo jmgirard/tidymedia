@@ -93,7 +93,7 @@ A \code{video_codec} in a family that backend has no encoder for is a
 wrong argument rather than an absent encoder, so it aborts whatever
 \code{fallback} says.}
 
-\item{audio_stream}{The 0-based index of the audio track to carry into the output, counted \emph{among the input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) carries \strong{every} audio track. The every-track family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The first-track family takes one track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. Subtitle and data streams are not carried either way. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
+\item{audio_stream}{The audio track to carry into the output, as a number that counts from \code{0} among the \emph{audio tracks} of the input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) carries \strong{every} audio track. The every-track family reads \code{NULL} this way: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The function does not carry subtitle or data streams in either case. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run each segment's command (\code{TRUE}, default) or
 only compile them (\code{FALSE}).}
@@ -130,7 +130,7 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
 \code{\link[=segment_video_batch]{segment_video_batch()}} for the many-file form.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -186,4 +186,4 @@ Other audio selection functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{audio selection functions}
-\concept{task verb functions}
+\concept{task functions}

@@ -142,7 +142,7 @@ check_multi_input_ordering <- function(object, verb,
 #' @param ... Ignored.
 #' @return \code{x}, invisibly.
 #' @seealso [ffm_compile()], which produces the printed command.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' ffm_files(video, "output.mp4") |>

@@ -35,7 +35,7 @@ audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode; or pass
 \code{NULL} to emit no \code{-codec:a} and let the output container's
 default encoder decide.}
 
-\item{audio_stream}{The 0-based index of the audio track to take, counted \emph{among that row's input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) takes the \strong{first} audio track. The argument applies to every row lacking an \code{audio_stream} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, rather than falling back to the argument. The first-track family reads \code{NULL} this way -- \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus their \code{_batch} siblings. The every-track family keeps them all instead: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus theirs. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
+\item{audio_stream}{The audio track to take, as a number that counts from \code{0} among the \emph{audio tracks} of each row's input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) takes the \strong{first} audio track. Without an \code{audio_stream} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row. It does not fall back to the argument. The first-track family reads \code{NULL} as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The every-track family reads it as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}
@@ -89,7 +89,7 @@ extract_audio_batch(jobs, run = FALSE)
 \code{\link[=extract_audio]{extract_audio()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}}, the batch
 runner; \code{\link[=convert_audio_batch]{convert_audio_batch()}} to transcode audio in batch.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -145,4 +145,4 @@ Other audio selection functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{audio selection functions}
-\concept{task verb functions}
+\concept{task functions}

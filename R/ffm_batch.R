@@ -3,23 +3,27 @@
 #' Run an FFmpeg Pipeline Over Many Files
 #'
 #' Apply a pipeline-building function to every row of a jobs table and compile
-#' (and optionally run) the resulting FFmpeg command for each. This is
-#' tidymedia's batch-processing entry point: one reproducible compiled command
+#' (and optionally run) the resulting FFmpeg command for each. This is the
+#' package's main batch function. It gives one reproducible compiled command
 #' per job, collected back into a tibble.
 #'
 #' Each column of \code{jobs} is passed by name to \code{.f} (as
-#' [purrr::pmap()] does), so a job table with columns \code{input}, \code{output}
-#' and \code{start} calls \code{.f(input = ..., output = ..., start = ...)}.
-#' \code{.f} must return an ffm pipeline (see \code{\link{ffm_files}}). Give
+#' [purrr::pmap()] does), so a job table with columns \code{input},
+#' \code{output} and \code{start} calls
+#' \code{.f(input = ..., output = ..., start = ...)}.
+#' \code{.f} must return a pipeline (see \code{\link{ffm_files}}). Give
 #' \code{.f} a \code{...} argument if \code{jobs} carries columns it does not
 #' use.
 #'
 #' Two jobs whose pipelines write to the same \code{output} path are refused
 #' before any job runs, under \code{run = FALSE} as well as \code{run = TRUE}.
 #' Paths are compared exactly as written. An output that writes no file may
-#' repeat: \code{-} (standard output), a \code{pipe:} URL, or an output whose
-#' last \code{-f} option is \code{-f null}, as
+#' repeat. Such outputs are \code{-} (standard output), a \code{pipe:} URL, and
+#' an output whose last \code{-f} option is \code{-f null}, as
 #' \code{ffm_output_options("-f null")} gives.
+#'
+#' [with_timeout()] explains how to limit how long R waits for each program in
+#' a job, and what happens when a program reaches the limit.
 #'
 #' @param jobs A data frame with one row per job. Its column names are the
 #'   arguments passed to \code{.f}.
@@ -29,46 +33,48 @@
 #' @param run A logical: run each compiled command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}, a dry run).
 #' @param parallel A logical: map over jobs in parallel with \pkg{furrr}
-#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). Parallelism follows
-#'   the \code{\link[future:plan]{future}} plan the caller has set; with
-#'   \code{TRUE} but the default sequential plan, jobs still run one at a time
-#'   and a warning is issued. Set a plan first, e.g.
+#'   (\code{TRUE}) or sequentially (\code{FALSE}, default). Parallel runs follow
+#'   the \code{\link[future:plan]{future}} plan that you set. With \code{TRUE}
+#'   and the default sequential plan, jobs still run one at a time, and you get
+#'   a warning. Set a plan first, for example
 #'   \code{future::plan(future::multisession)}.
 #' @param verify An optional output check applied to each job (only when
-#'   \code{run = TRUE}). Either a named list of expected properties (the same
-#'   spec for every job, e.g. \code{list(width = 1920)}) or a function of the
-#'   job columns (called \code{\link[purrr:pmap]{pmap}}-style, like \code{.f})
-#'   that returns such a list per job. Each job's output is passed to
-#'   \code{\link{verify_media}}; unlike \code{\link{ffm_run}}, a failed check is
-#'   \emph{recorded}, not aborted. Adds a logical \code{verified} column (all
-#'   checks passed), \code{NA} for jobs that did not run successfully.
+#'   \code{run = TRUE}). Give a named list of expected properties, or a
+#'   function. A list, for example \code{list(width = 1920)}, applies the same
+#'   checks to every job. A function takes the job columns like \code{.f}
+#'   (called \code{\link[purrr:pmap]{pmap}}-style) and returns such a list for
+#'   each job. Each job's output is passed to \code{\link{verify_media}}.
+#'   Unlike \code{\link{ffm_run}}, a failed check is \emph{recorded}, and does
+#'   not stop the call. Adds a logical \code{verified} column (all checks
+#'   passed), \code{NA} for jobs that did not run successfully.
 #' @param progress A logical: display a \pkg{cli} progress bar as the jobs run
 #'   (\code{TRUE}) or run quietly (\code{FALSE}, default). Only applies when
 #'   \code{run = TRUE}; safe (a no-op animation) in non-interactive sessions.
-#' @param manifest A logical: when \code{TRUE} (and \code{run = TRUE}), record a
-#'   provenance manifest (per-job command, FFmpeg/FFprobe versions, timestamp,
-#'   output size) and attach it to the result, readable with
-#'   \code{\link{ffm_manifest}}. (default = \code{FALSE})
+#' @param manifest A logical. When \code{TRUE} (and \code{run = TRUE}), the
+#'   batch records a provenance manifest and attaches it to the result. The
+#'   manifest has each job's command, the FFmpeg and FFprobe versions, a
+#'   timestamp and the output size. Read it with \code{\link{ffm_manifest}}.
+#'   (default = \code{FALSE})
 #' @param checksums A logical: when \code{TRUE}, the manifest also captures md5
 #'   checksums of each job's input(s) and output. Ignored unless
 #'   \code{manifest = TRUE}. (default = \code{FALSE})
 #' @return \code{jobs} as a [tibble][tibble::tibble-package] with an added
-#'   \code{command} column (the compiled FFmpeg command for each job) and, when
-#'   \code{run = TRUE}, a logical \code{success} column (plus a \code{verified}
-#'   column when \code{verify} is supplied). When \code{manifest = TRUE} a
-#'   provenance manifest is attached as an attribute; read it with
-#'   \code{\link{ffm_manifest}}.
+#'   \code{command} column, which holds the compiled FFmpeg command for each
+#'   job. When \code{run = TRUE}, it also has a logical \code{success} column.
+#'   When \code{verify} is supplied, it also has a \code{verified} column.
+#'   When \code{manifest = TRUE}, a provenance manifest is attached as an
+#'   attribute; read it with \code{\link{ffm_manifest}}.
 #' @seealso [segment_video()], which is built on \code{ffm_batch()};
 #'   [verify_media()] for the verification spec and [ffm_manifest()] for the
 #'   provenance manifest.
-#' @family builder functions
+#' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(
 #'   input  = c(video, video),
 #'   output = c("a.mp3", "b.mp3")
 #' )
-#' # run = FALSE compiles one reproducible command per job without calling FFmpeg
+#' # run = FALSE compiles one command per job without calling FFmpeg
 #' ffm_batch(jobs, run = FALSE, .f = function(input, output, ...) {
 #'   ffm_files(input, output) |>
 #'     ffm_drop("video") |>

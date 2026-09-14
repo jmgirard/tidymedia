@@ -2,92 +2,69 @@
 % Please edit documentation in R/timeout.R
 \name{local_timeout}
 \alias{local_timeout}
-\title{Bound the rest of a function's wall-clock time}
+\title{Set a time limit for the rest of a function}
 \usage{
 local_timeout(seconds, .local_envir = parent.frame())
 }
 \arguments{
 \item{seconds}{A whole number of seconds. \code{0} means no limit, so
-\code{local_timeout(0)} lifts a session limit for the rest of the frame. A value
-the underlying limit could not use — a fraction of a second, a negative
-number, a string — is refused before anything is set.}
+\code{local_timeout(0)} removes a session limit for the rest of the function. A
+fraction, a negative number, a string or \code{NULL} gives an error, and the
+limit does not change.}
 
-\item{.local_envir}{The environment to bind the limit to. Defaults to the
-calling frame, which is what you want unless you are writing your own
-helper that sets a limit on behalf of \emph{its} caller. It must be a frame that
-is still on the call stack: an environment that never exits — a plain
-\code{\link[=new.env]{new.env()}}, or a frame that has already returned — takes the undo with it,
-and the limit then stays set with no error anywhere. \code{\link[withr:local_options]{withr::local_options()}}
-behaves the same way.}
+\item{.local_envir}{The environment that holds the limit. The default is the
+function that calls \code{local_timeout()}. Change it only when you write a
+helper that sets a limit for its own caller. Inside a function, the
+environment must belong to a function that is still running. Suppose it
+belongs to a function that has returned, or it is an environment such as
+\code{new.env()}. Then the limit stays set with no error.
+\code{\link[withr:local_options]{withr::local_options()}} works the same way. At the top level of a
+script or the console, \code{\link[withr:defer]{withr::defer()}} decides when the limit is undone.}
 }
 \value{
-The caller's prior setting, invisibly, as the one-element list
-\code{options()} returns — the same shape \code{\link[withr:local_options]{withr::local_options()}} gives back.
+The caller's earlier setting, invisibly. It is a list with one
+element, the same form that \code{\link[withr:local_options]{withr::local_options()}} returns.
 }
 \description{
-Set a wall-clock limit for the remainder of the function you call this from,
-without changing the limit the rest of the session runs under. \code{seconds}
-bounds how long each FFmpeg, FFprobe or MediaInfo program started between
-this call and the end of that function is waited for — not how long it runs;
-a program that ignores the first two signals is waited for up to 40 seconds
-longer, described under Details. When the function ends, by any route,
-whatever the caller had set before is back — unless that function discards
-the undo itself, which is possible and is described under Details.
+\code{local_timeout()} sets a time limit for the rest of the function that calls
+it. The limit applies to each FFmpeg, FFprobe or MediaInfo program that the
+function starts after this call. When the function returns, or stops with an
+error, the caller's own limit is back, except in the cases in Details.
 
-This is the statement form of \code{\link[=with_timeout]{with_timeout()}}. Use \code{with_timeout()} when
-there is one expression to bound and you can wrap it; use \code{local_timeout()}
-when the thing to bound is the rest of a function body, or several calls that
-would be awkward to wrap together.
+Use \code{\link[=with_timeout]{with_timeout()}} to set a limit on one expression. Use \code{local_timeout()}
+to set a limit on the rest of a function, or on several calls that are hard
+to wrap in one expression.
 }
 \details{
-The limit applies per spawned program, not per frame: a \code{local_timeout()}
-above a 100-row batch waits \code{seconds} on each row, not on the batch. It reaches
-a \code{parallel = TRUE} fan-out as well, because the worker is handed the limit in
-force when the fan-out starts.
+The limit applies to each program, not to the whole function. In a 100-row
+batch after \code{local_timeout(600)}, each program that a row starts gets 600
+seconds, plus the delay that \code{\link[=with_timeout]{with_timeout()}} describes. The workers of a
+\code{parallel = TRUE} run use the same limit.
 
-\code{seconds} bounds the wait, and the wait can exceed it, by the same arithmetic
-\code{\link[=with_timeout]{with_timeout()}} describes: \code{seconds} + 40 for a program that answers none of
-R's three signals, measured at 42.0 s under a 2 s limit on Linux and on macOS
-alike.
+R can wait up to 40 seconds past the limit, and \code{\link[=with_timeout]{with_timeout()}} explains
+why. It also explains what happens when a limit is reached.
 
-Two calls in one frame stack the way any pair of \verb{local_*()} calls does: the
-second is in force until the frame ends, and both are undone together, back
-to what the caller had.
+Two calls in one function work like any two \verb{local_*()} calls. The second
+limit applies until the function ends. Then both are undone, and the caller's
+limit is back.
 
-There are two ways the restore can be lost, and neither is this function
-failing quietly at something it could have done. The undo is registered as an
-exit handler on the calling frame, so a frame that writes \code{on.exit(...)} of
-its own \emph{without} \code{add = TRUE} discards every handler already registered —
-this one included — and the limit stays set after the frame returns, silently
-and with no error anywhere. Write \code{on.exit(..., add = TRUE)} and it does not
-happen. The second is a \code{.local_envir} that is not a live frame, described
-under that argument above. This is not particular to this function:
-\code{\link[withr:defer]{withr::defer()}} and \code{\link[withr:local_options]{withr::local_options()}} lose their undo both ways
-(measured 2026-08-27 on withr 2.5.0, the oldest this package accepts, and on
-3.0.3, with the same result on each), because that is how R's exit handlers
-work. What cannot happen is the limit being set and the undo never
-registered: the undo goes on the frame first, and only then is the limit
-written.
+In three cases, the caller's limit is not back when the function ends, and
+there is no error.
+\itemize{
+\item The function calls \code{on.exit()} without \code{add = TRUE}. That call removes the
+undo step. Write \code{on.exit(..., add = TRUE)} instead.
+\item The \code{.local_envir} belongs to a function that has returned, or it is an
+environment such as \code{new.env()}.
+\item \code{local_timeout()} is called directly inside the expression of
+\code{\link[=with_timeout]{with_timeout()}}. There, \code{local_timeout()} belongs to the function around
+it. So when that function ends, the limit that \code{\link[=with_timeout]{with_timeout()}} set is in
+force. Put the inner limit in a function of its own, or use only one of
+the two.
+}
 
-Written \emph{directly inside} a \code{\link[=with_timeout]{with_timeout()}} expression, \code{local_timeout()}
-binds to the frame that wrote the call, not to the wrapper — \code{expr} is
-evaluated in the caller's frame — so its undo runs after the wrapper's, and
-the wrapper's limit is what the frame leaves behind. Put the inner limit in a
-function of its own, or use one form or the other. This is what \verb{with_*()}
-and \verb{local_*()} do together anywhere in R, not something particular to these
-two (measured 2026-08-27 against \code{\link[withr:with_options]{withr::with_options()}} and
-\code{\link[withr:local_options]{withr::local_options()}}, which behave identically, on withr 2.5.0 and 3.0.3
-alike).
-
-\code{seconds} is refused by the rule \code{options(tidymedia.timeout = )} applies, with
-one deliberate exception. Setting the option to \code{NULL} REMOVES it, leaving the
-session unset and therefore unlimited; \code{local_timeout(NULL)} is a caller
-naming no limit at all, and is refused rather than read as "no limit". Write
-\code{local_timeout(0)} for that.
-
-What a reached limit does — abort or warning, by call — is described under
-"Bounding a run that hangs" in \link{tidymedia-package}; setting the limit this way
-changes none of it.
+The first two cases also apply to \code{\link[withr:local_options]{withr::local_options()}}, because R's exit
+handlers work this way. They do not apply to \code{\link[withr:with_options]{withr::with_options()}}, which
+puts the option back itself.
 }
 \examples{
 bounded <- function() {
@@ -111,6 +88,6 @@ convert_all <- function(files) {
 
 }
 \seealso{
-\code{\link[=with_timeout]{with_timeout()}} for the expression form, and \link{tidymedia-package} for
-the session-wide setting and what a reached limit does.
+\code{\link[=with_timeout]{with_timeout()}} to set a limit for one expression.
+\link{tidymedia-package} describes the session options.
 }

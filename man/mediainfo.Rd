@@ -2,22 +2,28 @@
 % Please edit documentation in R/mediainfo.R
 \name{mediainfo}
 \alias{mediainfo}
-\title{Run MediaInfo CLI}
+\title{Run a MediaInfo command}
 \usage{
 mediainfo(command)
 }
 \arguments{
-\item{command}{A string containing a mediainfo command.}
+\item{command}{A string with the arguments to give MediaInfo.}
 }
 \value{
-A string containing the command line output from mediainfo.
+A character vector with the text that MediaInfo writes to standard
+output, one element for each line. Messages on standard error are not
+returned. On macOS and Linux, a shell redirect such as \verb{2>&1} in \code{command}
+returns them too.
 }
 \description{
-Run the command through the MediaInfo command line interface (CLI) and return
-its output as a string. This is the Layer 0 escape hatch: \code{command} is passed
-to MediaInfo verbatim, so you are responsible for quoting it. For structured,
-tibble-returning output use \code{\link[=mediainfo_template]{mediainfo_template()}}, \code{\link[=mediainfo_query]{mediainfo_query()}}, or
-\code{\link[=mediainfo_parameter]{mediainfo_parameter()}}, which quote their arguments safely.
+\code{mediainfo()} runs the MediaInfo program with the arguments in \code{command} and
+returns its output. MediaInfo reads information about media files.
+}
+\details{
+\code{mediainfo()} is a direct command. The package passes \code{command} to MediaInfo
+exactly as you wrote it, so you must add any quotes that it needs. To get a
+tibble or a value instead, use \code{\link[=mediainfo_template]{mediainfo_template()}}, \code{\link[=mediainfo_query]{mediainfo_query()}} or
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}}. These functions quote their arguments for you.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}
@@ -25,12 +31,12 @@ mediainfo("--Version")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=mediainfo_template]{mediainfo_template()}}, \code{\link[=mediainfo_query]{mediainfo_query()}}, and
-\code{\link[=mediainfo_parameter]{mediainfo_parameter()}} for structured output, and \code{\link[=get_duration]{get_duration()}} and
-friends for common scalars.
+\code{\link[=mediainfo_template]{mediainfo_template()}}, \code{\link[=mediainfo_query]{mediainfo_query()}} and
+\code{\link[=mediainfo_parameter]{mediainfo_parameter()}} for a tibble or a value. \code{\link[=get_duration]{get_duration()}} and the
+other \verb{get_*()} functions for common single values.
 
-Other escape hatch functions:
+Other direct command functions:
 \code{\link[=ffmpeg]{ffmpeg()}},
 \code{\link[=ffprobe]{ffprobe()}}
 }
-\concept{escape hatch functions}
+\concept{direct command functions}

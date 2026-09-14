@@ -40,7 +40,7 @@ ffm_files(c(video, video), "output.mp4") |>
 \code{\link[=ffm_hstack]{ffm_hstack()}} for horizontal stacking and \code{\link[=compare_videos]{compare_videos()}}, the
 task verb built on both.
 
-Other builder functions:
+Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},
@@ -64,4 +64,4 @@ Other builder functions:
 \code{\link[=ffm_trim]{ffm_trim()}},
 \code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
 }
-\concept{builder functions}
+\concept{pipeline functions}

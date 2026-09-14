@@ -60,7 +60,7 @@ ffm_files(video, "output.mkv") |>
 \code{\link[=ffm_copy]{ffm_copy()}}, which maps all streams; \code{\link[=separate_audio_video]{separate_audio_video()}} is a
 task verb built on it.
 
-Other builder functions:
+Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},
 \code{\link[=ffm_codec]{ffm_codec()}},
 \code{\link[=ffm_compile]{ffm_compile()}},
@@ -84,4 +84,4 @@ Other builder functions:
 \code{\link[=ffm_vstack]{ffm_vstack()}},
 \code{\link[=print.tidymedia_ffm]{print.tidymedia_ffm()}}
 }
-\concept{builder functions}
+\concept{pipeline functions}

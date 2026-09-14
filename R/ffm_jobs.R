@@ -2,51 +2,58 @@
 
 #' Build a Jobs Table From a Directory
 #'
-#' List the media files in a directory and return them as the jobs table
-#' [ffm_batch()] takes: a tibble with one row per file and an \code{input}
-#' column of full paths. This is the batch entry point's companion — the batch
-#' story starts here rather than with a hand-rolled \code{list.files()} call.
+#' List the media files in a directory and return them as a jobs table for
+#' [ffm_batch()]. The table is a tibble with one row per file and an
+#' \code{input} column of full paths. Start a batch here, instead of with your
+#' own \code{list.files()} call.
 #'
-#' The returned tibble carries \code{input} and nothing else, deliberately:
-#' [ffm_batch()] passes every column of the jobs table to \code{.f} by name, so
-#' a column \code{.f} has no argument for stops the batch with R's
-#' "unused argument" error unless \code{.f} takes \code{...}.
-#' [crop_video_batch()] and [extract_audio_batch()] return a column they do
-#' not read unchanged — other than one named like a column [ffm_batch()]
-#' adds (see its Value section): a \code{command} column, for one, is replaced
-#' by the compiled command — and they read a column named like one of their
-#' per-row
-#' arguments (each help page lists which) in place of that argument, row by
-#' row: a \code{width} column in [crop_video_batch()], an \code{audio_codec}
-#' column in [extract_audio_batch()]. Add
-#' the columns your pipeline needs with the usual data-frame tools — some
-#' \code{*_batch()} verbs want an \code{output} column, others a
-#' task-specific one such as \code{start} and \code{end} — as the examples
-#' below derive an \code{output} from \code{input}.
+#' The table has only the \code{input} column. [ffm_batch()] passes every column
+#' of the jobs table to \code{.f} by name. So if \code{.f} has no argument for a
+#' column, and no \code{...} argument, the batch stops with R's "unused
+#' argument" error.
+#'
+#' Add the columns your pipeline needs with the usual data-frame tools. Some
+#' \code{*_batch()} task functions need an \code{output} column. Others need
+#' columns for their task, such as \code{start} and \code{end}. The examples
+#' below make an \code{output} column from \code{input}.
+#'
+#' [crop_video_batch()] and [extract_audio_batch()] handle the other columns of
+#' the table as follows:
+#' \itemize{
+#'   \item They read a column named like one of their per-row arguments in
+#'     place of that argument, row by row. Each help page lists these
+#'     arguments. Examples are a \code{width} column in [crop_video_batch()]
+#'     and an \code{audio_codec} column in [extract_audio_batch()].
+#'   \item They replace a column named like one that [ffm_batch()] adds. For
+#'     example, the compiled command replaces a \code{command} column. The
+#'     Value section of [ffm_batch()] lists the added columns.
+#'   \item They return every other column unchanged.
+#' }
 #'
 #' @param directory A single string naming an existing directory.
-#' @param type The media category to list: \code{"video"}, \code{"audio"}, or
-#'   \code{"image"}. Required — it has no default, since any default would be
-#'   one of the three (D079).
+#' @param type The media category to list, one of \code{"video"},
+#'   \code{"audio"} or \code{"image"}. You must give it, because it has no
+#'   default.
 #' @param extension An optional character vector of file extensions narrowing
 #'   the search within \code{type}, with or without a leading dot
 #'   (\code{"mp4"} and \code{".mp4"} both work). Each must be one of the
-#'   extensions \code{type} covers; the refusal lists them. \code{NULL} (the
-#'   default) lists every extension of that type.
+#'   extensions \code{type} covers, and the error message lists them.
+#'   \code{NULL} (the default) lists every extension of that type.
 #' @param recursive A logical: descend into subdirectories (\code{TRUE}) or
 #'   list only the top level (\code{FALSE}, default).
 #' @return A [tibble][tibble::tibble-package] with one row per matching file
-#'   whose name does not start with a dot, and a single character column,
-#'   \code{input}, holding each file's full path. Rows are in the order
+#'   and one character column, \code{input}, with each file's full path. Files
+#'   whose names start with a dot are left out. Rows are in the order
 #'   \code{\link[base]{list.files}} returns them.
-#'   Every row is a path that exists and is not a directory: a subdirectory
-#'   whose own name ends in a listed extension is never a row, nor — on macOS
-#'   and Linux — is a symbolic link whose target is gone. Windows reports such
-#'   a link as existing, so there it can still be a row. The call aborts rather
-#'   than returning zero rows when nothing matches. With
+#'
+#'   Every row is a path that exists and is not a directory. A subdirectory
+#'   whose own name ends in a listed extension is never a row. On macOS and
+#'   Linux, a symbolic link whose target is gone is never a row either.
+#'   Windows reports such a link as existing, so there it can still be a row.
+#'   The call gives an error, instead of zero rows, when nothing matches. With
 #'   \code{recursive = TRUE} the search follows a symbolic link to a directory,
 #'   so a row can name a file outside \code{directory}.
-#' @family builder functions
+#' @family pipeline functions
 #' @seealso [ffm_batch()], which consumes the returned table.
 #' @examples
 #' folder <- system.file("extdata", package = "tidymedia")
@@ -64,6 +71,8 @@
 #' })
 #' @export
 ffm_jobs <- function(directory, type, extension = NULL, recursive = FALSE) {
+  # `type` has no default because any default would be one of the three media
+  # types (D079).
   rlang::check_required(type)
   tm_ffm_jobs(
     directory = directory, type = type, extension = extension,

@@ -3,16 +3,22 @@
 
 #' Send a command to the FFprobe program
 #'
-#' Probe a media file for information. This is the Layer 0 escape hatch: the
-#' `command` string is passed to FFprobe verbatim, so you are responsible for
-#' quoting it. For structured, tibble-returning output use [probe_all()] and the
-#' `probe_*()` shortcuts, which quote their arguments safely.
+#' `ffprobe()` runs the FFprobe program with the arguments in `command` and
+#' returns its output. FFprobe reads information about media files.
 #'
-#' @param command A string containing the command to send to FFprobe.
-#' @return A string containing the text output by FFprobe.
-#' @seealso [probe_all()] and the `probe_*()` shortcuts for structured,
-#'   tibble-returning output.
-#' @family escape hatch functions
+#' `ffprobe()` is a direct command. The package passes `command` to FFprobe
+#' exactly as you wrote it, so you must add any quotes that it needs. To get
+#' tibbles instead, use [probe_all()] and the other `probe_*()` functions. These
+#' functions quote their arguments for you.
+#'
+#' @param command A string with the arguments to give FFprobe.
+#' @return A character vector with the text that FFprobe writes to standard
+#'   output, one element for each line. Messages on standard error, such as
+#'   FFprobe's banner and errors, are not returned. On macOS and Linux, a
+#'   shell redirect such as `2>&1` in `command` returns them too.
+#' @seealso [probe_all()] and the other `probe_*()` functions, which return
+#'   tibbles.
+#' @family direct command functions
 #' @examplesIf nzchar(Sys.which("ffprobe"))
 #' ffprobe("-version")
 #' @export
@@ -32,35 +38,45 @@ ffprobe <- function(command) {
 
 #' Look up information about media files using FFprobe
 #'
-#' Probe one or more media files and return their container- and stream-level
-#' metadata as tibbles. `infile` may be a vector of several files: the results
-#' are stacked and keyed by a leading `file` column, so the output is ready for
-#' `dplyr` joins and filters over a whole batch.
+#' `probe_all()` uses the FFprobe program to read information about media
+#' files. It returns two tibbles. One describes each file as a whole, and one
+#' describes each stream in the files.
 #'
-#' This is tidymedia's **FFprobe** metadata reader, returning **tibbles** (one
-#' row per file or per stream) — distinct from the **MediaInfo** readers
-#' (`mediainfo_*()`, which return tibbles or values) and the scalar `get_*()`
-#' helpers (which return a single value per file).
+#' Give several files in `infile` to read them all in one call. The function
+#' stacks the rows, and the first column, `file`, names the input file. So you
+#' can join and filter the results for a whole batch with `dplyr`.
 #'
-#' @param infile A character vector of one or more media-file locations (file
-#'   paths or web links) to probe.
-#' @param typed A logical. When `TRUE` (default) numeric columns are converted
-#'   to integers/doubles and FFprobe's `"N/A"` becomes `NA`; fractions, ratios,
-#'   hex identifiers, and text stay as strings. When `FALSE` every value is
-#'   returned as an unconverted string.
-#' @param parallel A logical: probe the files in parallel with \pkg{furrr}
-#'   (`TRUE`) or one at a time (`FALSE`, the default). The parallel path
-#'   honors the active `future::plan()` and warns when that plan is
-#'   sequential, since it would then give no speedup. Output is identical
-#'   either way, rows included and in the same order. Requires the optional
-#'   \pkg{furrr} package, which is checked for only when `parallel` is `TRUE`.
-#' @return A list of two tibbles: `container` (one row per input file) and
-#'   `streams` (one row per stream, or a single `NA` row for a file with no
-#'   readable streams). Both lead with a `file` column identifying the input.
-#'   Files that cannot be probed yield an all-`NA` row and a warning rather than
-#'   aborting the call.
-#' @seealso [mediainfo_template()] and [mediainfo_query()] for the MediaInfo
-#'   backend, and [get_duration()] and friends for single scalar values.
+#' The MediaInfo functions, `mediainfo_*()`, return tibbles or values. The
+#' `get_*()` functions return one value for each file.
+#'
+#' The glossary in `vignette("tidymedia")` explains media terms such as
+#' container and stream.
+#'
+#' @param infile A character vector of one or more media files to probe, as
+#'   file paths or web links.
+#' @param typed A logical. If `TRUE` (the default), numeric columns become
+#'   integers or doubles, and FFprobe's `"N/A"` becomes `NA`. Fractions,
+#'   ratios, hex identifiers and text stay as strings. If `FALSE`, every value
+#'   stays a string.
+#' @param parallel A logical. If `TRUE`, the function probes the files in
+#'   parallel with \pkg{furrr}. If `FALSE` (the default), it probes them one at
+#'   a time. A parallel run uses the active `future::plan()`. It warns when that
+#'   plan is sequential, because the run is then no faster. The output is the
+#'   same either way, with the same rows in the same order. `parallel = TRUE`
+#'   needs the \pkg{furrr} package, and only then does the function check for
+#'   it.
+#' @return A list of two tibbles. `container` has one row for each input file.
+#'   `streams` has one row for each stream. Both tibbles start with a `file`
+#'   column that names the input file. A file with no readable streams gets one
+#'   row in `streams`, with `NA` in every other column.
+#'
+#'   The function does not stop at a file that it could not probe. That file
+#'   gets a row of `NA` values in both tibbles, and the function gives a
+#'   warning. A file that reaches the time limit counts as not probed; see
+#'   [with_timeout()].
+#' @seealso [mediainfo_template()] and [mediainfo_query()] to read information
+#'   with MediaInfo. [get_duration()] and the other `get_*()` functions for
+#'   single values.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("ffprobe"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -352,30 +368,38 @@ probe_one <- function(file) {
 
 #' Shortcut functions for probing specific information
 #'
-#' Return just the `container` tibble via `probe_container()`, just the
-#' `streams` tibble via `probe_streams()`, or just the video/audio stream rows
-#' via `probe_video()` / `probe_audio()`. Each takes **either** the output of
-#' [probe_all()] (via `probe`) **or** one or more file locations (via `infile`);
-#' passing `infile` reprobes, so reuse a `probe` object when working with large
-#' files.
+#' These functions return one part of what [probe_all()] returns.
+#' `probe_container()` returns the `container` tibble, and `probe_streams()`
+#' returns the `streams` tibble. `probe_video()` and `probe_audio()` return only
+#' the video rows or the audio rows of `streams`.
 #'
-#' These **FFprobe**-backed shortcuts return **tibbles**; the **MediaInfo**
-#' readers (`mediainfo_*()`) and the scalar `get_*()` helpers are the
-#' alternatives.
+#' Give each function either the output of [probe_all()] in `probe`, or one or
+#' more files in `infile`. Give exactly one of the two, or the function gives
+#' an error. With `infile`, the function probes the files again. For large
+#' files, probe once with [probe_all()] and reuse the result.
 #'
-#' @param probe A list object created by [probe_all()]. Must be `NULL` if
-#'   `infile` is supplied.
-#' @param infile A character vector of one or more media-file locations. Must be
-#'   `NULL` if `probe` is supplied.
-#' @param typed A logical passed to [probe_all()] when `infile` is used (default
-#'   `TRUE`); ignored when `probe` is supplied.
-#' @param parallel A logical passed to [probe_all()] when `infile` is used:
-#'   probe the files in parallel with \pkg{furrr} (`TRUE`) or one at a time
-#'   (`FALSE`, the default). Ignored when `probe` is supplied, since a probe
-#'   object has nothing left to probe.
-#' @return A tibble containing only the requested information.
-#' @seealso [probe_all()] for the full probe; [mediainfo_query()] for the
-#'   MediaInfo backend; [get_width()] and friends for single scalar values.
+#' These functions use FFprobe and return tibbles. The MediaInfo functions,
+#' `mediainfo_*()`, and the `get_*()` functions are the other ways to read
+#' information. The glossary in `vignette("tidymedia")` explains media terms
+#' such as container and stream.
+#'
+#' @param probe A list made by [probe_all()]. Must be `NULL` if you give
+#'   `infile`.
+#' @param infile A character vector of one or more media files. Must be `NULL`
+#'   if you give `probe`.
+#' @param typed A logical that the function passes to [probe_all()] when you
+#'   give `infile`. The default is `TRUE`. The function ignores it when you give
+#'   `probe`.
+#' @param parallel A logical that the function passes to [probe_all()] when you
+#'   give `infile`. If `TRUE`, it probes the files in parallel with \pkg{furrr}.
+#'   If `FALSE` (the default), it probes them one at a time. The function
+#'   ignores it when you give `probe`, because nothing is left to probe.
+#' @return A tibble with only the requested information. When you give
+#'   `infile`, a file that could not be probed gives a warning, as in
+#'   [probe_all()].
+#' @seealso [probe_all()] for the full probe. [mediainfo_query()] to read
+#'   information with MediaInfo. [get_width()] and the other `get_*()`
+#'   functions for single values.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("ffprobe"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

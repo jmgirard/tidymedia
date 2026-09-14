@@ -69,7 +69,7 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 batch runner and the arguments forwarded through \code{...};
 \code{\link[=segment_video_batch]{segment_video_batch()}} for the segment-cutting sibling.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -100,4 +100,4 @@ Other task verb functions:
 \code{\link[=strip_metadata]{strip_metadata()}},
 \code{\link[=strip_metadata_batch]{strip_metadata_batch()}}
 }
-\concept{task verb functions}
+\concept{task functions}

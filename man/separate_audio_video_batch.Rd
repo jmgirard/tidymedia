@@ -66,7 +66,7 @@ the encoder.
 The stream-copy conflict above is caught first, so such a call aborts
 without probing.}
 
-\item{audio_stream}{The 0-based index of the audio track to write to each \code{audiofile}, counted \emph{among that row's input's audio streams} -- \code{0} is the first audio track, \code{1} the second, whatever their positions among the file's streams. \code{NULL} (default) keeps \strong{every} audio track. The argument applies to every row lacking an \code{audio_stream} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, rather than falling back to the argument. The every-track family reads \code{NULL} this way -- \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, plus their \code{_batch} siblings. The first-track family takes one track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, plus theirs. A container that holds several audio streams (\code{.mka}, \code{.m4a}) receives them all, while a single-stream container (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail -- name a track to write one of those. Count among the input's \emph{audio} streams, not the \code{index} column of \code{\link{probe_audio}}, which counts every stream. Unlike the verbs that pass video through, an input carrying no audio at all is an FFmpeg error here, because this verb's product is the audio file. \code{videofile} is never affected. Naming a track the input does not have is an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
+\item{audio_stream}{The audio track to write to each \code{audiofile}, as a number that counts from \code{0} among the \emph{audio tracks} of each row's input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) keeps \strong{every} audio track. Without an \code{audio_stream} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row. It does not fall back to the argument. The every-track family reads \code{NULL} as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. A container that holds several audio streams (\code{.mka}, \code{.m4a}) gets them all. A container for one stream only (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail, so name a track to write one of those. Count only the input's \emph{audio} streams. Do not use the \code{index} column of \code{\link{probe_audio}}, which counts every stream. An input with no audio at all is an FFmpeg error here, because this function writes an audio file. Functions that write only a video file, such as \code{\link{standardize_video}}, do not fail in that case. \code{videofile} is never affected. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}
@@ -168,7 +168,7 @@ separate_audio_video_batch(jobs, run = FALSE)
 the batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
 \code{\link[=segment_video_batch]{segment_video_batch()}} for the other fan-out batch verb.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -224,4 +224,4 @@ Other audio selection functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{audio selection functions}
-\concept{task verb functions}
+\concept{task functions}

@@ -72,11 +72,20 @@ test_that("the landing topic qualifies the loudnorm pass's exit class", {
   skip_if(length(topic) != 1L, "no landing topic")
   txt <- topic[[1]]
 
-  # The one place the topic attributes the exit class to the analysis pass.
-  loud <- regexpr("loudnorm} analysis pass behind", txt, fixed = TRUE)
-  expect_gt(loud, 0L)
-  exit <- regexpr("tidymedia_ffmpeg_exit", substring(txt, loud), fixed = TRUE)
-  expect_gt(exit, 0L)
-  attribution <- substring(txt, loud, loud + exit - 1L)
-  expect_match(attribution, "when FFmpeg exits non-zero", fixed = TRUE)
+  # The one place the topic attributes the exit class to the analysis pass:
+  # the class's own \item, which since M127 opens with the class name. The
+  # item must name the analysis pass and qualify it with the non-zero exit.
+  items <- regmatches(txt, gregexpr("\\\\item [^\n]*(\n(?!\\\\item|\\})[^\n]*)*",
+                                    txt, perl = TRUE))[[1]]
+  exit_item <- items[startsWith(items, "\\item \\code{tidymedia_ffmpeg_exit}")]
+  expect_length(exit_item, 1L)
+  expect_match(exit_item, "loudnorm} analysis pass", fixed = TRUE)
+  expect_match(exit_item, "exited non-zero", fixed = TRUE)
+  # And the qualifier really scopes the pass: the two sit in one sentence, so
+  # no full stop falls between them. Comparing positions could not fail,
+  # because "exited non-zero" opens the item (M127 review O11).
+  from <- regexpr("exited non-zero", exit_item, fixed = TRUE)
+  to <- regexpr("loudnorm} analysis pass", exit_item, fixed = TRUE)
+  expect_lt(from, to)
+  expect_no_match(substr(exit_item, from, to), "\\.\\s")
 })

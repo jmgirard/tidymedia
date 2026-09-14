@@ -12,10 +12,14 @@
 # blocks on standardize_video() and anonymize_video() still named
 # separate_audio_video() as their only fellow every-track verb, because M48
 # added crop/segment without back-linking them.
+#
+# The generated sentences land on many help pages, so they follow the plain
+# English rules in cairn/references/plain-docs.md (M127): at most 25 words a
+# sentence, and no ` -- ` in the Rd source.
 
 # The two verb families, by how each reads `audio_stream = NULL`. Every entry
 # also has a `_batch` sibling reading it the same way, so the rendered lists say
-# "and their _batch siblings" rather than doubling in length.
+# "and their _batch forms" rather than doubling in length.
 audio_stream_families <- list(
   first = c("extract_audio", "convert_audio", "normalize_audio"),
   every = c("separate_audio_video", "standardize_video", "anonymize_video",
@@ -36,19 +40,31 @@ rd_verb_list <- function(verbs) {
 
 # The sentence naming both families, told from the point of view of the family
 # `reading` belongs to. Exists in exactly one place; both readings are rendered
-# from the same two vectors, so neither list can drift from the other.
-audio_stream_family_sentence <- function(reading = c("first", "every")) {
+# from the same two vectors, so neither list can drift from the other. Each
+# sentence says what the family reads `NULL` as, rather than "this way", so it
+# stands on its own as a bullet on ?audio_stream as well as after a verb's
+# "`NULL` (default) takes ..." sentence.
+#
+# `after_null = TRUE` is for a verb's own `@param` text, where the sentence
+# before it has just said what `NULL` gives. There the family's own reading is
+# "this way" rather than repeated word for word.
+audio_stream_family_sentence <- function(reading = c("first", "every"),
+                                         after_null = FALSE) {
   reading <- match.arg(reading)
   first <- rd_verb_list(audio_stream_families$first)
   every <- rd_verb_list(audio_stream_families$every)
+  forms <- ", and their \\code{_batch} forms."
+  first_s <- paste0(" as the first audio track only: ", first, forms)
+  every_s <- paste0(" as every audio track: ", every, forms)
+  own_s <- function(s, list) {
+    if (after_null) paste0(" this way: ", list, forms) else s
+  }
   if (identical(reading, "first")) {
-    paste0("The first-track family reads \\code{NULL} this way -- ", first,
-           ", plus their \\code{_batch} siblings. The every-track family ",
-           "keeps them all instead: ", every, ", plus theirs.")
+    paste0("The first-track family reads \\code{NULL}", own_s(first_s, first),
+           " The every-track family reads it", every_s)
   } else {
-    paste0("The every-track family reads \\code{NULL} this way -- ", every,
-           ", plus their \\code{_batch} siblings. The first-track family takes ",
-           "one track only: ", first, ", plus theirs.")
+    paste0("The every-track family reads \\code{NULL}", own_s(every_s, every),
+           " The first-track family reads it", first_s)
   }
 }
 
@@ -73,25 +89,28 @@ audio_stream_param <- function(action,
     "\\strong{every} audio track"
   }
   parts <- c(
-    sprintf(paste0("The 0-based index of the audio track to %s, counted ",
-                   "\\emph{among %s audio streams} -- \\code{0} is the first ",
-                   "audio track, \\code{1} the second, whatever their ",
-                   "positions among the file's streams."),
+    sprintf(paste0("The audio track to %s, as a number that counts from ",
+                   "\\code{0} among the \\emph{audio tracks} of %s. ",
+                   "\\code{0} is the first audio track and \\code{1} is the ",
+                   "second. Other streams in the file, such as video, do not ",
+                   "count."),
             action,
-            if (batch) "that row's input's" else "the input's"),
+            if (batch) "each row's input" else "the input"),
     sprintf("\\code{NULL} (default) %s %s.", null_action, quantity),
     if (batch) {
-      paste0("The argument applies to every row lacking an ",
-             "\\code{audio_stream} column; an \\code{NA} cell in that column ",
-             "means the same as \\code{NULL} for that row, rather than ",
-             "falling back to the argument.")
+      paste0("Without an \\code{audio_stream} column, the argument applies to ",
+             "every row. An \\code{NA} cell in that column means \\code{NULL} ",
+             "for that row. It does not fall back to the argument.")
     },
-    audio_stream_family_sentence(reading),
+    # A `_batch` verb puts its column sentences between the `NULL` sentence and
+    # this one, so there "this way" would point at the wrong sentence.
+    audio_stream_family_sentence(reading, after_null = !batch),
     extra,
-    paste0("Naming a track the input does not have is an FFmpeg error, not an ",
+    paste0("A track the input does not have gives an FFmpeg error, not an ",
            "R one. See \\code{\\link{audio_stream}} for how this differs from ",
-           "\\code{audio_input}, the input index on \\code{\\link{compare_videos}} ",
-           "and \\code{\\link{picture_in_picture}}."),
+           "\\code{audio_input}, the input index on ",
+           "\\code{\\link{compare_videos}} and ",
+           "\\code{\\link{picture_in_picture}}."),
     "(default = \\code{NULL})"
   )
   paste(parts, collapse = " ")
@@ -102,19 +121,21 @@ audio_stream_param <- function(action,
 audio_input_param <- function(batch = FALSE, extra = NULL) {
   paste(
     c(
-      paste0("The 0-based index of the \\emph{input} whose audio to keep -- ",
-             "\\code{0} is the first file passed in, \\code{1} the second. ",
-             "This counts the verb's inputs, not one input's audio streams, ",
-             "so it is a different index from \\code{audio_stream} on the ",
-             "single-input verbs."),
-      paste0("\\code{NULL} (default) maps no audio at all, so the output is ",
-             "silent -- unlike \\code{audio_stream = NULL}, which always maps ",
-             "something. Naming an input the call does not have is an R ",
-             "error, raised before FFmpeg runs."),
+      paste0("The input file whose audio to keep, as a number that counts ",
+             "from \\code{0}. \\code{0} is the first file you pass and ",
+             "\\code{1} is the second. This counts the function's inputs, ",
+             "not the audio tracks of one input. So it is a different index ",
+             "from \\code{audio_stream} on the functions that take one input."),
+      # "still selects audio" is the plain form of "always emits a stream map":
+      # audio_stream = NULL is a selection, never an absence.
+      paste0("\\code{NULL} (default) selects no audio at all, so the output ",
+             "is silent. This differs from \\code{audio_stream = NULL}, which ",
+             "still selects audio. An input number the call does not have ",
+             "gives an R error, before FFmpeg runs."),
       if (batch) {
-        paste0("Applied to every row lacking an \\code{audio_input} column; an ",
-               "\\code{NA} cell in that column means the same as \\code{NULL} ",
-               "for that row, dropping that output's audio.")
+        paste0("Without an \\code{audio_input} column, the argument applies ",
+               "to every row. An \\code{NA} cell in that column means ",
+               "\\code{NULL} for that row, so that output has no audio.")
       },
       extra,
       "See \\code{\\link{audio_stream}}. (default = \\code{NULL})"
@@ -128,110 +149,118 @@ audio_input_param <- function(batch = FALSE, extra = NULL) {
 # genuinely true of exactly one verb stays written out at that verb's block.
 audio_stream_extras <- list(
   passthrough_subtitles = paste0(
-    "Subtitle and data streams are not carried either way."
+    "The function does not carry subtitle or data streams in either case."
   ),
   separation_container = paste0(
     "A container that holds several audio streams (\\code{.mka}, ",
-    "\\code{.m4a}) receives them all, while a single-stream container ",
-    "(\\code{.aac}, \\code{.mp3}, \\code{.wav}) makes FFmpeg fail -- name a ",
-    "track to write one of those. Count among the input's \\emph{audio} ",
-    "streams, not the \\code{index} column of \\code{\\link{probe_audio}}, ",
-    "which counts every stream. Unlike the verbs that pass video through, an ",
-    "input carrying no audio at all is an FFmpeg error here, because this ",
-    "verb's product is the audio file. \\code{videofile} is never affected."
+    "\\code{.m4a}) gets them all. A container for one stream only ",
+    "(\\code{.aac}, \\code{.mp3}, \\code{.wav}) makes FFmpeg fail, so name a ",
+    "track to write one of those. Count only the input's \\emph{audio} ",
+    "streams. Do not use the \\code{index} column of ",
+    "\\code{\\link{probe_audio}}, which counts every stream. An input with ",
+    "no audio at all is an FFmpeg error here, because this function writes ",
+    "an audio file. Functions that write only a video file, such as ",
+    "\\code{\\link{standardize_video}}, do not fail in that case. ",
+    "\\code{videofile} is never affected."
   ),
   normalize_one_track = paste0(
-    "This verb reads \\code{NULL} the first-track way because the two-pass ",
-    "analysis produces one measurement per audio track while the correction ",
-    "takes a single set, so normalizing several tracks at once would apply ",
-    "one track's measurements to all of them. Under \\code{two_pass = TRUE} ",
-    "the analysis pass measures this same track. Only the named track reaches ",
-    "the output, and no video does -- whatever the container, so an output ",
-    "name that keeps a video extension yields a video file carrying audio ",
-    "alone. An input with no audio at all is an FFmpeg error."
+    "This function reads \\code{NULL} as the first track only. The two-pass ",
+    "analysis measures each audio track, but the correction uses one set of ",
+    "measurements. Normalizing several tracks at once would apply one ",
+    "track's measurements to all of them. Under \\code{two_pass = TRUE}, the ",
+    "analysis pass measures this same track. Only the named track reaches ",
+    "the output, and no video does, whatever the container. So an output ",
+    "name with a video extension gives a video file that holds only audio. ",
+    "An input with no audio at all is an FFmpeg error."
   )
 )
 
 #' Audio track and audio input indices
 #'
 #' @description
-#' tidymedia has two 0-based audio arguments that count different things. This
-#' page says which is which, so that meeting one after the other is not a trap.
+#' Two audio arguments in this package count different things: `audio_stream`
+#' and `audio_input`. Both count from `0`, so `0` means the first one. This page
+#' explains which is which.
+#'
+#' The glossary in `vignette("tidymedia")` explains media terms such as stream,
+#' container and codec.
 #'
 #' @details
 #' # The two indices
 #'
-#' \code{audio_stream} counts \strong{one input's audio streams}. On
-#' \code{\link{extract_audio}}, \code{audio_stream = 1} is that file's second
-#' audio track, whatever position it holds among the file's streams overall (it
-#' is not the \code{index} column of \code{\link{probe_audio}}, which counts
-#' every stream, audio or not).
+#' `audio_stream` counts \strong{the audio tracks of one input file}. On
+#' [extract_audio()], `audio_stream = 1` is the second audio track of the file.
+#' Where that track sits among all the streams of the file does not matter. So
+#' `audio_stream` is not the `index` column of [probe_audio()], which counts
+#' every stream, audio or not.
 #'
-#' \code{audio_input} counts \strong{a verb's inputs}. On
-#' \code{\link{compare_videos}} and \code{\link{picture_in_picture}}, which
-#' combine several files into one output and must choose whose sound to keep,
-#' \code{audio_input = 1} is the second \emph{file}, and says nothing about which of
-#' its tracks is taken.
+#' `audio_input` counts \strong{the input files of a function}. The functions
+#' [compare_videos()] and [picture_in_picture()] combine several files into one
+#' output, so they must choose whose sound to keep. On these functions,
+#' `audio_input = 1` is the second \emph{file}. It says nothing about which
+#' track of that file is used.
 #'
-#' Neither can be computed from the other, which is why they stay separate
-#' names rather than one argument meaning two things depending on the verb's
-#' arity.
+#' You cannot work out one index from the other. So the package keeps two
+#' names, rather than one argument whose meaning depends on how many inputs a
+#' function takes.
 #'
-#' # What `NULL` means, and it is not the same thing
+#' # What `NULL` means
 #'
-#' \code{audio_stream = NULL} is a selection rather than an absence: the verb
-#' still emits a stream map. What differs is how much it selects.
+#' `audio_stream = NULL` still selects audio. It does not mean "no audio". How
+#' much audio it selects depends on the function.
 #'
 #' * `r audio_stream_family_sentence("first")`
-#' * The two readings exist because a verb that writes one audio stream by
-#'   construction must pick one track when you name none, while a verb that
-#'   carries audio through can keep whatever its container holds.
-#' * On the verbs that pass video through, the every-track map is written so
-#'   that it matches nothing rather than failing, so an input with no audio at
-#'   all simply yields an output with none. On
-#'   \code{\link{separate_audio_video}} and \code{\link{normalize_audio}},
-#'   whose product \emph{is} audio, that same case is an FFmpeg error.
+#' * The two readings have a reason. A function that writes one audio stream
+#'   must pick one track when you name none. A function that carries audio
+#'   through can keep all the tracks its container holds.
+#' * On the functions that pass video through, an input with no audio gives an
+#'   output with no audio, not an error. On [separate_audio_video()] and
+#'   [normalize_audio()], whose output \emph{is} audio, that input gives an
+#'   FFmpeg error.
 #'
-#' \code{audio_input = NULL} is different in kind: it emits no audio map at all, so
-#' the output carries \strong{no audio}. A silent output is the default for
-#' \code{\link{compare_videos}} and \code{\link{picture_in_picture}}, because
-#' there is no non-arbitrary answer to which of several inputs should be heard.
+#' `audio_input = NULL` is different: it selects no audio at all, so the output
+#' has \strong{no audio}. A silent output is the default for [compare_videos()]
+#' and [picture_in_picture()]. With several inputs, no choice of which one to
+#' hear is better than another.
 #'
-#' Out of range, the two also fail differently. An \code{audio_input} beyond the
-#' inputs you passed is an R error raised before FFmpeg runs; an
-#' \code{audio_stream} beyond the input's tracks is an FFmpeg error, because
-#' the track count is a property of the file rather than of the call.
+#' The two arguments also fail in different ways when a number is too large.
+#' An `audio_input` that names an input you did not pass gives an R error,
+#' before FFmpeg runs. An `audio_stream` that names a track the input does not
+#' have gives an FFmpeg error. The reason is that the number of tracks is a fact
+#' about the file, not about the call.
 #'
 #' # In a `_batch` jobs table
 #'
-#' Both arguments follow one rule on a \code{_batch} verb: the scalar argument
-#' is the default, and a \code{jobs} column of the same name overrides it row by
-#' row. (This is how these two behave; it is not a claim about every
-#' \code{_batch} argument — \code{hardware}, \code{parallel} and \code{two_pass}
-#' are batch-wide and read no column.) An \strong{absent column}
-#' means the scalar argument applies to every row. A \strong{present column}
-#' overrides it row by row, and an \code{NA} cell is that column's spelling of
-#' \code{NULL} -- it does not fall back to the scalar argument. So
-#' \code{audio_stream = 2} with an \code{audio_stream} column holding \code{NA}
-#' puts that row on its family's \code{NULL} reading, not on track 2.
+#' On a `_batch` function, both arguments follow one rule. The argument you
+#' pass is the default, and a `jobs` column with the same name overrides it row
+#' by row.
 #'
-#' # The bare name `audio` is not an index
+#' This rule is about these two arguments only. The arguments `hardware`,
+#' `parallel` and `two_pass` apply to the whole batch, and the function reads
+#' no column for them.
 #'
-#' Layer 1 keeps \code{audio} for two things that count nothing:
+#' If the column is absent, the argument applies to every row. If the column is
+#' present, each row uses its own cell. An `NA` cell means `NULL` for that row.
+#' It does not fall back to the argument. So `audio_stream = 2` with an `NA`
+#' cell in an `audio_stream` column gives that row the `NULL` reading of its
+#' family, not track 2.
 #'
-#' * an audio \emph{codec} string on \code{\link{ffm_codec}}, where
-#'   \code{audio = "aac"} names an encoder;
-#' * a \emph{logical} on \code{\link{ffm_copy}}, where \code{audio = TRUE}
-#'   stream-copies the audio instead of re-encoding it.
+#' # The name `audio` alone is not an index
 #'
-#' The input index is \code{audio_input}, so that its name says what it counts,
-#' as \code{audio_stream} does.
+#' The pipeline functions use `audio` for two things that are not counts:
 #'
-#' @seealso `r rd_verb_list(audio_stream_families$first)` for the first-track
-#'   reading; `r rd_verb_list(audio_stream_families$every)` for the every-track
-#'   one; \code{\link{compare_videos}} and \code{\link{picture_in_picture}} for
-#'   the input index; \code{\link{probe_audio}} to see what tracks a file
-#'   actually holds.
+#' * an audio codec name on [ffm_codec()], where `audio = "aac"` names an
+#'   encoder;
+#' * a logical on [ffm_copy()], where `audio = TRUE` copies the audio stream
+#'   without re-encoding it.
+#'
+#' The input index is called `audio_input`, so that its name says what it
+#' counts, as `audio_stream` does.
+#'
+#' @seealso `r rd_verb_list(audio_stream_families$first)` read `NULL` as the
+#'   first audio track. `r rd_verb_list(audio_stream_families$every)` read it
+#'   as every audio track. [compare_videos()] and [picture_in_picture()] take
+#'   the input index. [probe_audio()] shows which audio tracks a file has.
 #' @family audio selection functions
 #'
 #' @aliases audio-tracks audio_indices

@@ -7,35 +7,30 @@
 unset_program(program)
 }
 \arguments{
-\item{program}{A string naming which program to forget the location for:
-one of \code{"ffmpeg"}, \code{"ffprobe"}, \code{"ffplay"} or \code{"mediainfo"}. There is
-no default: the call deletes a file, and D079's rule for this package
-keeps a member of the set out of the default position, so a call that
-names no program refuses rather than picking one.}
+\item{program}{A string naming the program to forget. One of \code{"ffmpeg"},
+\code{"ffprobe"}, \code{"ffplay"} or \code{"mediainfo"}. There is no default, because the
+call deletes a file. A call that names no program gives an error.}
 }
 \value{
-Invisibly, \code{TRUE} where a remembered location was removed and \code{FALSE}
-where there was none to remove.
+Invisibly, \code{TRUE} when the call removed a saved location, and \code{FALSE}
+when there was none to remove.
 }
 \description{
-Removes the location \code{\link[=set_program]{set_program()}} remembered for a program, so that
-\code{\link[=find_ffmpeg]{find_ffmpeg()}} and its siblings go back to answering from the \code{PATH}. Both
-places a location can live are cleared: the file under
-\code{tools::R_user_dir("tidymedia", "config")} and, where one is still there, the
-file a version of tidymedia before 0.2.0 wrote under
-\code{rappdirs::user_config_dir("tidymedia", "R")}.
+\code{unset_program()} forgets the location that \code{\link[=set_program]{set_program()}} saved for a
+program. After that, \code{\link[=find_ffmpeg]{find_ffmpeg()}} and the other \verb{find_*()} functions look
+for the program on the \code{PATH} only.
 }
 \details{
-Forgetting a location does not remove the program itself, and it does not
-change what is on the \code{PATH}. A program tidymedia found on the \code{PATH} is
-still found afterwards. A location remembered by a version before 0.2.0 is
-cleared as well, so it is not left behind for \code{\link[=find_ffmpeg]{find_ffmpeg()}} and its
-siblings to answer with once the current file is gone.
+The call deletes the file that holds the location. It does not ask you to
+confirm first. It does not remove the program, and it does not change the
+\code{PATH}. A program on the \code{PATH} is still found afterwards.
 
-There is nothing to confirm: deleting the remembered location is the whole of
-what the call does. Calling it for a program with nothing remembered warns
-and returns \code{FALSE} rather than failing -- the state you asked for is already
-the state you have.
+If no location is saved for the program, the call gives a warning and
+returns \code{FALSE}. It does not give an error, because the program is already
+forgotten.
+
+The call also clears a location saved by a version before 0.2.0. See the
+section "Locations saved by earlier versions" in \code{\link[=find_ffmpeg]{find_ffmpeg()}}.
 }
 \examples{
 \dontrun{
@@ -45,8 +40,8 @@ unset_program("mediainfo")
 }
 }
 \seealso{
-\code{\link[=set_program]{set_program()}} to remember a location, and \code{\link[=program_status]{program_status()}} to
-see what tidymedia currently finds.
+\code{\link[=set_program]{set_program()}} to save a location, and \code{\link[=program_status]{program_status()}} to see
+where the package finds each program.
 
 Other program management functions:
 \code{\link[=find_ffmpeg]{find_ffmpeg()}},

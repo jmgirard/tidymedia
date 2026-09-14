@@ -28,8 +28,8 @@ ffmpeg("-version")
 queries, and the \verb{ffm_*} pipeline builders (e.g. \code{\link[=ffm_run]{ffm_run()}}) for a safer
 command layer.
 
-Other escape hatch functions:
+Other direct command functions:
 \code{\link[=ffprobe]{ffprobe()}},
 \code{\link[=mediainfo]{mediainfo()}}
 }
-\concept{escape hatch functions}
+\concept{direct command functions}

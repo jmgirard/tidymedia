@@ -38,7 +38,7 @@ default), \code{"topleft"}, \code{"bottomright"}, \code{"bottomleft"} or
 \code{"center"}; a \code{position} column is held to those same five
 values, per row. See \code{\link[=picture_in_picture]{picture_in_picture()}} for their fuller meaning.}
 
-\item{audio_input}{The 0-based index of the \emph{input} whose audio to keep -- \code{0} is the first file passed in, \code{1} the second. This counts the verb's inputs, not one input's audio streams, so it is a different index from \code{audio_stream} on the single-input verbs. \code{NULL} (default) maps no audio at all, so the output is silent -- unlike \code{audio_stream = NULL}, which always maps something. Naming an input the call does not have is an R error, raised before FFmpeg runs. Applied to every row lacking an \code{audio_input} column; an \code{NA} cell in that column means the same as \code{NULL} for that row, dropping that output's audio. See \code{\link{audio_stream}}. (default = \code{NULL})}
+\item{audio_input}{The input file whose audio to keep, as a number that counts from \code{0}. \code{0} is the first file you pass and \code{1} is the second. This counts the function's inputs, not the audio tracks of one input. So it is a different index from \code{audio_stream} on the functions that take one input. \code{NULL} (default) selects no audio at all, so the output is silent. This differs from \code{audio_stream = NULL}, which still selects audio. An input number the call does not have gives an R error, before FFmpeg runs. Without an \code{audio_input} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row, so that output has no audio. See \code{\link{audio_stream}}. (default = \code{NULL})}
 
 \item{video_codec}{A string naming the output video codec, applied to every
 row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
@@ -107,7 +107,7 @@ batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for th
 \code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}} and \code{\link[=compare_videos_batch]{compare_videos_batch()}},
 the other fan-in batch siblings.
 
-Other task verb functions:
+Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},
 \code{\link[=anonymize_video_batch]{anonymize_video_batch()}},
 \code{\link[=compare_videos]{compare_videos()}},
@@ -163,4 +163,4 @@ Other audio selection functions:
 \code{\link[=standardize_video_batch]{standardize_video_batch()}}
 }
 \concept{audio selection functions}
-\concept{task verb functions}
+\concept{task functions}

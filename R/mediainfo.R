@@ -1,21 +1,26 @@
 
 # mediainfo() -------------------------------------------------------------
 
-#' Run MediaInfo CLI
+#' Run a MediaInfo command
 #'
-#' Run the command through the MediaInfo command line interface (CLI) and return
-#' its output as a string. This is the Layer 0 escape hatch: `command` is passed
-#' to MediaInfo verbatim, so you are responsible for quoting it. For structured,
-#' tibble-returning output use [mediainfo_template()], [mediainfo_query()], or
-#' [mediainfo_parameter()], which quote their arguments safely.
+#' `mediainfo()` runs the MediaInfo program with the arguments in `command` and
+#' returns its output. MediaInfo reads information about media files.
 #'
-#' @param command A string containing a mediainfo command.
-#' @return A string containing the command line output from mediainfo.
+#' `mediainfo()` is a direct command. The package passes `command` to MediaInfo
+#' exactly as you wrote it, so you must add any quotes that it needs. To get a
+#' tibble or a value instead, use [mediainfo_template()], [mediainfo_query()] or
+#' [mediainfo_parameter()]. These functions quote their arguments for you.
 #'
-#' @seealso [mediainfo_template()], [mediainfo_query()], and
-#'   [mediainfo_parameter()] for structured output, and [get_duration()] and
-#'   friends for common scalars.
-#' @family escape hatch functions
+#' @param command A string with the arguments to give MediaInfo.
+#' @return A character vector with the text that MediaInfo writes to standard
+#'   output, one element for each line. Messages on standard error are not
+#'   returned. On macOS and Linux, a shell redirect such as `2>&1` in `command`
+#'   returns them too.
+#'
+#' @seealso [mediainfo_template()], [mediainfo_query()] and
+#'   [mediainfo_parameter()] for a tibble or a value. [get_duration()] and the
+#'   other `get_*()` functions for common single values.
+#' @family direct command functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' mediainfo("--Version")
 #' @export
@@ -35,30 +40,38 @@ mediainfo <- function(command) {
 
 #' Query a single parameter from a single MediaInfo section
 #'
-#' Query a single parameter in a single section from MediaInfo. `file` may be a
-#' vector of several files, in which case a vector of values (one per file) is
-#' returned.
+#' `mediainfo_parameter()` uses the MediaInfo program to read one value, such as
+#' the video width, from media files. MediaInfo groups its values in sections,
+#' such as `"General"`, `"Video"` and `"Audio"`. You name the section and the
+#' parameter to read.
 #'
-#' This **MediaInfo**-backed reader returns a **value** (or a vector of values,
-#' one per file), not a tibble; the FFprobe counterpart is the `probe_*()`
-#' family.
+#' Give several files in `file` to get one value for each file. The function
+#' returns a vector, not a tibble. The `probe_*()` functions read similar
+#' information with FFprobe and return tibbles.
 #'
-#' @param file A character vector of one or more media-file paths.
-#' @param section A string containing the name of the mediainfo section from
-#'   which to query \code{parameter}.
-#' @param parameter A string containing the name of the mediainfo parameter to
-#'   query from \code{section}.
-#' @param typed A logical. When \code{TRUE} (default) the value is converted to
-#'   its natural type (e.g. a number); when \code{FALSE} it is returned as a
-#'   string.
-#' @return A vector the same length as \code{file} holding each requested value,
-#'   or \code{NA} where the value was empty, the section-parameter combination
-#'   was not found, or the file could not be read (a warning is issued for
-#'   unreadable files rather than aborting).
+#' @param file A character vector of one or more media file paths.
+#' @param section A string. The name of the MediaInfo section to read
+#'   `parameter` from.
+#' @param parameter A string. The name of the MediaInfo parameter to read from
+#'   `section`.
+#' @param typed A logical. If `TRUE` (the default), the function converts the
+#'   values to their natural type, for example to numbers. If `FALSE`, it
+#'   returns strings.
+#' @return A vector with one value for each element of `file`. A value is `NA`
+#'   when MediaInfo prints more than one line, for example for a `section` it
+#'   does not know. A parameter that `section` does not have gives an empty
+#'   value. That value is `NA` when `typed = TRUE` and `""` when
+#'   `typed = FALSE`. A value is also `NA` for a file that does not exist or
+#'   that reaches the time limit.
 #'
-#' @seealso [mediainfo_query()] to pull several parameters at once,
-#'   [mediainfo_template()] for a whole template, [probe_all()] for the FFprobe
-#'   backend, and [get_duration()] and friends for common single values.
+#'   The function does not stop at those files. It reads the other files, and
+#'   then gives one warning that names the files that do not exist or reached
+#'   the limit. See [with_timeout()] for the time limit.
+#'
+#' @seealso [mediainfo_query()] to read several parameters at once.
+#'   [mediainfo_template()] to apply a whole template. [probe_all()] to read
+#'   information with FFprobe. [get_duration()] and the other `get_*()`
+#'   functions for common single values.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -110,31 +123,36 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
 
 #' Query multiple parameters from a single MediaInfo section
 #'
-#' Create a tibble containing multiple parameters from a single MediaInfo
-#' section. To query parameters from multiple sections at once, use
-#' \code{mediainfo_template()}. `file` may be a
-#' vector of several files; results are stacked with a leading \code{file}
-#' column.
+#' `mediainfo_query()` uses the MediaInfo program to read several parameters
+#' from one section, and returns a tibble. To read parameters from more than
+#' one section in one call, use [mediainfo_template()].
 #'
-#' This **MediaInfo**-backed reader returns a **tibble**; the FFprobe
-#' counterpart is the `probe_*()` family.
+#' Give several files in `file` to get one row for each file. The first column,
+#' `file`, names the input file. The `probe_*()` functions read similar
+#' information with FFprobe.
 #'
-#' @param file A character vector of one or more media-file paths.
-#' @param section A string indicating the MediaInfo section from which to query
-#'   the \code{parameters}.
+#' @param file A character vector of one or more media file paths.
+#' @param section A string. The name of the MediaInfo section to read
+#'   `parameters` from.
 #' @param parameters A character vector of one or more MediaInfo parameters to
-#'   query from \code{section}.
-#' @param names A character vector naming the returned columns; must be the same
-#'   length as \code{parameters} (default = \code{parameters}). Supplied names
-#'   are used verbatim.
-#' @param typed A logical. When \code{TRUE} (default) numeric columns are typed
-#'   and empty values become \code{NA}; when \code{FALSE} columns stay strings.
-#' @return A tibble with one row per input file, leading with a \code{file}
-#'   column and one column per requested parameter.
+#'   read from `section`.
+#' @param names A character vector of column names, one for each element of
+#'   `parameters`. The default is `parameters`. The function keeps the names as
+#'   you give them, but removes spaces at their start and end.
+#' @param typed A logical. If `TRUE` (the default), numeric columns become
+#'   numbers and empty values become `NA`. If `FALSE`, all columns stay strings.
+#' @return A tibble with one row for each input file. The first column is
+#'   `file`, and then there is one column for each parameter.
 #'
-#' @seealso [mediainfo_parameter()] for a single value, [mediainfo_template()]
-#'   for a whole template, [probe_all()] for the FFprobe backend, and
-#'   [get_duration()] and friends for single scalar values.
+#'   A file that the function could not read gets a row of `NA` values. The
+#'   function reads the other files, and then gives one warning that names the
+#'   files it could not read. A file that reaches the time limit counts as not
+#'   read; see [with_timeout()].
+#'
+#' @seealso [mediainfo_parameter()] to read a single value.
+#'   [mediainfo_template()] to apply a whole template. [probe_all()] to read
+#'   information with FFprobe. [get_duration()] and the other `get_*()`
+#'   functions for common single values.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -175,31 +193,36 @@ mediainfo_query <- function(file, section, parameters, names = parameters,
 
 #' Describe media files by applying a MediaInfo template
 #'
-#' Create a tibble describing one or more media files by applying a MediaInfo
-#' template, which can pull multiple parameters from multiple sections. Two
-#' templates ship with the package (\code{"brief"} and \code{"extended"}); a
-#' custom template file can also be supplied. `file` may be a vector of several
-#' files; results are stacked with a leading \code{file} column.
+#' `mediainfo_template()` uses the MediaInfo program to describe media files,
+#' and returns a tibble. It applies a MediaInfo template, which can read many
+#' parameters from many sections.
 #'
-#' This **MediaInfo**-backed reader returns a **tibble**; the FFprobe
-#' counterpart is the `probe_*()` family.
+#' The package comes with two templates, `"brief"` and `"extended"`. You can
+#' also give your own template file. Give several files in `file` to get one
+#' row for each file. The first column, `file`, names the input file. The
+#' `probe_*()` functions read similar information with FFprobe.
 #'
-#' @param file A character vector of one or more media-file paths.
-#' @param template A string naming the template to apply: a built-in
-#'   (\code{"brief"} or \code{"extended"}) or \code{"custom"} to apply the file
-#'   given in \code{templatefile}.
-#' @param templatefile Either the path to a MediaInfo template (.txt) file
-#'   formatted to output comma-separated values (required when \code{template}
-#'   is \code{"custom"}) or \code{NULL} (default).
-#' @param typed A logical. When \code{TRUE} (default) numeric columns are typed
-#'   and empty values become \code{NA}; when \code{FALSE} columns stay strings.
-#' @return A tibble with one row per input file. The columns (and their
-#'   names/order) are determined by the template; custom-template column names
-#'   are used verbatim.
+#' @param file A character vector of one or more media file paths.
+#' @param template A string. Use `"brief"` or `"extended"` for a template that
+#'   comes with the package. Use `"custom"` to apply the file in `templatefile`.
+#' @param templatefile The path to your own MediaInfo template, a `.txt` file
+#'   that makes MediaInfo print comma-separated values. Give it when `template`
+#'   is `"custom"`, and only then. The default is `NULL`.
+#' @param typed A logical. If `TRUE` (the default), numeric columns become
+#'   numbers and empty values become `NA`. If `FALSE`, all columns stay strings.
+#' @return A tibble with one row for each input file. The template sets the
+#'   columns, their names and their order. The function keeps the column names
+#'   of a custom template, but removes spaces at their start and end.
 #'
-#' @seealso [mediainfo_query()] for a single section, [mediainfo_parameter()]
-#'   for a single value, [probe_all()] for the FFprobe backend, and
-#'   [get_duration()] and friends for single scalar values.
+#'   A file that the function could not read gets a row of `NA` values. The
+#'   function reads the other files, and then gives one warning that names the
+#'   files it could not read. A file that reaches the time limit counts as not
+#'   read; see [with_timeout()].
+#'
+#' @seealso [mediainfo_query()] to read one section. [mediainfo_parameter()] to
+#'   read a single value. [probe_all()] to read information with FFprobe.
+#'   [get_duration()] and the other `get_*()` functions for common single
+#'   values.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -305,14 +328,13 @@ warn_unreadable <- function(failed, timed_out = character(0)) {
 
 #' Get the duration of a media file
 #'
-#' Use MediaInfo to quickly look up the duration of different sections of a
-#' media file in various units.
+#' `get_duration()` uses the MediaInfo program to look up the duration of a
+#' media file. You choose the section of the file and the unit.
 #'
-#' This **MediaInfo**-backed helper returns a **single value per file** (a
-#' numeric scalar), unlike the tibble-returning `probe_*()`, `mediainfo_query()`,
-#' and `mediainfo_template()` readers.
+#' The function returns one number for each file. The `probe_*()` functions,
+#' [mediainfo_query()] and [mediainfo_template()] return tibbles instead.
 #'
-#' @param file A character vector of one or more media-file paths.
+#' @param file A character vector of one or more media file paths.
 #' @param section A string indicating the MediaInfo section from which to query
 #'   the duration value. Can be either \code{"General"}, \code{"Video"}, or
 #'   \code{"Audio"} (default = \code{"General"}).
@@ -323,7 +345,7 @@ warn_unreadable <- function(failed, timed_out = character(0)) {
 #'   section in the specified units.
 #'
 #' @seealso [mediainfo_parameter()] for arbitrary MediaInfo fields, and
-#'   [probe_all()] for the FFprobe backend.
+#'   [probe_all()] to read information with FFprobe.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -356,18 +378,18 @@ get_duration <- function(file,
 
 #' Get the video frame rate of a media file
 #'
-#' Use MediaInfo to quickly look up the video frame rate of a media file in
-#' frames per second (fps).
+#' `get_frame_rate()` uses the MediaInfo program to look up the video frame
+#' rate of a media file, in frames per second (fps). The glossary in
+#' `vignette("tidymedia")` explains media terms such as frame rate.
 #'
-#' This **MediaInfo**-backed helper returns a **single value per file** (a
-#' numeric scalar), unlike the tibble-returning `probe_*()`, `mediainfo_query()`,
-#' and `mediainfo_template()` readers.
+#' The function returns one number for each file. The `probe_*()` functions,
+#' [mediainfo_query()] and [mediainfo_template()] return tibbles instead.
 #'
-#' @param file A character vector of one or more media-file paths.
+#' @param file A character vector of one or more media file paths.
 #' @return A double vector (one per file) giving the video frame rate in fps.
 #'
 #' @seealso [mediainfo_parameter()] for arbitrary MediaInfo fields, and
-#'   [probe_all()] for the FFprobe backend.
+#'   [probe_all()] to read information with FFprobe.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -388,18 +410,17 @@ get_frame_rate <- function(file) {
 
 #' Get the video width of a media file
 #'
-#' Use MediaInfo to quickly look up the video width of a media file in
-#' pixels (px).
+#' `get_width()` uses the MediaInfo program to look up the video width of a
+#' media file, in pixels (px).
 #'
-#' This **MediaInfo**-backed helper returns a **single value per file** (a
-#' numeric scalar), unlike the tibble-returning `probe_*()`, `mediainfo_query()`,
-#' and `mediainfo_template()` readers.
+#' The function returns one number for each file. The `probe_*()` functions,
+#' [mediainfo_query()] and [mediainfo_template()] return tibbles instead.
 #'
-#' @param file A character vector of one or more media-file paths.
+#' @param file A character vector of one or more media file paths.
 #' @return A double vector (one per file) giving the video width in px.
 #'
 #' @seealso [mediainfo_parameter()] for arbitrary MediaInfo fields, and
-#'   [probe_all()] for the FFprobe backend.
+#'   [probe_all()] to read information with FFprobe.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -420,18 +441,17 @@ get_width <- function(file) {
 
 #' Get the video height of a media file
 #'
-#' Use MediaInfo to quickly look up the video height of a media file in
-#' pixels (px).
+#' `get_height()` uses the MediaInfo program to look up the video height of a
+#' media file, in pixels (px).
 #'
-#' This **MediaInfo**-backed helper returns a **single value per file** (a
-#' numeric scalar), unlike the tibble-returning `probe_*()`, `mediainfo_query()`,
-#' and `mediainfo_template()` readers.
+#' The function returns one number for each file. The `probe_*()` functions,
+#' [mediainfo_query()] and [mediainfo_template()] return tibbles instead.
 #'
-#' @param file A character vector of one or more media-file paths.
+#' @param file A character vector of one or more media file paths.
 #' @return A double vector (one per file) giving the video height in px.
 #'
 #' @seealso [mediainfo_parameter()] for arbitrary MediaInfo fields, and
-#'   [probe_all()] for the FFprobe backend.
+#'   [probe_all()] to read information with FFprobe.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -450,20 +470,20 @@ get_height <- function(file) {
 
 # get_sample_rate() ------------------------------------------------------
 
-#' Get the audio sampling rate of a media file
+#' Get the audio sample rate of a media file
 #'
-#' Use MediaInfo to quickly look up the audio sampling rate of a media file in
-#' hertz (Hz).
+#' `get_sample_rate()` uses the MediaInfo program to look up the audio sample
+#' rate of a media file, in hertz (Hz). The glossary in `vignette("tidymedia")`
+#' explains media terms such as sample rate.
 #'
-#' This **MediaInfo**-backed helper returns a **single value per file** (a
-#' numeric scalar), unlike the tibble-returning `probe_*()`, `mediainfo_query()`,
-#' and `mediainfo_template()` readers.
+#' The function returns one number for each file. The `probe_*()` functions,
+#' [mediainfo_query()] and [mediainfo_template()] return tibbles instead.
 #'
-#' @param file A character vector of one or more media-file paths.
-#' @return A double vector (one per file) giving the audio sampling rate in Hz.
+#' @param file A character vector of one or more media file paths.
+#' @return A double vector (one per file) giving the audio sample rate in Hz.
 #'
 #' @seealso [mediainfo_parameter()] for arbitrary MediaInfo fields, and
-#'   [probe_all()] for the FFprobe backend.
+#'   [probe_all()] to read information with FFprobe.
 #' @family metadata functions
 #' @examplesIf nzchar(Sys.which("mediainfo"))
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

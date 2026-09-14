@@ -206,3 +206,19 @@ Evidence is from 2026-09-13 on `26ce8895`. That commit contains `origin/master` 
 - AC5: at `264afff4` the pattern finds 27 identifiers in the 28 domain pages (round 3). At head, `git grep -wF` finds each of the 27 in `man/*.Rd`.
 - AC6: `devtools::check()` on `82b7c72d` gives 0 errors, 0 warnings and 0 notes, with spelling OK and tests included. `26ce8895` differs from it only in `cairn/` files. `devtools::test()` on `82b7c72d` gives 1738 tests, 0 failed, 0 errors, 5 skipped. On `26ce8895`, `devtools::document()` leaves `man/` and `NAMESPACE` unchanged, and `pkgdown::check_pkgdown()` on `82b7c72d` found no problems.
 - Consistency gate: `cairn_validate` passes. The diff adds no top-level file and touches only `R/`, `man/`, `tests/` and `cairn/`. It changes no `README`, `NEWS.md`, `DESCRIPTION` or `DESIGN.md`. No principle changed.
+
+### Review round 4 findings
+
+Three new-context reviewers ran on `693648c8`. The prior-review reviewer found no PR comments, and found every O, R2 and R3 fix still in place. The blame-history reviewer found no defects. The diff-bug reviewer found the code the same as at base, apart from the help-text generators in `R/audio-stream-doc.R`. It ranked 11 findings, listed here in its order. No finding shows an acceptance criterion failing, so none moves the status.
+
+- R4-1: `?with_timeout` says "Two calls do not read the limit", which reads as a full list. Measured with `options(tidymedia.timeout = "bad")`: `hardware_encoder()`, `find_ffmpeg()`, `refresh_ffmpeg_capabilities()` and a pipeline built with no run also give no error. The code comment limits the claim to paths that run a program. The ledger row for `tidymedia-package` still says this text was deleted. New in `82b7c72d`.
+- R4-2: on the 10 `_batch` pages with an `audio_stream` column, "reads `NULL` this way" follows the column sentences, so "this way" points to "It does not fall back to the argument". New in `82b7c72d`.
+- R4-3: `?refresh_ffmpeg_capabilities` Parallel workers says a worker does not get your session's record. Measured: `plan(multicore)` workers are forked, so they get the record and ask 0 times. `plan(multisession)` workers keep their record across calls. A discard in your session reaches forks made after it. Base had the same premise.
+- R4-4: the `separation_container` text says "The other every-track functions do not fail" for an input with no audio. On `?separate_audio_video` that includes `separate_audio_video_batch()`, whose row fails (measured). New in `82b7c72d`.
+- R4-5: `?audio_stream` says the functions that pass video through give no error for an input with no audio, which covers `separate_audio_video()`. It names only `separate_audio_video()` and `normalize_audio()` as failing. Measured: `extract_audio()` and `convert_audio()` fail too. Same fact at base.
+- R4-6: on `?normalize_audio` and `?normalize_audio_batch`, "The first-track family reads `NULL` this way" is followed by "This function reads `NULL` as the first track only". This is the repetition R3-14 fixed elsewhere.
+- R4-7: `?mediainfo_parameter` Value does not say that a known section the file lacks (`"Text"`) also gives an empty value. It also omits `NA` for no output at all. The second part is not confirmed.
+- R4-8: `?install_on_win` Value says the Errors section lists "the error classes the call gives". A write failure in `set_program()` at the end gives an error with no class. Not confirmed.
+- R4-9: `?local_timeout` says "The first two cases also apply to `withr::local_options()`", which implies the third does not. It likely does. Not measured.
+- R4-10: `?refresh_ffmpeg_capabilities` Details says the first `hardware = "nvenc"` call asks FFmpeg. That is not so when `tidymedia.hardware_encoders` is set. Read from `hardware_encoder_available()`. Same at base.
+- R4-11: `R/timeout.R:57` is a 125-character comment line, new in `82b7c72d`.

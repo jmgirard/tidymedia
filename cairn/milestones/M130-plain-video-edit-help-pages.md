@@ -40,7 +40,7 @@ The M130 help-page domain uses plain English for an R user who does not know FFm
 ## Tasks
 
 - [x] T1: Record in a new M130 ledger section the base commit, the domain page list, the AC4 identifiers and the sweep output over the domain at the base commit.
-- [ ] T2: Rewrite `crop_video()` and `format_for_web()`, and their batch pages.
+- [x] T2: Rewrite `crop_video()` and `format_for_web()`, and their batch pages.
 - [ ] T3: Rewrite `standardize_video()` and `strip_metadata()`, and their batch pages.
 - [ ] T4: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words, and a sentence that names the glossary stays. A base claim found false gets a ledger row and a line in the follow-up candidate row. Fill the ledger. Run the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
@@ -50,6 +50,7 @@ The M130 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-13: re-cut by /milestone-plan under D093: M130 keeps 8 of its 18 own pages, and the anonymize, segment, concatenate, compare and picture-in-picture pages moved to M134. The criteria audit and re-audit lines are in M129's work log, and cover this template.
 - 2026-09-14: implement started on branch `m130-plain-video-edit-help-pages`, cut from `9353ac4f`. No open choices, so no question gate.
 - 2026-09-14: T1 done. `### M130` ledger in `cairn/references/plain-docs.md`: base sweep over 8 pages read 380 sentences, 48 findings (31 words, 15 term, 2 dash), no AC4 identifiers, no page names the glossary.
+- 2026-09-14: T2 done. `crop_video`, `format_for_web` and their batch pages rewritten, each names the glossary, and the sweep over the 4 pages exits 0. A first draft reworded `crop_video_batch`'s `video_codec`, which is M129 shared text inherited by two M134 pages, so it was put back. `devtools::test()`: 0 failed, 0 errors, 5 skipped.
 
 ## Decisions
 

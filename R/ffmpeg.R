@@ -1371,6 +1371,10 @@ crop_video_pipeline <- function(input, output, width, height,
 
 #' Crop a video to a rectangular region
 #'
+#' Crop a video to a rectangular region. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec, container
+#' and stream copy.
+#'
 #' @param infile A string containing the path to a video file.
 #' @param outfile `r write_path_param("video")`
 #' @param width The width of the output video, in pixels.
@@ -1382,16 +1386,16 @@ crop_video_pipeline <- function(input, output, width, height,
 #' @param video_codec `r video_codec_unset_param()`
 #' @param audio_codec A string naming the output audio codec.
 #'   `r audio_codec_copy_sentences("the audio")` Stream-copying fails if
-#'   the output container cannot hold the source audio codec (e.g. FLAC in
-#'   \code{.mp4}) — name an encoder in that case.
+#'   the output container cannot hold the source audio codec, for example FLAC
+#'   in \code{.mp4}. In that case, name an encoder.
 #' @param hardware `r hardware_param(null_default = TRUE)`
 #' @param fallback `r fallback_param("software", unset = "picking")`
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return `r command_return()`
-#' @seealso [ffm_crop()], the builder it wraps; [has_hardware_encoder()] for the
-#'   \code{hardware} toggle;
+#' @seealso [ffm_crop()], the pipeline function it wraps;
+#'   [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [crop_video_batch()] for the many-file form.
 #' @family task functions
 #' @family audio selection functions
@@ -1481,22 +1485,25 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 
 #' Re-encode a video for web playback
 #'
-#' Re-encode a video into a widely compatible, web-friendly form (H.264 video
-#' with \code{yuv420p} and \code{+faststart}, AAC audio), padding odd
-#' dimensions down to even values as required by the codec.
+#' Re-encode a video into a widely compatible, web-friendly form: H.264 video
+#' with \code{yuv420p} and \code{+faststart}, and AAC audio. Odd dimensions are
+#' padded down to even values, as the codec requires. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec, pixel format
+#' and re-encode.
 #'
 #' @inheritParams crop_video
-#' @param hardware The encoder backend: \code{"none"} (default, software
-#'   libx264), \code{"nvenc"} for NVIDIA GPU H.264 encoding
-#'   (\code{"h264_nvenc"}), or \code{"videotoolbox"} for Apple GPU H.264
+#' @param hardware The encoder backend. \code{"none"} (default) uses software
+#'   libx264. \code{"nvenc"} uses NVIDIA GPU H.264 encoding
+#'   (\code{"h264_nvenc"}), and \code{"videotoolbox"} uses Apple GPU H.264
 #'   encoding (\code{"h264_videotoolbox"}). The backend you name is the one
-#'   used; an unavailable one aborts unless \code{fallback = TRUE}. See
+#'   used. An unavailable one aborts unless \code{fallback = TRUE}. See
 #'   \code{\link{has_hardware_encoder}}.
 #'   `r hardware_probe_sentences()`
 #' @param fallback `r fallback_param("libx264")`
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @return `r command_return()`
-#' @seealso [ffm_codec()] and [ffm_pixel_format()], among the builders it wraps;
+#' @seealso [ffm_codec()] and [ffm_pixel_format()], among the pipeline functions
+#'   it wraps;
 #'   [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [standardize_video()] for a configurable re-encode;
 #'   [format_for_web_batch()] for the many-file form.
@@ -5871,52 +5878,54 @@ derive_web_names <- function(input) {
 
 #' Crop Many Videos From a Jobs Table
 #'
-#' Crop many input videos to a rectangular region from a single jobs tibble —
-#' the **batch** (table-driven) sibling of [crop_video()] for when you have more
-#' than one file. Each row is one input. This is a thin wrapper over
-#' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
-#' the same crop pipeline as the scalar verb. Each row's geometry values are
-#' checked at this verb's own front door, so a bad cell is refused -- naming
-#' this function -- before any command runs.
+#' Crop many videos to a rectangular region, using one jobs table. This is the
+#' **batch** form of [crop_video()], for when you have more than one file. Each
+#' row is one input. The function is a thin wrapper over
+#' \code{\link{ffm_batch}}. It builds one reproducible command for each input,
+#' with the same crop steps as \code{crop_video()}. This function checks each
+#' row's crop size and position before any command runs. So a bad cell is
+#' refused with an error that names this function. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec, container
+#' and stream copy.
 #'
-#' @param jobs A data frame with one row per input and (at least) an
-#'   \code{input} column (source path). An optional \code{output} column names
-#'   the destination; when absent, one is derived per row by appending
-#'   \code{_cropped} to each input's basename, keeping the input's extension
-#'   (e.g. \code{clip.mp4} becomes \code{clip_cropped.mp4}). Each crop dimension
-#'   — \code{width}, \code{height}, \code{x}, \code{y} — may also appear as a
-#'   column to override the corresponding argument per row; rows (or dimensions)
-#'   omitting the column fall back to the argument. A \code{video_codec} column
-#'   overrides that argument per row, with \code{NA} meaning "leave the codec
-#'   unset" (the column's way of writing the argument's \code{NULL}); an
+#' @param jobs A data frame with one row per input. It needs at least an
+#'   \code{input} column, the source path. An optional \code{output} column
+#'   names the destination. Without it, each row's output name adds
+#'   \code{_cropped} to the input's base name and keeps its extension. For
+#'   example, \code{clip.mp4} becomes \code{clip_cropped.mp4}. A \code{width},
+#'   \code{height}, \code{x} or \code{y} column overrides that argument for each
+#'   row. A dimension with no column uses the argument. A \code{video_codec}
+#'   column overrides that argument for each row, and \code{NA} leaves the codec
+#'   unset. That is the column form of the argument's \code{NULL}. An
 #'   \code{audio_codec} column works the same way. An \code{audio_stream} column
-#'   overrides that argument per row, with \code{NA} meaning "keep every audio
-#'   track" (the column's way of writing that argument's \code{NULL}). Two rows
-#'   whose destination is the same path are refused before any row runs: a
-#'   repeated \code{output}, or a repeated \code{input} when there is no
-#'   \code{output} column. Any other columns are ignored.
-#' @param width,height The output crop size in pixels, applied to every row
-#'   unless \code{jobs} carries a column of the same name. Required: pass each as
-#'   an argument or supply the column (there is no default crop size).
-#' @param x,y The offset in pixels of the crop's left/top edge, applied to every
-#'   row unless \code{jobs} carries a column of the same name. Default: centered.
+#'   overrides that argument for each row, and \code{NA} keeps every audio
+#'   track. That is the column form of that argument's \code{NULL}. Two rows
+#'   with the same destination path are refused before any row runs. That
+#'   happens with a repeated \code{output}, or with a repeated \code{input} when
+#'   there is no \code{output} column. Any other columns are ignored.
+#' @param width,height The output crop size in pixels, for every row unless
+#'   \code{jobs} has a column of the same name. Each is required: pass it as an
+#'   argument or as a column. There is no default crop size.
+#' @param x,y The offset in pixels of the crop's left and top edge, for every
+#'   row unless \code{jobs} has a column of the same name. The default centers
+#'   the crop.
 #' @param video_codec A string naming the output video codec, applied to every
 #'   row lacking a \code{video_codec} column. \code{NULL} (default) leaves it
 #'   unset, so each output keeps its container's default encoder.
-#' @param audio_codec A string naming the output audio codec, applied to every
-#'   row lacking an \code{audio_codec} column. \code{"copy"} (default)
-#'   stream-copies the audio; name an encoder to transcode it, or \code{NULL} to
-#'   leave the codec unset so each output keeps its container's default encoder.
+#' @param audio_codec A string naming the output audio codec, for every row
+#'   when \code{jobs} has no \code{audio_codec} column. \code{"copy"} (default)
+#'   stream-copies the audio. Name an encoder to transcode it. \code{NULL}
+#'   leaves the codec unset, so each output keeps its container's default
+#'   encoder.
 #' @param hardware,fallback `r batch_hardware_param("crop_video")`
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
-#'   A call that is also wrong about a per-row value — a \code{width} or
-#'   \code{height} that is neither a positive number nor an FFmpeg expression
-#'   — is refused for the value first, whether or not this machine has the
-#'   encoder.
+#'   A call can also have a \code{width} or \code{height} that is neither a
+#'   positive number nor an FFmpeg expression. That call is refused for the
+#'   value first, whether or not this machine has the encoder.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @inheritParams extract_audio_batch
 #' @return `r jobs_return()`
-#' @seealso [crop_video()], the scalar verb it wraps; [ffm_batch()], the batch
+#' @seealso [crop_video()], the single-file function it wraps; [ffm_batch()], the batch
 #'   runner; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [standardize_video_batch()] to re-encode in batch.
 #' @family task functions
@@ -6046,38 +6055,42 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 
 #' Re-encode Many Videos for the Web From a Jobs Table
 #'
-#' Re-encode many input videos into a widely compatible, web-friendly form from
-#' a single jobs tibble — the **batch** (table-driven) sibling of
-#' [format_for_web()] for when you have more than one file. Each row is one
-#' input. This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible
-#' compiled command per input, sharing the same fixed H.264/AAC/\code{+faststart}
-#' pipeline as the scalar verb (no per-row knobs).
+#' Re-encode many videos into a widely compatible, web-friendly form, using one
+#' jobs table. This is the **batch** form of [format_for_web()], for when you
+#' have more than one file. Each row is one input. The function is a thin
+#' wrapper over \code{\link{ffm_batch}}. It builds one reproducible command for
+#' each input. Each command uses the same fixed H.264, AAC and
+#' \code{+faststart} steps as \code{format_for_web()}, with no per-row settings.
+#' The glossary in \code{vignette("tidymedia")} explains media terms such as
+#' codec and re-encode.
 #'
-#' @param jobs A data frame with one row per input and (at least) an
-#'   \code{input} column (source path). An optional \code{output} column names
-#'   the destination; when absent, one is derived per row by appending
-#'   \code{_web} to each input's basename with an \code{.mp4} extension (the web
-#'   re-encode always writes H.264/mp4), e.g. \code{clip.mkv} becomes
-#'   \code{clip_web.mp4}. Two rows whose destination is the same path are
-#'   refused before any row runs: a repeated \code{output}, or two derived
-#'   names that match, as \code{clip.mov} and \code{clip.mkv} both give
-#'   \code{clip_web.mp4}. An optional numeric \code{audio_stream} column (\code{NA} to keep
-#'   every audio track in that row) overrides the \code{audio_stream} argument
-#'   per row. Any other columns are ignored — including \code{video_codec} and
-#'   \code{audio_codec}, which the sibling batch verbs read as per-row overrides
-#'   but this one does not: the web recipe fixes both codecs by identity (H.264
-#'   video, AAC audio). For per-row codecs use a verb that exposes them, such as
+#' @param jobs A data frame with one row per input. It needs at least an
+#'   \code{input} column, the source path. An optional \code{output} column
+#'   names the destination. Without it, each row's output name adds \code{_web}
+#'   to the input's base name, with an \code{.mp4} extension. The web re-encode
+#'   always writes H.264 in mp4. For example, \code{clip.mkv} becomes
+#'   \code{clip_web.mp4}. Two rows with the same destination path are refused
+#'   before any row runs. That happens with a repeated \code{output}, or with
+#'   two derived names that match. For example, \code{clip.mov} and
+#'   \code{clip.mkv} both give \code{clip_web.mp4}. An optional numeric
+#'   \code{audio_stream} column overrides the \code{audio_stream} argument for
+#'   each row. \code{NA} keeps every audio track in that row. Any other columns
+#'   are ignored, \code{video_codec} and \code{audio_codec} included. The
+#'   sibling batch functions read those two columns as per-row overrides, but
+#'   this one does not. The web recipe fixes both codecs: H.264 video and AAC
+#'   audio. For per-row codecs, use a function that has them, such as
 #'   \code{\link{standardize_video_batch}} or \code{\link{crop_video_batch}}.
-#' @param hardware The encoder backend applied to every row: \code{"none"}
-#'   (default, software libx264), \code{"nvenc"} for NVIDIA GPU H.264
-#'   encoding, or \code{"videotoolbox"} for Apple GPU H.264 encoding.
-#'   Batch-wide (not a per-row column). See \code{\link{has_hardware_encoder}}.
+#' @param hardware The encoder backend for every row. \code{"none"} (default)
+#'   uses software libx264. \code{"nvenc"} uses NVIDIA GPU H.264 encoding, and
+#'   \code{"videotoolbox"} uses Apple GPU H.264 encoding. It applies to the
+#'   whole batch and is not read as a column. See
+#'   \code{\link{has_hardware_encoder}}.
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @inheritParams extract_audio_batch
 #' @inheritParams format_for_web
 #' @return `r jobs_return()`
-#' @seealso [format_for_web()], the scalar verb it wraps; [ffm_batch()], the
+#' @seealso [format_for_web()], the single-file function it wraps; [ffm_batch()], the
 #'   batch runner; [standardize_video_batch()] for a configurable re-encode.
 #' @family task functions
 #' @family audio selection functions

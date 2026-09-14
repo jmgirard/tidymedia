@@ -26,7 +26,7 @@ The M128 help-page domain uses plain English for an R user who does not know FFm
 - [x] AC3: Each page in the M128 domain whose `--prose` output at head matches a glossary stem names the glossary.
 - [x] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M128 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
 - [x] AC5: For every `man/*.Rd` file outside the M128 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
-- [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
+- [x] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
 
@@ -58,6 +58,7 @@ The M128 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-14: T4 checkpoint, half done: ledger filled. The full test, check and pkgdown run is not yet read.
 - 2026-09-14: T4 done. `devtools::test()` 0 failures (13866 passed, 5 skipped). `devtools::check()` 0 errors, 0 warnings, 0 notes. `pkgdown::check_pkgdown()` no problems. `devtools::document()` at head writes nothing. No test pinned changed wording. Status set to review.
 - 2026-09-14: review checkpoint, half done: AC1-AC5 evidence recorded and ticked, and `cairn_validate` passes. The AC6 run and the three reviewers are still running.
+- 2026-09-14: review pre-gate checkpoint: all six criteria verified at `3d8e0518`, and 4 introduced wording slips fixed and read by a fresh reader. roxygen2 was updated to 8.1.0 by user choice. The T4 line's `document()` result had rested on a roxygen2 version stop. No return.
 
 ## Decisions
 
@@ -84,4 +85,7 @@ Reviewer findings, ranked by each reviewer. Dispositions are proposed and wait f
 - S2 (minor): `?ffm_output_options` "after any added before" is a claim the base did not make. Proposed: reject, because the base verb "Append" already says the options go after earlier ones.
 - Gate triage, chosen by the user: the proposed dispositions above, as proposed. The user also chose to install roxygen2 8.1.0 from CRAN for AC6.
 - Fix-now edits: O1 now reads "It also gives an error when FFmpeg exits non-zero." O2 reads "use `"yuv420p"` for broad player compatibility". O3 reads "The failed rows can include rows that exited zero and rows that FFmpeg refused." O4 reads "Give more than one path for stacking." O8: the base-sweep counts are 14 `[<n> words]` and 12 `[term …]`, recounted from the base sweep. ROADMAP item (d) now says "a function". O7 became items (e) and (f) of the follow-up row and two ledger rows.
+- Fresh reader of the fix-now edits (D093), at `3d8e0518`: all four are true and make the base claim with nothing added. Its extra notes, each rejected: `?ffm_files` names stacking only, though `ffm_concat()` and `ffm_overlay()` also take several paths, which is incomplete base text rather than false. The O1 sentence sits in the `verify` item but is true. A roxygen line wraps early and renders correctly. A nested quote is in this Review section.
+- Re-check at `3d8e0518` after the fixes: the sweep over the 10 pages exits 0 with no finding. The AC3 stems and glossary names are the same six pages. The 7 AC4 identifiers are still found in 3 to 23 pages. `git diff --name-only dc6cbd20 HEAD -- man/` still lists only the 10 domain pages.
+- AC6 at `3d8e0518`, which replaces the "not yet met" line above: with roxygen2 8.1.0 installed, `devtools::document()` runs and leaves `man/`, `NAMESPACE` and `R/` unchanged. `devtools::test()` reports 0 failures, 13866 passed and 5 skipped. `devtools::check()` reports 0 errors, 0 warnings and 0 notes in 6m 13s. `pkgdown::check_pkgdown()` prints "No problems found".
 - S1, S3, S4, O5, O6 and the prior-review lens: no defect. The four known false base claims are in the ledger, no test pins changed wording, and no prior review finding is repeated.

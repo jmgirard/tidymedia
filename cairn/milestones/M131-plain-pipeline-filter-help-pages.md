@@ -26,7 +26,7 @@ The M131 help-page domain uses plain English for an R user who does not know FFm
 - [x] AC3: Each page in the M131 domain whose `--prose` output at head matches a glossary stem names the glossary.
 - [x] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M131 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
 - [x] AC5: For every `man/*.Rd` file outside the M131 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
-- [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
+- [x] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
 
@@ -65,3 +65,20 @@ Evidence gathered 2026-09-14 on branch head `5e6d75e1`. Master had not moved sin
 - AC3: the `--prose` output at head has a glossary stem on 6 pages: `ffm_concat`, `ffm_fps`, `ffm_loudnorm`, `ffm_overlay`, `ffm_trim` and `ffm_vstack`. Each of the 6 has a rendered sentence with `glossary` and `vignette("tidymedia")`. `ffm_crop`, `ffm_drawbox`, `ffm_hstack` and `ffm_scale` have no stem. The same glossary check on the base `ffm_trim` page reads false.
 - AC4: the only match at the base commit is `tidymedia_ffm`, 20 times. `git grep -lwF tidymedia_ffm HEAD -- 'man/*.Rd'` finds it in 23 files.
 - AC5: `git diff --name-only 08a4df26 HEAD -- man/` lists only the 10 domain pages, so no page outside the domain is in scope.
+- AC6: `devtools::document()` exits 0 and leaves the tree clean. `devtools::test()` gives FAIL 0, WARN 12, SKIP 5, PASS 13866. `devtools::check()` gives 0 errors, 0 warnings and 0 notes. `pkgdown::check_pkgdown()` prints "No problems found".
+- Consistency gate: `cairn_validate.py` exits 0 with all checks passed. No principle changed, so `cairn_impact` does not apply. The branch does not touch `README.Rmd`, `README.md`, `NEWS.md` (no entry, D091) or any top-level file.
+
+Independent review: three fresh reviewers. The [S] blame-history and [S] prior-review lenses found nothing, and the GitHub probe found no review threads. The [O] diff-bug lens found no false claim the branch added and no code change. Its ranked findings:
+
+- O1: `?ffm_concat` "use a direct command, such as `ffmpeg()`" hints that `ffprobe()` or `mediainfo()` could run the concat filter.
+- O2: `?ffm_concat` "at once" replaces "immediately" and can read as "all together".
+- O3: the ledger and the T3 work-log line say 7 pages with a stem name the glossary. The count is 6.
+- O4: follow-up row item (c) says every multi-input function drops the audio filters. `ffm_concat()` aborts instead, and only hstack, vstack and overlay set `complex`.
+- O5: `?ffm_loudnorm` Details "It makes one reproducible command": the subject "It" is unclear.
+- O6: `?ffm_loudnorm` Details: splitting the encoder sentence makes "accept whatever frame" and "refuse to open" read as a contradiction.
+- O7: the follow-up row's integer-refusal note leaves out `?ffm_overlay`, whose `x` and `y` also go through `check_dim()`.
+- O8: `?ffm_fps` "like the other filters that take one input" can include `ffm_loudnorm()`, an audio filter. The base text had the same reach.
+- O9: the second `?ffm_vstack` Description sentence moved to Details.
+- O10: FFmpeg wording from the base text stays, for example `-filter_complex` and "compiles to `-af`".
+- O11: `?ffm_loudnorm` `linear = FALSE` "leaves out the option, so the single-pass dynamic behavior does not change". FFmpeg 9.0.1 `-h filter=loudnorm` shows `linear` defaults to true. This is a base claim, not added by the branch.
+- O12: the ledger table under the base-commit heading also has a head Result column.

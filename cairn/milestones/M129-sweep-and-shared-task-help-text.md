@@ -1,6 +1,6 @@
 # M129: The prose sweep reads help pages correctly, and text repeated across the task function pages is written once, in plain English
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
@@ -43,7 +43,7 @@ Text repeated across the task function help pages is written once, in plain Engl
 - [x] T2: Write `tools/roxygen_repeats.R` to list the paragraphs AC1 defines. Before trusting a clean result, plant repeats and see each listed: in `@param` (also under two argument names), `@return`, the description and `@section`; wrapped at different points, including inside an Rd macro; ended by a tag, by a blank line and by a `#'` line of spaces; in 2 and in 3 blocks. See none listed for example code, `@examplesIf`, `@export`, `@family`, `@rdname` and `@inheritParams` lines, and an inline `r` call.
 - [x] T3: With the sweep from T1, record in a new M129 ledger section the base commit, the domain page list, the AC4 identifiers, the sweep output over the domain at the base commit, and the repeats listed at the base commit.
 - [x] T4: For each repeated paragraph whose copies make the same claim, keep one copy in plain English and reuse it with `@inheritParams`, `@inheritSection`, a `man-roxygen/` template, or a string in an `R/` doc file. Copies that differ in what they claim stay separate, with a ledger row. A base claim found false keeps its meaning and goes to the follow-up row. After `devtools::document()`, read the rendered shared text on each page that receives it.
-- [ ] T5: A test that pins changed wording now pins the new wording of the same property. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words. Fill the ledger. Run `tools/test_doc_prose_report.R`, the repeats script, the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
+- [x] T5: A test that pins changed wording now pins the new wording of the same property. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words. Fill the ledger. Run `tools/test_doc_prose_report.R`, the repeats script, the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
 ## Work log
 
@@ -62,6 +62,7 @@ Text repeated across the task function help pages is written once, in plain Engl
 - 2026-09-13: T4 done. `devtools::test()` gave 0 failures, 13866 passes and 5 skips. `man/` was regenerated after the `parallel` rewording. The repeats script exits 0, and the sweep comparison still finds no page with more findings and no cross-page finding. The rendered shared text was read on all 27 changed pages. No base claim was found false, so no follow-up row.
 - 2026-09-14: claim audit: 34 claims read, 7 corrected — `R/task-doc.R`, `tools/roxygen_repeats.R`, `tools/doc_prose_report.R`
 - 2026-09-14: T5 claim audit detail. A fresh [O] reader also compared each changed sentence with base. Two help sentences had moved from the base claim ("for example" widened the contradiction sentence, "only when" narrowed the FFprobe sentence) and were put back. Five tools/ header statements were wrong and were corrected, with a block-name fix in `roxygen_repeats.R`. The same reader re-read the corrections once and found all four groups true. It also found one base claim false (a timed-out probe warns instead of staying silent). That claim has a ledger row and is item (h) of the M127 help-text follow-up row. The earlier "no follow-up row" line is superseded by this.
+- 2026-09-14: T5 done, status set to review. At `75245894`: `devtools::document()` writes nothing, `devtools::check()` gives 0 errors, 0 warnings and 0 notes, `pkgdown::check_pkgdown()` finds no problems, and `devtools::test()` gives 0 failures, 13866 passes and 5 skips with no other R session running. Both tools/ plant tests pass, the repeats script exits 0, and the sweep comparison finds no problem. The ledger results section is filled.
 
 ## Decisions
 

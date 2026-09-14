@@ -10,7 +10,7 @@ _Last hygiene check: 2026-09-13 (M127 done and archived. PR #131 squash-merged, 
 |---|---|---|---|---|---|
 | M126 | The vignettes and README read as plain English for an R user | done | — | high | milestones/archive/M126-plain-vignettes-readme.md |
 | M127 | ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English | done | M126 | high | milestones/archive/M127-plain-setup-help-pages.md |
-| M129 | The prose sweep reads help pages correctly, and text repeated across the task function pages is written once, in plain English | in-progress | — | high | milestones/M129-sweep-and-shared-task-help-text.md |
+| M129 | The prose sweep reads help pages correctly, and text repeated across the task function pages is written once, in plain English | review | — | high | milestones/M129-sweep-and-shared-task-help-text.md |
 | M128 | The input, output and run pipeline help pages read as plain English | planned | M129 | high | milestones/M128-plain-pipeline-io-help-pages.md |
 | M131 | The filter and multi-input pipeline help pages read as plain English | planned | M129 | high | milestones/M131-plain-pipeline-filter-help-pages.md |
 | M132 | The FFmpeg-capability, frame and audio conversion help pages read as plain English | planned | M129 | high | milestones/M132-plain-capability-frame-audio-help-pages.md |

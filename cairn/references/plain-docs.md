@@ -1,10 +1,10 @@
-# Plain-English documentation rules and ledger (M126-M130)
+# Plain-English documentation rules and ledger (M126-M134)
 
 **Provenance.** Ingested 2026-09-13 by the M126-M130 plan, from the files in `vignettes/`, `R/` and `man/`. The inputs were three read-only surveys of `README.Rmd`, `vignettes/*.Rmd` and the `R/` roxygen blocks, and a criteria audit. All read commit `d7fa7058`.
 Pagination: —.
 Extraction: first-hand record, nothing to re-verify against — observed 2026-09-13.
 
-M126 to M130 read this page. The rules below define the terms their criteria use. Each milestone adds its own ledger section at the end.
+M126 to M134 read this page. The rules below define the terms their criteria use. Each milestone adds its own ledger section at the end. The series was re-cut on 2026-09-13 under D093 (corrected: it was M126-M130).
 
 ## Reader
 
@@ -17,6 +17,7 @@ The reader knows R, data frames and the pipe. The reader does not know FFmpeg, a
 3. Put the basic task first. Put error classes, option names and limits in a short section after it, or on the page that owns them.
 4. History, measured timings, internal ordering and test notes do not go in user docs. Move them to a code comment, or delete them.
 5. Use these names for the three kinds of function: "task functions" (for example `extract_audio()`), "pipeline functions" (the `ffm_*()` functions), and "direct commands" (`ffmpeg()`, `ffprobe()`, `mediainfo()`). The `@family` labels use the same names: "task functions", "pipeline functions" and "direct command functions".
+6. Change form, not claims (D093, from M128 on). A rewrite changes how a sentence says a fact, not what it claims. It can split, shorten, reorder, move or delete a claim. It adds no claim about what the package does that the base text did not make. A sentence whose only claim is that `vignette("tidymedia")` has a glossary is not such a claim. A base claim found false keeps its meaning. It gets a ledger row with its evidence and goes to the milestone's follow-up candidate row.
 
 ## Maintainer terms
 
@@ -45,14 +46,31 @@ The prose sweep is `Rscript tools/doc_prose_report.R <files>`. M126 writes it.
 - It prints each sentence over 25 words and each sentence that matches a maintainer term. If it prints a sentence, it exits with status 1.
 - With `--prose`, it prints the swept prose, one sentence per line.
 
+### Sweep terms for M128-M134
+
+These definitions assume the sweep as M129 leaves it.
+
+- The prose sweep runs as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R <files>`.
+- Report mode prints each finding as `<path>:<line>: [<n> words] <sentence>` or `<path>:<line>: [term <regex>] <sentence>`, with the line of the rendered text. A dash finding prints as `<path>:<line>: [dash in Rd source] <source line>`, with the source line.
+- It exits 0 when it prints no finding, 1 when it prints one, 2 when a file parses to no sentences, and 3 on a usage error or a missing file.
+- A comparison with the base commit runs the head version of the sweep over each page's text at the base commit. `git show <base>:man/<page>.Rd` writes that text to a file of the same name in a temporary folder, and the outputs are paired by file name.
+- Two sweep outputs are compared per page. A `[<n> words]` or `[term …]` finding counts once each time it is printed, keyed by its kind and sentence text. Line numbers are ignored. `[dash in Rd source]` lines are compared as one count per page.
+- A page names the glossary when its `tools::Rd2txt()` rendering has a sentence that contains the word `glossary` and the text `vignette("tidymedia")`.
+
 ## Domains
 
-Each help-page domain is the set of files that `grep -l -E "^% Please edit documentation in R/(<files>)\.R$" man/*.Rd` returns.
+A milestone's domain is the page list its ledger section records at the base commit, plus every `man/*.Rd` file added since that commit. The page milestones after M129 also include every `man/*.Rd` file that M129 added. A page list is made with `grep -l -E "^% Please edit documentation in R/<file>\.R$" man/*.Rd`, kept only where the base name matches the pattern.
 
-- M127: `program_management|mediainfo|tidymedia-package|timeout|ffprobe|audio-stream-doc|ffm_batch|ffm_jobs|cache|verify|ffm_manifest|utils-tidy-eval|ffm_oop` (28 files on 2026-09-13).
-- M128: `ffm` (20 files on 2026-09-13).
-- M129: `ffmpeg`, then only base names matching `audio|frame|^ffmpeg|hardware` (16 files on 2026-09-13).
-- M130: `ffmpeg` (34 files on 2026-09-13, which include M129's 16).
+- M127: `program_management|mediainfo|tidymedia-package|timeout|ffprobe|audio-stream-doc|ffm_batch|ffm_jobs|cache|verify|ffm_manifest|utils-tidy-eval|ffm_oop`, no name filter (28 files on 2026-09-13).
+- M129: `ffmpeg`, no name filter (34 files on 2026-09-13).
+- M128: `ffm`, names `^ffm_(files|copy|seek|map|drop|codec|pixel_format|output_options|compile|run)$` (10 files on 2026-09-13).
+- M131: `ffm`, names `^ffm_(trim|crop|scale|fps|drawbox|loudnorm|hstack|vstack|overlay|concat)$` (10 files on 2026-09-13).
+- M132: `ffmpeg`, names `^(ffmpeg|ffmpeg_codecs|ffmpeg_encoders|hardware_encoder|extract_frame|sample_frames|extract_audio|convert_audio)(_batch)?$` (12 files on 2026-09-13).
+- M133: `ffmpeg`, names `^(separate_audio_video|normalize_audio)(_batch)?$` (4 files on 2026-09-13).
+- M130: `ffmpeg`, names `^(crop_video|format_for_web|standardize_video|strip_metadata)(_batch)?$` (8 files on 2026-09-13).
+- M134: `ffmpeg`, names `^(anonymize_video|segment_video|concatenate_videos|compare_videos|picture_in_picture)(_batch)?$` (10 files on 2026-09-13).
+
+The domains were re-cut on 2026-09-13 under D093 (corrected: M128 was all 20 `ffm` files, M129 was 16 files, and M130 was all 34 `ffmpeg` files).
 
 ## Ledger
 

@@ -1,0 +1,60 @@
+# M129: The prose sweep reads help pages correctly, and text repeated across the task function pages is written once, in plain English
+
+- **Status:** planned
+- **Priority:** high
+- **Depends on:** —
+- **Driving RR:** —
+- **Principles touched:** —
+- **Resolves:** —
+- **Surface tier:** user-facing — shared help text that renders on 34 task function pages
+- **Branch/PR:** —
+
+## Goal
+
+Text repeated across the task function help pages is written once, in plain English, and the prose sweep that checks it reads help pages correctly.
+
+## Scope
+
+**In:** the six parse gaps in `tools/doc_prose_report.R` (ROADMAP item (o) of the shipped-docs row, absorbed here), and a committed check script for them. A new script `tools/roxygen_repeats.R`. The paragraphs repeated across roxygen blocks in `R/ffmpeg.R`, written once and reused, in plain English under rules 1-6 of `cairn/references/plain-docs.md`. The tests that pin wording of that text. Rule 6 (D093) holds: the shared text keeps the claims it had. Review triage follows D093.
+
+**Out:** page-specific prose on the 34 pages goes to M132, M133, M130 and M134. The `ffm_*()` pages go to M128 and M131. New sweep findings on the M126 and M127 files go to a candidate row. The other shipped-docs row items stay on that row. Code comments stay as they are. `NEWS.md` gets no entry (D091).
+
+## Acceptance criteria
+
+- [ ] AC1: At head, `Rscript tools/roxygen_repeats.R R/ffmpeg.R` lists no paragraph found in two or more roxygen blocks, or, for each paragraph it lists, a ledger row quotes the claim it makes in each block that holds it and names two blocks where those claims differ. A paragraph is the text of a run of `#'` lines that starts at a tag or after a blank `#'` line and ends before the next tag or blank `#'` line, with any leading tag and argument name removed and runs of white space made one space. Lines under `@examples` or `@examplesIf`, lines holding only `@export`, `@examples`, `@family …`, `@rdname …` or `@inheritParams …`, and a paragraph whose text is only one inline `` `r …` `` call, are not paragraphs.
+- [ ] AC2: Every page on the M129 domain list exists at head, and the prose sweep over the M129 domain at head exits with status 0 or 1 and prints no `[<n> words]` or `[term …]` finding whose sentence text it also prints for another page of the M129 domain.
+- [ ] AC3: On each page of the M129 domain, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines.
+- [ ] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M129 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
+- [ ] AC5: For every `man/*.Rd` file outside the M129 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
+- [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
+
+## Coverage
+
+- AC1 → T2, T4, T5
+- AC2 → T1, T4, T5
+- AC3 → T1, T3, T4, T5
+- AC4 → T3, T5
+- AC5 → T4, T5
+- AC6 → T5
+
+## Tasks
+
+- [ ] T1: Fix the six parse gaps of item (o) in `tools/doc_prose_report.R`, and add exit status 3 for a usage error or a missing file. Write `tools/test_doc_prose_report.R`, which plants each part of each gap and exits 0 only when every plant is read correctly. See each plant fail before its fix. Vary: a lowercase start with "tidymedia" and with another word; a wrapped argument line at two indents; a non-UTF-8 locale run; the empty file first, in the middle and last; no files and a missing file; ` -- ` and `---` in `.Rmd` prose and in a code span; a four-backtick fence, a `|` in a code span, and prose between `<` and `>`. Rerun the sweep over the M126 and M127 files, and send any new finding to a candidate row.
+- [ ] T2: Write `tools/roxygen_repeats.R` to list the paragraphs AC1 defines. Before trusting a clean result, plant repeats and see each listed: in `@param` (also under two argument names), `@return`, the description and `@section`; wrapped at different points, including inside an Rd macro; ended by a tag, by a blank line and by a `#'` line of spaces; in 2 and in 3 blocks. See none listed for example code, `@examplesIf`, `@export`, `@family`, `@rdname` and `@inheritParams` lines, and an inline `r` call.
+- [ ] T3: With the sweep from T1, record in a new M129 ledger section the base commit, the domain page list, the AC4 identifiers, the sweep output over the domain at the base commit, and the repeats listed at the base commit.
+- [ ] T4: For each repeated paragraph whose copies make the same claim, keep one copy in plain English and reuse it with `@inheritParams`, `@inheritSection`, a `man-roxygen/` template, or a string in an `R/` doc file. Copies that differ in what they claim stay separate, with a ledger row. A base claim found false keeps its meaning and goes to the follow-up row. After `devtools::document()`, read the rendered shared text on each page that receives it.
+- [ ] T5: A test that pins changed wording now pins the new wording of the same property. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words. Fill the ledger. Run `tools/test_doc_prose_report.R`, the repeats script, the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
+
+## Work log
+
+- 2026-09-13: created by /milestone-plan (series M126-M130). The criteria audit and gate choices are logged in M126's work log.
+- 2026-09-13: re-cut by /milestone-plan under D093 into M128, M129, M130 and M131-M134. M129 now holds the sweep fixes and the shared text. Its page rewrites moved to M132 and M133.
+- 2026-09-13: criteria audit (full): 21 findings on the draft. 13 clear fixes applied (exit status, locale, recorded domains, paragraph definition, escape clause, plants, count comparison, regex, output format, counts). 4 judgment calls went to the gate.
+- 2026-09-13: re-audit (full) of the gate-changed criteria: 22 findings. 13 clear fixes applied (AC5 by `git diff` and glossary, inline-r exclusion, exit 3, domain from the ledger, plants, rendered glossary check, base files by `git show`). Judgment calls settled: sweep tests stay a task, not a criterion; stems, locale pin and 0 notes kept.
+- 2026-09-13: plan gate chose M129 fixing all text repeated across pages over merging identical copies only, because 35 repeated finding sentences account for 126 of the 393 findings on the 34 pages; falsified by a page milestone after M129 that must edit shared text to pass its own criteria.
+- 2026-09-13: plan gate chose fixing the sweep's parse gaps in M129 over leaving them as M127 did, because task pages are mostly argument text, which the gaps misread; falsified by the fixed sweep reporting no new finding on the 34 pages.
+- 2026-09-13: size: M129 changes rendered text on up to 34 pages, but its work is about 38 distinct paragraphs, which one reviewer can read against the code. This is its D093 size justification.
+
+## Decisions
+
+## Review

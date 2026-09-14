@@ -21,11 +21,11 @@ Text repeated across the task function help pages is written once, in plain Engl
 
 ## Acceptance criteria
 
-- [ ] AC1: At head, `Rscript tools/roxygen_repeats.R R/ffmpeg.R` lists no paragraph found in two or more roxygen blocks, or, for each paragraph it lists, a ledger row quotes the claim it makes in each block that holds it and names two blocks where those claims differ. A paragraph is the text of a run of `#'` lines that starts at a tag or after a blank `#'` line and ends before the next tag or blank `#'` line, with any leading tag and argument name removed and runs of white space made one space. Lines under `@examples` or `@examplesIf`, lines holding only `@export`, `@examples`, `@family …`, `@rdname …` or `@inheritParams …`, and a paragraph whose text is only one inline `` `r …` `` call, are not paragraphs.
-- [ ] AC2: Every page on the M129 domain list exists at head, and the prose sweep over the M129 domain at head exits with status 0 or 1 and prints no `[<n> words]` or `[term …]` finding whose sentence text it also prints for another page of the M129 domain.
-- [ ] AC3: On each page of the M129 domain, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines.
-- [ ] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M129 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
-- [ ] AC5: For every `man/*.Rd` file outside the M129 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
+- [x] AC1: At head, `Rscript tools/roxygen_repeats.R R/ffmpeg.R` lists no paragraph found in two or more roxygen blocks, or, for each paragraph it lists, a ledger row quotes the claim it makes in each block that holds it and names two blocks where those claims differ. A paragraph is the text of a run of `#'` lines that starts at a tag or after a blank `#'` line and ends before the next tag or blank `#'` line, with any leading tag and argument name removed and runs of white space made one space. Lines under `@examples` or `@examplesIf`, lines holding only `@export`, `@examples`, `@family …`, `@rdname …` or `@inheritParams …`, and a paragraph whose text is only one inline `` `r …` `` call, are not paragraphs.
+- [x] AC2: Every page on the M129 domain list exists at head, and the prose sweep over the M129 domain at head exits with status 0 or 1 and prints no `[<n> words]` or `[term …]` finding whose sentence text it also prints for another page of the M129 domain.
+- [x] AC3: On each page of the M129 domain, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines.
+- [x] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M129 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
+- [x] AC5: For every `man/*.Rd` file outside the M129 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
 - [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
@@ -67,3 +67,11 @@ Text repeated across the task function help pages is written once, in plain Engl
 ## Decisions
 
 ## Review
+
+Evidence from 2026-09-14 at `19b3327a`. Base `db460d58` equals `origin/master`, so no sync merge was needed.
+
+- AC1: `Rscript tools/roxygen_repeats.R R/ffmpeg.R` exits 0 and prints "279 paragraphs in 34 blocks" with no paragraph listed. The same script over `R/ffmpeg.R` at base lists repeats, so it can fail. `tools/test_roxygen_repeats.R` passes 15 of 15 plants.
+- AC2: all 34 ledger pages exist at head, and the domain recomputed from the base headers equals the ledger list. `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R` over the 34 head pages exits 1 with 252 findings. No `[<n> words]` or `[term …]` sentence is printed for two pages. At base, 26 sentences were. `tools/test_doc_prose_report.R` passes 25 of 25 plants.
+- AC3: the head sweep ran over each page's base text from `git show db460d58:man/<page>.Rd`, giving 393 findings (256 words, 118 term, 19 dash), as the ledger records. Keyed by page, kind and sentence, no finding prints more times at head than at base. No page has more `[dash in Rd source]` lines (19 at base, 11 at head).
+- AC4: the two patterns over the 34 base pages match 11 identifiers, as the ledger lists. `git grep -lwF` finds each in 1 to 7 `man/*.Rd` files at head (`tm_video_error` in 1, `tidymedia_timeout` in 2).
+- AC5: `git diff --name-only db460d58 HEAD -- man/` lists 27 files, all on the domain list, and adds no file. No page outside the domain is compared, so the criterion holds with an empty set.

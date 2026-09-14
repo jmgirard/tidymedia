@@ -2,7 +2,7 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-09-14 (M129 done and archived. PR #132 squash-merged with 8/8 R checks green and Codecov red by user choice. No returns. One candidate row added, item (i) added to the help-text claims row, and M126's terminal row pruned for the line cap. LESSONS unchanged at 36 lines and 19,954/20,000 bytes. `false-greens.md` 25,996/26,000 and `guard-ordering.md` 5,451/11,000 unchanged. `ROADMAP.md` is over its 24,000-byte budget, and `/cairn-triage` is the remedy. `cairn_validate` clean.)_
+_Last hygiene check: 2026-09-14 (M128 done and archived. PR #133 squash-merged with 10/10 checks green. No returns. Items (e) and (f) added to the M128 follow-up row. LESSONS 36 lines and 19,881/20,000 bytes: one line added, and the stalest (M46) pruned. `false-greens.md` 25,996/26,000 and `guard-ordering.md` 5,451/11,000 unchanged. `ROADMAP.md` is still over its 24,000-byte budget, and `/cairn-triage` is the remedy. `cairn_validate` clean.)_
 
 ## Milestones
 
@@ -10,7 +10,7 @@ _Last hygiene check: 2026-09-14 (M129 done and archived. PR #132 squash-merged w
 |---|---|---|---|---|---|
 | M127 | ?tidymedia and the setup, metadata, timeout and batch help pages read as plain English | done | M126 | high | milestones/archive/M127-plain-setup-help-pages.md |
 | M129 | The prose sweep reads help pages correctly, and text repeated across the task function pages is written once, in plain English | done | — | high | milestones/archive/M129-sweep-and-shared-task-help-text.md |
-| M128 | The input, output and run pipeline help pages read as plain English | review | M129 | high | milestones/M128-plain-pipeline-io-help-pages.md |
+| M128 | The input, output and run pipeline help pages read as plain English | done | M129 | high | milestones/archive/M128-plain-pipeline-io-help-pages.md |
 | M131 | The filter and multi-input pipeline help pages read as plain English | planned | M129 | high | milestones/M131-plain-pipeline-filter-help-pages.md |
 | M132 | The FFmpeg-capability, frame and audio conversion help pages read as plain English | planned | M129 | high | milestones/M132-plain-capability-frame-audio-help-pages.md |
 | M133 | The separate-audio-video and normalize-audio help pages read as plain English | planned | M129 | high | milestones/M133-plain-separate-normalize-help-pages.md |

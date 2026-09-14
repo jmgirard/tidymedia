@@ -15,26 +15,28 @@ format_for_web_batch(
 )
 }
 \arguments{
-\item{jobs}{A data frame with one row per input and (at least) an
-\code{input} column (source path). An optional \code{output} column names
-the destination; when absent, one is derived per row by appending
-\code{_web} to each input's basename with an \code{.mp4} extension (the web
-re-encode always writes H.264/mp4), e.g. \code{clip.mkv} becomes
-\code{clip_web.mp4}. Two rows whose destination is the same path are
-refused before any row runs: a repeated \code{output}, or two derived
-names that match, as \code{clip.mov} and \code{clip.mkv} both give
-\code{clip_web.mp4}. An optional numeric \code{audio_stream} column (\code{NA} to keep
-every audio track in that row) overrides the \code{audio_stream} argument
-per row. Any other columns are ignored — including \code{video_codec} and
-\code{audio_codec}, which the sibling batch verbs read as per-row overrides
-but this one does not: the web recipe fixes both codecs by identity (H.264
-video, AAC audio). For per-row codecs use a verb that exposes them, such as
+\item{jobs}{A data frame with one row per input. It needs at least an
+\code{input} column, the source path. An optional \code{output} column
+names the destination. Without it, each row's output name adds \code{_web}
+to the input's base name, with an \code{.mp4} extension. The web re-encode
+always writes H.264 in mp4. For example, \code{clip.mkv} becomes
+\code{clip_web.mp4}. Two rows with the same destination path are refused
+before any row runs. That happens with a repeated \code{output}, or with
+two derived names that match. For example, \code{clip.mov} and
+\code{clip.mkv} both give \code{clip_web.mp4}. An optional numeric
+\code{audio_stream} column overrides the \code{audio_stream} argument for
+each row. \code{NA} keeps every audio track in that row. Any other columns
+are ignored, \code{video_codec} and \code{audio_codec} included. The
+sibling batch functions read those two columns as per-row overrides, but
+this one does not. The web recipe fixes which codecs the output uses:
+H.264 video and AAC audio. For per-row codecs, use a function that has them, such as
 \code{\link{standardize_video_batch}} or \code{\link{crop_video_batch}}.}
 
-\item{hardware}{The encoder backend applied to every row: \code{"none"}
-(default, software libx264), \code{"nvenc"} for NVIDIA GPU H.264
-encoding, or \code{"videotoolbox"} for Apple GPU H.264 encoding.
-Batch-wide (not a per-row column). See \code{\link{has_hardware_encoder}}.
+\item{hardware}{The encoder backend for every row. \code{"none"} (default)
+uses software libx264. \code{"nvenc"} uses NVIDIA GPU H.264 encoding, and
+\code{"videotoolbox"} uses Apple GPU H.264 encoding. It applies to the
+whole batch and is not read as a column. See
+\code{\link{has_hardware_encoder}}.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.}
 
 \item{fallback}{A logical. When a \code{hardware} other than \code{"none"} is requested but its encoder is unavailable, \code{TRUE} re-encodes with software libx264 and a message. \code{FALSE} (default) aborts instead. A \code{video_codec} in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever \code{fallback} says.}
@@ -55,12 +57,14 @@ or only compile them for inspection (\code{FALSE}).}
 The \code{jobs} tibble with an added \code{command} column. When \code{run = TRUE}, it also has a \code{success} column, plus \code{verified} or a provenance manifest, each when requested through \code{...}. See \code{\link{ffm_batch}}.
 }
 \description{
-Re-encode many input videos into a widely compatible, web-friendly form from
-a single jobs tibble — the \strong{batch} (table-driven) sibling of
-\code{\link[=format_for_web]{format_for_web()}} for when you have more than one file. Each row is one
-input. This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible
-compiled command per input, sharing the same fixed H.264/AAC/\code{+faststart}
-pipeline as the scalar verb (no per-row knobs).
+Re-encode many videos into a widely compatible, web-friendly form, using one
+jobs table. This is the \strong{batch} form of \code{\link[=format_for_web]{format_for_web()}}, for when you
+have more than one file. Each row is one input. The function is a thin
+wrapper over \code{\link{ffm_batch}}. It builds one reproducible command for
+each input. Each command uses the same fixed H.264, AAC and
+\code{+faststart} steps as \code{format_for_web()}, with no per-row settings.
+The glossary in \code{vignette("tidymedia")} explains media terms such as
+codec and re-encode.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -68,8 +72,8 @@ jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"))
 format_for_web_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=format_for_web]{format_for_web()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}}, the
-batch runner; \code{\link[=standardize_video_batch]{standardize_video_batch()}} for a configurable re-encode.
+\code{\link[=format_for_web]{format_for_web()}}, the single-input form it wraps;
+\code{\link[=ffm_batch]{ffm_batch()}}, the batch runner; \code{\link[=standardize_video_batch]{standardize_video_batch()}} for a configurable re-encode.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

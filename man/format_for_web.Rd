@@ -18,11 +18,11 @@ format_for_web(
 
 \item{outfile}{A string containing the path of the video file to write.}
 
-\item{hardware}{The encoder backend: \code{"none"} (default, software
-libx264), \code{"nvenc"} for NVIDIA GPU H.264 encoding
-(\code{"h264_nvenc"}), or \code{"videotoolbox"} for Apple GPU H.264
+\item{hardware}{The encoder backend. \code{"none"} (default) uses software
+libx264. \code{"nvenc"} uses NVIDIA GPU H.264 encoding
+(\code{"h264_nvenc"}), and \code{"videotoolbox"} uses Apple GPU H.264
 encoding (\code{"h264_videotoolbox"}). The backend you name is the one
-used; an unavailable one aborts unless \code{fallback = TRUE}. See
+used. An unavailable one aborts unless \code{fallback = TRUE}. See
 \code{\link{has_hardware_encoder}}.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it.}
 
@@ -37,16 +37,19 @@ or return the compiled command without running it (\code{FALSE}).}
 The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
-Re-encode a video into a widely compatible, web-friendly form (H.264 video
-with \code{yuv420p} and \code{+faststart}, AAC audio), padding odd
-dimensions down to even values as required by the codec.
+Re-encode a video into a widely compatible, web-friendly form: H.264 video
+with \code{yuv420p} and \code{+faststart}, and AAC audio. Odd dimensions are
+padded down to even values, as the codec requires. The glossary in
+\code{vignette("tidymedia")} explains media terms such as codec, pixel format
+and re-encode.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 format_for_web(video, "web.mp4", run = FALSE)
 }
 \seealso{
-\code{\link[=ffm_codec]{ffm_codec()}} and \code{\link[=ffm_pixel_format]{ffm_pixel_format()}}, among the builders it wraps;
+\code{\link[=ffm_codec]{ffm_codec()}} and \code{\link[=ffm_pixel_format]{ffm_pixel_format()}}, among the pipeline functions
+it wraps;
 \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
 \code{\link[=standardize_video]{standardize_video()}} for a configurable re-encode;
 \code{\link[=format_for_web_batch]{format_for_web_batch()}} for the many-file form.

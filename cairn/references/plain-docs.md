@@ -370,3 +370,42 @@ Each claim keeps its meaning at head. All are items of the M128 follow-up row in
 | `ffm_map` | A mapping is added beside `-map "[vout]"` for a function with several inputs. | `ffm_concat()` takes several inputs but sets no `[vout]` map. |
 | `ffm_seek` | `reencode = FALSE` is a fast, lossless copy. | `ffm_groups()` only moves `-ss` and `-to` before `-i` and adds `-avoid_negative_ts`. Without `ffm_copy()`, FFmpeg re-encodes. Found by M128 review. |
 | `ffm_drop` | The title says it removes streams from the media file. | It removes them from the output only. The input file is not changed. Found by M128 review. |
+
+### M130
+
+The base commit is `9353ac4f`. At that commit, the domain is the 8 `man/*.Rd` files whose header names `R/ffmpeg.R` and whose base name matches the M130 filter: `crop_video`, `crop_video_batch`, `format_for_web`, `format_for_web_batch`, `standardize_video`, `standardize_video_batch`, `strip_metadata` and `strip_metadata_batch`.
+
+#### Sweep output at the base commit (AC1, AC2, AC3, AC4)
+
+The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` over the 8 files that `git show 9353ac4f:man/<page>.Rd` wrote to a temporary folder. It read 380 sentences and exited 1 with 48 findings: 31 `[<n> words]`, 15 `[term …]` and 2 `[dash in Rd source]`. The same command gives the full output again. Stems are the glossary stems in each page's `--prose` output. No page has an AC4 identifier. No page named the glossary.
+
+| Page | Words | Term | Dash | Stems (AC3) | Result |
+|---|---|---|---|---|---|
+| crop_video | 0 | 1 | 0 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. Gained a description, which repeats the title. |
+| crop_video_batch | 7 | 4 | 2 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. |
+| format_for_web | 1 | 0 | 0 | `codec`, `encod`, `stream` | No finding. Names the glossary. Gained the stem `pixel format` from the glossary sentence. |
+| format_for_web_batch | 5 | 2 | 0 | `codec`, `encod`, `stream` | No finding. Names the glossary. |
+| standardize_video | 3 | 0 | 0 | `codec`, `container`, `encod`, `frame rate`, `pixel format`, `stream` | No finding. Names the glossary. The resolution rules are a three-item list. |
+| standardize_video_batch | 8 | 2 | 0 | `codec`, `container`, `encod`, `frame rate`, `pixel format`, `stream` | No finding. Names the glossary. |
+| strip_metadata | 4 | 4 | 0 | `container`, `encod`, `stream` | No finding. Names the glossary. |
+| strip_metadata_batch | 3 | 2 | 0 | `stream` | No finding. Names the glossary. |
+
+#### Results at head (T4)
+
+- AC1, AC2: the sweep over the 8 pages at head reads 467 sentences, prints no finding and exits 0.
+- AC3: all 8 pages have a stem at head, and each names the glossary. The same check on the base `crop_video` page reads false.
+- AC4: no page had an identifier at the base commit, so there is nothing to find.
+- AC5: `git diff --name-only 9353ac4f HEAD -- man/` lists only the 8 domain pages. A first draft reworded the `video_codec` text of `crop_video_batch`, which `compare_videos_batch` and `picture_in_picture_batch` inherit. That text is M129's shared text, so it was put back.
+- Tests: no test pins wording that changed, so no test was changed or removed.
+- Claim audit: a fresh reader read about 70 claims and found no false claim that the branch added. It found 3 changed sentences that did not make the base claim. All 3 were put back to the base claim, and the reader found the new wording correct.
+
+#### Base claims found false
+
+Each claim keeps its meaning at head. All are items of the M130 follow-up row in `cairn/ROADMAP.md`.
+
+| Page | Claim | Evidence |
+|---|---|---|
+| `format_for_web` | Odd dimensions are padded down to even values. | `format_for_web_pipeline()` calls `ffm_crop()` with `floor(in_w/2)*2`, which removes a row or column and adds no padding (`R/ffmpeg.R`). |
+| `format_for_web_batch` | The command has no per-row settings. | The function reads an `audio_stream` column for each row with `pick("audio_stream", audio_stream)` (`R/ffmpeg.R`). |
+| `crop_video_batch`, `format_for_web_batch` | See Also: each wraps its single-file function. | Each calls `crop_video_pipeline()` or `format_for_web_pipeline()`, not `crop_video()` or `format_for_web()`. |
+| `standardize_video_batch`, `strip_metadata_batch` | See Also: two named functions are "the other" batch task functions. | `R/ffmpeg.R` defines 17 `*_batch` functions. |

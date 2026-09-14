@@ -21,45 +21,45 @@ crop_video_batch(
 )
 }
 \arguments{
-\item{jobs}{A data frame with one row per input and (at least) an
-\code{input} column (source path). An optional \code{output} column names
-the destination; when absent, one is derived per row by appending
-\code{_cropped} to each input's basename, keeping the input's extension
-(e.g. \code{clip.mp4} becomes \code{clip_cropped.mp4}). Each crop dimension
-— \code{width}, \code{height}, \code{x}, \code{y} — may also appear as a
-column to override the corresponding argument per row; rows (or dimensions)
-omitting the column fall back to the argument. A \code{video_codec} column
-overrides that argument per row, with \code{NA} meaning "leave the codec
-unset" (the column's way of writing the argument's \code{NULL}); an
+\item{jobs}{A data frame with one row per input. It needs at least an
+\code{input} column, the source path. An optional \code{output} column
+names the destination. Without it, each row's output name adds
+\code{_cropped} to the input's base name and keeps its extension. For
+example, \code{clip.mp4} becomes \code{clip_cropped.mp4}. A \code{width},
+\code{height}, \code{x} or \code{y} column overrides that argument for each
+row. A dimension with no column uses the argument. A \code{video_codec}
+column overrides that argument for each row, and \code{NA} leaves the codec
+unset. That is the column form of the argument's \code{NULL}. An
 \code{audio_codec} column works the same way. An \code{audio_stream} column
-overrides that argument per row, with \code{NA} meaning "keep every audio
-track" (the column's way of writing that argument's \code{NULL}). Two rows
-whose destination is the same path are refused before any row runs: a
-repeated \code{output}, or a repeated \code{input} when there is no
-\code{output} column. Any other columns are ignored.}
+overrides that argument for each row, and \code{NA} keeps every audio
+track. That is the column form of that argument's \code{NULL}. Two rows
+with the same destination path are refused before any row runs. That
+happens with a repeated \code{output}, or with a repeated \code{input} when
+there is no \code{output} column. Any other columns are ignored.}
 
-\item{width, height}{The output crop size in pixels, applied to every row
-unless \code{jobs} carries a column of the same name. Required: pass each as
-an argument or supply the column (there is no default crop size).}
+\item{width, height}{The output crop size in pixels, for every row unless
+\code{jobs} has a column of the same name. Each is required: pass it as an
+argument or as a column. There is no default crop size.}
 
-\item{x, y}{The offset in pixels of the crop's left/top edge, applied to every
-row unless \code{jobs} carries a column of the same name. Default: centered.}
+\item{x, y}{The offset in pixels of the crop's left and top edge, for every
+row unless \code{jobs} has a column of the same name. The default centers
+the crop.}
 
 \item{video_codec}{A string naming the output video codec, applied to every
 row lacking a \code{video_codec} column. \code{NULL} (default) leaves it
 unset, so each output keeps its container's default encoder.}
 
-\item{audio_codec}{A string naming the output audio codec, applied to every
-row lacking an \code{audio_codec} column. \code{"copy"} (default)
-stream-copies the audio; name an encoder to transcode it, or \code{NULL} to
-leave the codec unset so each output keeps its container's default encoder.}
+\item{audio_codec}{A string naming the output audio codec, for every row
+when \code{jobs} has no \code{audio_codec} column. \code{"copy"} (default)
+stream-copies the audio. Name an encoder to transcode it. \code{NULL}
+leaves the codec unset, so each output keeps its container's default
+encoder.}
 
 \item{hardware, fallback}{The encoder backend and its fallback behavior, applied to the whole batch. They are a property of the machine, not of a row, so neither is read as a \code{jobs} column. See \code{\link[=crop_video]{crop_video()}}.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
-A call that is also wrong about a per-row value — a \code{width} or
-\code{height} that is neither a positive number nor an FFmpeg expression
-— is refused for the value first, whether or not this machine has the
-encoder.}
+A call can also have a per-row \code{width} or \code{height} that is
+neither a positive number nor an FFmpeg expression. Such a call is refused
+for the value first, whether or not this machine has the encoder.}
 
 \item{audio_stream}{The audio track to carry into each output, as a number that counts from \code{0} among the \emph{audio tracks} of each row's input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) carries \strong{every} audio track. Without an \code{audio_stream} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row. It does not fall back to the argument. The every-track family reads \code{NULL} as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The function does not carry subtitle or data streams in either case. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
@@ -77,13 +77,15 @@ or only compile them for inspection (\code{FALSE}).}
 The \code{jobs} tibble with an added \code{command} column. When \code{run = TRUE}, it also has a \code{success} column, plus \code{verified} or a provenance manifest, each when requested through \code{...}. See \code{\link{ffm_batch}}.
 }
 \description{
-Crop many input videos to a rectangular region from a single jobs tibble —
-the \strong{batch} (table-driven) sibling of \code{\link[=crop_video]{crop_video()}} for when you have more
-than one file. Each row is one input. This is a thin wrapper over
-\code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
-the same crop pipeline as the scalar verb. Each row's geometry values are
-checked at this verb's own front door, so a bad cell is refused -- naming
-this function -- before any command runs.
+Crop many videos to a rectangular region, using one jobs table. This is the
+\strong{batch} form of \code{\link[=crop_video]{crop_video()}}, for when you have more than one file. Each
+row is one input. The function is a thin wrapper over
+\code{\link{ffm_batch}}. It builds one reproducible command for each input,
+with the same crop steps as \code{crop_video()}. This function checks each
+row's crop size and position before any command runs. So a bad cell is
+refused with an error that names this function. The glossary in
+\code{vignette("tidymedia")} explains media terms such as codec, container
+and stream copy.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -92,8 +94,8 @@ jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"),
 crop_video_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=crop_video]{crop_video()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}}, the batch
-runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
+\code{\link[=crop_video]{crop_video()}}, the single-input form it wraps; \code{\link[=ffm_batch]{ffm_batch()}},
+the batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
 \code{\link[=standardize_video_batch]{standardize_video_batch()}} to re-encode in batch.
 
 Other task functions:

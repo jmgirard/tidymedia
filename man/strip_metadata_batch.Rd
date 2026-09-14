@@ -7,15 +7,15 @@
 strip_metadata_batch(jobs, run = TRUE, parallel = FALSE, ...)
 }
 \arguments{
-\item{jobs}{A data frame with one row per input and (at least) an
-\code{input} column (source path). An optional \code{output} column names
-the destination; when absent, one is derived per row by appending
-\code{_stripped} to each input's basename, keeping the input's extension
-(e.g. \code{clip.mkv} becomes \code{clip_stripped.mkv}). Any two rows that
-resolve to the \strong{same} output path — a duplicated \code{input} with no
-\code{output} column, or a repeated explicit \code{output} — are rejected
-so one file cannot silently overwrite another. Any other columns are
-ignored (the scrub has no per-row knobs).}
+\item{jobs}{A data frame with one row per input. It needs at least an
+\code{input} column, the source path. An optional \code{output} column
+names the destination. Without it, each row's output name adds
+\code{_stripped} to the input's base name and keeps its extension. For
+example, \code{clip.mkv} becomes \code{clip_stripped.mkv}. Any two rows
+with the \strong{same} output path are rejected, so one file cannot silently
+overwrite another. That happens with a duplicated \code{input} and no
+\code{output} column, or with a repeated explicit \code{output}. Any other
+columns are ignored, because the scrub has no per-row settings.}
 
 \item{run}{A logical: run each input's command through FFmpeg (\code{TRUE},
 default) or only compile them for inspection (\code{FALSE}).}
@@ -34,12 +34,14 @@ time and warns. Set a plan first, e.g.
 The \link[tibble:tibble-package]{tibble} returned by \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column. When \code{output} was derived, it also has the resolved \code{output} column. When \code{run = TRUE}, it has a \code{success} column, plus any columns the forwarded arguments add, such as \code{verified}.
 }
 \description{
-De-identify many input files from a single jobs tibble — the \strong{batch}
-(table-driven) sibling of \code{\link[=strip_metadata]{strip_metadata()}} for when you have more than one
-file to scrub. Each row is one input; the only required column names its
-source. This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible
-stream-copy strip command per input, sharing the same pipeline (and its
-bit-exact, metadata-dropping behavior) as the scalar verb.
+De-identify many files, using one jobs table. This is the \strong{batch} form of
+\code{\link[=strip_metadata]{strip_metadata()}}, for when you have more than one file to scrub. Each row
+is one input, and the only required column names its source. The function
+is a thin wrapper over \code{\link{ffm_batch}}. It builds one reproducible
+stream-copy strip command for each input. Each command uses the same steps
+as \code{strip_metadata()}, so it is bit-exact and drops the same metadata.
+The glossary in \code{vignette("tidymedia")} explains media terms such as
+stream and stream copy.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -51,7 +53,7 @@ strip_metadata_batch(jobs, run = FALSE)
 \code{\link[=strip_metadata]{strip_metadata()}} for the single-input form; \code{\link[=ffm_batch]{ffm_batch()}} for the
 batch runner and the arguments forwarded through \code{...};
 \code{\link[=standardize_video_batch]{standardize_video_batch()}} and \code{\link[=anonymize_video_batch]{anonymize_video_batch()}} for the other
-table-driven siblings.
+batch task functions.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

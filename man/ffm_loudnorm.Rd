@@ -19,63 +19,67 @@ ffm_loudnorm(
 )
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
 \item{target_loudness}{The target integrated loudness, in LUFS
-(a number in \code{-70}..\code{-5}; default \code{-23}, the EBU
-R128 target).}
+(a number in \code{-70}..\code{-5}). The default, \code{-23}, is
+the EBU R128 target.}
 
 \item{true_peak}{The maximum true peak, in dBTP
-(a number in \code{-9}..\code{0}; default \code{-1}, the EBU R128
-ceiling).}
+(a number in \code{-9}..\code{0}). The default, \code{-1}, is the EBU
+R128 ceiling.}
 
 \item{loudness_range}{The target loudness range, in LU
-(a number in \code{1}..\code{50}; default \code{7}).}
+(a number in \code{1}..\code{50}). The default is \code{7}.}
 
 \item{measured_i, measured_tp, measured_lra, measured_thresh}{Measured input
-values from a prior \code{loudnorm} analysis pass (integrated loudness,
-true peak, loudness range, and threshold). Supplied together to drive an
-accurate two-pass (linear) correction; all five of these plus \code{offset}
-must be given as a set, or none (\code{NULL}, default, for single-pass
-dynamic normalization). These map to FFmpeg's \code{measured_I},
-\code{measured_TP}, \code{measured_LRA}, and \code{measured_thresh} options.}
+values from an earlier \code{loudnorm} analysis pass: integrated loudness,
+true peak, loudness range and threshold. Give them together for an accurate
+two-pass (linear) correction. Give these values and \code{offset} as one
+set, or give none of them. \code{NULL}, the default, gives single-pass
+dynamic normalization. These map to FFmpeg's \code{measured_I},
+\code{measured_TP}, \code{measured_LRA} and \code{measured_thresh} options.}
 
-\item{offset}{The \code{target_offset} (offset gain) reported by the analysis
-pass, part of the measured set (see \code{measured_i}). \code{NULL} by
-default.}
+\item{offset}{The \code{target_offset} (offset gain) that the analysis pass
+reports. It is part of the measured set (see \code{measured_i}). The
+default is \code{NULL}.}
 
-\item{linear}{A logical: when \code{TRUE}, request linear normalization
+\item{linear}{A logical. \code{TRUE} requests linear normalization
 (\code{linear=true}), which needs the measured values to hit the target
-precisely. \code{FALSE} (default) omits the option entirely, leaving
-single-pass dynamic behavior untouched.}
+precisely. \code{FALSE} (the default) leaves out the option, so the
+single-pass dynamic behavior does not change.}
 
-\item{print_format}{The measurement report format for an analysis pass, one
-of \code{"json"}, \code{"summary"}, or \code{"none"}. \code{NULL} (default)
-omits the option. Use \code{"json"} for a machine-parseable analysis pass.}
+\item{print_format}{The format of the measurement report for an analysis
+pass: \code{"json"}, \code{"summary"} or \code{"none"}. \code{NULL} (the
+default) leaves out the option. Use \code{"json"} for an analysis pass that
+a program can parse.}
 }
 \value{
-\code{object} but with the added instruction to normalize loudness.
+\code{object} with an added instruction to normalize loudness.
 }
 \description{
-Append FFmpeg's \code{loudnorm} (EBU R128) audio filter, normalizing the
+Add FFmpeg's \code{loudnorm} (EBU R128) audio filter. It normalizes the
 input's perceived loudness toward a target integrated loudness, true-peak
-ceiling, and loudness range. This is the first builder function to write the
-pipeline's audio filter chain, so it compiles to \code{-af} (or joins an
-existing audio filter chain in application order).
+ceiling and loudness range. The filter compiles to \code{-af}, or joins an
+existing audio filter chain in the order the filters were added. The glossary
+in \code{vignette("tidymedia")} explains media terms such as LUFS and true
+peak.
 }
 \details{
-This is single-pass (dynamic) \code{loudnorm}: one reproducible command, no
-measurement pass. The defaults follow EBU Recommendation R 128 (2014) —
-\code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP, loudness
-measured per ITU-R BS.1770-4 — with \code{loudness_range = 7} (FFmpeg's own
-\code{loudnorm} default, EBU R128 not prescribing a single value).
+This is single-pass (dynamic) \code{loudnorm}. It makes one reproducible
+command, with no measurement pass. The defaults follow EBU Recommendation R
+128 (2014): \code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP.
+Loudness is measured per ITU-R BS.1770-4. The default
+\code{loudness_range = 7} is FFmpeg's own \code{loudnorm} default, because
+EBU R128 does not prescribe a single value.
 
-Two filters are appended, not one: \code{loudnorm} is followed by
-\code{asetnsamples}, which re-chunks the filtered audio into 4096-sample
-frames without padding the last one. Dynamic \code{loudnorm} resamples to
-192 kHz and emits 192000-sample frames, which encoders that accept whatever
-frame they are handed — FLAC and Vorbis among them — refuse to open at all.
+Two filters are added, not one. \code{loudnorm} is followed by
+\code{asetnsamples}, which regroups the filtered audio into frames of 4096
+samples and does not pad the last one. Dynamic \code{loudnorm} resamples to
+192 kHz and gives frames of 192000 samples. Some encoders accept whatever
+frame they are given, FLAC and Vorbis among them. Those encoders refuse to
+open at all on such frames.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -89,7 +93,7 @@ maximum level of audio signals}; ITU-R BS.1770-4.
 \url{https://ffmpeg.org/ffmpeg-filters.html#loudnorm}
 }
 \seealso{
-\code{\link[=normalize_audio]{normalize_audio()}}, the task verb built on this filter.
+\code{\link[=normalize_audio]{normalize_audio()}}, the task function built on this filter.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

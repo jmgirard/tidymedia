@@ -14,34 +14,35 @@ ffm_trim(
 )
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{start}{The time of the start of the kept section (i.e., this will be
-the first frame in the output) given in \code{units}.}
+\item{start}{The time of the start of the kept section, given in
+\code{units}. This time is the first frame of the output.}
 
-\item{end}{The time of the first frame that will be dropped (i.e., the frame
-immediately preceding this will be the last frame in the output), given in
-\code{units}.}
+\item{end}{The time of the first frame that is dropped, given in
+\code{units}. The frame just before it is the last frame of the output.}
 
-\item{duration}{The maximum duration of the output given in time duration
+\item{duration}{The maximum duration of the output, given in time duration
 syntax.}
 
-\item{units}{A string indicating whether the \code{start} and/or \code{end}
-are given time duration syntax ("tds"), timebase units ("pts"), or frame
-number ("frame"). default = \code{"tds"}}
+\item{units}{A string that says how \code{start} and \code{end} are given:
+time duration syntax (\code{"tds"}), timebase units (\code{"pts"}) or frame
+numbers (\code{"frame"}). The default is \code{"tds"}.}
 
-\item{setpts}{A logical indicating whether the output timestamps should be
-modified to start at zero. If TRUE, will add a setpts filter after trim.}
+\item{setpts}{A logical that says whether the output timestamps change to
+start at zero. If \code{TRUE}, a \code{setpts} filter is added after the
+trim.}
 }
 \value{
-\code{object} but will added instructions to trim the duration.
+\code{object} with added instructions to trim the duration.
 }
 \description{
-Trim the input so that the output contains one continuous subpart of the
-input. Note that, if \code{start=NULL}, then the kept section will start at
-the beginning of the input. If both \code{end=NULL} and \code{duration=NULL},
-the kept section will end at the end of the input.
+Trim the input so that the output keeps one continuous part of the input. If
+\code{start} is \code{NULL}, the kept section starts at the beginning of the
+input. If both \code{end} and \code{duration} are \code{NULL}, the kept
+section ends at the end of the input. The glossary in
+\code{vignette("tidymedia")} explains media terms such as stream copy.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -55,8 +56,8 @@ https://ffmpeg.org/ffmpeg-filters.html#trim
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }
 \seealso{
-\code{\link[=ffm_seek]{ffm_seek()}}, the faster seek-based cut that can stream-copy (this
-is the frame-exact \emph{filter}).
+\code{\link[=ffm_seek]{ffm_seek()}}, the faster cut by seeking, which can use stream copy.
+\code{ffm_trim()} is the filter that cuts on exact frames.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

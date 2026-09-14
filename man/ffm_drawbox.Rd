@@ -15,38 +15,38 @@ ffm_drawbox(
 )
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{x}{The horizontal position, in the input video, of the left edge of the
-box (in pixels). Either a nonnegative real number or a string that contains
-an FFMPEG expression. (default = 0)}
+\item{x}{The horizontal position of the left edge of the box, in pixels of
+the input video. Give a nonnegative real number or a string that contains
+an FFmpeg expression. The default is \code{0}.}
 
-\item{y}{The vertical position, in the input video, of the top edge of the
-box (in pixels). Either a nonnegative real number or a string that contains
-an FFMPEG expression. (default = 0)}
+\item{y}{The vertical position of the top edge of the box, in pixels of the
+input video. Give a nonnegative real number or a string that contains an
+FFmpeg expression. The default is \code{0}.}
 
-\item{width}{The width of the box (in pixels). Either a positive real number
-or a string that contains an FFmpeg expression. (default = \code{"in_w"})}
+\item{width}{The width of the box, in pixels. Give a positive real number or
+a string that contains an FFmpeg expression. The default is \code{"in_w"}.}
 
-\item{height}{The height of the box (in pixels). Either a positive real
-number or a string that contains an FFmpeg expression. (default =
-\code{"in_h"})}
+\item{height}{The height of the box, in pixels. Give a positive real number
+or a string that contains an FFmpeg expression. The default is
+\code{"in_h"}.}
 
-\item{color}{A string containing the color of the box in FFmpeg color syntax,
-see reference link below for more details. If the special value
-\code{"invert"} is used, the box color is the same as the video with
-inverted luma. (default = \code{"black"})}
+\item{color}{A string with the color of the box, in FFmpeg color syntax. The
+reference link below explains that syntax. With the special value
+\code{"invert"}, the box has the color of the video with inverted luma. The
+default is \code{"black"}.}
 
-\item{thickness}{A thickness of the box edge (in pixels). A value of
-\code{"fill"} will create a filled box. (default = \code{"fill"})}
+\item{thickness}{The thickness of the box edge, in pixels. The value
+\code{"fill"} draws a filled box. The default is \code{"fill"}.}
 }
 \value{
-\code{object} but with the added instruction to apply the drawbox
+\code{object} with an added instruction to apply the \code{drawbox}
 filter.
 }
 \description{
-Add a video filter to draw a colored rectangle on the input video.
+Add a video filter that draws a colored rectangle on the input video.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -61,8 +61,8 @@ https://ffmpeg.org/ffmpeg-filters.html#drawbox
 https://ffmpeg.org/ffmpeg-utils.html#color-syntax
 }
 \seealso{
-\code{\link[=anonymize_video]{anonymize_video()}}, the task verb that fills regions via this
-builder.
+\code{\link[=anonymize_video]{anonymize_video()}}, the task function that uses
+\code{ffm_drawbox()} to fill regions.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

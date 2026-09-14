@@ -1,6 +1,6 @@
 # M128: The input, output and run pipeline help pages read as plain English
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** M129
 - **Driving RR:** —
@@ -42,7 +42,7 @@ The M128 help-page domain uses plain English for an R user who does not know FFm
 - [x] T1: Record in a new M128 ledger section the base commit, the domain page list, the AC4 identifiers and the sweep output over the domain at the base commit.
 - [x] T2: Rewrite `ffm_files()`, `ffm_copy()`, `ffm_seek()`, `ffm_map()` and `ffm_drop()`.
 - [x] T3: Rewrite `ffm_codec()`, `ffm_pixel_format()`, `ffm_output_options()`, `ffm_compile()` and `ffm_run()`. Move the exit-status detail in `?ffm_run` to a short end section.
-- [ ] T4: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words, and a sentence that names the glossary stays. A base claim found false gets a ledger row and a line in the follow-up candidate row. Fill the ledger. Run the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
+- [x] T4: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words, and a sentence that names the glossary stays. A base claim found false gets a ledger row and a line in the follow-up candidate row. Fill the ledger. Run the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
 ## Work log
 
@@ -56,6 +56,7 @@ The M128 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-14: T3 done. The sweep over the 10 pages exits 0. The exit-status detail on `?ffm_run` stays in its own section after Value, now split into two lists. The exit-condition and audio-index tests pass.
 - 2026-09-14: claim audit: 125 claims read, 6 corrected — R/ffm.R, man/ffm_seek.Rd, man/ffm_map.Rd, man/ffm_output_options.Rd, man/ffm_run.Rd. The same [O] reader re-read the 6 once and found them true and the same claim as base. Four base claims found false went to a new M128 follow-up row. The one-line `unset_*()` row was merged into the declined-exports row, so `ROADMAP.md` stays under 60 lines.
 - 2026-09-14: T4 checkpoint, half done: ledger filled. The full test, check and pkgdown run is not yet read.
+- 2026-09-14: T4 done. `devtools::test()` 0 failures (13866 passed, 5 skipped). `devtools::check()` 0 errors, 0 warnings, 0 notes. `pkgdown::check_pkgdown()` no problems. `devtools::document()` at head writes nothing. No test pinned changed wording. Status set to review.
 
 ## Decisions
 

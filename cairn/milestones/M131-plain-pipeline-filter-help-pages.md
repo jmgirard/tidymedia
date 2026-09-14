@@ -53,6 +53,9 @@ The M131 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-14: T3 done. Four pages rewritten. The sweep over all 10 pages prints no finding. The 7 pages with a stem name the glossary. "Layer-2", "blessed" and "verb" are gone. `devtools::test()` has 0 failures.
 - 2026-09-14: T4 checkpoint, not done. claim audit: 110 claims read, 6 corrected — R/ffm.R (concat, loudnorm, trim, vstack, overlay, crop and scale See Also); the same reader re-read all 6 as the base claim. Three false base claims are ledger rows and the M131 part of the `ffm_*()` help-text follow-up row. `pkgdown::check_pkgdown()` found no problems. `devtools::test()` and `devtools::check()` are still running.
 - 2026-09-14: T4 done. `devtools::document()` writes nothing. `devtools::test()` has 0 failures. `devtools::check()` gives 0 errors, 0 warnings and 0 notes. Status set to review.
+- 2026-09-14: review. Correction to the T3 line: 6 pages with a stem name the glossary, not 7 (review O3).
+- 2026-09-14: review gate fixes O1-O7 committed on the branch. O11 extends the follow-up row by the maintainer's choice.
+- step-7 approval: m131-plain-pipeline-filter-help-pages approved for merge
 
 ## Decisions
 
@@ -82,3 +85,15 @@ Independent review: three fresh reviewers. The [S] blame-history and [S] prior-r
 - O10: FFmpeg wording from the base text stays, for example `-filter_complex` and "compiles to `-af`".
 - O11: `?ffm_loudnorm` `linear = FALSE` "leaves out the option, so the single-pass dynamic behavior does not change". FFmpeg 9.0.1 `-h filter=loudnorm` shows `linear` defaults to true. This is a base claim, not added by the branch.
 - O12: the ledger table under the base-commit heading also has a head Result column.
+
+Triage at the gate, 2026-09-14, as the maintainer chose. No finding shows a criterion failing, so there is no return.
+
+- O1, O2: fixed. `?ffm_concat` now says "so use `ffmpeg()`" and "When you call `ffm_concat()`, it writes one to a temporary path".
+- O5, O6: fixed. `?ffm_loudnorm` now says "The pipeline stays one reproducible command" and "Even those encoders refuse to open".
+- O3: fixed in the ledger, marked corrected. The T3 work-log line is history, and a correction line follows it.
+- O4, O7: fixed in the M131 part of the follow-up row, marked corrected.
+- O11: follow-up. Item (d) of the M131 part of the follow-up row. The maintainer chose to extend that row at the gate.
+- O8, O10: rejected, because each is base text that the rewrite keeps.
+- O9: rejected, because rule 6 allows a move.
+- O12: rejected, because the M128 and M130 ledgers use the same layout.
+- After the fixes: `devtools::document()` leaves the tree clean after it writes the two pages. The sweep over all `man/ffm_*.Rd` pages prints no finding. `?ffm_concat` and `?ffm_loudnorm` still name the glossary. `devtools::test(filter = "shared-range|ffm")` gives FAIL 0. `pkgdown::check_pkgdown()` finds no problems. The full `devtools::check()` is left to CI on the PR.

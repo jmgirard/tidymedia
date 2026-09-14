@@ -434,7 +434,7 @@ The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` o
 #### Results at head (T4)
 
 - AC1, AC2: the sweep over the 10 pages at head reads 271 sentences, prints no finding and exits 0.
-- AC3: the 7 pages with a stem at head each name the glossary. `ffm_crop`, `ffm_drawbox`, `ffm_hstack` and `ffm_scale` have no stem.
+- AC3: the 6 pages with a stem at head each name the glossary (corrected M131 review: said 7). `ffm_crop`, `ffm_drawbox`, `ffm_hstack` and `ffm_scale` have no stem.
 - AC4: `tidymedia_ffm` is found by `git grep -wF` in `man/*.Rd` at head.
 - AC5: `git diff --name-only 08a4df26 HEAD -- man/` lists only the 10 domain pages.
 - Tests: no test pins wording that changed, so no test was changed or removed. `test-shared-range-bindings.R` still finds the three rendered loudness ranges on `?ffm_loudnorm`.

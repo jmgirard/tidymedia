@@ -373,10 +373,11 @@ ffm_fps <- function(object, fps) {
 #' peak.
 #'
 #' @details
-#' This is single-pass (dynamic) \code{loudnorm}. It makes one reproducible
-#' command, with no measurement pass. The defaults follow EBU Recommendation R
-#' 128 (2014): \code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP.
-#' Loudness is measured per ITU-R BS.1770-4. The default
+#' This is single-pass (dynamic) \code{loudnorm}. The pipeline stays one
+#' reproducible command, with no measurement pass. The defaults follow EBU
+#' Recommendation R 128 (2014): \code{target_loudness = -23} LUFS and
+#' \code{true_peak = -1} dBTP. Loudness is measured per ITU-R BS.1770-4. The
+#' default
 #' \code{loudness_range = 7} is FFmpeg's own \code{loudnorm} default. EBU
 #' R128 does not prescribe a single value.
 #'
@@ -384,8 +385,8 @@ ffm_fps <- function(object, fps) {
 #' \code{asetnsamples}, which regroups the filtered audio into frames of 4096
 #' samples and does not pad the last one. Dynamic \code{loudnorm} resamples to
 #' 192 kHz and gives frames of 192000 samples. Some encoders accept whatever
-#' frame they are given, FLAC and Vorbis among them. Those encoders refuse to
-#' open at all on frames of 192000 samples.
+#' frame they are given, FLAC and Vorbis among them. Even those encoders refuse
+#' to open at all on frames of 192000 samples.
 #'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
@@ -1001,13 +1002,13 @@ ffm_overlay <- function(object,
 #' and stream copy.
 #'
 #' To join inputs with different parameters, you must re-encode with the concat
-#' filter. The package does not wrap that filter yet, so use a direct command,
-#' such as \code{\link{ffmpeg}}.
+#' filter. The package does not wrap that filter yet, so use
+#' \code{\link{ffmpeg}}.
 #'
-#' The demuxer needs a list file that names the inputs. \code{ffm_concat()}
-#' writes one to a temporary path at once and stores it in the pipeline, so the
-#' compiled command can refer to it. It also copies codecs and maps all
-#' streams, as \code{\link{ffm_copy}} would.
+#' The demuxer needs a list file that names the inputs. When you call
+#' \code{ffm_concat()}, it writes one to a temporary path and stores it in the
+#' pipeline, so the compiled command can refer to it. It also copies codecs and
+#' maps all streams, as \code{\link{ffm_copy}} would.
 #'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()} with more than one input file.

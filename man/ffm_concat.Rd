@@ -24,13 +24,13 @@ and stream copy.
 }
 \details{
 To join inputs with different parameters, you must re-encode with the concat
-filter. The package does not wrap that filter yet, so use a direct command,
-such as \code{\link{ffmpeg}}.
+filter. The package does not wrap that filter yet, so use
+\code{\link{ffmpeg}}.
 
-The demuxer needs a list file that names the inputs. \code{ffm_concat()}
-writes one to a temporary path at once and stores it in the pipeline, so the
-compiled command can refer to it. It also copies codecs and maps all
-streams, as \code{\link{ffm_copy}} would.
+The demuxer needs a list file that names the inputs. When you call
+\code{ffm_concat()}, it writes one to a temporary path and stores it in the
+pipeline, so the compiled command can refer to it. It also copies codecs and
+maps all streams, as \code{\link{ffm_copy}} would.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

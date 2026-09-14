@@ -46,25 +46,16 @@ an argument or supply the column (there is no default crop size).}
 row unless \code{jobs} carries a column of the same name. Default: centered.}
 
 \item{video_codec}{A string naming the output video codec, applied to every
-row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
-it unset so each output keeps its container's default encoder.}
+row lacking a \code{video_codec} column. \code{NULL} (default) leaves it
+unset, so each output keeps its container's default encoder.}
 
 \item{audio_codec}{A string naming the output audio codec, applied to every
 row lacking an \code{audio_codec} column. \code{"copy"} (default)
 stream-copies the audio; name an encoder to transcode it, or \code{NULL} to
 leave the codec unset so each output keeps its container's default encoder.}
 
-\item{hardware, fallback}{The encoder backend and its fallback behavior,
-applied to the whole batch (a property of the machine, not of a row, so
-neither is read as a \code{jobs} column). See \code{\link[=crop_video]{crop_video()}}.
-Resolving a hardware backend asks this FFmpeg build which encoders it has,
-so the first such call that re-encodes the video runs the binary
-while the command is built, even under \code{run = FALSE}. The answer is
-remembered for the rest of the R session; see
-\code{\link{refresh_ffmpeg_capabilities}} to discard it.
-Availability is checked at this verb's own front door, before any row
-runs, so an unavailable encoder aborts naming this function rather than
-the internal fan-out it would otherwise be reported against.
+\item{hardware, fallback}{The encoder backend and its fallback behavior, applied to the whole batch. They are a property of the machine, not of a row, so neither is read as a \code{jobs} column. See \code{\link[=crop_video]{crop_video()}}.
+Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
 A call that is also wrong about a per-row value — a \code{width} or
 \code{height} that is neither a positive number nor an FFmpeg expression
 — is refused for the value first, whether or not this machine has the
@@ -75,18 +66,15 @@ encoder.}
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}
 
-\item{parallel}{A logical: map over jobs in parallel with \pkg{furrr}
-(\code{TRUE}) or sequentially (\code{FALSE}, default). See
+\item{parallel}{A logical: process the jobs in parallel with \pkg{furrr}
+(\code{TRUE}) or one at a time (\code{FALSE}, default). See
 \code{\link{ffm_batch}} for the \pkg{future} plan requirement.}
 
 \item{...}{Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
 \code{verify}, \code{manifest}, \code{progress}).}
 }
 \value{
-The \code{jobs} tibble with an added \code{command} column and, when
-\code{run = TRUE}, a \code{success} column (plus \code{verified} /
-provenance manifest when requested via \code{...}). See
-\code{\link{ffm_batch}}.
+The \code{jobs} tibble with an added \code{command} column. When \code{run = TRUE}, it also has a \code{success} column, plus \code{verified} or a provenance manifest, each when requested through \code{...}. See \code{\link{ffm_batch}}.
 }
 \description{
 Crop many input videos to a rectangular region from a single jobs tibble —

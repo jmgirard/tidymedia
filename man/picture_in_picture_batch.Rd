@@ -26,10 +26,8 @@ picture_in_picture_batch(
 \code{margin}, \code{audio_input}, \code{video_codec}, and \code{audio_codec}
 columns override the
 like-named arguments
-per row (a row omitting one falls back to the argument). In an \code{audio_input}
-column, \code{NA} means "drop audio" (the column's way of writing the
-scalar's \code{NULL}); in a \code{video_codec} or \code{audio_codec} column
-it means "leave the codec unset". Two rows given the same \code{output}
+per row (a row omitting one falls back to the argument).
+In an \code{audio_input} column, \code{NA} means "drop audio", the column's way of writing the scalar's \code{NULL}. In a \code{video_codec} or \code{audio_codec} column, it means "leave the codec unset". Two rows given the same \code{output}
 path are refused before any row runs; other columns are ignored.}
 
 \item{position, scale, margin}{Defaults applied to every row lacking the
@@ -41,51 +39,35 @@ values, per row. See \code{\link[=picture_in_picture]{picture_in_picture()}} for
 \item{audio_input}{The input file whose audio to keep, as a number that counts from \code{0}. \code{0} is the first file you pass and \code{1} is the second. This counts the function's inputs, not the audio tracks of one input. So it is a different index from \code{audio_stream} on the functions that take one input. \code{NULL} (default) selects no audio at all, so the output is silent. This differs from \code{audio_stream = NULL}, which still selects audio. An input number the call does not have gives an R error, before FFmpeg runs. Without an \code{audio_input} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row, so that output has no audio. See \code{\link{audio_stream}}. (default = \code{NULL})}
 
 \item{video_codec}{A string naming the output video codec, applied to every
-row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
-it unset so each output keeps its container's default encoder.}
+row lacking a \code{video_codec} column. \code{NULL} (default) leaves it
+unset, so each output keeps its container's default encoder.}
 
 \item{audio_codec}{A string naming the codec for the carried audio track,
 applied to every row lacking an \code{audio_codec} column. \code{"copy"}
-(default) stream-copies it; name an encoder to transcode it, or \code{NULL}
-to leave the codec unset. A row carrying no audio emits no \code{-codec:a};
-naming an encoder on such a row is an error.}
+(default) stream-copies it. Name an encoder to transcode it, or
+\code{NULL} to leave the codec unset. A row carrying no audio emits no
+\code{-codec:a}, and naming an encoder on such a row is an error.}
 
-\item{hardware, fallback}{The encoder backend and its fallback behavior,
-applied to the whole batch (a property of the machine, not of a row, so
-neither is read as a \code{jobs} column). See \code{\link[=picture_in_picture]{picture_in_picture()}}.
-Resolving a hardware backend asks this FFmpeg build which encoders it has,
-so the first such call that re-encodes the video runs the binary
-while the command is built, even under \code{run = FALSE}. The answer is
-remembered for the rest of the R session; see
-\code{\link{refresh_ffmpeg_capabilities}} to discard it.
-Availability is checked at this verb's own front door, before any row
-runs, so an unavailable encoder aborts naming this function rather than
-the internal fan-out it would otherwise be reported against. A call that
-also contradicts itself — naming an \code{audio_codec} with no audio carried into the output —
-is refused for the contradiction first, whether or not this machine has
-the encoder.
+\item{hardware, fallback}{The encoder backend and its fallback behavior, applied to the whole batch. They are a property of the machine, not of a row, so neither is read as a \code{jobs} column. See \code{\link[=picture_in_picture]{picture_in_picture()}}.
+Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
+A call can also contradict itself by naming an \code{audio_codec} with no audio carried into the output. Such a call is refused for the contradiction first, whether or not this machine has the encoder.
 A per-row value error — a negative \code{margin}, an \code{audio_input} index
 outside the two inputs, a \code{position} outside the five accepted values
 — likewise reports ahead of the encoder check.
-A value error and a contradiction resolve the same way whether the value
-arrived as an argument or in a \code{jobs} column; the contradiction
-reports first.}
+A value error and a contradiction resolve the same way whether the value arrived as an argument or in a \code{jobs} column. The contradiction reports first.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}
 
-\item{parallel}{A logical: map over jobs in parallel with \pkg{furrr}
-(\code{TRUE}) or sequentially (\code{FALSE}, default). See
+\item{parallel}{A logical: process the jobs in parallel with \pkg{furrr}
+(\code{TRUE}) or one at a time (\code{FALSE}, default). See
 \code{\link{ffm_batch}} for the \pkg{future} plan requirement.}
 
 \item{...}{Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
 \code{verify}, \code{manifest}, \code{progress}).}
 }
 \value{
-The \code{jobs} tibble with an added \code{command} column and, when
-\code{run = TRUE}, a \code{success} column (plus \code{verified} /
-provenance manifest when requested via \code{...}). See
-\code{\link{ffm_batch}}.
+The \code{jobs} tibble with an added \code{command} column. When \code{run = TRUE}, it also has a \code{success} column, plus \code{verified} or a provenance manifest, each when requested through \code{...}. See \code{\link{ffm_batch}}.
 }
 \description{
 Composite an inset (overlay) video onto a main video for many outputs from a

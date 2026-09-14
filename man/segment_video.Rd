@@ -46,52 +46,22 @@ frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
 for the trade-off.}
 
-\item{video_codec}{A string naming the output video codec, or \code{NULL}
-(default) to leave it unset, so the output container's default encoder is
-used and the compiled command is unchanged from one that never named a
-codec. A stream copy runs no encoder, so naming a codec (or a
-\code{hardware} backend) alongside \code{reencode = FALSE} is an error.}
+\item{video_codec}{A string naming the output video codec, or \code{NULL} (default) to leave it unset. Then the output container's default encoder is used, and the compiled command is the same as one that never named a codec. A stream copy runs no
+encoder, so naming a codec (or a \code{hardware} backend) alongside
+\code{reencode = FALSE} is an error.}
 
-\item{audio_codec}{A string naming the output audio codec. \code{"copy"}
-(default) stream-copies the audio through untouched; name an encoder (e.g.
-\code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec unset
-so the output container's default encoder is used. A stream copy
+\item{audio_codec}{A string naming the output audio codec.
+\code{"copy"} (default) stream-copies the audio through untouched. Name an encoder, such as \code{"aac"}, to transcode it. \code{NULL} leaves the codec unset, so the output container's default encoder is used. A stream copy
 (\code{reencode = FALSE}) always copies the audio, so any other value is an
 error there. Stream-copying fails if the output container cannot hold the
 source audio codec (e.g. FLAC in \code{.mp4}) — name an encoder instead.}
 
-\item{hardware}{The encoder backend: \code{"none"} (default, the
-software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
-(H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
-(H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
-family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
-\code{"h264_videotoolbox"}); with the default \code{video_codec = NULL}
-the H.264 family is assumed, so a non-H.264 container (e.g.
-\code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}
-(AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}}
-for availability and its caveats.
-Resolving a hardware backend asks this FFmpeg build which encoders it has,
-so the first such call that re-encodes the video runs the binary
-while the command is built, even under \code{run = FALSE}. The answer is
-remembered for the rest of the R session; see
-\code{\link{refresh_ffmpeg_capabilities}} to discard it.
-Availability is checked at this verb's own front door, before any row
-runs, so an unavailable encoder aborts naming this function rather than
-the internal fan-out it would otherwise be reported against. A call that
-also contradicts itself — asking for GPU encoding on a cut that stream-copies —
-is refused for the contradiction first, whether or not this machine has
-the encoder.
+\item{hardware}{The encoder backend. \code{"none"} (default) uses the software \code{video_codec}. \code{"nvenc"} uses NVIDIA GPU encoding (H.264, HEVC and AV1), and \code{"videotoolbox"} uses Apple GPU encoding (H.264 and HEVC). A backend uses its own encoder for the family of \code{video_codec}. For example, \code{"libx264"} becomes \code{"h264_nvenc"} or \code{"h264_videotoolbox"}. With the default \code{video_codec = NULL}, the H.264 family is assumed. So a non-H.264 container, such as \code{.webm}, needs an explicit HEVC- or AV1-family \code{video_codec} (AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}} for availability and its caveats. Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it.
+This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows. A call can also contradict itself by asking for GPU encoding on a cut that stream-copies. Such a call is refused for the contradiction first, whether or not this machine has the encoder.
 The stream-copy conflict named under \code{reencode} is caught first, so
 such a call aborts without probing.}
 
-\item{fallback}{A logical: when a non-\code{"none"} \code{hardware} is
-requested but its encoder is unavailable, encode in software with a
-message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
-\code{video_codec = NULL} the fallback leaves the codec unset rather
-than picking one, so the codec never changes silently.
-A \code{video_codec} in a family that backend has no encoder for is a
-wrong argument rather than an absent encoder, so it aborts whatever
-\code{fallback} says.}
+\item{fallback}{A logical. When a \code{hardware} other than \code{"none"} is requested but its encoder is unavailable, \code{TRUE} encodes in software with a message. \code{FALSE} (default) aborts instead. With \code{video_codec = NULL}, the fallback leaves the codec unset rather than picking one, so the codec never changes silently. A \code{video_codec} in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever \code{fallback} says.}
 
 \item{audio_stream}{The audio track to carry into the output, as a number that counts from \code{0} among the \emph{audio tracks} of the input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) carries \strong{every} audio track. The every-track family reads \code{NULL} this way: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The function does not carry subtitle or data streams in either case. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 

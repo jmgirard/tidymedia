@@ -18,11 +18,8 @@ compare_videos(
 )
 }
 \arguments{
-\item{infiles}{A character vector of two or more video file paths. Every
-path is checked at this verb's own front door, so a path that cannot be
-found or read aborts naming this function and lists every such path,
-rather than being reported against the internal builder it would otherwise
-reach.}
+\item{infiles}{A character vector of two or more video file paths.
+This function checks every path itself. A path that cannot be found or read aborts naming this function, and the error lists every such path. It is not reported against the internal builder that the path would otherwise reach.}
 
 \item{outfile}{A string giving the path to write the comparison video to.}
 
@@ -34,42 +31,16 @@ edge. Only supported for exactly two inputs. (default = \code{TRUE})}
 
 \item{audio_input}{The input file whose audio to keep, as a number that counts from \code{0}. \code{0} is the first file you pass and \code{1} is the second. This counts the function's inputs, not the audio tracks of one input. So it is a different index from \code{audio_stream} on the functions that take one input. \code{NULL} (default) selects no audio at all, so the output is silent. This differs from \code{audio_stream = NULL}, which still selects audio. An input number the call does not have gives an R error, before FFmpeg runs. See \code{\link{audio_stream}}. (default = \code{NULL})}
 
-\item{video_codec}{A string naming the output video codec, or \code{NULL}
-(default) to leave it unset, so the output container's default encoder is
-used and the compiled command is unchanged from one that never named a
-codec.}
+\item{video_codec}{A string naming the output video codec, or \code{NULL} (default) to leave it unset. Then the output container's default encoder is used, and the compiled command is the same as one that never named a codec.}
 
 \item{audio_codec}{A string naming the codec for the carried audio track.
-\code{"copy"} (default) stream-copies it through untouched; name an encoder
-(e.g. \code{"aac"}) to transcode it, or pass \code{NULL} to leave the codec
-unset so the output container's default encoder is used. Nothing is emitted
-when \code{audio_input} is \code{NULL}, since no audio reaches the output; naming
-an encoder in that case is an error.}
+\code{"copy"} (default) stream-copies it through untouched. Name an encoder, such as \code{"aac"}, to transcode it. \code{NULL} leaves the codec unset, so the output container's default encoder is used. When \code{audio_input} is
+\code{NULL}, no audio reaches the output, so nothing is emitted. Naming an
+encoder in that case is an error.}
 
-\item{hardware}{The encoder backend: \code{"none"} (default, the
-software \code{video_codec}), \code{"nvenc"} for NVIDIA GPU encoding
-(H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple GPU encoding
-(H.264 and HEVC). Uses that backend's encoder for \code{video_codec}'s
-family (e.g. \code{"libx264"} becomes \code{"h264_nvenc"} or
-\code{"h264_videotoolbox"}); with the default \code{video_codec = NULL}
-the H.264 family is assumed, so a non-H.264 container (e.g.
-\code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}
-(AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}}
-for availability and its caveats.
-Resolving a hardware backend asks this FFmpeg build which encoders it has,
-so the first such call that re-encodes the video runs the binary
-while the command is built, even under \code{run = FALSE}. The answer is
-remembered for the rest of the R session; see
-\code{\link{refresh_ffmpeg_capabilities}} to discard it.}
+\item{hardware}{The encoder backend. \code{"none"} (default) uses the software \code{video_codec}. \code{"nvenc"} uses NVIDIA GPU encoding (H.264, HEVC and AV1), and \code{"videotoolbox"} uses Apple GPU encoding (H.264 and HEVC). A backend uses its own encoder for the family of \code{video_codec}. For example, \code{"libx264"} becomes \code{"h264_nvenc"} or \code{"h264_videotoolbox"}. With the default \code{video_codec = NULL}, the H.264 family is assumed. So a non-H.264 container, such as \code{.webm}, needs an explicit HEVC- or AV1-family \code{video_codec} (AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}} for availability and its caveats. Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it.}
 
-\item{fallback}{A logical: when a non-\code{"none"} \code{hardware} is
-requested but its encoder is unavailable, encode in software with a
-message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
-\code{video_codec = NULL} the fallback leaves the codec unset rather
-than picking one, so the codec never changes silently.
-A \code{video_codec} in a family that backend has no encoder for is a
-wrong argument rather than an absent encoder, so it aborts whatever
-\code{fallback} says.}
+\item{fallback}{A logical. When a \code{hardware} other than \code{"none"} is requested but its encoder is unavailable, \code{TRUE} encodes in software with a message. \code{FALSE} (default) aborts instead. With \code{video_codec = NULL}, the fallback leaves the codec unset rather than picking one, so the codec never changes silently. A \code{video_codec} in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever \code{fallback} says.}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}

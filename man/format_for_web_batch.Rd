@@ -35,40 +35,24 @@ video, AAC audio). For per-row codecs use a verb that exposes them, such as
 (default, software libx264), \code{"nvenc"} for NVIDIA GPU H.264
 encoding, or \code{"videotoolbox"} for Apple GPU H.264 encoding.
 Batch-wide (not a per-row column). See \code{\link{has_hardware_encoder}}.
-Resolving a hardware backend asks this FFmpeg build which encoders it has,
-so the first such call that re-encodes the video runs the binary
-while the command is built, even under \code{run = FALSE}. The answer is
-remembered for the rest of the R session; see
-\code{\link{refresh_ffmpeg_capabilities}} to discard it.
-Availability is checked at this verb's own front door, before any row
-runs, so an unavailable encoder aborts naming this function rather than
-the internal fan-out it would otherwise be reported against.}
+Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.}
 
-\item{fallback}{A logical: when a non-\code{"none"} \code{hardware} is
-requested but its encoder is unavailable, re-encode with software
-libx264 and a message (\code{TRUE}) instead of aborting (\code{FALSE},
-default).
-A \code{video_codec} in a family that backend has no encoder for is a
-wrong argument rather than an absent encoder, so it aborts whatever
-\code{fallback} says.}
+\item{fallback}{A logical. When a \code{hardware} other than \code{"none"} is requested but its encoder is unavailable, \code{TRUE} re-encodes with software libx264 and a message. \code{FALSE} (default) aborts instead. A \code{video_codec} in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever \code{fallback} says.}
 
 \item{audio_stream}{The audio track to carry into each output, as a number that counts from \code{0} among the \emph{audio tracks} of each row's input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) carries \strong{every} audio track. Without an \code{audio_stream} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row. It does not fall back to the argument. The every-track family reads \code{NULL} as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The function does not carry subtitle or data streams in either case. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}
 
-\item{parallel}{A logical: map over jobs in parallel with \pkg{furrr}
-(\code{TRUE}) or sequentially (\code{FALSE}, default). See
+\item{parallel}{A logical: process the jobs in parallel with \pkg{furrr}
+(\code{TRUE}) or one at a time (\code{FALSE}, default). See
 \code{\link{ffm_batch}} for the \pkg{future} plan requirement.}
 
 \item{...}{Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
 \code{verify}, \code{manifest}, \code{progress}).}
 }
 \value{
-The \code{jobs} tibble with an added \code{command} column and, when
-\code{run = TRUE}, a \code{success} column (plus \code{verified} /
-provenance manifest when requested via \code{...}). See
-\code{\link{ffm_batch}}.
+The \code{jobs} tibble with an added \code{command} column. When \code{run = TRUE}, it also has a \code{success} column, plus \code{verified} or a provenance manifest, each when requested through \code{...}. See \code{\link{ffm_batch}}.
 }
 \description{
 Re-encode many input videos into a widely compatible, web-friendly form from

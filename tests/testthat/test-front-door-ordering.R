@@ -393,7 +393,7 @@ test_that("a clean `audio_input` column still compiles every row", {
 
 # --- AC6: the sentence the docs and the changelog pin -------------------------
 
-# The claim these verbs make to the user, in one wording, in three places. It is
+# The claim these verbs make to the user, pinned in the wordings below. It is
 # pinned rather than paraphrased because it is quantified twice -- over the four
 # values and over the two forms -- and a rewrite that widens either quantifier
 # would claim behavior no cell measures. The enumeration test below is what
@@ -401,6 +401,13 @@ test_that("a clean `audio_input` column still compiles every row", {
 ordering_sentence <- paste(
   "A value error and a contradiction resolve the same way whether the value",
   "arrived as an argument or in a jobs column; the contradiction reports first."
+)
+
+# The help pages split the same claim into two sentences (M129, plain English),
+# while the changelog keeps the one-sentence form above.
+ordering_sentence_rd <- paste(
+  "A value error and a contradiction resolve the same way whether the value",
+  "arrived as an argument or in a jobs column. The contradiction reports first."
 )
 
 # Both sources wrap the sentence across lines and mark up `jobs` differently --
@@ -420,7 +427,7 @@ test_that("both `_batch` verbs' help states the ordering sentence", {
   rd <- rd_sources()
   skip_if(is.null(rd), "no Rd source available")
   carrying <- sub("\\.Rd$", "", names(rd)[
-    grepl(ordering_sentence, normalize_prose(rd), fixed = TRUE)])
+    grepl(ordering_sentence_rd, normalize_prose(rd), fixed = TRUE)])
   # Both directions at once: every topic that should carry it does, and no
   # other topic claims it. A verb whose front door was never reordered must not
   # tell its user that it was.

@@ -119,11 +119,7 @@ and warns. Set a plan first, e.g.
 \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.}
 }
 \value{
-The \link[tibble:tibble-package]{tibble} returned by
-\code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column
-(and, when \code{output} was derived, the resolved \code{output} column;
-when \code{run = TRUE}, a \code{success} column, plus any columns the
-forwarded arguments add, e.g. \code{verified}). Under \code{two_pass = TRUE}
+The \link[tibble:tibble-package]{tibble} returned by \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column. When \code{output} was derived, it also has the resolved \code{output} column. When \code{run = TRUE}, it has a \code{success} column, plus any columns the forwarded arguments add, such as \code{verified}. Under \code{two_pass = TRUE}
 the result also carries the five measured columns (\code{measured_I} etc.)
 and a logical \code{silent} column, and the \code{command} column holds the
 linear correction commands (\code{NA} for silent rows, which carry \code{NA}
@@ -149,22 +145,14 @@ When a row names no \code{audio_stream} and its input turns out to carry
 tracks the output will not, the verb warns \strong{once} for the whole batch,
 naming every affected row. Naming a track silences it -- the
 \code{audio_stream} argument, or an \code{audio_stream} cell on every row --
-as does \code{suppressWarnings(classes = "tidymedia_dropped_audio")}. The
-check is \strong{best-effort} and costs \strong{one FFprobe call per
-distinct input} it has to probe, so a repeated input is probed once and a
-row that names a track is not probed at all: it is emitted when FFprobe is
-available and the input can be probed, and skipped silently otherwise. Those probes run \strong{serially at the front door}, before the
-fan-out starts, so \code{parallel} does not reach them; a sweep long enough
-to look like a hang reports its progress. The check never runs under
+as does \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+The check costs \strong{one FFprobe call per distinct input} it has to probe. A repeated input is probed once, and a row that names a track is not probed at all. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. Those probes run \strong{one at a time, before any row starts}, so \code{parallel} does not reach them. A sweep long enough to look like a hang reports its progress. The check never runs under
 \code{run = FALSE}, never changes any compiled command, and is skipped
 entirely when every row names a track. Under \code{two_pass = TRUE} it lands
 \emph{before} Phase 1, so it arrives while adding \code{audio_stream} can
 still save the analysis pass.
 
-Switch the check off -- and skip the whole sweep -- with
-\code{options(tidymedia.check_tracks = FALSE)} for the session, or
-\code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of
-one function.
+To switch the check off and skip the whole sweep, use \code{options(tidymedia.check_tracks = FALSE)} for the session. Use \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of one function.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -182,8 +170,7 @@ normalize_audio_batch(jobs, two_pass = TRUE)
 }
 }
 \references{
-EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted
-maximum level of audio signals}; ITU-R BS.1770-4.
+EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted maximum level of audio signals}; ITU-R BS.1770-4.
 }
 \seealso{
 \code{\link[=normalize_audio]{normalize_audio()}} for the single-input form; \code{\link[=ffm_batch]{ffm_batch()}} for the

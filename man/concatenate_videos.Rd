@@ -8,10 +8,7 @@ concatenate_videos(infiles, outfile, run = TRUE)
 }
 \arguments{
 \item{infiles}{A character vector containing the file paths to video files.
-Every path is checked at this verb's own front door, so a path that cannot
-be found or read aborts naming this function and lists every such path,
-rather than being reported against the internal builder it would otherwise
-reach.}
+This function checks every path itself. A path that cannot be found or read aborts naming this function, and the error lists every such path. It is not reported against the internal builder that the path would otherwise reach.}
 
 \item{outfile}{A string containing the desired file path to write the new,
 concatenated video file to.}

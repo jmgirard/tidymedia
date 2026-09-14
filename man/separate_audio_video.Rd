@@ -47,22 +47,11 @@ stream copy, which runs no encoder at all, a non-\code{"none"}
 \code{hardware} alongside \code{video_codec = "copy"} is an error: name
 an encoder or pass \code{video_codec = NULL}. See
 \code{\link{has_hardware_encoder}} for availability and its caveats.
-Resolving a hardware backend asks this FFmpeg build which encoders it has,
-so the first such call that re-encodes the video runs the binary
-while the command is built, even under \code{run = FALSE}. The answer is
-remembered for the rest of the R session; see
-\code{\link{refresh_ffmpeg_capabilities}} to discard it.
+Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 The stream-copy conflict above is caught first, so such a call aborts
 without probing.}
 
-\item{fallback}{A logical: when a non-\code{"none"} \code{hardware} is
-requested but its encoder is unavailable, encode in software with a
-message (\code{TRUE}) instead of aborting (\code{FALSE}, default). With
-\code{video_codec = NULL} the fallback leaves the codec unset rather
-than injecting one.
-A \code{video_codec} in a family that backend has no encoder for is a
-wrong argument rather than an absent encoder, so it aborts whatever
-\code{fallback} says.}
+\item{fallback}{A logical. When a \code{hardware} other than \code{"none"} is requested but its encoder is unavailable, \code{TRUE} encodes in software with a message. \code{FALSE} (default) aborts instead. With \code{video_codec = NULL}, the fallback leaves the codec unset rather than injecting one. A \code{video_codec} in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever \code{fallback} says.}
 
 \item{audio_stream}{The audio track to write to \code{audiofile}, as a number that counts from \code{0} among the \emph{audio tracks} of the input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) keeps \strong{every} audio track. The every-track family reads \code{NULL} this way: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. A container that holds several audio streams (\code{.mka}, \code{.m4a}) gets them all. A container for one stream only (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail, so name a track to write one of those. Count only the input's \emph{audio} streams. Do not use the \code{index} column of \code{\link{probe_audio}}, which counts every stream. An input with no audio at all is an FFmpeg error here, because this function writes an audio file. Functions that write only a video file, such as \code{\link{standardize_video}}, do not fail in that case. \code{videofile} is never affected. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 

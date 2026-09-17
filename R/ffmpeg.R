@@ -3,18 +3,19 @@
 
 #' Run a raw FFmpeg command
 #'
-#' Send a raw argument string to the FFmpeg command-line program. This is the
-#' Layer 0 escape hatch: the string is passed to FFmpeg verbatim (after the
-#' executable path), so the caller is responsible for quoting and option order.
+#' Send a raw argument string to the FFmpeg command-line program. This is a
+#' direct command. The function passes the string to FFmpeg unchanged, after
+#' the path of the FFmpeg program. So you are responsible for the quoting and
+#' the order of the options.
 #'
 #' @param command A string containing the arguments to pass to FFmpeg.
 #' @return A character vector containing the text output by FFmpeg.
-#' @seealso [ffmpeg_codecs()] and [ffmpeg_encoders()] for structured capability
-#'   queries, and the `ffm_*` pipeline builders (e.g. [ffm_run()]) for a safer
-#'   command layer.
+#' @seealso [ffmpeg_codecs()] and [ffmpeg_encoders()] return what FFmpeg
+#'   supports as data frames. The `ffm_*()` pipeline functions, such as
+#'   [ffm_run()], are a safer way to build a command.
 #' @family direct command functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
-#' # Layer 0 escape hatch: the string is passed to FFmpeg verbatim
+#' # A direct command: the function passes the string to FFmpeg unchanged
 #' ffmpeg("-version")
 #' @export
 ffmpeg <- function(command) {
@@ -2694,12 +2695,12 @@ normalize_audio_pipeline <- function(input, output,
 
 #' Get a data frame of all installed codecs
 #'
-#' Query a list of installed codecs from FFmpeg and construct a tidy data frame
-#' containing information about these codecs.
+#' Ask FFmpeg for its list of installed codecs, and return the list as a data
+#' frame with information about each codec. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec and encoder.
 #'
-#' @param sort_by_type A logical indicating whether the tibble should be sorted
-#'   by type and then by name (\code{TRUE}) or just by name (\code{FALSE}).
-#'   (default = \code{TRUE})
+#' @param sort_by_type A logical. \code{TRUE} sorts the tibble by type and then
+#'   by name. \code{FALSE} sorts it by name only. (default = \code{TRUE})
 #' @return A [tibble][tibble::tibble-package] with the following variables:
 #'   \item{name}{A character vector including the name/code of each codec}
 #'   \item{details}{A character vector including details about each codec}
@@ -2712,7 +2713,7 @@ normalize_audio_pipeline <- function(input, output,
 #'   whether each codec supports lossy compression} \item{lossless}{A logical
 #'   vector indicating whether each codec supports lossless compression}
 #' @seealso [ffmpeg_encoders()] for the encoder list, [ffm_codec()] to set a
-#'   codec in a pipeline, and [ffmpeg()] for the Layer 0 escape hatch.
+#'   codec in a pipeline, and [ffmpeg()] for the direct command.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' head(ffmpeg_codecs())
@@ -2783,8 +2784,9 @@ ffmpeg_codecs <- function(sort_by_type = TRUE) {
 
 #' Get a data frame of all installed encoders
 #'
-#' Query a list of installed encoders from FFmpeg and construct a tidy data
-#' frame containing information about these encoders.
+#' Ask FFmpeg for its list of installed encoders, and return the list as a data
+#' frame with information about each encoder. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec and encoder.
 #'
 #' @inheritParams ffmpeg_codecs
 #' @return A [tibble][tibble::tibble-package] with the following variables:
@@ -2800,7 +2802,7 @@ ffmpeg_codecs <- function(sort_by_type = TRUE) {
 #'   \item{direct_render}{A logical vector indicating whether each encoders
 #'   supports direct rending method 1}
 #' @seealso [ffmpeg_codecs()] for the codec list, [ffm_codec()] to set a codec
-#'   in a pipeline, and [ffmpeg()] for the Layer 0 escape hatch.
+#'   in a pipeline, and [ffmpeg()] for the direct command.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' head(ffmpeg_encoders())
@@ -2903,59 +2905,62 @@ hardware_codec_families <- function() {
 
 #' Hardware video encoders
 #'
-#' Helpers for opt-in hardware video encoding. \code{hardware_encoder()} maps a
-#' codec family to its hardware encoder name; \code{has_hardware_encoder()}
-#' reports whether that encoder is available in the local FFmpeg build. Two
-#' backends are supported: NVIDIA nvenc (H.264, HEVC and AV1) and Apple
-#' videotoolbox (H.264 and HEVC), so \code{hardware_encoder("h264", "nvenc")}
-#' is \code{"h264_nvenc"} and \code{hardware_encoder("h264",
-#' "videotoolbox")} is \code{"h264_videotoolbox"}.
+#' These functions help with optional hardware video encoding.
+#' \code{hardware_encoder()} gives the hardware encoder name for a codec family.
+#' \code{has_hardware_encoder()} reports whether that encoder is available in
+#' the local FFmpeg build. The package supports two backends: NVIDIA nvenc
+#' (H.264, HEVC and AV1) and Apple videotoolbox (H.264 and HEVC). So
+#' \code{hardware_encoder("h264", "nvenc")} is \code{"h264_nvenc"}, and
+#' \code{hardware_encoder("h264", "videotoolbox")} is
+#' \code{"h264_videotoolbox"}. The glossary in \code{vignette("tidymedia")}
+#' explains media terms such as codec, container and hardware encoder.
 #'
-#' \code{has_hardware_encoder()} is a \emph{cheap} check: it asks whether FFmpeg lists the
-#' encoder (via \code{\link{ffmpeg_encoders}}), which reflects how FFmpeg was
-#' built, not whether working hardware and a driver are present at run time.
-#' An encode can still fail at run time on a machine with no capable GPU. To
-#' override detection in a known environment (or in tests), set
-#' \code{options(tidymedia.hardware_encoders = )} to a character vector of encoder
-#' names to treat as available.
+#' \code{has_hardware_encoder()} is a \emph{cheap} check. It asks whether FFmpeg
+#' lists the encoder (via \code{\link{ffmpeg_encoders}}). That list reflects how
+#' FFmpeg was built. It does not reflect whether working hardware and a driver
+#' are present at run time. An encode can still fail at run time on a machine
+#' with no capable GPU. To override detection in a known environment (or in
+#' tests), set \code{options(tidymedia.hardware_encoders = )} to a character
+#' vector of encoder names to treat as available.
 #'
-#' These back the \code{hardware} toggle on
+#' The \code{hardware} argument of these task functions uses them:
 #' \code{\link{standardize_video}}, \code{\link{format_for_web}},
 #' \code{\link{anonymize_video}}, \code{\link{crop_video}},
 #' \code{\link{segment_video}}, \code{\link{compare_videos}},
 #' \code{\link{picture_in_picture}}, and \code{\link{separate_audio_video}}
-#' (and their \code{_batch} siblings). On the
-#' verbs whose \code{video_codec} defaults to \code{NULL} (no codec named), the
-#' H.264 family is assumed, so a non-H.264
-#' container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
-#' \code{video_codec} (AV1 only under \code{"nvenc"}). Hardware
-#' \emph{decoding} (\code{-hwaccel}) and GPU filter pipelines are out of scope;
-#' use the \code{\link{ffmpeg}} escape hatch for those.
+#' (and their \code{_batch} forms). Some of these functions have a
+#' \code{video_codec} that defaults to \code{NULL} (no codec named), and they
+#' assume the H.264 family. So a container that does not take H.264 (e.g.
+#' \code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}.
+#' AV1 works only under \code{"nvenc"}. Hardware \emph{decoding}
+#' (\code{-hwaccel}) and GPU filter pipelines are out of scope. Use the
+#' \code{\link{ffmpeg}} direct command for those.
 #'
 #' @param codec The video codec family: one of \code{"h264"}, \code{"hevc"},
 #'   \code{"av1"}, or \code{"prores"}. These are the families the package
-#'   recognizes, not the families a given backend covers: a family the chosen
-#'   \code{hardware} backend has no encoder for is refused naming both the
-#'   backend and the family (e.g. \code{"av1"} under \code{"videotoolbox"}).
-#'   \code{"prores"} is refused by both backends today.
+#'   recognizes, not the families a given backend covers. If the chosen
+#'   \code{hardware} backend has no encoder for a family, the function refuses
+#'   the call. The error names both the backend and the family (e.g.
+#'   \code{"av1"} under \code{"videotoolbox"}). Both backends refuse
+#'   \code{"prores"} today.
 #' @param hardware The backend: \code{"nvenc"} or \code{"videotoolbox"}.
-#'   Required, with no default. Narrower than the verbs' \code{hardware}
-#'   argument: \code{"none"} is the verbs' off position, meaning "use no
-#'   backend", which has no meaning here, so it is refused.
-#' @return \code{hardware_encoder()} a single encoder-name string (e.g.
-#'   \code{"h264_nvenc"}); \code{has_hardware_encoder()} a length-one logical.
-#'   Neither returns for a \code{codec} the chosen \code{hardware} backend has
-#'   no encoder for: that pair is a wrong argument rather than a machine
-#'   without something, so both raise the error \code{codec} describes above.
-#'   \code{has_hardware_encoder()} returns \code{FALSE} only for a pair the
-#'   table holds and this FFmpeg build does not list.
-#' @seealso \code{\link{ffmpeg_encoders}} for the full encoder list,
+#'   Required, with no default. This set is narrower than the \code{hardware}
+#'   argument of the task functions. There, \code{"none"} means "use no
+#'   backend". That has no meaning here, so the function refuses it.
+#' @return \code{hardware_encoder()} returns a single encoder-name string (e.g.
+#'   \code{"h264_nvenc"}). \code{has_hardware_encoder()} returns a length-one
+#'   logical. Neither returns for a \code{codec} that the chosen \code{hardware}
+#'   backend has no encoder for. That pair is a wrong argument, not a machine
+#'   without something. So both give the error that \code{codec} describes
+#'   above. \code{has_hardware_encoder()} returns \code{FALSE} only for a pair
+#'   that the package supports and this FFmpeg build does not list.
+#' @seealso \code{\link{ffmpeg_encoders}} for the full encoder list.
+#'   The \code{hardware} argument of these functions uses this page's functions:
 #'   \code{\link{standardize_video}}, \code{\link{format_for_web}},
 #'   \code{\link{anonymize_video}}, \code{\link{crop_video}},
 #'   \code{\link{segment_video}}, \code{\link{compare_videos}},
 #'   \code{\link{picture_in_picture}}, and
-#'   \code{\link{separate_audio_video}} for the
-#'   \code{hardware} toggle that uses these.
+#'   \code{\link{separate_audio_video}}.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' hardware_encoder("h264", "nvenc")

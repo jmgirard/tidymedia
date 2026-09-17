@@ -13,20 +13,21 @@ ffmpeg(command)
 A character vector containing the text output by FFmpeg.
 }
 \description{
-Send a raw argument string to the FFmpeg command-line program. This is the
-Layer 0 escape hatch: the string is passed to FFmpeg verbatim (after the
-executable path), so the caller is responsible for quoting and option order.
+Send a raw argument string to the FFmpeg command-line program. This is a
+direct command. The function passes the string to FFmpeg unchanged, after
+the path of the FFmpeg program. So you are responsible for the quoting and
+the order of the options.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
-# Layer 0 escape hatch: the string is passed to FFmpeg verbatim
+# A direct command: the function passes the string to FFmpeg unchanged
 ffmpeg("-version")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}} and \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}} for structured capability
-queries, and the \verb{ffm_*} pipeline builders (e.g. \code{\link[=ffm_run]{ffm_run()}}) for a safer
-command layer.
+\code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}} and \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}} return what FFmpeg
+supports as data frames. The \verb{ffm_*()} pipeline functions, such as
+\code{\link[=ffm_run]{ffm_run()}}, are a safer way to build a command.
 
 Other direct command functions:
 \code{\link[=ffprobe]{ffprobe()}},

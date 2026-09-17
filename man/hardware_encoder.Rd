@@ -12,55 +12,58 @@ has_hardware_encoder(codec = c("h264", "hevc", "av1", "prores"), hardware)
 \arguments{
 \item{codec}{The video codec family: one of \code{"h264"}, \code{"hevc"},
 \code{"av1"}, or \code{"prores"}. These are the families the package
-recognizes, not the families a given backend covers: a family the chosen
-\code{hardware} backend has no encoder for is refused naming both the
-backend and the family (e.g. \code{"av1"} under \code{"videotoolbox"}).
-\code{"prores"} is refused by both backends today.}
+recognizes, not the families a given backend covers. If the chosen
+\code{hardware} backend has no encoder for a family, the function refuses
+the call. The error names both the backend and the family (e.g.
+\code{"av1"} under \code{"videotoolbox"}). Both backends refuse
+\code{"prores"} today.}
 
 \item{hardware}{The backend: \code{"nvenc"} or \code{"videotoolbox"}.
-Required, with no default. Narrower than the verbs' \code{hardware}
-argument: \code{"none"} is the verbs' off position, meaning "use no
-backend", which has no meaning here, so it is refused.}
+Required, with no default. This set is narrower than the \code{hardware}
+argument of the task functions. There, \code{"none"} means "use no
+backend". That has no meaning here, so the function refuses it.}
 }
 \value{
-\code{hardware_encoder()} a single encoder-name string (e.g.
-\code{"h264_nvenc"}); \code{has_hardware_encoder()} a length-one logical.
-Neither returns for a \code{codec} the chosen \code{hardware} backend has
-no encoder for: that pair is a wrong argument rather than a machine
-without something, so both raise the error \code{codec} describes above.
-\code{has_hardware_encoder()} returns \code{FALSE} only for a pair the
-table holds and this FFmpeg build does not list.
+\code{hardware_encoder()} returns a single encoder-name string (e.g.
+\code{"h264_nvenc"}). \code{has_hardware_encoder()} returns a length-one
+logical. Neither returns for a \code{codec} that the chosen \code{hardware}
+backend has no encoder for. That pair is a wrong argument, not a machine
+without something. So both give the error that \code{codec} describes
+above. \code{has_hardware_encoder()} returns \code{FALSE} only for a pair
+that the package supports and this FFmpeg build does not list.
 }
 \description{
-Helpers for opt-in hardware video encoding. \code{hardware_encoder()} maps a
-codec family to its hardware encoder name; \code{has_hardware_encoder()}
-reports whether that encoder is available in the local FFmpeg build. Two
-backends are supported: NVIDIA nvenc (H.264, HEVC and AV1) and Apple
-videotoolbox (H.264 and HEVC), so \code{hardware_encoder("h264", "nvenc")}
-is \code{"h264_nvenc"} and \code{hardware_encoder("h264",
-"videotoolbox")} is \code{"h264_videotoolbox"}.
+These functions help with optional hardware video encoding.
+\code{hardware_encoder()} gives the hardware encoder name for a codec family.
+\code{has_hardware_encoder()} reports whether that encoder is available in
+the local FFmpeg build. The package supports two backends: NVIDIA nvenc
+(H.264, HEVC and AV1) and Apple videotoolbox (H.264 and HEVC). So
+\code{hardware_encoder("h264", "nvenc")} is \code{"h264_nvenc"}, and
+\code{hardware_encoder("h264", "videotoolbox")} is
+\code{"h264_videotoolbox"}. The glossary in \code{vignette("tidymedia")}
+explains media terms such as codec, container and hardware encoder.
 }
 \details{
-\code{has_hardware_encoder()} is a \emph{cheap} check: it asks whether FFmpeg lists the
-encoder (via \code{\link{ffmpeg_encoders}}), which reflects how FFmpeg was
-built, not whether working hardware and a driver are present at run time.
-An encode can still fail at run time on a machine with no capable GPU. To
-override detection in a known environment (or in tests), set
-\code{options(tidymedia.hardware_encoders = )} to a character vector of encoder
-names to treat as available.
+\code{has_hardware_encoder()} is a \emph{cheap} check. It asks whether FFmpeg
+lists the encoder (via \code{\link{ffmpeg_encoders}}). That list reflects how
+FFmpeg was built. It does not reflect whether working hardware and a driver
+are present at run time. An encode can still fail at run time on a machine
+with no capable GPU. To override detection in a known environment (or in
+tests), set \code{options(tidymedia.hardware_encoders = )} to a character
+vector of encoder names to treat as available.
 
-These back the \code{hardware} toggle on
+The \code{hardware} argument of these task functions uses them:
 \code{\link{standardize_video}}, \code{\link{format_for_web}},
 \code{\link{anonymize_video}}, \code{\link{crop_video}},
 \code{\link{segment_video}}, \code{\link{compare_videos}},
 \code{\link{picture_in_picture}}, and \code{\link{separate_audio_video}}
-(and their \code{_batch} siblings). On the
-verbs whose \code{video_codec} defaults to \code{NULL} (no codec named), the
-H.264 family is assumed, so a non-H.264
-container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
-\code{video_codec} (AV1 only under \code{"nvenc"}). Hardware
-\emph{decoding} (\code{-hwaccel}) and GPU filter pipelines are out of scope;
-use the \code{\link{ffmpeg}} escape hatch for those.
+(and their \code{_batch} forms). Some of these functions have a
+\code{video_codec} that defaults to \code{NULL} (no codec named), and they
+assume the H.264 family. So a container that does not take H.264 (e.g.
+\code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}.
+AV1 works only under \code{"nvenc"}. Hardware \emph{decoding}
+(\code{-hwaccel}) and GPU filter pipelines are out of scope. Use the
+\code{\link{ffmpeg}} direct command for those.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
@@ -69,13 +72,13 @@ has_hardware_encoder("h264", "nvenc")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link{ffmpeg_encoders}} for the full encoder list,
+\code{\link{ffmpeg_encoders}} for the full encoder list.
+The \code{hardware} argument of these functions uses this page's functions:
 \code{\link{standardize_video}}, \code{\link{format_for_web}},
 \code{\link{anonymize_video}}, \code{\link{crop_video}},
 \code{\link{segment_video}}, \code{\link{compare_videos}},
 \code{\link{picture_in_picture}}, and
-\code{\link{separate_audio_video}} for the
-\code{hardware} toggle that uses these.
+\code{\link{separate_audio_video}}.
 
 Other capability functions:
 \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}},

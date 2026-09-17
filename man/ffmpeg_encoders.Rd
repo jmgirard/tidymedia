@@ -7,9 +7,8 @@
 ffmpeg_encoders(sort_by_type = TRUE)
 }
 \arguments{
-\item{sort_by_type}{A logical indicating whether the tibble should be sorted
-by type and then by name (\code{TRUE}) or just by name (\code{FALSE}).
-(default = \code{TRUE})}
+\item{sort_by_type}{A logical. \code{TRUE} sorts the tibble by type and then
+by name. \code{FALSE} sorts it by name only. (default = \code{TRUE})}
 }
 \value{
 A \link[tibble:tibble-package]{tibble} with the following variables:
@@ -26,8 +25,9 @@ logical vector indicating whether each encoder supports draw_horiz_band}
 supports direct rending method 1}
 }
 \description{
-Query a list of installed encoders from FFmpeg and construct a tidy data
-frame containing information about these encoders.
+Ask FFmpeg for its list of installed encoders, and return the list as a data
+frame with information about each encoder. The glossary in
+\code{vignette("tidymedia")} explains media terms such as codec and encoder.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
@@ -37,7 +37,7 @@ ffmpeg_encoders(sort_by_type = FALSE)
 }
 \seealso{
 \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}} for the codec list, \code{\link[=ffm_codec]{ffm_codec()}} to set a codec
-in a pipeline, and \code{\link[=ffmpeg]{ffmpeg()}} for the Layer 0 escape hatch.
+in a pipeline, and \code{\link[=ffmpeg]{ffmpeg()}} for the direct command.
 
 Other capability functions:
 \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}},

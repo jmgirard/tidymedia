@@ -449,3 +449,26 @@ Each claim keeps its meaning at head. All are items of the M131 part of the `ffm
 | `ffm_crop` | `x` and `y` take a positive number. | `check_dim(x, inclusive = TRUE)` accepts 0 (`R/utils.R`). |
 | `ffm_hstack`, `ffm_vstack` | `shortest` trims all videos to the shortest. | With `resize = TRUE`, the resize graph has no `shortest` term (`R/ffm.R`). |
 | `ffm_loudnorm` | The filter compiles to `-af`. | In the `complex` branch, `ffm_compile()` writes only `filter_video` and never reads `filter_audio` (`R/ffm.R`). |
+
+### M132
+
+The base commit is `efb2b2c4`. At that commit, the domain is the 12 `man/*.Rd` files whose header names `R/ffmpeg.R` and whose base name matches the M132 filter: `convert_audio`, `convert_audio_batch`, `extract_audio`, `extract_audio_batch`, `extract_frame`, `extract_frame_batch`, `ffmpeg`, `ffmpeg_codecs`, `ffmpeg_encoders`, `hardware_encoder`, `sample_frames` and `sample_frames_batch`.
+
+#### Sweep output at the base commit (AC1, AC2, AC3, AC4)
+
+The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` over the 12 files that `git show efb2b2c4:man/<page>.Rd` wrote to a temporary folder. It read 369 sentences and exited 1 with 45 findings: 23 `[<n> words]`, 22 `[term …]` and no `[dash in Rd source]`. The same command gives the full output again. Stems are the glossary stems in each page's `--prose` output. The AC4 identifiers are `tidymedia.check_tracks`, `tidymedia.hardware_encoders` and `tidymedia_dropped_audio`. No page named the glossary.
+
+| Page | Words | Term | Dash | Stems (AC3) | Result |
+|---|---|---|---|---|---|
+| convert_audio | 0 | 3 | 0 | `codec`, `encod`, `stream` | |
+| convert_audio_batch | 3 | 3 | 0 | `codec`, `stream` | |
+| extract_audio | 1 | 1 | 0 | `codec`, `container`, `encod`, `stream` | |
+| extract_audio_batch | 4 | 2 | 0 | `codec`, `container`, `encod`, `stream` | |
+| extract_frame | 0 | 0 | 0 | — | |
+| extract_frame_batch | 4 | 1 | 0 | `frame rate` | |
+| ffmpeg | 1 | 2 | 0 | — | |
+| ffmpeg_codecs | 0 | 2 | 0 | `codec`, `encod` | |
+| ffmpeg_encoders | 0 | 2 | 0 | `codec`, `encod` | |
+| hardware_encoder | 4 | 1 | 0 | `codec`, `container`, `encod` | |
+| sample_frames | 3 | 3 | 0 | `frame rate`, `sampl(e\|ing) rate` | |
+| sample_frames_batch | 3 | 2 | 0 | `sampl(e\|ing) rate` | |

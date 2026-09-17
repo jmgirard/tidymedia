@@ -409,3 +409,43 @@ Each claim keeps its meaning at head. All are items of the M130 follow-up row in
 | `format_for_web_batch` | The command has no per-row settings. | The function reads an `audio_stream` column for each row with `pick("audio_stream", audio_stream)` (`R/ffmpeg.R`). |
 | `crop_video_batch`, `format_for_web_batch` | See Also: each wraps its single-file function. | Each calls `crop_video_pipeline()` or `format_for_web_pipeline()`, not `crop_video()` or `format_for_web()`. |
 | `standardize_video_batch`, `strip_metadata_batch` | See Also: two named functions are "the other" batch task functions. | `R/ffmpeg.R` defines 17 `*_batch` functions. |
+
+### M131
+
+The base commit is `08a4df26`. At that commit, the domain is the 10 `man/*.Rd` files whose header names `R/ffm.R` and whose base name matches the M131 filter: `ffm_concat`, `ffm_crop`, `ffm_drawbox`, `ffm_fps`, `ffm_hstack`, `ffm_loudnorm`, `ffm_overlay`, `ffm_scale`, `ffm_trim` and `ffm_vstack`.
+
+#### Sweep output at the base commit (AC1, AC2, AC3, AC4)
+
+The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` over the 10 files that `git show 08a4df26:man/<page>.Rd` wrote to a temporary folder. It read 220 sentences and exited 1 with 14 findings: 9 `[<n> words]`, 5 `[term …]` and no `[dash in Rd source]`. The same command gives the full output again. Stems are the glossary stems in each page's `--prose` output. The only AC4 identifier is `tidymedia_ffm`, on all 10 pages. No page named the glossary. `?ffm_overlay` also says "Layer-2", which the term pattern `\bLayer [012]\b` does not match.
+
+| Page | Words | Term | Dash | Stems (AC3) | Result |
+|---|---|---|---|---|---|
+| ffm_concat | 2 | 2 | 0 | `codec`, `encod`, `frame rate`, `stream` | No finding. Names the glossary. "Layer 0 escape hatch" became "a direct command, such as `ffmpeg()`". |
+| ffm_crop | 0 | 0 | 0 | — | No finding. No stem. |
+| ffm_drawbox | 0 | 0 | 0 | — | No finding. No stem. |
+| ffm_fps | 0 | 0 | 0 | `frame rate` | No finding. Names the glossary. |
+| ffm_hstack | 0 | 0 | 0 | — | No finding. No stem. |
+| ffm_loudnorm | 4 | 2 | 0 | `encod`, `LUFS`, `true peak` | No finding. Names the glossary. Deleted: that it is the first pipeline function to write the audio filter chain (history), and the count "all five of these plus `offset`", which read as six values. The all-or-none rule stays. |
+| ffm_overlay | 2 | 1 | 0 | `stream` | No finding. Names the glossary. "Layer-2 verb" became "task function". |
+| ffm_scale | 0 | 0 | 0 | — | No finding. No stem. The title typo "a FFmpeg" is fixed. |
+| ffm_trim | 1 | 0 | 0 | `stream` | No finding. Names the glossary. |
+| ffm_vstack | 0 | 0 | 0 | `stream` | No finding. Names the glossary. |
+
+#### Results at head (T4)
+
+- AC1, AC2: the sweep over the 10 pages at head reads 271 sentences, prints no finding and exits 0.
+- AC3: the 6 pages with a stem at head each name the glossary (corrected M131 review: said 7). `ffm_crop`, `ffm_drawbox`, `ffm_hstack` and `ffm_scale` have no stem.
+- AC4: `tidymedia_ffm` is found by `git grep -wF` in `man/*.Rd` at head.
+- AC5: `git diff --name-only 08a4df26 HEAD -- man/` lists only the 10 domain pages.
+- Tests: no test pins wording that changed, so no test was changed or removed. `test-shared-range-bindings.R` still finds the three rendered loudness ranges on `?ffm_loudnorm`.
+- Claim audit: a fresh reader read about 110 claims and found no false claim that the branch added. It found 2 changed sentences, 1 dropped "internally" and 3 unclear phrases. All were put back to the base claim, and the reader found the new wording correct.
+
+#### Base claims found false
+
+Each claim keeps its meaning at head. All are items of the M131 part of the `ffm_*()` help-text follow-up row in `cairn/ROADMAP.md`.
+
+| Page | Claim | Evidence |
+|---|---|---|
+| `ffm_crop` | `x` and `y` take a positive number. | `check_dim(x, inclusive = TRUE)` accepts 0 (`R/utils.R`). |
+| `ffm_hstack`, `ffm_vstack` | `shortest` trims all videos to the shortest. | With `resize = TRUE`, the resize graph has no `shortest` term (`R/ffm.R`). |
+| `ffm_loudnorm` | The filter compiles to `-af`. | In the `complex` branch, `ffm_compile()` writes only `filter_video` and never reads `filter_audio` (`R/ffm.R`). |

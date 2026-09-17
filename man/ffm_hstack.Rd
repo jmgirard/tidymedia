@@ -7,24 +7,24 @@
 ffm_hstack(object, shortest = FALSE, resize = FALSE)
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{shortest}{A logical indicating whether to trim the duration of all
-videos to that of the shortest video (default = \code{FALSE})}
+\item{shortest}{A logical that says whether to trim the duration of all
+videos to that of the shortest video. The default is \code{FALSE}.}
 
-\item{resize}{A logical indicating whether to resize the height of the input
-videos to match (takes longer and currently only works with two inputs).
-Resizing conforms both inputs to the same aspect ratio, so it assumes the
+\item{resize}{A logical that says whether to resize the input videos to the
+same height. Resizing takes longer, and for now it works only with two
+inputs. It fits both inputs to the same aspect ratio, so it assumes the
 inputs share one.}
 }
 \value{
-\code{object} but with the added instruction to apply horizontal
-stacking.
+\code{object} with an added instruction to stack the videos
+horizontally.
 }
 \description{
-Add a complex video filter to stack multiple videos horizontally
-(side-by-side) and, optionally, resize them to have the same height.
+Add a complex video filter that stacks several videos horizontally (side by
+side). It can also resize the videos to the same height.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -34,8 +34,8 @@ ffm_files(c(video, video), "output.mp4") |>
   ffm_compile()
 }
 \seealso{
-\code{\link[=ffm_vstack]{ffm_vstack()}} for vertical stacking and \code{\link[=compare_videos]{compare_videos()}}, the
-task verb built on both.
+\code{\link[=ffm_vstack]{ffm_vstack()}} for vertical stacking, and \code{\link[=compare_videos]{compare_videos()}}, the
+task function built on both.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

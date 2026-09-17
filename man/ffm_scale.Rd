@@ -2,26 +2,26 @@
 % Please edit documentation in R/ffm.R
 \name{ffm_scale}
 \alias{ffm_scale}
-\title{Scale (Resize) Frames in a FFmpeg Pipeline}
+\title{Scale (Resize) Frames in an FFmpeg Pipeline}
 \usage{
 ffm_scale(object, width, height)
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{width}{The width of the output video (in pixels). Either (1) a positive
-real number or (2) a string that contains an FFmpeg expression.}
+\item{width}{The width of the output video, in pixels. Give a positive real
+number or a string that contains an FFmpeg expression.}
 
-\item{height}{The height of the output video (in pixels). Either (1) a
-positive real number or (2) a string that contains an FFmpeg expression.}
+\item{height}{The height of the output video, in pixels. Give a positive
+real number or a string that contains an FFmpeg expression.}
 }
 \value{
-\code{object} but with the added instruction to resize the image(s).
+\code{object} with an added instruction to resize the frames.
 }
 \description{
-Scale (resize) the input video's frames to either a specific width and height
-(in pixels) or using an FFmpeg expression.
+Scale (resize) the input video's frames to a width and height in pixels, or
+with an FFmpeg expression.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -30,8 +30,8 @@ ffm_files(video, "output.mp4") |>
   ffm_compile()
 }
 \seealso{
-\code{\link[=ffm_crop]{ffm_crop()}} to crop instead of resize; \code{\link[=standardize_video]{standardize_video()}} is the
-task verb built on it.
+\code{\link[=ffm_crop]{ffm_crop()}} to crop instead of resize. \code{\link[=standardize_video]{standardize_video()}} is the
+task function built on \code{ffm_scale()}.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

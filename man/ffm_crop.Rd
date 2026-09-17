@@ -7,28 +7,28 @@
 ffm_crop(object, width, height, x = "(in_w-out_w)/2", y = "(in_h-out_h)/2")
 }
 \arguments{
-\item{object}{An ffmpeg pipeline (\code{ffm}) object created by
+\item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{width}{The width of the output video (in pixels). Either a positive
-real number or a string that contains an FFMPEG expression.}
+\item{width}{The width of the output video, in pixels. Give a positive real
+number or a string that contains an FFmpeg expression.}
 
-\item{height}{The height of the output video (in pixels). Either a positive
-real number or a string that contains an FFMPEG expression.}
+\item{height}{The height of the output video, in pixels. Give a positive
+real number or a string that contains an FFmpeg expression.}
 
-\item{x}{The horizontal position, in the input video, of the left edge of the
-output video (in pixels). Either a positive real number or a string that
-contains an FFMPEG expression. (default = \code{"(in_w-out_w)/2"})}
+\item{x}{The horizontal position of the left edge of the output video, in
+pixels of the input video. Give a positive real number or a string that
+contains an FFmpeg expression. The default is \code{"(in_w-out_w)/2"}.}
 
-\item{y}{The vertical position, in the input video, of the top edge of the
-output video (in pixels). Either a positive real number or a string that
-contains an FFMPEG expression. (default = \code{"(in_h-out_h)/2"})}
+\item{y}{The vertical position of the top edge of the output video, in pixels
+of the input video. Give a positive real number or a string that contains
+an FFmpeg expression. The default is \code{"(in_h-out_h)/2"}.}
 }
 \value{
-\code{object} but with the added instruction to crop the image(s).
+\code{object} with an added instruction to crop the frames.
 }
 \description{
-Decrease the size of the video's frames by cropping it.
+Make the video's frames smaller by cropping them.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -41,8 +41,8 @@ ffm_files(video, "output.mp4") |>
 https://ffmpeg.org/ffmpeg-filters.html#crop
 }
 \seealso{
-\code{\link[=ffm_scale]{ffm_scale()}} to resize instead of crop; \code{\link[=crop_video]{crop_video()}} and
-\code{\link[=format_for_web]{format_for_web()}} are the task verbs built on it.
+\code{\link[=ffm_scale]{ffm_scale()}} to resize instead of crop. \code{\link[=crop_video]{crop_video()}} and
+\code{\link[=format_for_web]{format_for_web()}} are the task functions built on \code{ffm_crop()}.
 
 Other pipeline functions:
 \code{\link[=ffm_batch]{ffm_batch()}},

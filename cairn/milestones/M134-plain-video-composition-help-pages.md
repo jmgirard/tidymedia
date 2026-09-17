@@ -1,6 +1,6 @@
 # M134: The anonymize, segment, concatenate, compare and picture-in-picture help pages read as plain English
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** M129
 - **Driving RR:** —
@@ -43,7 +43,7 @@ The M134 help-page domain uses plain English for an R user who does not know FFm
 - [x] T2: Rewrite `anonymize_video()` and `segment_video()`, and their batch pages.
 - [x] T3: Rewrite `concatenate_videos()` and its batch page.
 - [x] T4: Rewrite `compare_videos()` and `picture_in_picture()`, and their batch pages.
-- [ ] T5: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words, and a sentence that names the glossary stays. A base claim found false gets a ledger row and a line in the follow-up candidate row. Fill the ledger. Run the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
+- [x] T5: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words, and a sentence that names the glossary stays. A base claim found false gets a ledger row and a line in the follow-up candidate row. Fill the ledger. Run the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
 ## Work log
 
@@ -52,6 +52,9 @@ The M134 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-17: T1 done. `### M134` in `cairn/references/plain-docs.md` records the base commit, the 10 pages and the base sweep: 553 sentences, 56 findings. The AC4 patterns match nothing at the base commit.
 - 2026-09-17: T2 done. The sweep prints no finding for the 4 anonymize and segment pages, and each names the glossary. `devtools::document()` changed only those 4 pages. The docs, anonymize and segment test files pass.
 - 2026-09-17: T3 and T4 done in one commit, because both edit `R/ffmpeg.R` and one `devtools::document()` run wrote their 6 pages. The sweep over the 10 pages reads 621 sentences, prints no finding and exits 0. The 9 pages with a stem name the glossary. `concatenate_videos_batch` has no stem.
+- 2026-09-17: [O] claim audit reader delegated. It read every added line of the branch diff against the code and asked for no correction.
+- 2026-09-17: claim audit: 63 claims read, 0 corrected — R/ffmpeg.R
+- 2026-09-17: T5 done. No test file changed. No base claim was found false, so the follow-up candidate row gets no M134 line. `devtools::check()` gave 0 errors, 0 warnings and 0 notes, `devtools::test()` gave 0 failures, `pkgdown::check_pkgdown()` found no problems, and `devtools::document()` leaves `man/` unchanged. The ledger is filled. Status set to review.
 
 ## Decisions
 

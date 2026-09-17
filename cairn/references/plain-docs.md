@@ -535,13 +535,28 @@ The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` o
 
 | Page | Words | Term | Dash | Stems (AC3) | Result |
 |---|---|---|---|---|---|
-| anonymize_video | 3 | 0 | 1 | `codec`, `container`, `encod`, `pixel format`, `stream` | |
-| anonymize_video_batch | 10 | 4 | 0 | `codec`, `container`, `encod`, `pixel format`, `stream` | |
-| compare_videos | 2 | 1 | 0 | `codec`, `container`, `encod`, `stream` | |
-| compare_videos_batch | 3 | 4 | 0 | `codec`, `container`, `encod`, `stream` | |
-| concatenate_videos | 0 | 0 | 0 | `codec`, `encod` | |
-| concatenate_videos_batch | 3 | 3 | 0 | — | |
-| picture_in_picture | 1 | 1 | 0 | `codec`, `container`, `encod`, `stream` | |
-| picture_in_picture_batch | 2 | 3 | 0 | `codec`, `container`, `encod`, `stream` | |
-| segment_video | 3 | 1 | 1 | `codec`, `container`, `encod`, `key ?frame`, `stream` | |
-| segment_video_batch | 8 | 2 | 0 | `codec`, `container`, `encod`, `key ?frame`, `stream` | |
+| anonymize_video | 3 | 0 | 1 | `codec`, `container`, `encod`, `pixel format`, `stream` | No finding. Names the glossary. "builder filter" became "pipeline function", and "toggle" became "argument". |
+| anonymize_video_batch | 10 | 4 | 0 | `codec`, `container`, `encod`, `pixel format`, `stream` | No finding. Names the glossary. "sibling" became "form", "scalar verb" became "`anonymize_video()`", and "knobs" became "arguments". |
+| compare_videos | 2 | 1 | 0 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. "blessed stacking verbs" became "stacking pipeline functions". |
+| compare_videos_batch | 3 | 4 | 0 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. "(D015)" is gone, "transcode" became "re-encode", and "fan-in batch siblings" became "batch functions that take several inputs per row". |
+| concatenate_videos | 0 | 0 | 0 | `codec`, `encod` | No finding. Names the glossary. "builder" became "pipeline function". |
+| concatenate_videos_batch | 3 | 3 | 0 | — | No finding. No stem. "(D015)" is gone, and "scalar verb" became "`concatenate_videos()`" in the text and "the one-output function it wraps" in See Also. |
+| picture_in_picture | 1 | 1 | 0 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. "blessed `ffm_overlay` verb" became "`ffm_overlay` pipeline function". |
+| picture_in_picture_batch | 2 | 3 | 0 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. "(D015)" is gone, and "scalar verb" became "`picture_in_picture()`". |
+| segment_video | 3 | 1 | 1 | `codec`, `container`, `encod`, `key ?frame`, `stream` | No finding. Names the glossary. "per-segment fan-out" became "per-segment step". |
+| segment_video_batch | 8 | 2 | 0 | `codec`, `container`, `encod`, `key ?frame`, `stream` | No finding. Names the glossary. "sibling" became "form", and "transcode" became "re-encode". |
+
+#### Results at head (T5)
+
+- AC1, AC2: the sweep over the 10 pages at head reads 621 sentences, prints no finding and exits 0.
+- AC3: the 9 pages with a stem at head each name the glossary. `concatenate_videos_batch` has no stem.
+- AC4: the patterns match nothing at the base commit, so there is no identifier to find.
+- AC5: `git diff --name-only 7b2f9b0d HEAD -- man/` lists only the 10 domain pages.
+- AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` gave 0 errors, 0 warnings and 0 notes. `devtools::test()` gave 0 failures. `pkgdown::check_pkgdown()` found no problems.
+- Tests: no test file changed, and the full suite passes on the new wording.
+- Shared text: the text from `R/task-doc.R` helpers and the `run`, `parallel` and `...` arguments stay as they were.
+- Claim audit: a fresh reader read 63 claims. It found no added, changed or false claim, so nothing was corrected. It noted that "encode knobs" became "encoding arguments", which keeps the base meaning.
+
+#### Base claims found false
+
+None. The M134 reader found no base claim that the code contradicts.

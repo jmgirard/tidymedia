@@ -1857,25 +1857,29 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #' Cover fixed regions of a video with opaque boxes
 #'
 #' Anonymize a video by covering one or more fixed rectangular regions with
-#' opaque filled boxes -- for example, to redact a face, a name badge, or a
+#' opaque filled boxes. For example, you can redact a face, a name badge, or a
 #' screen that stays in one place for the whole clip. The regions are fixed
 #' (there is no face or object tracking), so this suits footage where the areas
-#' to cover do not move.
+#' to cover do not move. The glossary in \code{vignette("tidymedia")} explains
+#' media terms such as codec, pixel format and stream copy.
 #'
 #' @details
 #' \code{regions} is a data frame with one row per box and the columns
-#' \code{x}, \code{y}, \code{width}, and \code{height} (each a pixel number or an
-#' FFmpeg expression such as \code{"in_w/2"}); \code{x}/\code{y} give the
-#' top-left corner and \code{width}/\code{height} the size. An optional
+#' \code{x}, \code{y}, \code{width}, and \code{height}. Each value is a pixel
+#' number or an FFmpeg expression such as \code{"in_w/2"}. \code{x} and
+#' \code{y} give the top-left corner, and \code{width} and \code{height} give
+#' the size. An optional
 #' \code{color} column overrides the \code{color} argument for that row. Every
-#' box is a solid fill (FFmpeg's \code{drawbox} with \code{t=fill}); hollow
-#' outlines are intentionally not offered.
+#' box is a solid fill (FFmpeg's \code{drawbox} with \code{t=fill}). The
+#' function intentionally does not offer hollow outlines.
 #'
-#' Because a filter is applied, the video is re-encoded (\code{video_codec} /
-#' \code{pixel_format}, defaulting to H.264 / \code{yuv420p}); odd source
-#' dimensions are floored to even so the output always encodes (a
-#' \code{yuv420p}/\code{libx264} requirement, and a no-op for already-even
-#' input). Audio is stream-copied unchanged (\code{-c:a copy}) unless
+#' Because the function applies a filter, it re-encodes the video. The
+#' \code{video_codec} and \code{pixel_format} arguments set the encoding, and
+#' default to H.264 and \code{yuv420p}. The function floors odd source
+#' dimensions to even, so the output always encodes. \code{yuv420p} and
+#' \code{libx264} require even dimensions, and the step changes nothing for
+#' input that is already even. The function stream-copies the audio unchanged
+#' (\code{-c:a copy}) unless
 #' \code{audio_codec} names an encoder. The same input and regions therefore
 #' always compile to a byte-identical command.
 #'
@@ -1887,8 +1891,9 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
 #'   used for any row without its own \code{color} (default \code{"black"}).
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @return `r command_return()`
-#' @seealso [ffm_drawbox()], the builder filter it wraps; [has_hardware_encoder()] for the
-#'   \code{hardware} toggle; [anonymize_video_batch()]
+#' @seealso [ffm_drawbox()], the pipeline function it wraps;
+#'   [has_hardware_encoder()] for the
+#'   \code{hardware} argument; [anonymize_video_batch()]
 #'   for the many-file (batch) form.
 #' @references https://ffmpeg.org/ffmpeg-filters.html#drawbox
 #' @family task functions
@@ -2098,60 +2103,65 @@ derive_anonymized_names <- function(input) {
 #' Anonymize Many Videos From a Jobs Table
 #'
 #' Cover fixed rectangular regions of many input videos with opaque filled boxes
-#' from a single jobs tibble — the **batch** (table-driven) sibling of
-#' [anonymize_video()] for when you have more than one video to
-#' redact. Each row is one input with its own regions; the required columns name
+#' from a single jobs tibble. This is the **batch** (table-driven) form of
+#' [anonymize_video()], for when you have more than one video to
+#' redact. Each row is one input with its own regions. The required columns name
 #' the source (\code{input}) and the boxes to cover (\code{regions}). This is a
-#' thin wrapper over \code{\link{ffm_batch}}: one reproducible compiled command
-#' per input, sharing the same box-fill pipeline (and per-region validation) as
-#' the scalar verb.
+#' thin wrapper over \code{\link{ffm_batch}}. It compiles one reproducible
+#' command per input. It shares the same box-fill pipeline (and per-region
+#' validation) as [anonymize_video()]. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec, pixel format
+#' and stream copy.
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path) and a \code{regions} list-column. Each
-#'   \code{regions} cell is itself a data frame of boxes for that input — the
-#'   same \code{x}/\code{y}/\code{width}/\code{height} (and optional per-box
-#'   \code{color}) shape \code{\link{anonymize_video}} takes. An optional
-#'   \code{output} column names the destination; when absent, one is derived per
-#'   row by appending \code{_anonymized} to each input's basename, keeping the
-#'   input's extension (e.g. \code{clip.mkv} becomes \code{clip_anonymized.mkv}).
-#'   `r duplicate_output_sentences()` Each of the
-#'   four encode knobs — \code{color}, \code{video_codec}, \code{audio_codec},
-#'   \code{pixel_format} — may
-#'   also appear as a column to override the corresponding argument on a per-row
-#'   basis; rows (or knobs) that omit the column fall back to the argument's
-#'   value. In either codec column, \code{NA} leaves that row's codec unset (the
-#'   column form of \code{video_codec = NULL} / \code{audio_codec = NULL}); in a
-#'   \code{color} or \code{pixel_format} column it is an error, because those
-#'   have no unset state. An \code{audio_stream} column overrides the
+#'   \code{regions} cell is itself a data frame of boxes for that input. It has
+#'   the same shape that \code{\link{anonymize_video}} takes: \code{x},
+#'   \code{y}, \code{width}, \code{height} and an optional per-box
+#'   \code{color}. An optional
+#'   \code{output} column names the destination. When it is absent, the function
+#'   derives one per row. It appends \code{_anonymized} to each input's basename
+#'   and keeps the input's extension (e.g. \code{clip.mkv} becomes
+#'   \code{clip_anonymized.mkv}).
+#'   `r duplicate_output_sentences()` Four encoding arguments may also appear as
+#'   a column: \code{color}, \code{video_codec}, \code{audio_codec} and
+#'   \code{pixel_format}. Such a column overrides the corresponding argument on
+#'   a per-row basis. Rows (or arguments) that omit the column fall back to the
+#'   argument's value. In either codec column, \code{NA} leaves that row's codec
+#'   unset. This is the column form of \code{video_codec = NULL} /
+#'   \code{audio_codec = NULL}. In a
+#'   \code{color} or \code{pixel_format} column \code{NA} is an error, because
+#'   those have no unset state. An \code{audio_stream} column overrides the
 #'   \code{audio_stream} argument per row, where \code{NA} keeps that row on
 #'   every audio track. Any other columns are ignored.
 #' @param color A string naming the default fill color (FFmpeg color syntax)
-#'   applied to every row, unless \code{jobs} carries a \code{color} column or a
-#'   box supplies its own \code{color}. (default = \code{"black"})
+#'   applied to every row. A \code{color} column in \code{jobs}, or a box that
+#'   supplies its own \code{color}, overrides it. (default = \code{"black"})
 #' @param video_codec A string naming the output video codec applied to every
-#'   row, unless \code{jobs} carries a \code{video_codec} column, in which case
-#'   \code{NA} in a cell leaves that row's codec unset.
+#'   row, unless \code{jobs} carries a \code{video_codec} column. In that
+#'   column, \code{NA} in a cell leaves that row's codec unset.
 #'   `r batch_libx264_sentences()`
 #' @param audio_codec A string naming the output audio codec applied to every
-#'   row, unless \code{jobs} carries an \code{audio_codec} column, in which case
-#'   \code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
-#'   stream-copies the audio through untouched; name an encoder (e.g.
+#'   row, unless \code{jobs} carries an \code{audio_codec} column. In that
+#'   column, \code{NA} in a cell leaves that row's codec unset. \code{"copy"}
+#'   (default) stream-copies the audio through untouched. Name an encoder (e.g.
 #'   \code{"aac"}) when the source audio cannot be copied into the output
 #'   container.
 #' @param pixel_format A string naming the output pixel format applied to every
 #'   row, unless \code{jobs} carries a \code{pixel_format} column.
 #'   (default = \code{"yuv420p"})
-#' @param hardware The encoder backend applied to every row: \code{"none"}
-#'   (default, the software \code{video_codec}), \code{"nvenc"} for NVIDIA
-#'   GPU encoding (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple
+#' @param hardware The encoder backend applied to every row. \code{"none"}
+#'   (default) uses the software \code{video_codec}. \code{"nvenc"} gives NVIDIA
+#'   GPU encoding (H.264, HEVC and AV1). \code{"videotoolbox"} gives Apple
 #'   GPU encoding (H.264 and HEVC). Batch-wide (a machine property), not a
 #'   per-row column; a \code{hardware} column in \code{jobs} is ignored. See
 #'   \code{\link{has_hardware_encoder}}.
 #'   `r hardware_probe_sentences()`
 #'   `r encoder_check_sentences()`
-#'   A call that is also wrong about a per-row value — a \code{regions}
-#'   table missing a required column, say — is refused for the value first,
-#'   whether or not this machine has the encoder.
+#'   A call can also be wrong about a per-row value, for example a
+#'   \code{regions} table that is missing a required column. The function
+#'   refuses that call for the value first, whether or not this machine has the
+#'   encoder.
 #' @param fallback `r fallback_param("video_codec", batch = TRUE)`
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
@@ -2165,11 +2175,11 @@ derive_anonymized_names <- function(input) {
 #' @param ... Additional arguments forwarded to \code{\link{ffm_batch}}, such as
 #'   \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.
 #' @return `r batch_return("output")`
-#' @seealso [anonymize_video()] for the single-input form; [has_hardware_encoder()] for the
-#'   \code{hardware} toggle; [ffm_batch()] for the
-#'   batch runner and the arguments forwarded through \code{...};
+#' @seealso [anonymize_video()] for the single-input form.
+#'   [has_hardware_encoder()] for the \code{hardware} argument. [ffm_batch()]
+#'   for the batch runner and the arguments forwarded through \code{...}.
 #'   [standardize_video_batch()] and [segment_video_batch()] for the other
-#'   table-driven siblings.
+#'   table-driven functions.
 #' @family task functions
 #' @family audio selection functions
 #' @examples
@@ -3573,10 +3583,12 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #' Segment Video
 #'
 #' Use FFmpeg to quickly break a single video file into multiple smaller video
-#' files (with the same encoding) based on pairs of start and stop timestamps.
-#' Segment video files will be named by taking the name of \code{infile} and
-#' appending a suffix of an underscore (_) and an integer indicating which
-#' segment (based on the order provided in \code{start} and \code{end}).
+#' files (with the same encoding). Pairs of start and stop timestamps set the
+#' segments. The function names each segment file after \code{infile}. It
+#' appends a suffix of an underscore (_) and an integer indicating which
+#' segment, based on the order provided in \code{start} and \code{end}. The
+#' glossary in \code{vignette("tidymedia")} explains media terms such as codec,
+#' keyframe and stream copy.
 #'
 #' @inheritParams crop_video
 #' @param start A vector containing one or more timestamps indicating the
@@ -3590,10 +3602,10 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #' @param outfiles Either NULL or a character vector indicating the filename
 #'   (with extension) for each segment to create. If NULL, will append a
 #'   zero-padded integer to \code{infile}. If not NULL, must have the same
-#'   length as \code{start}, and each element must be a single string -- so a
-#'   list of strings is accepted as well as a character vector, and a missing
-#'   value or a number in any position is refused by this function rather than
-#'   by the per-segment fan-out below it. Two segments given the same path
+#'   length as \code{start}, and each element must be a single string. So the
+#'   function accepts a list of strings as well as a character vector. This
+#'   function itself refuses a missing value or a number in any position, before
+#'   the per-segment step below it can. Two segments given the same path
 #'   are refused before any segment is cut.
 #' @param reencode A logical passed to \code{\link{ffm_seek}}: cut each segment
 #'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
@@ -3606,7 +3618,7 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #'   `r audio_codec_copy_sentences("the audio")` A stream copy
 #'   (\code{reencode = FALSE}) always copies the audio, so any other value is an
 #'   error there. Stream-copying fails if the output container cannot hold the
-#'   source audio codec (e.g. FLAC in \code{.mp4}) — name an encoder instead.
+#'   source audio codec (e.g. FLAC in \code{.mp4}). Name an encoder instead.
 #' @param hardware `r hardware_param(null_default = TRUE)`
 #'   `r encoder_check_sentences()` `r contradiction_sentences("cut")`
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
@@ -3623,8 +3635,8 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #' @return The [tibble][tibble::tibble-package] returned by
 #'   \code{\link{ffm_batch}}: one row per segment with its \code{command} (and,
 #'   when \code{run = TRUE}, \code{success}).
-#' @seealso [ffm_seek()], the builder it uses to cut; [ffm_batch()], the runner;
-#'   [has_hardware_encoder()] for the \code{hardware} toggle;
+#' @seealso [ffm_seek()], the pipeline function it uses to cut; [ffm_batch()],
+#'   the runner; [has_hardware_encoder()] for the \code{hardware} argument;
 #'   [segment_video_batch()] for the many-file form.
 #' @references `r time_duration_reference()`
 #' @family task functions
@@ -3842,20 +3854,23 @@ segment_pipeline <- function(input, output, start, end, reencode,
 
 #' Segment Many Videos From a Jobs Table
 #'
-#' Cut segments across many input files from a single jobs tibble — the
-#' **batch** (table-driven) sibling of [segment_video()] for when your segments
+#' Cut segments across many input files from a single jobs tibble. This is the
+#' **batch** (table-driven) form of [segment_video()], for when your segments
 #' span more than one input. Each row is one segment; the four required columns
 #' name its source, destination, and cut points. This is a thin wrapper over
-#' \code{\link{ffm_batch}}: one reproducible compiled command per segment.
+#' \code{\link{ffm_batch}}: one reproducible compiled command per segment. The
+#' glossary in \code{vignette("tidymedia")} explains media terms such as codec,
+#' keyframe and stream copy.
 #'
 #' @param jobs A data frame with one row per segment and (at least) the columns
-#'   \code{input} (source path), \code{start} and \code{end} (cut points; a
-#'   numeric column of seconds or a character column with time-duration syntax).
+#'   \code{input} (source path), \code{start} and \code{end} (cut points). Each
+#'   cut-point column is a numeric column of seconds or a character column with
+#'   time-duration syntax.
 #'   Two optional columns are recognized: \code{output} (destination path) and
 #'   \code{reencode} (a logical; see the \code{reencode} argument). If
-#'   \code{output} is absent, one is derived per row by appending
-#'   \code{_<n>.<ext>} to each input's basename, with the segment number
-#'   restarting at 1 for each input file (the same rule as
+#'   \code{output} is absent, the function derives one per row by appending
+#'   \code{_<n>.<ext>} to each input's basename. The segment number
+#'   restarts at 1 for each input file (the same rule as
 #'   \code{\link{segment_video}}). Two rows given the same \code{output} path
 #'   are refused before any row runs. A \code{video_codec} or \code{audio_codec}
 #'   column overrides that argument per row, with \code{NA} meaning "leave the
@@ -3869,22 +3884,23 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   for the trade-off. Applies to every row, unless \code{jobs} carries a
 #'   \code{reencode} column, which overrides this argument on a per-row basis.
 #' @param video_codec A string naming the output video codec, applied to every
-#'   row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
-#'   it unset so each segment keeps its container's default encoder. A row that
-#'   resolves to a codec while cutting by stream copy (\code{reencode = FALSE},
-#'   as an argument or a column) is an error: no encoder runs on that path.
+#'   row lacking a \code{video_codec} column. \code{NULL} (default) leaves
+#'   it unset, so each segment keeps its container's default encoder. A row can
+#'   resolve to a codec while cutting by stream copy (\code{reencode = FALSE},
+#'   as an argument or a column). That row is an error, because no encoder runs
+#'   on that path.
 #' @param audio_codec A string naming the output audio codec, applied to every
 #'   row lacking an \code{audio_codec} column. \code{"copy"} (default)
-#'   stream-copies the audio; name an encoder to transcode it, or \code{NULL} to
-#'   leave the codec unset. A row that resolves to anything but \code{"copy"}
+#'   stream-copies the audio; name an encoder to re-encode it, or \code{NULL} to
+#'   leave the codec unset. A row can resolve to anything but \code{"copy"}
 #'   while cutting by stream copy (\code{reencode = FALSE}, as an argument or a
-#'   column) is an error, so a jobs table mixing stream-copy rows with a
-#'   transcoding \code{audio_codec} must be split into separate calls.
+#'   column). That row is an error. So split a jobs table that mixes
+#'   stream-copy rows with a re-encoding \code{audio_codec} into separate calls.
 #' @param hardware,fallback `r batch_hardware_param("segment_video")`
 #'   Because \code{hardware} is batch-wide, a non-\code{"none"} value
-#'   conflicts with a stream-copy row on its own — even one naming no codec —
-#'   so a jobs table mixing \code{reencode = FALSE} rows with GPU encoding
-#'   must be split into separate calls.
+#'   conflicts with a stream-copy row on its own, even one naming no codec.
+#'   So split a jobs table that mixes \code{reencode = FALSE} rows with GPU
+#'   encoding into separate calls.
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
 #'   `r contradiction_sentences("cut")`
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
@@ -3895,9 +3911,9 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #' @inheritParams segment_video
 #' @inheritParams anonymize_video_batch
 #' @return `r batch_return("output")`
-#' @seealso [segment_video()] for the single-input, parallel-vector form;
+#' @seealso [segment_video()] for the single-input, parallel-vector form.
 #'   [ffm_batch()] for the batch runner and the arguments forwarded through
-#'   \code{...}; [has_hardware_encoder()] for the \code{hardware} toggle;
+#'   \code{...}. [has_hardware_encoder()] for the \code{hardware} argument.
 #'   [ffm_seek()] for the cut trade-off.
 #' @references `r time_duration_reference()`
 #' @family task functions

@@ -61,25 +61,29 @@ The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
 Anonymize a video by covering one or more fixed rectangular regions with
-opaque filled boxes -- for example, to redact a face, a name badge, or a
+opaque filled boxes. For example, you can redact a face, a name badge, or a
 screen that stays in one place for the whole clip. The regions are fixed
 (there is no face or object tracking), so this suits footage where the areas
-to cover do not move.
+to cover do not move. The glossary in \code{vignette("tidymedia")} explains
+media terms such as codec, pixel format and stream copy.
 }
 \details{
 \code{regions} is a data frame with one row per box and the columns
-\code{x}, \code{y}, \code{width}, and \code{height} (each a pixel number or an
-FFmpeg expression such as \code{"in_w/2"}); \code{x}/\code{y} give the
-top-left corner and \code{width}/\code{height} the size. An optional
+\code{x}, \code{y}, \code{width}, and \code{height}. Each value is a pixel
+number or an FFmpeg expression such as \code{"in_w/2"}. \code{x} and
+\code{y} give the top-left corner, and \code{width} and \code{height} give
+the size. An optional
 \code{color} column overrides the \code{color} argument for that row. Every
-box is a solid fill (FFmpeg's \code{drawbox} with \code{t=fill}); hollow
-outlines are intentionally not offered.
+box is a solid fill (FFmpeg's \code{drawbox} with \code{t=fill}). The
+function intentionally does not offer hollow outlines.
 
-Because a filter is applied, the video is re-encoded (\code{video_codec} /
-\code{pixel_format}, defaulting to H.264 / \code{yuv420p}); odd source
-dimensions are floored to even so the output always encodes (a
-\code{yuv420p}/\code{libx264} requirement, and a no-op for already-even
-input). Audio is stream-copied unchanged (\code{-c:a copy}) unless
+Because the function applies a filter, it re-encodes the video. The
+\code{video_codec} and \code{pixel_format} arguments set the encoding, and
+default to H.264 and \code{yuv420p}. The function floors odd source
+dimensions to even, so the output always encodes. \code{yuv420p} and
+\code{libx264} require even dimensions, and the step changes nothing for
+input that is already even. The function stream-copies the audio unchanged
+(\code{-c:a copy}) unless
 \code{audio_codec} names an encoder. The same input and regions therefore
 always compile to a byte-identical command.
 }
@@ -98,8 +102,9 @@ anonymize_video(video, "anon.mp4", regions, audio_stream = 1, run = FALSE)
 https://ffmpeg.org/ffmpeg-filters.html#drawbox
 }
 \seealso{
-\code{\link[=ffm_drawbox]{ffm_drawbox()}}, the builder filter it wraps; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the
-\code{hardware} toggle; \code{\link[=anonymize_video_batch]{anonymize_video_batch()}}
+\code{\link[=ffm_drawbox]{ffm_drawbox()}}, the pipeline function it wraps;
+\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the
+\code{hardware} argument; \code{\link[=anonymize_video_batch]{anonymize_video_batch()}}
 for the many-file (batch) form.
 
 Other task functions:

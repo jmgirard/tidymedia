@@ -35,10 +35,10 @@ length as \code{start}.}
 \item{outfiles}{Either NULL or a character vector indicating the filename
 (with extension) for each segment to create. If NULL, will append a
 zero-padded integer to \code{infile}. If not NULL, must have the same
-length as \code{start}, and each element must be a single string -- so a
-list of strings is accepted as well as a character vector, and a missing
-value or a number in any position is refused by this function rather than
-by the per-segment fan-out below it. Two segments given the same path
+length as \code{start}, and each element must be a single string. So the
+function accepts a list of strings as well as a character vector. This
+function itself refuses a missing value or a number in any position, before
+the per-segment step below it can. Two segments given the same path
 are refused before any segment is cut.}
 
 \item{reencode}{A logical passed to \code{\link{ffm_seek}}: cut each segment
@@ -54,7 +54,7 @@ encoder, so naming a codec (or a \code{hardware} backend) alongside
 \code{"copy"} (default) stream-copies the audio through untouched. Name an encoder, such as \code{"aac"}, to transcode it. \code{NULL} leaves the codec unset, so the output container's default encoder is used. A stream copy
 (\code{reencode = FALSE}) always copies the audio, so any other value is an
 error there. Stream-copying fails if the output container cannot hold the
-source audio codec (e.g. FLAC in \code{.mp4}) — name an encoder instead.}
+source audio codec (e.g. FLAC in \code{.mp4}). Name an encoder instead.}
 
 \item{hardware}{The encoder backend. \code{"none"} (default) uses the software \code{video_codec}. \code{"nvenc"} uses NVIDIA GPU encoding (H.264, HEVC and AV1), and \code{"videotoolbox"} uses Apple GPU encoding (H.264 and HEVC). A backend uses its own encoder for the family of \code{video_codec}. For example, \code{"libx264"} becomes \code{"h264_nvenc"} or \code{"h264_videotoolbox"}. With the default \code{video_codec = NULL}, the H.264 family is assumed. So a non-H.264 container, such as \code{.webm}, needs an explicit HEVC- or AV1-family \code{video_codec} (AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}} for availability and its caveats. Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows. A call can also contradict itself by asking for GPU encoding on a cut that stream-copies. Such a call is refused for the contradiction first, whether or not this machine has the encoder.
@@ -82,10 +82,12 @@ when \code{run = TRUE}, \code{success}).
 }
 \description{
 Use FFmpeg to quickly break a single video file into multiple smaller video
-files (with the same encoding) based on pairs of start and stop timestamps.
-Segment video files will be named by taking the name of \code{infile} and
-appending a suffix of an underscore (_) and an integer indicating which
-segment (based on the order provided in \code{start} and \code{end}).
+files (with the same encoding). Pairs of start and stop timestamps set the
+segments. The function names each segment file after \code{infile}. It
+appends a suffix of an underscore (_) and an integer indicating which
+segment, based on the order provided in \code{start} and \code{end}. The
+glossary in \code{vignette("tidymedia")} explains media terms such as codec,
+keyframe and stream copy.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -96,8 +98,8 @@ segment_video(video, start = c(0, 0.5), end = c(0.5, 1), run = FALSE)
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }
 \seealso{
-\code{\link[=ffm_seek]{ffm_seek()}}, the builder it uses to cut; \code{\link[=ffm_batch]{ffm_batch()}}, the runner;
-\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
+\code{\link[=ffm_seek]{ffm_seek()}}, the pipeline function it uses to cut; \code{\link[=ffm_batch]{ffm_batch()}},
+the runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} argument;
 \code{\link[=segment_video_batch]{segment_video_batch()}} for the many-file form.
 
 Other task functions:

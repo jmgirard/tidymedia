@@ -21,11 +21,11 @@ The M132 help-page domain uses plain English for an R user who does not know FFm
 
 ## Acceptance criteria
 
-- [ ] AC1: Every page on the M132 domain list exists at head, and the prose sweep over the M132 domain at head exits with status 0 or 1 and prints no `[term …]` or `[dash in Rd source]` line.
-- [ ] AC2: Every page on the M132 domain list exists at head, and the prose sweep over the M132 domain at head exits with status 0 or 1 and prints no `[<n> words]` line.
-- [ ] AC3: Each page in the M132 domain whose `--prose` output at head matches a glossary stem names the glossary.
-- [ ] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M132 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
-- [ ] AC5: For every `man/*.Rd` file outside the M132 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
+- [x] AC1: Every page on the M132 domain list exists at head, and the prose sweep over the M132 domain at head exits with status 0 or 1 and prints no `[term …]` or `[dash in Rd source]` line.
+- [x] AC2: Every page on the M132 domain list exists at head, and the prose sweep over the M132 domain at head exits with status 0 or 1 and prints no `[<n> words]` line.
+- [x] AC3: Each page in the M132 domain whose `--prose` output at head matches a glossary stem names the glossary.
+- [x] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M132 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
+- [x] AC5: For every `man/*.Rd` file outside the M132 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
 - [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
@@ -62,3 +62,11 @@ The M132 help-page domain uses plain English for an R user who does not know FFm
 ## Decisions
 
 ## Review
+
+Reviewed 2026-09-17 at `29bd0880`. The branch was cut from `efb2b2c4`, which is still the head of `master`, so no merge was needed. The domain list was rebuilt by command from the base commit: 12 pages, none added since, all 12 present at head.
+
+- AC1: the sweep over the 12 pages at head exits 0 and prints no `[term …]` and no `[dash in Rd source]` line.
+- AC2: the same sweep prints no `[<n> words]` line. The `--prose` output has 480 sentences.
+- AC3: 10 pages have a glossary stem in their `--prose` output, and each has a sentence with `glossary` and `vignette("tidymedia")` in its `tools::Rd2txt()` text. `ffmpeg` and `extract_frame` have no stem and do not name the glossary.
+- AC4: the base pages give 3 identifiers, `tidymedia.check_tracks`, `tidymedia.hardware_encoders` and `tidymedia_dropped_audio`. `git grep -wF` finds each one in `man/*.Rd` at head.
+- AC5: `git diff --name-only efb2b2c4 HEAD -- man/` lists 12 files, all in the domain. No page outside the domain changed, so there is nothing to compare.

@@ -1,13 +1,13 @@
 # M134: The anonymize, segment, concatenate, compare and picture-in-picture help pages read as plain English
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** M129
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — shipped help pages for exported functions
-- **Branch/PR:** —
+- **Branch/PR:** `m134-plain-video-composition-help-pages`
 
 ## Goal
 
@@ -39,7 +39,7 @@ The M134 help-page domain uses plain English for an R user who does not know FFm
 
 ## Tasks
 
-- [ ] T1: Record in a new M134 ledger section the base commit, the domain page list, the AC4 identifiers and the sweep output over the domain at the base commit.
+- [x] T1: Record in a new M134 ledger section the base commit, the domain page list, the AC4 identifiers and the sweep output over the domain at the base commit.
 - [ ] T2: Rewrite `anonymize_video()` and `segment_video()`, and their batch pages.
 - [ ] T3: Rewrite `concatenate_videos()` and its batch page.
 - [ ] T4: Rewrite `compare_videos()` and `picture_in_picture()`, and their batch pages.
@@ -48,6 +48,8 @@ The M134 help-page domain uses plain English for an R user who does not know FFm
 ## Work log
 
 - 2026-09-13: created by /milestone-plan (re-cut of M130 under D093). The criteria audit and re-audit lines are in M129's work log, and cover this template.
+- 2026-09-17: implement started on `m134-plain-video-composition-help-pages`, cut from `7b2f9b0d`. No question was open at the gate.
+- 2026-09-17: T1 done. `### M134` in `cairn/references/plain-docs.md` records the base commit, the 10 pages and the base sweep: 553 sentences, 56 findings. The AC4 patterns match nothing at the base commit.
 
 ## Decisions
 

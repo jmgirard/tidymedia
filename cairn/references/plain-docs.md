@@ -524,3 +524,24 @@ The code does not settle this claim. It keeps its meaning at head, and it is the
 | Page | Claim | Evidence |
 |---|---|---|
 | `normalize_audio_batch` | The defaults that follow EBU R 128 (2014) include `loudness_range = 7` LU. | The M133 reader says R 128 sets the -23 LUFS and -1 dBTP pair, and 7 is the default of `loudnorm`. `?normalize_audio` keeps the 7 outside the attribution, at the base commit and at head. |
+
+### M134
+
+The base commit is `7b2f9b0d`. At that commit, the domain is the 10 `man/*.Rd` files whose header names `R/ffmpeg.R` and whose base name matches the M134 filter: `anonymize_video`, `anonymize_video_batch`, `compare_videos`, `compare_videos_batch`, `concatenate_videos`, `concatenate_videos_batch`, `picture_in_picture`, `picture_in_picture_batch`, `segment_video` and `segment_video_batch`.
+
+#### Sweep output at the base commit (AC1, AC2, AC3, AC4)
+
+The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` over the 10 files that `git show 7b2f9b0d:man/<page>.Rd` wrote to a temporary folder. It read 553 sentences and exited 1 with 56 findings: 35 `[<n> words]`, 19 `[term …]` and 2 `[dash in Rd source]`. The same command gives the full output again. Stems are the glossary stems in each page's `--prose` output. The AC4 patterns match nothing in the 10 pages at the base commit, so there is no AC4 identifier. No page named the glossary.
+
+| Page | Words | Term | Dash | Stems (AC3) | Result |
+|---|---|---|---|---|---|
+| anonymize_video | 3 | 0 | 1 | `codec`, `container`, `encod`, `pixel format`, `stream` | |
+| anonymize_video_batch | 10 | 4 | 0 | `codec`, `container`, `encod`, `pixel format`, `stream` | |
+| compare_videos | 2 | 1 | 0 | `codec`, `container`, `encod`, `stream` | |
+| compare_videos_batch | 3 | 4 | 0 | `codec`, `container`, `encod`, `stream` | |
+| concatenate_videos | 0 | 0 | 0 | `codec`, `encod` | |
+| concatenate_videos_batch | 3 | 3 | 0 | — | |
+| picture_in_picture | 1 | 1 | 0 | `codec`, `container`, `encod`, `stream` | |
+| picture_in_picture_batch | 2 | 3 | 0 | `codec`, `container`, `encod`, `stream` | |
+| segment_video | 3 | 1 | 1 | `codec`, `container`, `encod`, `key ?frame`, `stream` | |
+| segment_video_batch | 8 | 2 | 0 | `codec`, `container`, `encod`, `key ?frame`, `stream` | |

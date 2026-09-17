@@ -56,6 +56,7 @@ The M133 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-17: T4 done. No test file changed. Sweep at head: 526 sentences, no finding, exit 0. `check()` 0/0/0, `test()` 0 failures, `check_pkgdown()` no problems, `document()` no diff. One doubtful base claim on `?normalize_audio_batch` went to the ledger and the follow-up candidate row. Status set to review.
 - 2026-09-17: review ran. 6 of 6 criteria pass. 10 findings, 5 fixed on the branch, 1 noted and 4 rejected.
 - 2026-09-17: step-7 approval: m133-plain-separate-normalize-help-pages approved for merge
+- 2026-09-17: after the gate fixes, `document()` left no diff, the sweep read 526 sentences with no finding, and `test()` gave 0 failures.
 
 ## Decisions
 

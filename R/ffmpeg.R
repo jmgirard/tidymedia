@@ -500,9 +500,11 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy",
 
 #' Extract the audio stream from a media file
 #'
-#' Pulls one audio track out of \code{infile}, dropping the video. When the
-#' input carries more than one audio track, \code{audio_stream} names which one
-#' to take; with no selector the \strong{first} audio track is taken.
+#' Take one audio track out of \code{infile}, and drop the video. When the
+#' input has more than one audio track, \code{audio_stream} names which one to
+#' take. With no \code{audio_stream}, the function takes the \strong{first}
+#' audio track. The glossary in \code{vignette("tidymedia")} explains media
+#' terms such as codec, container and stream copy.
 #'
 #' `r dropped_audio_paragraph()`
 #'
@@ -511,15 +513,15 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy",
 #' @inheritParams crop_video
 #' @param infile A string containing the path to a media file.
 #' @param outfile `r write_path_param("audio")`
-#' @param audio_codec A string naming the audio codec for the output stream
-#'   (default \code{"copy"}, i.e. remux without re-encoding), or \code{NULL} to
-#'   emit no \code{-codec:a} and let the output container's default encoder
-#'   decide — useful when the source codec cannot be copied into the extension
-#'   you asked for.
+#' @param audio_codec A string naming the audio codec for the output stream.
+#'   The default \code{"copy"} copies the stream into the new container
+#'   without re-encoding. \code{NULL} writes no \code{-codec:a}, so the output
+#'   container's default encoder decides. That is useful when FFmpeg cannot
+#'   copy the source codec into the extension you asked for.
 #' @param audio_stream `r audio_stream_param("take", "takes", "first")`
 #' @return `r command_return()`
-#' @seealso [ffm_drop()] and [ffm_codec()], the builders it wraps;
-#'   [convert_audio()] to re-encode the extracted audio;
+#' @seealso [ffm_drop()] and [ffm_codec()], the pipeline functions it wraps.
+#'   [convert_audio()] to re-encode the extracted audio.
 #'   [extract_audio_batch()] for the many-file form.
 #' @family task functions
 #' @family audio selection functions
@@ -1258,14 +1260,16 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
 
 #' Extract or convert a media file's audio track
 #'
-#' Maps the audio stream of \code{infile} into \code{outfile}. By default
-#' (\code{audio_codec = NULL}) the output format follows the \code{outfile} file
-#' extension at highest VBR quality (\code{-q:a 0}) — e.g. an \code{.mp3}
-#' extension yields an MP3. Pass \code{audio_codec} to pin the output audio
-#' codec explicitly, regardless of the extension.
+#' Write the audio stream of \code{infile} into \code{outfile}. By default
+#' (\code{audio_codec = NULL}), the output format follows the \code{outfile}
+#' file extension, at the highest VBR quality (\code{-q:a 0}). For example, an
+#' \code{.mp3} extension gives an MP3. Pass \code{audio_codec} to set the output
+#' audio codec yourself, whatever the extension is. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec and stream.
 #'
-#' When \code{infile} carries more than one audio track, \code{audio_stream}
-#' names which one to take; with no selector the \strong{first} one is taken.
+#' When \code{infile} has more than one audio track, \code{audio_stream} names
+#' which one to take. With no \code{audio_stream}, the function takes the
+#' \strong{first} one.
 #'
 #' `r dropped_audio_paragraph()`
 #'
@@ -1274,14 +1278,14 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
 #' @inheritParams extract_audio
 #' @param audio_codec An optional string naming the output audio codec (e.g.
 #'   \code{"libmp3lame"}, \code{"aac"}, \code{"flac"}), passed to FFmpeg's
-#'   \code{-c:a}. When \code{NULL} (default), the codec is inferred from the
-#'   \code{outfile} extension and encoded at highest VBR quality. Unlike the
-#'   other transform verbs, \code{NULL} here is \emph{not} the "leave the codec
-#'   unset" sentinel — it selects \code{-q:a 0}.
+#'   \code{-c:a}. When \code{NULL} (default), FFmpeg infers the codec from the
+#'   \code{outfile} extension and encodes at the highest VBR quality. On the
+#'   other task functions, \code{NULL} means "leave the codec unset". Here it
+#'   does \emph{not} mean that. It selects \code{-q:a 0}.
 #' @param audio_stream `r audio_stream_param("take", "takes", "first")`
 #' @return `r command_return()`
-#' @seealso [ffm_codec()] and [ffm_map()], the builders it wraps;
-#'   [extract_audio()] to copy audio without re-encoding;
+#' @seealso [ffm_codec()] and [ffm_map()], the pipeline functions it wraps.
+#'   [extract_audio()] to copy audio without re-encoding.
 #'   [convert_audio_batch()] for the many-file form.
 #' @family task functions
 #' @family audio selection functions
@@ -5638,36 +5642,39 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 
 #' Extract Audio From Many Files From a Jobs Table
 #'
-#' Pull the audio track out of many input files from a single jobs tibble — the
-#' **batch** (table-driven) sibling of [extract_audio()] for when you have more
-#' than one file. Each row is one input; \code{input} and \code{output} columns
-#' are required. This is a thin wrapper over \code{\link{ffm_batch}}: one
-#' reproducible compiled command per input, sharing the same map/drop-video
-#' pipeline as the scalar verb.
+#' Take the audio track out of many input files, using one jobs table. This is
+#' the **batch** form of [extract_audio()], for when you have more than one
+#' file. Each row is one input. The \code{input} and \code{output} columns are
+#' required. The function is a thin wrapper over \code{\link{ffm_batch}}. It
+#' builds one reproducible command for each input, with the same steps as
+#' \code{extract_audio()}: select the audio track and drop the video. The
+#' glossary in \code{vignette("tidymedia")} explains media terms such as codec,
+#' container and stream copy.
 #'
 #' `r dropped_audio_paragraph(batch = TRUE)`
 #'
 #' `r check_tracks_off_paragraph(batch = TRUE)`
 #'
-#' @param jobs A data frame with one row per input and (at least) an
+#' @param jobs A data frame with one row per input. It needs at least an
 #'   \code{input} column (source path) and an \code{output} column (destination
-#'   path). An \code{output} column is **required** — unlike the video batch
-#'   verbs, an audio destination cannot be auto-named because its extension is
-#'   the instruction (it picks the container, and with \code{audio_codec =
-#'   "copy"} must match the source codec). An optional \code{audio_codec} column
-#'   overrides the \code{audio_codec} argument per row; rows omitting it fall
-#'   back to the argument, and \code{NA} in a cell leaves that row's codec unset
-#'   (the column form of \code{audio_codec = NULL}). An optional
-#'   \code{audio_stream} column likewise overrides the \code{audio_stream}
-#'   argument per row, where \code{NA} keeps that row on the first audio track.
-#'   Two rows given the same \code{output} path are refused before any row
-#'   runs. Any other columns are ignored.
-#' @param audio_codec The audio codec applied to every row unless \code{jobs}
-#'   carries an \code{audio_codec} column, in which case \code{NA} in a cell
-#'   leaves that row's codec unset. \code{"copy"} (default) stream-copies the
-#'   audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode; or pass
-#'   \code{NULL} to emit no \code{-codec:a} and let the output container's
-#'   default encoder decide.
+#'   path). The \code{output} column is **required**. Unlike the video batch
+#'   functions, this function cannot name an audio destination for you,
+#'   because the extension is the instruction. The extension picks the
+#'   container, and with \code{audio_codec = "copy"} it must match the source
+#'   codec. An optional \code{audio_codec} column overrides the
+#'   \code{audio_codec} argument per row. Rows without a value use the
+#'   argument. \code{NA} in a cell leaves that row's codec unset, which is the
+#'   column form of \code{audio_codec = NULL}. An optional \code{audio_stream}
+#'   column overrides the \code{audio_stream} argument per row in the same
+#'   way, and \code{NA} keeps that row on the first audio track. The function
+#'   refuses two rows with the same \code{output} path, before any row runs.
+#'   The function ignores any other columns.
+#' @param audio_codec The audio codec applied to every row, unless \code{jobs}
+#'   has an \code{audio_codec} column. In that column, \code{NA} in a cell
+#'   leaves that row's codec unset. \code{"copy"} (default) copies the audio
+#'   stream with no quality loss. Name an encoder (e.g. \code{"aac"}) to
+#'   re-encode. Or pass \code{NULL} to write no \code{-codec:a}, so the output
+#'   container's default encoder decides.
 #' @param audio_stream `r audio_stream_param("take", "takes", "first", batch = TRUE)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
@@ -5677,8 +5684,8 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
 #'   \code{verify}, \code{manifest}, \code{progress}).
 #' @return `r jobs_return()`
-#' @seealso [extract_audio()], the scalar verb it wraps; [ffm_batch()], the batch
-#'   runner; [convert_audio_batch()] to transcode audio in batch.
+#' @seealso [extract_audio()], the single-input form it wraps. [ffm_batch()],
+#'   the batch runner. [convert_audio_batch()] to re-encode audio in batch.
 #' @family task functions
 #' @family audio selection functions
 #' @examples
@@ -5756,40 +5763,44 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
 
 #' Convert the Audio of Many Files From a Jobs Table
 #'
-#' Extract or transcode the audio track of many input files from a single jobs
-#' tibble — the **batch** (table-driven) sibling of [convert_audio()] for when
-#' you have more than one file. Each row is one input; \code{input} and
-#' \code{output} columns are required. This is a thin wrapper over
-#' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
-#' the same audio-map pipeline (and per-value \code{audio_codec} validation) as
-#' the scalar verb.
+#' Extract or re-encode the audio track of many input files, using one jobs
+#' table. This is the **batch** form of [convert_audio()], for when you have
+#' more than one file. Each row is one input. The \code{input} and
+#' \code{output} columns are required. The function is a thin wrapper over
+#' \code{\link{ffm_batch}}. It builds one reproducible command for each input.
+#' Each command uses the same audio steps as \code{convert_audio()}, and the
+#' function checks each \code{audio_codec} value in the same way. The glossary
+#' in \code{vignette("tidymedia")} explains media terms such as codec and
+#' stream.
 #'
 #' `r dropped_audio_paragraph(batch = TRUE)`
 #'
 #' `r check_tracks_off_paragraph(batch = TRUE)`
 #'
-#' @param jobs A data frame with one row per input and (at least) an
+#' @param jobs A data frame with one row per input. It needs at least an
 #'   \code{input} column (source path) and an \code{output} column (destination
-#'   path). An \code{output} column is **required** — an audio destination
-#'   cannot be auto-named because its extension picks the output format. An
-#'   optional \code{audio_codec} column overrides the \code{audio_codec}
-#'   argument per row, where \code{NA} spells "use the highest-VBR-quality
-#'   default"; rows omitting it fall back to the argument. An optional
-#'   \code{audio_stream} column likewise overrides the \code{audio_stream}
-#'   argument per row, where \code{NA} keeps that row on the first audio track.
-#'   Two rows given the same \code{output} path are refused before any row
-#'   runs. Any other columns are
-#'   ignored — except a \code{format} column, retired with the argument of the
-#'   same name, which is an error rather than a silent no-op.
-#' @param audio_codec The output audio codec applied to every row unless
-#'   \code{jobs} carries an \code{audio_codec} column. \code{NULL} (default)
-#'   infers the codec from each \code{output} extension at highest VBR quality;
-#'   name a codec (e.g. \code{"aac"}, \code{"flac"}) to pin \code{-c:a}.
+#'   path). The \code{output} column is **required**. The function cannot name
+#'   an audio destination for you, because its extension picks the output
+#'   format. An optional \code{audio_codec} column overrides the
+#'   \code{audio_codec} argument per row. There, \code{NA} means "use the
+#'   highest-VBR-quality default". Rows without a value use the argument. An
+#'   optional \code{audio_stream} column overrides the \code{audio_stream}
+#'   argument per row in the same way, and \code{NA} keeps that row on the
+#'   first audio track. The function refuses two rows with the same
+#'   \code{output} path, before any row runs. The function ignores any other
+#'   columns, with one exception. A \code{format} column is an error, not a
+#'   silent no-op. The package retired that column with the argument of the
+#'   same name.
+#' @param audio_codec The output audio codec applied to every row, unless
+#'   \code{jobs} has an \code{audio_codec} column. With \code{NULL} (default),
+#'   FFmpeg infers the codec from each \code{output} extension, at the highest
+#'   VBR quality. Name a codec (e.g. \code{"aac"}, \code{"flac"}) to set
+#'   \code{-c:a}.
 #' @param audio_stream `r audio_stream_param("take", "takes", "first", batch = TRUE)`
 #' @inheritParams extract_audio_batch
 #' @return `r jobs_return()`
-#' @seealso [convert_audio()], the scalar verb it wraps; [ffm_batch()], the batch
-#'   runner; [extract_audio_batch()] to stream-copy audio in batch.
+#' @seealso [convert_audio()], the single-input form it wraps. [ffm_batch()],
+#'   the batch runner. [extract_audio_batch()] to stream-copy audio in batch.
 #' @family task functions
 #' @family audio selection functions
 #' @examples

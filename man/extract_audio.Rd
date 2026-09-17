@@ -17,11 +17,11 @@ extract_audio(
 
 \item{outfile}{A string containing the path of the audio file to write.}
 
-\item{audio_codec}{A string naming the audio codec for the output stream
-(default \code{"copy"}, i.e. remux without re-encoding), or \code{NULL} to
-emit no \code{-codec:a} and let the output container's default encoder
-decide — useful when the source codec cannot be copied into the extension
-you asked for.}
+\item{audio_codec}{A string naming the audio codec for the output stream.
+The default \code{"copy"} copies the stream into the new container
+without re-encoding. \code{NULL} writes no \code{-codec:a}, so the output
+container's default encoder decides. That is useful when FFmpeg cannot
+copy the source codec into the extension you asked for.}
 
 \item{audio_stream}{The audio track to take, as a number that counts from \code{0} among the \emph{audio tracks} of the input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) takes the \strong{first} audio track. The first-track family reads \code{NULL} this way: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The every-track family reads it as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
@@ -32,9 +32,11 @@ or return the compiled command without running it (\code{FALSE}).}
 The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
-Pulls one audio track out of \code{infile}, dropping the video. When the
-input carries more than one audio track, \code{audio_stream} names which one
-to take; with no selector the \strong{first} audio track is taken.
+Take one audio track out of \code{infile}, and drop the video. When the
+input has more than one audio track, \code{audio_stream} names which one to
+take. With no \code{audio_stream}, the function takes the \strong{first}
+audio track. The glossary in \code{vignette("tidymedia")} explains media
+terms such as codec, container and stream copy.
 }
 \details{
 When no \code{audio_stream} is named and the input has tracks that the output will not carry, the function warns. The check costs \strong{one FFprobe call per distinct input}, which is one call here, because this function takes a single \code{infile}. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. It never runs under \code{run = FALSE}, and never changes the compiled command. Suppress it by naming a track with \code{audio_stream}, or by class with \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
@@ -48,8 +50,8 @@ extract_audio(video, "audio.aac", run = FALSE)
 extract_audio(video, "audio.aac", audio_stream = 1, run = FALSE)
 }
 \seealso{
-\code{\link[=ffm_drop]{ffm_drop()}} and \code{\link[=ffm_codec]{ffm_codec()}}, the builders it wraps;
-\code{\link[=convert_audio]{convert_audio()}} to re-encode the extracted audio;
+\code{\link[=ffm_drop]{ffm_drop()}} and \code{\link[=ffm_codec]{ffm_codec()}}, the pipeline functions it wraps.
+\code{\link[=convert_audio]{convert_audio()}} to re-encode the extracted audio.
 \code{\link[=extract_audio_batch]{extract_audio_batch()}} for the many-file form.
 
 Other task functions:

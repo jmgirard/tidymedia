@@ -14,26 +14,27 @@ extract_audio_batch(
 )
 }
 \arguments{
-\item{jobs}{A data frame with one row per input and (at least) an
+\item{jobs}{A data frame with one row per input. It needs at least an
 \code{input} column (source path) and an \code{output} column (destination
-path). An \code{output} column is \strong{required} — unlike the video batch
-verbs, an audio destination cannot be auto-named because its extension is
-the instruction (it picks the container, and with \code{audio_codec =
-"copy"} must match the source codec). An optional \code{audio_codec} column
-overrides the \code{audio_codec} argument per row; rows omitting it fall
-back to the argument, and \code{NA} in a cell leaves that row's codec unset
-(the column form of \code{audio_codec = NULL}). An optional
-\code{audio_stream} column likewise overrides the \code{audio_stream}
-argument per row, where \code{NA} keeps that row on the first audio track.
-Two rows given the same \code{output} path are refused before any row
-runs. Any other columns are ignored.}
+path). The \code{output} column is \strong{required}. Unlike the video batch
+functions, this function cannot name an audio destination for you,
+because the extension is the instruction. The extension picks the
+container, and with \code{audio_codec = "copy"} it must match the source
+codec. An optional \code{audio_codec} column overrides the
+\code{audio_codec} argument per row. Rows without a value use the
+argument. \code{NA} in a cell leaves that row's codec unset, which is the
+column form of \code{audio_codec = NULL}. An optional \code{audio_stream}
+column overrides the \code{audio_stream} argument per row in the same
+way, and \code{NA} keeps that row on the first audio track. The function
+refuses two rows with the same \code{output} path, before any row runs.
+The function ignores any other columns.}
 
-\item{audio_codec}{The audio codec applied to every row unless \code{jobs}
-carries an \code{audio_codec} column, in which case \code{NA} in a cell
-leaves that row's codec unset. \code{"copy"} (default) stream-copies the
-audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode; or pass
-\code{NULL} to emit no \code{-codec:a} and let the output container's
-default encoder decide.}
+\item{audio_codec}{The audio codec applied to every row, unless \code{jobs}
+has an \code{audio_codec} column. In that column, \code{NA} in a cell
+leaves that row's codec unset. \code{"copy"} (default) copies the audio
+stream with no quality loss. Name an encoder (e.g. \code{"aac"}) to
+re-encode. Or pass \code{NULL} to write no \code{-codec:a}, so the output
+container's default encoder decides.}
 
 \item{audio_stream}{The audio track to take, as a number that counts from \code{0} among the \emph{audio tracks} of each row's input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) takes the \strong{first} audio track. Without an \code{audio_stream} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row. It does not fall back to the argument. The first-track family reads \code{NULL} as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The every-track family reads it as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
@@ -51,12 +52,14 @@ or only compile them for inspection (\code{FALSE}).}
 The \code{jobs} tibble with an added \code{command} column. When \code{run = TRUE}, it also has a \code{success} column, plus \code{verified} or a provenance manifest, each when requested through \code{...}. See \code{\link{ffm_batch}}.
 }
 \description{
-Pull the audio track out of many input files from a single jobs tibble — the
-\strong{batch} (table-driven) sibling of \code{\link[=extract_audio]{extract_audio()}} for when you have more
-than one file. Each row is one input; \code{input} and \code{output} columns
-are required. This is a thin wrapper over \code{\link{ffm_batch}}: one
-reproducible compiled command per input, sharing the same map/drop-video
-pipeline as the scalar verb.
+Take the audio track out of many input files, using one jobs table. This is
+the \strong{batch} form of \code{\link[=extract_audio]{extract_audio()}}, for when you have more than one
+file. Each row is one input. The \code{input} and \code{output} columns are
+required. The function is a thin wrapper over \code{\link{ffm_batch}}. It
+builds one reproducible command for each input, with the same steps as
+\code{extract_audio()}: select the audio track and drop the video. The
+glossary in \code{vignette("tidymedia")} explains media terms such as codec,
+container and stream copy.
 }
 \details{
 When a row names no \code{audio_stream} and its input has tracks that the output will not carry, the function warns \strong{once} for the whole batch. The warning names every affected row. The check costs \strong{one FFprobe call per distinct input} it has to probe. A repeated input is probed once, and a row that names a track is not probed at all. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. Those probes run \strong{one at a time, before any row starts}, so \code{parallel} does not reach them. A sweep long enough to look like a hang reports its progress. The check never runs under \code{run = FALSE}, never changes any compiled command, and is skipped entirely when every row names a track. Suppress it by class with \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
@@ -69,8 +72,8 @@ jobs <- tibble::tibble(input = c(video, video), output = c("a.aac", "b.aac"))
 extract_audio_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=extract_audio]{extract_audio()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}}, the batch
-runner; \code{\link[=convert_audio_batch]{convert_audio_batch()}} to transcode audio in batch.
+\code{\link[=extract_audio]{extract_audio()}}, the single-input form it wraps. \code{\link[=ffm_batch]{ffm_batch()}},
+the batch runner. \code{\link[=convert_audio_batch]{convert_audio_batch()}} to re-encode audio in batch.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

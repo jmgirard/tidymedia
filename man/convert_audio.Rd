@@ -19,10 +19,10 @@ convert_audio(
 
 \item{audio_codec}{An optional string naming the output audio codec (e.g.
 \code{"libmp3lame"}, \code{"aac"}, \code{"flac"}), passed to FFmpeg's
-\code{-c:a}. When \code{NULL} (default), the codec is inferred from the
-\code{outfile} extension and encoded at highest VBR quality. Unlike the
-other transform verbs, \code{NULL} here is \emph{not} the "leave the codec
-unset" sentinel — it selects \code{-q:a 0}.}
+\code{-c:a}. When \code{NULL} (default), FFmpeg infers the codec from the
+\code{outfile} extension and encodes at the highest VBR quality. On the
+other task functions, \code{NULL} means "leave the codec unset". Here it
+does \emph{not} mean that. It selects \code{-q:a 0}.}
 
 \item{audio_stream}{The audio track to take, as a number that counts from \code{0} among the \emph{audio tracks} of the input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) takes the \strong{first} audio track. The first-track family reads \code{NULL} this way: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The every-track family reads it as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
@@ -33,15 +33,17 @@ or return the compiled command without running it (\code{FALSE}).}
 The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
-Maps the audio stream of \code{infile} into \code{outfile}. By default
-(\code{audio_codec = NULL}) the output format follows the \code{outfile} file
-extension at highest VBR quality (\code{-q:a 0}) — e.g. an \code{.mp3}
-extension yields an MP3. Pass \code{audio_codec} to pin the output audio
-codec explicitly, regardless of the extension.
+Write the audio stream of \code{infile} into \code{outfile}. By default
+(\code{audio_codec = NULL}), the output format follows the \code{outfile}
+file extension, at the highest VBR quality (\code{-q:a 0}). For example, an
+\code{.mp3} extension gives an MP3. Pass \code{audio_codec} to set the output
+audio codec yourself, whatever the extension is. The glossary in
+\code{vignette("tidymedia")} explains media terms such as codec and stream.
 }
 \details{
-When \code{infile} carries more than one audio track, \code{audio_stream}
-names which one to take; with no selector the \strong{first} one is taken.
+When \code{infile} has more than one audio track, \code{audio_stream} names
+which one to take. With no \code{audio_stream}, the function takes the
+\strong{first} one.
 
 When no \code{audio_stream} is named and the input has tracks that the output will not carry, the function warns. The check costs \strong{one FFprobe call per distinct input}, which is one call here, because this function takes a single \code{infile}. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. It never runs under \code{run = FALSE}, and never changes the compiled command. Suppress it by naming a track with \code{audio_stream}, or by class with \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
 
@@ -55,8 +57,8 @@ convert_audio(video, "audio.m4a", audio_codec = "aac", run = FALSE)
 convert_audio(video, "audio.mp3", audio_stream = 1, run = FALSE)
 }
 \seealso{
-\code{\link[=ffm_codec]{ffm_codec()}} and \code{\link[=ffm_map]{ffm_map()}}, the builders it wraps;
-\code{\link[=extract_audio]{extract_audio()}} to copy audio without re-encoding;
+\code{\link[=ffm_codec]{ffm_codec()}} and \code{\link[=ffm_map]{ffm_map()}}, the pipeline functions it wraps.
+\code{\link[=extract_audio]{extract_audio()}} to copy audio without re-encoding.
 \code{\link[=convert_audio_batch]{convert_audio_batch()}} for the many-file form.
 
 Other task functions:

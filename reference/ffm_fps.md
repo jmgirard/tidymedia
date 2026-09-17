@@ -1,8 +1,11 @@
 # Set the Frame Rate in an FFmpeg Pipeline
 
-Resample the video to a constant frame rate via FFmpeg's `fps` filter,
-duplicating or dropping frames as needed. Appended to the video filter
-chain like the other single-input sequential filters.
+Resample the video to a constant frame rate with FFmpeg's `fps` filter.
+The filter duplicates or drops frames as needed. It is added to the end
+of the video filters, like the other filters that take one input. The
+glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as frame rate.
 
 ## Usage
 
@@ -14,23 +17,23 @@ ffm_fps(object, fps)
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 - fps:
 
-  The target frame rate. Either (1) a positive real number of frames per
-  second or (2) a string that contains an FFmpeg framerate expression
-  (for example `"30000/1001"` for NTSC).
+  The target frame rate. Give a positive real number of frames per
+  second, or a string that contains an FFmpeg frame rate expression. For
+  example, `"30000/1001"` is the NTSC rate.
 
 ## Value
 
-`object` but with the added instruction to resample the frame rate.
+`object` with an added instruction to resample the frame rate.
 
 ## See also
 
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
-the task verb that sets frame rate via this builder.
+the task function that uses `ffm_fps()` to set the frame rate.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

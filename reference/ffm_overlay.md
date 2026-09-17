@@ -1,11 +1,14 @@
 # Overlay One Video on Another in an FFmpeg Pipeline
 
-Composite the second input (the overlay) on top of the first (the main
-video) at position `x`/`y`. This is a blessed multi-input verb (like
-[`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)):
-it forces the `-filter_complex` path and manages its own stream labels
-internally. Exactly two inputs are required — the first is the
-background, the second is drawn over it.
+Draw the second input (the overlay) on top of the first input (the main
+video) at position `x` and `y`. Like
+[`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md),
+this is a pipeline function for several inputs. It forces the
+`-filter_complex` path and manages its own stream labels internally. It
+needs exactly two inputs. The first is the background, and the second is
+drawn over it. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as stream.
 
 ## Usage
 
@@ -17,54 +20,57 @@ ffm_overlay(object, x = 0, y = 0, shortest = FALSE, scale = NULL)
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md)
   with exactly two input files.
 
 - x:
 
   The horizontal position of the overlay's left edge, as a number of
-  pixels or an FFmpeg expression. (default = `0`)
+  pixels or an FFmpeg expression. The default is `0`.
 
 - y:
 
   The vertical position of the overlay's top edge, as a number of pixels
-  or an FFmpeg expression. (default = `0`)
+  or an FFmpeg expression. The default is `0`.
 
 - shortest:
 
-  A logical indicating whether to end the output when the shorter input
-  ends (default = `FALSE`).
+  A logical that says whether to end the output when the shorter input
+  ends. The default is `FALSE`.
 
 - scale:
 
-  An optional fraction (`0 < scale <= 1`) to resize the overlay to
-  `scale` times the main video's width before compositing (aspect
-  preserved); `NULL` (default) overlays at native size. When set,
-  `overlay_w`/`overlay_h` in `x`/`y` refer to the resized overlay.
+  An optional fraction (`0 < scale <= 1`). Before the overlay is drawn,
+  it is resized to `scale` times the main video's width, and its aspect
+  ratio is kept. `NULL` (the default) draws the overlay at its own size.
+  When `scale` is set, `overlay_w` and `overlay_h` in `x` and `y` refer
+  to the resized overlay.
 
 ## Value
 
-`object` with the added instruction to overlay the second input on the
+`object` with an added instruction to draw the second input on the
 first.
 
 ## Details
 
-`x` and `y` accept plain numbers (pixels from the top-left of the main
-video) or FFmpeg overlay expressions, where `main_w`/`main_h` are the
-main video's dimensions and `overlay_w`/`overlay_h` are the overlay's.
-For example, `x = "main_w-overlay_w-16"` pins the overlay 16 pixels from
-the right edge. When `scale` is set, the overlay is first resized to a
-fraction of the main video's width (aspect preserved), which is what the
-Layer-2
+`x` and `y` accept plain numbers or FFmpeg overlay expressions. A plain
+number counts pixels from the top-left of the main video. In an
+expression, `main_w` and `main_h` are the main video's dimensions.
+`overlay_w` and `overlay_h` are the overlay's dimensions. For example,
+`x = "main_w-overlay_w-16"` puts the overlay 16 pixels from the right
+edge.
+
+When `scale` is set, the overlay is first resized to a fraction of the
+main video's width, and its aspect ratio is kept. The task function
 [`picture_in_picture`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
-verb uses. Otherwise, to resize the overlay yourself, filter it in a
-separate pipeline first.
+uses this resize. Otherwise, to resize the overlay yourself, filter it
+in a separate pipeline first.
 
 ## See also
 
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md),
-the task verb built on this verb.
+the task function built on this function.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

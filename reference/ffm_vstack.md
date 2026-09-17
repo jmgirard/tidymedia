@@ -1,11 +1,7 @@
 # Vertically Stack Multiple Videos in an FFmpeg Pipeline
 
-Add a complex video filter to stack multiple videos vertically (one
-above the other) and, optionally, resize them to have the same width.
-This is the vertical companion to
-[`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md);
-both are blessed multi-input verbs that force the `-filter_complex` path
-and manage their own stream labels internally.
+Add a complex video filter that stacks several videos vertically (one
+above the other). It can also resize the videos to the same width.
 
 ## Usage
 
@@ -17,31 +13,41 @@ ffm_vstack(object, shortest = FALSE, resize = FALSE)
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 - shortest:
 
-  A logical indicating whether to trim the duration of all videos to
-  that of the shortest video (default = `FALSE`)
+  A logical that says whether to trim the duration of all videos to that
+  of the shortest video. The default is `FALSE`.
 
 - resize:
 
-  A logical indicating whether to resize the width of the input videos
-  to match (takes longer and currently only works with two inputs).
-  Resizing conforms both inputs to the same aspect ratio, so it assumes
+  A logical that says whether to resize the input videos to the same
+  width. Resizing takes longer, and for now it works only with two
+  inputs. It fits both inputs to the same aspect ratio, so it assumes
   the inputs share one.
 
 ## Value
 
-`object` but with the added instruction to apply vertical stacking.
+`object` with an added instruction to stack the videos vertically.
+
+## Details
+
+This is the vertical form of
+[`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md).
+Both are pipeline functions for several inputs. They force the
+`-filter_complex` path and manage their own stream labels internally.
+The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as stream.
 
 ## See also
 
 [`ffm_hstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)
-for horizontal stacking and
+for horizontal stacking, and
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
-the task verb built on both.
+the task function built on both.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

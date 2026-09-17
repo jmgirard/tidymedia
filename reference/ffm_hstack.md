@@ -1,7 +1,7 @@
 # Horizontally Stack Multiple Videos in an FFmpeg Pipeline
 
-Add a complex video filter to stack multiple videos horizontally
-(side-by-side) and, optionally, resize them to have the same height.
+Add a complex video filter that stacks several videos horizontally (side
+by side). It can also resize the videos to the same height.
 
 ## Usage
 
@@ -13,31 +13,31 @@ ffm_hstack(object, shortest = FALSE, resize = FALSE)
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 - shortest:
 
-  A logical indicating whether to trim the duration of all videos to
-  that of the shortest video (default = `FALSE`)
+  A logical that says whether to trim the duration of all videos to that
+  of the shortest video. The default is `FALSE`.
 
 - resize:
 
-  A logical indicating whether to resize the height of the input videos
-  to match (takes longer and currently only works with two inputs).
-  Resizing conforms both inputs to the same aspect ratio, so it assumes
+  A logical that says whether to resize the input videos to the same
+  height. Resizing takes longer, and for now it works only with two
+  inputs. It fits both inputs to the same aspect ratio, so it assumes
   the inputs share one.
 
 ## Value
 
-`object` but with the added instruction to apply horizontal stacking.
+`object` with an added instruction to stack the videos horizontally.
 
 ## See also
 
 [`ffm_vstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md)
-for vertical stacking and
+for vertical stacking, and
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
-the task verb built on both.
+the task function built on both.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

@@ -54,7 +54,7 @@ Build an FFmpeg command one step at a time, then compile it or run it.
 - [`ffm_crop()`](https://jmgirard.github.io/tidymedia/reference/ffm_crop.md)
   : Crop Frames in an FFmpeg Pipeline
 - [`ffm_scale()`](https://jmgirard.github.io/tidymedia/reference/ffm_scale.md)
-  : Scale (Resize) Frames in a FFmpeg Pipeline
+  : Scale (Resize) Frames in an FFmpeg Pipeline
 - [`ffm_fps()`](https://jmgirard.github.io/tidymedia/reference/ffm_fps.md)
   : Set the Frame Rate in an FFmpeg Pipeline
 - [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)

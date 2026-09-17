@@ -1,7 +1,7 @@
-# Scale (Resize) Frames in a FFmpeg Pipeline
+# Scale (Resize) Frames in an FFmpeg Pipeline
 
-Scale (resize) the input video's frames to either a specific width and
-height (in pixels) or using an FFmpeg expression.
+Scale (resize) the input video's frames to a width and height in pixels,
+or with an FFmpeg expression.
 
 ## Usage
 
@@ -13,29 +13,29 @@ ffm_scale(object, width, height)
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 - width:
 
-  The width of the output video (in pixels). Either (1) a positive real
-  number or (2) a string that contains an FFmpeg expression.
+  The width of the output video, in pixels. Give a positive real number
+  or a string that contains an FFmpeg expression.
 
 - height:
 
-  The height of the output video (in pixels). Either (1) a positive real
-  number or (2) a string that contains an FFmpeg expression.
+  The height of the output video, in pixels. Give a positive real number
+  or a string that contains an FFmpeg expression.
 
 ## Value
 
-`object` but with the added instruction to resize the image(s).
+`object` with an added instruction to resize the frames.
 
 ## See also
 
 [`ffm_crop()`](https://jmgirard.github.io/tidymedia/reference/ffm_crop.md)
-to crop instead of resize;
+to crop instead of resize.
 [`standardize_video()`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
-is the task verb built on it.
+is the task function built on `ffm_scale()`.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

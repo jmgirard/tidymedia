@@ -1,6 +1,6 @@
 # Crop Frames in an FFmpeg Pipeline
 
-Decrease the size of the video's frames by cropping it.
+Make the video's frames smaller by cropping them.
 
 ## Usage
 
@@ -12,34 +12,34 @@ ffm_crop(object, width, height, x = "(in_w-out_w)/2", y = "(in_h-out_h)/2")
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 - width:
 
-  The width of the output video (in pixels). Either a positive real
-  number or a string that contains an FFMPEG expression.
+  The width of the output video, in pixels. Give a positive real number
+  or a string that contains an FFmpeg expression.
 
 - height:
 
-  The height of the output video (in pixels). Either a positive real
-  number or a string that contains an FFMPEG expression.
+  The height of the output video, in pixels. Give a positive real number
+  or a string that contains an FFmpeg expression.
 
 - x:
 
-  The horizontal position, in the input video, of the left edge of the
-  output video (in pixels). Either a positive real number or a string
-  that contains an FFMPEG expression. (default = `"(in_w-out_w)/2"`)
+  The horizontal position of the left edge of the output video, in
+  pixels of the input video. Give a positive real number or a string
+  that contains an FFmpeg expression. The default is `"(in_w-out_w)/2"`.
 
 - y:
 
-  The vertical position, in the input video, of the top edge of the
-  output video (in pixels). Either a positive real number or a string
-  that contains an FFMPEG expression. (default = `"(in_h-out_h)/2"`)
+  The vertical position of the top edge of the output video, in pixels
+  of the input video. Give a positive real number or a string that
+  contains an FFmpeg expression. The default is `"(in_h-out_h)/2"`.
 
 ## Value
 
-`object` but with the added instruction to crop the image(s).
+`object` with an added instruction to crop the frames.
 
 ## References
 
@@ -48,11 +48,11 @@ https://ffmpeg.org/ffmpeg-filters.html#crop
 ## See also
 
 [`ffm_scale()`](https://jmgirard.github.io/tidymedia/reference/ffm_scale.md)
-to resize instead of crop;
+to resize instead of crop.
 [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
 and
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
-are the task verbs built on it.
+are the task functions built on `ffm_crop()`.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

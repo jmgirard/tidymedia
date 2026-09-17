@@ -1,6 +1,6 @@
 # Draw a Colored Box on the Videos in an FFmpeg Pipeline
 
-Add a video filter to draw a colored rectangle on the input video.
+Add a video filter that draws a colored rectangle on the input video.
 
 ## Usage
 
@@ -20,46 +20,46 @@ ffm_drawbox(
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 - x:
 
-  The horizontal position, in the input video, of the left edge of the
-  box (in pixels). Either a nonnegative real number or a string that
-  contains an FFMPEG expression. (default = 0)
+  The horizontal position of the left edge of the box, in pixels of the
+  input video. Give a nonnegative real number or a string that contains
+  an FFmpeg expression. The default is `0`.
 
 - y:
 
-  The vertical position, in the input video, of the top edge of the box
-  (in pixels). Either a nonnegative real number or a string that
-  contains an FFMPEG expression. (default = 0)
+  The vertical position of the top edge of the box, in pixels of the
+  input video. Give a nonnegative real number or a string that contains
+  an FFmpeg expression. The default is `0`.
 
 - width:
 
-  The width of the box (in pixels). Either a positive real number or a
-  string that contains an FFmpeg expression. (default = `"in_w"`)
+  The width of the box, in pixels. Give a positive real number or a
+  string that contains an FFmpeg expression. The default is `"in_w"`.
 
 - height:
 
-  The height of the box (in pixels). Either a positive real number or a
-  string that contains an FFmpeg expression. (default = `"in_h"`)
+  The height of the box, in pixels. Give a positive real number or a
+  string that contains an FFmpeg expression. The default is `"in_h"`.
 
 - color:
 
-  A string containing the color of the box in FFmpeg color syntax, see
-  reference link below for more details. If the special value `"invert"`
-  is used, the box color is the same as the video with inverted luma.
-  (default = `"black"`)
+  A string with the color of the box, in FFmpeg color syntax. The
+  reference link below explains that syntax. With the special value
+  `"invert"`, the box has the color of the video with inverted luma. The
+  default is `"black"`.
 
 - thickness:
 
-  A thickness of the box edge (in pixels). A value of `"fill"` will
-  create a filled box. (default = `"fill"`)
+  The thickness of the box edge, in pixels. The value `"fill"` draws a
+  filled box. The default is `"fill"`.
 
 ## Value
 
-`object` but with the added instruction to apply the drawbox filter.
+`object` with an added instruction to apply the `drawbox` filter.
 
 ## References
 
@@ -70,7 +70,7 @@ https://ffmpeg.org/ffmpeg-utils.html#color-syntax
 ## See also
 
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
-the task verb that fills regions via this builder.
+the task function that uses `ffm_drawbox()` to fill regions.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

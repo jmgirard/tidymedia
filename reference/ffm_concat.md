@@ -1,13 +1,13 @@
 # Concatenate Multiple Inputs in an FFmpeg Pipeline
 
-Join the pipeline's input files one after another using FFmpeg's [concat
-demuxer](https://ffmpeg.org/ffmpeg-formats.html#concat-1). This is a
-blessed multi-input verb (like
-[`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)):
-it stream-copies, so it is fast and lossless but requires that every
-input share the same parameters (codec, resolution, frame rate, ...). To
-concatenate inputs with differing parameters you must re-encode via the
-concat filter (not yet wrapped; use the Layer 0 escape hatch).
+Join the pipeline's input files one after another with FFmpeg's [concat
+demuxer](https://ffmpeg.org/ffmpeg-formats.html#concat-1). Like
+[`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md),
+this is a pipeline function for several inputs. It uses stream copy, so
+it is fast and lossless. But every input must share the same parameters,
+such as codec, resolution and frame rate. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, re-encode and stream copy.
 
 ## Usage
 
@@ -19,27 +19,31 @@ ffm_concat(object)
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md)
   with more than one input file.
 
 ## Value
 
-`object` with the added instruction to concatenate the inputs.
+`object` with an added instruction to concatenate the inputs.
 
 ## Details
 
-The demuxer needs a list file naming the inputs; `ffm_concat()` writes
-one to a temporary path immediately and stores it in the pipeline, so
-the compiled command can reference it. It also copies codecs and maps
-all streams (as
+To join inputs with different parameters, you must re-encode with the
+concat filter. The package does not wrap that filter yet, so use
+[`ffmpeg`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md).
+
+The demuxer needs a list file that names the inputs. When you call
+`ffm_concat()`, it writes one to a temporary path and stores it in the
+pipeline, so the compiled command can refer to it. It also copies codecs
+and maps all streams, as
 [`ffm_copy`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
-would).
+would.
 
 ## See also
 
 [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
-the task verb built on this verb.
+the task function built on this function.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
@@ -73,5 +77,5 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 ffm_files(c(video, video), "output.mp4") |>
   ffm_concat() |>
   ffm_compile()
-#> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmp9IWUvc/ffm-concat1f057e3d4eb1.txt\" -codec:v copy -codec:a copy -map \"0\" \"output.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/Rtmp3vzb6E/ffm-concat1f604eb97a64.txt\" -codec:v copy -codec:a copy -map \"0\" \"output.mp4\""
 ```

@@ -1,9 +1,11 @@
 # Trim the Duration of the FFmpeg Pipeline
 
-Trim the input so that the output contains one continuous subpart of the
-input. Note that, if `start=NULL`, then the kept section will start at
-the beginning of the input. If both `end=NULL` and `duration=NULL`, the
-kept section will end at the end of the input.
+Trim the input so that the output keeps one continuous part of the
+input. If `start` is `NULL`, the kept section starts at the beginning of
+the input. If both `end` and `duration` are `NULL`, the kept section
+ends at the end of the input. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as stream copy.
 
 ## Usage
 
@@ -22,38 +24,37 @@ ffm_trim(
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 - start:
 
-  The time of the start of the kept section (i.e., this will be the
-  first frame in the output) given in `units`.
+  The time of the start of the kept section, given in `units`. The frame
+  at this time is the first frame of the output.
 
 - end:
 
-  The time of the first frame that will be dropped (i.e., the frame
-  immediately preceding this will be the last frame in the output),
-  given in `units`.
+  The time of the first frame that is dropped, given in `units`. The
+  frame just before it is the last frame of the output.
 
 - duration:
 
-  The maximum duration of the output given in time duration syntax.
+  The maximum duration of the output, given in time duration syntax.
 
 - units:
 
-  A string indicating whether the `start` and/or `end` are given time
-  duration syntax ("tds"), timebase units ("pts"), or frame number
-  ("frame"). default = `"tds"`
+  A string that says how `start` and `end` are given: time duration
+  syntax (`"tds"`), timebase units (`"pts"`) or frame numbers
+  (`"frame"`). The default is `"tds"`.
 
 - setpts:
 
-  A logical indicating whether the output timestamps should be modified
-  to start at zero. If TRUE, will add a setpts filter after trim.
+  A logical that says whether the output timestamps change to start at
+  zero. If `TRUE`, a `setpts` filter is added after the trim.
 
 ## Value
 
-`object` but will added instructions to trim the duration.
+`object` with added instructions to trim the duration.
 
 ## References
 
@@ -64,8 +65,8 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 ## See also
 
 [`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md),
-the faster seek-based cut that can stream-copy (this is the frame-exact
-*filter*).
+the faster cut by seeking, which can use stream copy. `ffm_trim()` is
+the filter that cuts on exact frames.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

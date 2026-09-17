@@ -1,10 +1,12 @@
 # Normalize Loudness in an FFmpeg Pipeline
 
-Append FFmpeg's `loudnorm` (EBU R128) audio filter, normalizing the
+Add FFmpeg's `loudnorm` (EBU R128) audio filter. It normalizes the
 input's perceived loudness toward a target integrated loudness,
-true-peak ceiling, and loudness range. This is the first builder
-function to write the pipeline's audio filter chain, so it compiles to
-`-af` (or joins an existing audio filter chain in application order).
+true-peak ceiling and loudness range. The filter compiles to `-af`, or
+joins an existing audio filter chain in the order the filters were
+added. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as LUFS and true peak.
 
 ## Usage
 
@@ -28,69 +30,71 @@ ffm_loudnorm(
 
 - object:
 
-  An ffmpeg pipeline (`ffm`) object created by
+  An FFmpeg pipeline (`ffm`) object created by
   [`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md).
 
 - target_loudness:
 
-  The target integrated loudness, in LUFS (a number in `-70`..`-5`;
-  default `-23`, the EBU R128 target).
+  The target integrated loudness, in LUFS (a number in `-70`..`-5`). The
+  default, `-23`, is the EBU R128 target.
 
 - true_peak:
 
-  The maximum true peak, in dBTP (a number in `-9`..`0`; default `-1`,
-  the EBU R128 ceiling).
+  The maximum true peak, in dBTP (a number in `-9`..`0`). The default,
+  `-1`, is the EBU R128 ceiling.
 
 - loudness_range:
 
-  The target loudness range, in LU (a number in `1`..`50`; default `7`).
+  The target loudness range, in LU (a number in `1`..`50`). The default
+  is `7`.
 
 - measured_i, measured_tp, measured_lra, measured_thresh:
 
-  Measured input values from a prior `loudnorm` analysis pass
-  (integrated loudness, true peak, loudness range, and threshold).
-  Supplied together to drive an accurate two-pass (linear) correction;
-  all five of these plus `offset` must be given as a set, or none
-  (`NULL`, default, for single-pass dynamic normalization). These map to
-  FFmpeg's `measured_I`, `measured_TP`, `measured_LRA`, and
+  Measured input values from an earlier `loudnorm` analysis pass:
+  integrated loudness, true peak, loudness range and threshold. Give
+  them together for an accurate two-pass (linear) correction. Give these
+  values and `offset` as one set, or give none of them. `NULL`, the
+  default, gives single-pass dynamic normalization. These map to
+  FFmpeg's `measured_I`, `measured_TP`, `measured_LRA` and
   `measured_thresh` options.
 
 - offset:
 
-  The `target_offset` (offset gain) reported by the analysis pass, part
-  of the measured set (see `measured_i`). `NULL` by default.
+  The `target_offset` (offset gain) that the analysis pass reports. It
+  is part of the measured set (see `measured_i`). The default is `NULL`.
 
 - linear:
 
-  A logical: when `TRUE`, request linear normalization (`linear=true`),
-  which needs the measured values to hit the target precisely. `FALSE`
-  (default) omits the option entirely, leaving single-pass dynamic
-  behavior untouched.
+  A logical. `TRUE` requests linear normalization (`linear=true`), which
+  needs the measured values to hit the target precisely. `FALSE` (the
+  default) leaves out the option, so the single-pass dynamic behavior
+  does not change.
 
 - print_format:
 
-  The measurement report format for an analysis pass, one of `"json"`,
-  `"summary"`, or `"none"`. `NULL` (default) omits the option. Use
-  `"json"` for a machine-parseable analysis pass.
+  The format of the measurement report for an analysis pass: `"json"`,
+  `"summary"` or `"none"`. `NULL` (the default) leaves out the option.
+  Use `"json"` for an analysis pass that a program can parse.
 
 ## Value
 
-`object` but with the added instruction to normalize loudness.
+`object` with an added instruction to normalize loudness.
 
 ## Details
 
-This is single-pass (dynamic) `loudnorm`: one reproducible command, no
-measurement pass. The defaults follow EBU Recommendation R 128 (2014) —
-`target_loudness = -23` LUFS and `true_peak = -1` dBTP, loudness
-measured per ITU-R BS.1770-4 — with `loudness_range = 7` (FFmpeg's own
-`loudnorm` default, EBU R128 not prescribing a single value).
+This is single-pass (dynamic) `loudnorm`. The pipeline stays one
+reproducible command, with no measurement pass. The defaults follow EBU
+Recommendation R 128 (2014): `target_loudness = -23` LUFS and
+`true_peak = -1` dBTP. Loudness is measured per ITU-R BS.1770-4. The
+default `loudness_range = 7` is FFmpeg's own `loudnorm` default. EBU
+R128 does not prescribe a single value.
 
-Two filters are appended, not one: `loudnorm` is followed by
-`asetnsamples`, which re-chunks the filtered audio into 4096-sample
-frames without padding the last one. Dynamic `loudnorm` resamples to 192
-kHz and emits 192000-sample frames, which encoders that accept whatever
-frame they are handed — FLAC and Vorbis among them — refuse to open at
-all.
+Two filters are added, not one. `loudnorm` is followed by
+`asetnsamples`, which regroups the filtered audio into frames of 4096
+samples and does not pad the last one. Dynamic `loudnorm` resamples to
+192 kHz and gives frames of 192000 samples. Some encoders accept
+whatever frame they are given, FLAC and Vorbis among them. Even those
+encoders refuse to open at all on frames of 192000 samples.
 
 ## References
 
@@ -101,7 +105,7 @@ maximum level of audio signals*; ITU-R BS.1770-4.
 ## See also
 
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
-the task verb built on this filter.
+the task function built on this filter.
 
 Other pipeline functions:
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),

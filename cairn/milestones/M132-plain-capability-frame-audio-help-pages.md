@@ -70,3 +70,19 @@ Reviewed 2026-09-17 at `29bd0880`. The branch was cut from `efb2b2c4`, which is 
 - AC3: 10 pages have a glossary stem in their `--prose` output, and each has a sentence with `glossary` and `vignette("tidymedia")` in its `tools::Rd2txt()` text. `ffmpeg` and `extract_frame` have no stem and do not name the glossary.
 - AC4: the base pages give 3 identifiers, `tidymedia.check_tracks`, `tidymedia.hardware_encoders` and `tidymedia_dropped_audio`. `git grep -wF` finds each one in `man/*.Rd` at head.
 - AC5: `git diff --name-only efb2b2c4 HEAD -- man/` lists 12 files, all in the domain. No page outside the domain changed, so there is nothing to compare.
+
+### Gate
+
+`cairn_validate.py` passes every check and exits 0. No `DESIGN.md` principle changed, so `cairn_impact.py` did not run. `NEWS.md` gets no entry, as the scope says.
+
+### Reviewer findings
+
+Three fresh reviewers read the branch: [O] diff, [S] history and [S] prior review record. The history reviewer found nothing. The PR comment probe returned no comments. Dispositions are filled at the gate.
+
+- O1 `R/ffmpeg.R:2933`, `?hardware_encoder` Details. Base: "These back the `hardware` toggle on" the task functions. Head: "These task functions use them for their `hardware` argument". The task functions call the internal `tm_hardware_encoder()` and `hardware_encoder_available()`, and nothing internal calls the two exported functions. I checked this with a grep over `R/`. The head sentence makes a claim the base did not make.
+- O2 `R/ffmpeg.R:2965`, `?hardware_encoder` See Also. Head: "These task functions use this page for their `hardware` argument". A function does not use a help page. The base sentence sent the reader to the pages that document the argument.
+- O3 `R/ffmpeg.R:2963`, `?hardware_encoder` Value. "a pair that the package supports" replaces "a pair the table holds". The same page says the package recognizes `prores` and that no backend covers it, so "supports" can be read to include a `prores` pair. The ledger records this swap.
+- O4 `R/ffmpeg.R:1282`, `?convert_audio` `audio_codec`. "the other transform verbs" became "the other task functions". The reviewer checked `extract_audio()`, `normalize_audio()` and the shared codec text, and the wider claim holds there.
+- O5 `R/ffmpeg.R:109`, `?sample_frames`. "the front door to per-frame coding" became "This is the first step for per-frame coding". The reviewer judges the two equal.
+- O6 The reviewer read the file with AC6 not ticked. The AC6 run was still going at that time.
+- P1 `?convert_audio` `audio_codec`. "Here it does not mean that. It selects `-q:a 0`." has "it" and "that" in a row. The M131 review fixed the same pattern on `?ffm_loudnorm`. The reviewer has low confidence in this one.

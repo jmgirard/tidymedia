@@ -54,6 +54,8 @@ The M133 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-17: [O] delegation: fresh-context claim audit reader, read-only. I checked its 4 findings against the base text and applied all 4.
 - claim audit: 116 claims read, 4 corrected — R/ffmpeg.R, man/normalize_audio.Rd, man/normalize_audio_batch.Rd, man/separate_audio_video.Rd, man/separate_audio_video_batch.Rd
 - 2026-09-17: T4 done. No test file changed. Sweep at head: 526 sentences, no finding, exit 0. `check()` 0/0/0, `test()` 0 failures, `check_pkgdown()` no problems, `document()` no diff. One doubtful base claim on `?normalize_audio_batch` went to the ledger and the follow-up candidate row. Status set to review.
+- 2026-09-17: review ran. 6 of 6 criteria pass. 10 findings, 5 fixed on the branch, 1 noted and 4 rejected.
+- 2026-09-17: step-7 approval: m133-plain-separate-normalize-help-pages approved for merge
 
 ## Decisions
 
@@ -71,16 +73,16 @@ Evidence is from 2026-09-17 at `5f033063`. The branch is 0 commits behind `origi
 
 ### Findings
 
-Three fresh reviewers read the diff. The prior-review reviewer found nothing to report. Dispositions are filled at the approval gate.
+Three fresh reviewers read the diff. The prior-review reviewer found nothing to report. The user chose the dispositions at the approval gate on 2026-09-17.
 
-- O1 (diff): `R/ffmpeg.R:6283`. The `@return` of `separate_audio_video_batch()` now gives `verified` and the manifest without the `run = TRUE` condition that the base text had. `R/ffm_batch.R:145` shows that only a run produces them. Checked against the code and confirmed.
-- O2 (diff): `R/ffmpeg.R:6327`. "Each bullet" now follows a new list of four conditions, so it is not clear that it means the bullets of the warning.
-- O3 (diff): the work log page counts (149, 132, 106, 137) sum to 524, and the ledger says 526. The fresh sweep reads 526, so the ledger is right and two work log counts are one low.
-- O4 (diff): `R/ffmpeg.R:4928`. "carries the same row numbers" became "carries the row numbers", so the text no longer ties `tm_rows` to the rows just named.
-- O5 (diff): `R/ffmpeg.R:6242`. The "because" moved. The base gave the extension as the reason the function derives no output paths. The head gives the source codec as the reason for the extension.
-- O6 (diff): the ledger row for `separate_audio_video_batch` does not record that "scalar verb" also became "the one-file function it wraps" in See Also.
-- S1 (history): "scalar" became "one-file" on these pages only, and other pages still say "scalar verb".
-- S2 (history): "aborts without probing" became "without asking FFmpeg" on two of four copies of that sentence.
-- S3 (history): the bold "best-effort" became "not guaranteed" without bold.
-- S4 (history): the glossary sentences are new text. The reader confirmed they are accurate.
+- O1 (diff): `R/ffmpeg.R:6283`. The `@return` of `separate_audio_video_batch()` now gives `verified` and the manifest without the `run = TRUE` condition that the base text had. `R/ffm_batch.R:145` shows that only a run produces them. Checked against the code and confirmed. Disposition: Fixed now: "A run also gives `verified` and the provenance manifest".
+- O2 (diff): `R/ffmpeg.R:6327`. "Each bullet" now follows a new list of four conditions, so it is not clear that it means the bullets of the warning. Disposition: Fixed now: "Each bullet of the warning".
+- O3 (diff): the work log page counts (149, 132, 106, 137) sum to 524, and the ledger says 526. The fresh sweep reads 526, so the ledger is right and two work log counts are one low. Disposition: Noted here. The ledger count of 526 stands, and the work log stays as written.
+- O4 (diff): `R/ffmpeg.R:4928`. "carries the same row numbers" became "carries the row numbers", so the text no longer ties `tm_rows` to the rows just named. Disposition: Fixed now: "the same row numbers".
+- O5 (diff): `R/ffmpeg.R:6242`. The "because" moved. The base gave the extension as the reason the function derives no output paths. The head gives the source codec as the reason for the extension. Disposition: Fixed now: the "because" is back on the reason for no output paths.
+- O6 (diff): the ledger row for `separate_audio_video_batch` does not record that "scalar verb" also became "the one-file function it wraps" in See Also. Disposition: Fixed now in the ledger row.
+- S1 (history): "scalar" became "one-file" on these pages only, and other pages still say "scalar verb". Disposition: Rejected: the plan called for it, because "scalar" is a maintainer term under rule 5. The other pages belong to M134.
+- S2 (history): "aborts without probing" became "without asking FFmpeg" on two of four copies of that sentence. Disposition: Rejected: the plan called for it, and the other two copies are outside the M133 domain.
+- S3 (history): the bold "best-effort" became "not guaranteed" without bold. Disposition: Rejected: the plan called for it, because "best-effort" is on the term list and the claim stays.
+- S4 (history): the glossary sentences are new text. The reader confirmed they are accurate. Disposition: Rejected: AC3 requires these sentences.
 

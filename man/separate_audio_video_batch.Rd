@@ -21,8 +21,8 @@ separate_audio_video_batch(
 \code{input} column (source path), plus \code{audiofile} and
 \code{videofile} columns that name the two destinations. All three are
 \strong{required}. Like \code{\link{separate_audio_video}}, this function
-derives no output paths. The container extension of a copied stream is the
-instruction, because it must match the source codec. No two destinations in
+derives no output paths, because the container extension of a copied stream
+is the instruction. That extension must match the source codec. No two destinations in
 a table can be the same path. That covers an \code{audiofile} and a
 \code{videofile} in one row, and any two across rows. The function refuses
 such a table before any row runs. Optional \code{audio_codec} and
@@ -77,8 +77,8 @@ A \link[tibble:tibble-package]{tibble} with \strong{two rows per input},
 one per stream. It has the reshaped \code{input}, a single \code{output}
 path, a \code{stream} marker (\code{"audio"} or \code{"video"}), and an
 added \code{command} column. When \code{run = TRUE}, it also has a
-\code{success} column. It also has \code{verified} and the provenance
-manifest, each when requested via \code{...}. When \code{jobs} supplies
+\code{success} column. A run also gives \code{verified} and the
+provenance manifest, each when requested via \code{...}. When \code{jobs} supplies
 either codec column, a
 single \code{codec} column carries each row's resolved encoder for its own
 stream (\code{NA} where none is set). When \code{audio_stream} is supplied
@@ -131,7 +131,7 @@ warning advises. Such a row is silently not named. A batch whose failed audio
 rows all write to those nine does not warn at all. The
 headline count follows the rows actually named.
 
-Each bullet states what that row \emph{did}: its track count, and that every
+Each bullet of the warning states what that row \emph{did}: its track count, and that every
 track was mapped into one output. It never states why FFmpeg refused.
 Several causes look alike from here. Examples are a stream copy into a
 container

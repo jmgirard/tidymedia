@@ -83,8 +83,8 @@ analysis of any row fails or gives no measurement that can be parsed, the
 call aborts and names those rows. It aborts before it builds any
 correction command. That abort has class
 \code{tidymedia_loudnorm_no_measurement}, the same class that
-\code{\link{normalize_audio}} raises for this event. It carries the row
-numbers on \code{tm_rows}, alongside \code{tm_row_status}. That field has
+\code{\link{normalize_audio}} raises for this event. It carries the same
+row numbers on \code{tm_rows}, alongside \code{tm_row_status}. That field has
 the FFmpeg exit status of each row, or \code{NA} where the row exited zero
 but printed nothing that can be parsed. It carries no single exit status
 on \code{tm_status}, and it does not have class

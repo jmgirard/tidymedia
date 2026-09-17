@@ -51,7 +51,7 @@ ffmpeg <- function(command) {
 #' @param frame Either an integerish frame number or \code{NULL}. Provide
 #'   exactly one of \code{timestamp} or \code{frame}.
 #' @return `r command_return()`
-#' @seealso [ffm_seek()], the builder it uses to grab the frame;
+#' @seealso [ffm_seek()], the pipeline function it uses to get the frame.
 #'   [extract_frame_batch()] for the many-file (batch) form.
 #' @family task functions
 #' @examples
@@ -104,28 +104,30 @@ frame_pipeline <- function(input, output, timestamp) {
 
 #' Sample frames from a video at a fixed rate
 #'
-#' Sample a video at a fixed rate (\code{fps}) or interval (\code{interval},
-#' seconds between frames) into a numbered image sequence — the front door to
-#' per-frame coding and computer-vision feature pipelines. Provide exactly one
-#' of \code{fps} or \code{interval}.
+#' Sample a video into a numbered image sequence. Sample at a fixed rate
+#' (\code{fps}) or at a fixed interval (\code{interval}, seconds between
+#' frames). This is the first step for per-frame coding and for computer-vision
+#' feature pipelines. Provide exactly one of \code{fps} or \code{interval}.
 #'
-#' Unlike \code{\link{extract_frame}} (one frame) and
-#' \code{\link{extract_frame_batch}} (a caller-enumerated set of frames), this
-#' verb emits a \emph{single} FFmpeg command whose output is a printf-style
-#' pattern that FFmpeg's \code{image2} muxer fills — the frame count is decided
-#' at decode time, not enumerated by the caller. Frames are written to
-#' \code{outdir} as \code{<prefix>_<n>.<format>}, where \code{<n>} is a
-#' zero-padded integer starting at 1.
+#' \code{\link{extract_frame}} saves one frame, and
+#' \code{\link{extract_frame_batch}} saves a set of frames that you list. This
+#' function is different. It builds a \emph{single} FFmpeg command whose output
+#' is a printf-style file name pattern. FFmpeg's \code{image2} muxer fills the
+#' pattern. FFmpeg decides the frame count when it decodes the video, and you
+#' do not list the frames. The function writes frames to \code{outdir} as
+#' \code{<prefix>_<n>.<format>}, where \code{<n>} is a zero-padded integer
+#' starting at 1. The glossary in \code{vignette("tidymedia")} explains media
+#' terms such as frame rate.
 #'
 #' @inheritParams crop_video
 #' @param outdir A string naming the directory to write the image sequence to.
-#'   It is created (recursively) if it does not exist.
+#'   The function creates it (recursively) if it does not exist.
 #' @param fps The sampling rate, in frames per second: either a positive number
 #'   or an FFmpeg framerate expression string (for example \code{"30000/1001"}).
 #'   Provide exactly one of \code{fps} or \code{interval}.
 #' @param interval The number of seconds between sampled frames (a positive
-#'   number); the reciprocal is used as the frame rate. Provide exactly one of
-#'   \code{fps} or \code{interval}.
+#'   number). The function uses the reciprocal as the frame rate. Provide
+#'   exactly one of \code{fps} or \code{interval}.
 #' @param format A string giving the output image file extension (one of
 #'   \code{"png"}, \code{"jpg"}, \code{"jpeg"}, \code{"bmp"}, \code{"tif"},
 #'   \code{"tiff"}, \code{"webp"}). (default = \code{"png"})
@@ -133,9 +135,10 @@ frame_pipeline <- function(input, output, timestamp) {
 #'   \code{NULL} to derive it from \code{infile}'s basename. (default =
 #'   \code{NULL})
 #' @return `r command_return()`
-#' @seealso [ffm_fps()], the builder it uses to set the sampling rate;
-#'   [extract_frame()] for a single frame and [extract_frame_batch()] for a
-#'   caller-enumerated set; [sample_frames_batch()] for the many-file form.
+#' @seealso [ffm_fps()], the pipeline function it uses to set the sampling rate.
+#'   [extract_frame()] for a single frame, and [extract_frame_batch()] for a
+#'   set of frames that you list. [sample_frames_batch()] for the many-file
+#'   form.
 #' @family task functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -4033,40 +4036,42 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
 
 #' Extract Still Frames From Many Videos From a Jobs Table
 #'
-#' Grab one still image per row across many input files from a single jobs
-#' tibble — the **batch** (table-driven) sibling of [extract_frame()] for when
-#' your
-#' frames span more than one input. Each row is one frame; the required columns
-#' name its source and the moment to capture. This is a thin wrapper over
-#' \code{\link{ffm_batch}}: one reproducible compiled command per frame.
+#' Save one still image for each row, across many input files, using one jobs
+#' table. This is the **batch** form of [extract_frame()], for when your frames
+#' come from more than one input. Each row is one frame. The required columns
+#' name its source and the moment to capture. The function is a thin wrapper
+#' over \code{\link{ffm_batch}}. It builds one reproducible command for each
+#' frame. The glossary in \code{vignette("tidymedia")} explains media terms
+#' such as frame rate.
 #'
-#' @param jobs A data frame with one row per frame and (at least) an
-#'   \code{input} column (source path) plus \strong{exactly one} of a
-#'   \code{timestamp} column (seconds, or \pkg{FFmpeg} time-duration strings) or
-#'   a \code{frame} column (whole frame numbers, converted per row to a
-#'   timestamp via the input's frame rate, as \code{\link{extract_frame}} does).
-#'   An optional \code{output} column names the destination image; when absent,
-#'   one is derived per row by appending \code{_<n>.<format>} to each input's
-#'   basename, with the frame number restarting at 1 for each input file. Two
-#'   rows whose destination is the same path are refused before any row runs:
-#'   a repeated \code{output}, or two derived names that match, as
-#'   \code{clip.mp4} and \code{clip.mkv} both give \code{clip_1.png}. Any other
-#'   columns are ignored.
-#' @param format A string giving the image file extension used when \code{output}
-#'   is derived (ignored when \code{jobs} carries an \code{output} column).
-#'   (default = \code{"png"})
+#' @param jobs A data frame with one row per frame. It needs at least an
+#'   \code{input} column (source path). It also needs \strong{exactly one} of a
+#'   \code{timestamp} column and a \code{frame} column. A \code{timestamp}
+#'   holds seconds, or \pkg{FFmpeg} time-duration strings. A \code{frame} holds
+#'   whole frame numbers. The function converts each one to a timestamp with
+#'   the input's frame rate, as \code{\link{extract_frame}} does. An optional
+#'   \code{output} column names the destination image. When it is absent, the
+#'   function derives one per row by appending \code{_<n>.<format>} to each
+#'   input's basename. The frame number restarts at 1 for each input file. The
+#'   function refuses two rows whose destination is the same path, before any
+#'   row runs. That covers a repeated \code{output}, and two derived names that
+#'   match. For example, \code{clip.mp4} and \code{clip.mkv} both give
+#'   \code{clip_1.png}. The function ignores any other columns.
+#' @param format A string giving the image file extension used when the
+#'   function derives \code{output}. The function ignores it when \code{jobs}
+#'   has an \code{output} column. (default = \code{"png"})
 #' @param run A logical: run each frame's command through FFmpeg (\code{TRUE},
-#'   default) or only compile them for inspection (\code{FALSE}).
-#' @param parallel A logical passed to \code{\link{ffm_batch}}: grab frames in
-#'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
-#'   default). Parallelism follows the active \code{\link[future:plan]{future}}
-#'   plan; \code{TRUE} under the default sequential plan runs one frame at a time
-#'   and warns.
+#'   default) or only build the commands for inspection (\code{FALSE}).
+#' @param parallel A logical passed to \code{\link{ffm_batch}}: save frames in
+#'   parallel with \pkg{furrr} (\code{TRUE}) or one after another (\code{FALSE},
+#'   default). Parallel work follows the active
+#'   \code{\link[future:plan]{future}} plan. \code{TRUE} under the default
+#'   sequential plan runs one frame at a time and warns.
 #' @inheritParams anonymize_video_batch
 #' @return `r batch_return("output")`
-#' @seealso [extract_frame()] for the single-frame form; [ffm_batch()] for the
-#'   batch runner and the arguments forwarded through \code{...};
-#'   [segment_video_batch()] for the segment-cutting sibling.
+#' @seealso [extract_frame()] for the single-frame form. [ffm_batch()] for the
+#'   batch runner and the arguments passed on through \code{...}.
+#'   [segment_video_batch()] for the batch function that cuts segments.
 #' @references `r time_duration_reference()`
 #' @family task functions
 #' @examples
@@ -4203,45 +4208,49 @@ derive_frames_dir <- function(input) {
 
 #' Sample frames from many videos at a fixed rate from a jobs table
 #'
-#' Sample many videos into numbered image sequences from a single jobs tibble —
-#' the **batch** (table-driven) sibling of [sample_frames()]. Each row is one
-#' input video sampled at a fixed rate into its own image sequence. This is a
-#' thin wrapper over \code{\link{ffm_batch}}: one reproducible compiled command
-#' per input.
+#' Sample many videos into numbered image sequences, using one jobs table. This
+#' is the **batch** form of [sample_frames()]. Each row is one input video,
+#' sampled at a fixed rate into its own image sequence. The function is a thin
+#' wrapper over \code{\link{ffm_batch}}. It builds one reproducible command for
+#' each input. The glossary in \code{vignette("tidymedia")} explains media terms
+#' such as frame rate.
 #'
-#' Supply the sampling rate once as the scalar \code{fps} or \code{interval}
-#' argument (applied to every row), or per row as an \code{fps} or
-#' \code{interval} column that overrides the scalar of the same name. Exactly one
-#' of the two — fps \emph{or} interval — may be supplied across arguments and
+#' Supply the sampling rate once as the single \code{fps} or \code{interval}
+#' argument, which applies to every row. Or supply it per row as an \code{fps}
+#' or \code{interval} column, which overrides the argument of the same name.
+#' Supply exactly one of the two, fps \emph{or} interval, across arguments and
 #' columns.
 #'
-#' @param jobs A data frame with one row per input and (at least) an
-#'   \code{input} column (source path). Optional columns: \code{outdir} (the
-#'   output directory for that row's sequence; when absent, one is derived as
-#'   \code{<input-base>_frames} beside each input), and \code{fps} /
-#'   \code{interval} (per-row rate overrides). Any other columns are ignored.
-#'   Two rows whose image sequences would share a file-name pattern are refused
-#'   before any row runs: the same output directory path (from the column, the
-#'   \code{outdir} argument, or derived) and the same input file name without
-#'   its extension.
+#' @param jobs A data frame with one row per input. It needs at least an
+#'   \code{input} column (source path). An optional \code{outdir} column gives
+#'   the output directory for that row's sequence. When it is absent, the
+#'   function derives one as \code{<input-base>_frames} beside each input.
+#'   Optional \code{fps} and \code{interval} columns override the rate per row.
+#'   The function ignores any other columns. The function refuses two rows
+#'   whose image sequences would share a file-name pattern, before any row
+#'   runs. Two rows share a pattern when they have the same output directory
+#'   path and the same input file name without its extension. The directory
+#'   path can come from the column, from the \code{outdir} argument, or from
+#'   the derived name.
 #' @param fps,interval The sampling rate applied to every row, as in
-#'   [sample_frames()]; a per-row column of the same name overrides it. Supply
+#'   [sample_frames()]. A per-row column of the same name overrides it. Supply
 #'   exactly one of the two (as an argument or a column). (default = \code{NULL})
-#' @param outdir An optional single output directory for all rows (overridden by
-#'   an \code{outdir} column); when both are absent, per-input directories are
-#'   derived. (default = \code{NULL})
+#' @param outdir An optional single output directory for all rows. An
+#'   \code{outdir} column overrides it. When both are absent, the function
+#'   derives one directory per input. (default = \code{NULL})
 #' @param format A string giving the output image file extension, as in
 #'   [sample_frames()]. (default = \code{"png"})
 #' @inheritParams anonymize_video_batch
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: sample in
-#'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
-#'   default). Parallelism follows the active \code{\link[future:plan]{future}}
-#'   plan; \code{TRUE} under the default sequential plan runs one at a time and
-#'   warns.
+#'   parallel with \pkg{furrr} (\code{TRUE}) or one after another (\code{FALSE},
+#'   default). Parallel work follows the active
+#'   \code{\link[future:plan]{future}} plan. \code{TRUE} under the default
+#'   sequential plan runs one at a time and warns.
 #' @return `r batch_return("outdir")`
-#' @seealso [sample_frames()] for the single-video form; [ffm_batch()] for the
-#'   batch runner and the arguments forwarded through \code{...};
-#'   [extract_frame_batch()] for the enumerated-frame sibling.
+#' @seealso [sample_frames()] for the single-video form. [ffm_batch()] for the
+#'   batch runner and the arguments passed on through \code{...}.
+#'   [extract_frame_batch()] for the batch function that takes a list of
+#'   frames.
 #' @family task functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")

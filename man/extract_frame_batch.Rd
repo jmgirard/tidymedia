@@ -7,31 +7,32 @@
 extract_frame_batch(jobs, format = "png", run = TRUE, parallel = FALSE, ...)
 }
 \arguments{
-\item{jobs}{A data frame with one row per frame and (at least) an
-\code{input} column (source path) plus \strong{exactly one} of a
-\code{timestamp} column (seconds, or \pkg{FFmpeg} time-duration strings) or
-a \code{frame} column (whole frame numbers, converted per row to a
-timestamp via the input's frame rate, as \code{\link{extract_frame}} does).
-An optional \code{output} column names the destination image; when absent,
-one is derived per row by appending \code{_<n>.<format>} to each input's
-basename, with the frame number restarting at 1 for each input file. Two
-rows whose destination is the same path are refused before any row runs:
-a repeated \code{output}, or two derived names that match, as
-\code{clip.mp4} and \code{clip.mkv} both give \code{clip_1.png}. Any other
-columns are ignored.}
+\item{jobs}{A data frame with one row per frame. It needs at least an
+\code{input} column (source path). It also needs \strong{exactly one} of a
+\code{timestamp} column and a \code{frame} column. A \code{timestamp}
+holds seconds, or \pkg{FFmpeg} time-duration strings. A \code{frame} holds
+whole frame numbers. The function converts each one to a timestamp with
+the input's frame rate, as \code{\link{extract_frame}} does. An optional
+\code{output} column names the destination image. When it is absent, the
+function derives one per row by appending \code{_<n>.<format>} to each
+input's basename. The frame number restarts at 1 for each input file. The
+function refuses two rows whose destination is the same path, before any
+row runs. That covers a repeated \code{output}, and two derived names that
+match. For example, \code{clip.mp4} and \code{clip.mkv} both give
+\code{clip_1.png}. The function ignores any other columns.}
 
-\item{format}{A string giving the image file extension used when \code{output}
-is derived (ignored when \code{jobs} carries an \code{output} column).
-(default = \code{"png"})}
+\item{format}{A string giving the image file extension used when the
+function derives \code{output}. The function ignores it when \code{jobs}
+has an \code{output} column. (default = \code{"png"})}
 
 \item{run}{A logical: run each frame's command through FFmpeg (\code{TRUE},
-default) or only compile them for inspection (\code{FALSE}).}
+default) or only build the commands for inspection (\code{FALSE}).}
 
-\item{parallel}{A logical passed to \code{\link{ffm_batch}}: grab frames in
-parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
-default). Parallelism follows the active \code{\link[future:plan]{future}}
-plan; \code{TRUE} under the default sequential plan runs one frame at a time
-and warns.}
+\item{parallel}{A logical passed to \code{\link{ffm_batch}}: save frames in
+parallel with \pkg{furrr} (\code{TRUE}) or one after another (\code{FALSE},
+default). Parallel work follows the active
+\code{\link[future:plan]{future}} plan. \code{TRUE} under the default
+sequential plan runs one frame at a time and warns.}
 
 \item{...}{Additional arguments forwarded to \code{\link{ffm_batch}}, such as
 \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.}
@@ -40,12 +41,13 @@ and warns.}
 The \link[tibble:tibble-package]{tibble} returned by \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column. When \code{output} was derived, it also has the resolved \code{output} column. When \code{run = TRUE}, it has a \code{success} column, plus any columns the forwarded arguments add, such as \code{verified}.
 }
 \description{
-Grab one still image per row across many input files from a single jobs
-tibble — the \strong{batch} (table-driven) sibling of \code{\link[=extract_frame]{extract_frame()}} for when
-your
-frames span more than one input. Each row is one frame; the required columns
-name its source and the moment to capture. This is a thin wrapper over
-\code{\link{ffm_batch}}: one reproducible compiled command per frame.
+Save one still image for each row, across many input files, using one jobs
+table. This is the \strong{batch} form of \code{\link[=extract_frame]{extract_frame()}}, for when your frames
+come from more than one input. Each row is one frame. The required columns
+name its source and the moment to capture. The function is a thin wrapper
+over \code{\link{ffm_batch}}. It builds one reproducible command for each
+frame. The glossary in \code{vignette("tidymedia")} explains media terms
+such as frame rate.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -61,9 +63,9 @@ extract_frame_batch(jobs, run = FALSE)
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }
 \seealso{
-\code{\link[=extract_frame]{extract_frame()}} for the single-frame form; \code{\link[=ffm_batch]{ffm_batch()}} for the
-batch runner and the arguments forwarded through \code{...};
-\code{\link[=segment_video_batch]{segment_video_batch()}} for the segment-cutting sibling.
+\code{\link[=extract_frame]{extract_frame()}} for the single-frame form. \code{\link[=ffm_batch]{ffm_batch()}} for the
+batch runner and the arguments passed on through \code{...}.
+\code{\link[=segment_video_batch]{segment_video_batch()}} for the batch function that cuts segments.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

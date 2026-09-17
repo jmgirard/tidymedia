@@ -41,7 +41,7 @@ The M132 help-page domain uses plain English for an R user who does not know FFm
 
 - [x] T1: Record in a new M132 ledger section the base commit, the domain page list, the AC4 identifiers and the sweep output over the domain at the base commit.
 - [x] T2: Rewrite `ffmpeg()`, `ffmpeg_codecs()`, `ffmpeg_encoders()` and `hardware_encoder()`.
-- [ ] T3: Rewrite `extract_frame()` and `sample_frames()`, and their batch pages.
+- [x] T3: Rewrite `extract_frame()` and `sample_frames()`, and their batch pages.
 - [ ] T4: Rewrite `extract_audio()` and `convert_audio()`, and their batch pages.
 - [ ] T5: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words, and a sentence that names the glossary stays. A base claim found false gets a ledger row and a line in the follow-up candidate row. Fill the ledger. Run the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
@@ -52,6 +52,7 @@ The M132 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-17: implement started on `m132-plain-capability-frame-audio-help-pages`, cut from `efb2b2c4`. No question gate: the plan left nothing open.
 - 2026-09-17: T1 done. Ledger section `### M132` records base `efb2b2c4`, 12 pages, 369 sentences, 45 findings (23 words, 22 term, 0 dash) and 3 identifiers.
 - 2026-09-17: T2 done. `?ffmpeg`, `?ffmpeg_codecs`, `?ffmpeg_encoders` and `?hardware_encoder` have no sweep finding, and the three with a stem name the glossary. The seven docs test files pass.
+- 2026-09-17: T3 done. `?extract_frame`, `?sample_frames` and their batch pages have no sweep finding. The three with a stem name the glossary.
 
 ## Decisions
 

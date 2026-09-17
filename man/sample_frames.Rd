@@ -18,15 +18,15 @@ sample_frames(
 \item{infile}{A string containing the path to a video file.}
 
 \item{outdir}{A string naming the directory to write the image sequence to.
-It is created (recursively) if it does not exist.}
+The function creates it (recursively) if it does not exist.}
 
 \item{fps}{The sampling rate, in frames per second: either a positive number
 or an FFmpeg framerate expression string (for example \code{"30000/1001"}).
 Provide exactly one of \code{fps} or \code{interval}.}
 
 \item{interval}{The number of seconds between sampled frames (a positive
-number); the reciprocal is used as the frame rate. Provide exactly one of
-\code{fps} or \code{interval}.}
+number). The function uses the reciprocal as the frame rate. Provide
+exactly one of \code{fps} or \code{interval}.}
 
 \item{format}{A string giving the output image file extension (one of
 \code{"png"}, \code{"jpg"}, \code{"jpeg"}, \code{"bmp"}, \code{"tif"},
@@ -43,19 +43,21 @@ or return the compiled command without running it (\code{FALSE}).}
 The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
-Sample a video at a fixed rate (\code{fps}) or interval (\code{interval},
-seconds between frames) into a numbered image sequence — the front door to
-per-frame coding and computer-vision feature pipelines. Provide exactly one
-of \code{fps} or \code{interval}.
+Sample a video into a numbered image sequence. Sample at a fixed rate
+(\code{fps}) or at a fixed interval (\code{interval}, seconds between
+frames). This is the first step for per-frame coding and for computer-vision
+feature pipelines. Provide exactly one of \code{fps} or \code{interval}.
 }
 \details{
-Unlike \code{\link{extract_frame}} (one frame) and
-\code{\link{extract_frame_batch}} (a caller-enumerated set of frames), this
-verb emits a \emph{single} FFmpeg command whose output is a printf-style
-pattern that FFmpeg's \code{image2} muxer fills — the frame count is decided
-at decode time, not enumerated by the caller. Frames are written to
-\code{outdir} as \code{<prefix>_<n>.<format>}, where \code{<n>} is a
-zero-padded integer starting at 1.
+\code{\link{extract_frame}} saves one frame, and
+\code{\link{extract_frame_batch}} saves a set of frames that you list. This
+function is different. It builds a \emph{single} FFmpeg command whose output
+is a printf-style file name pattern. FFmpeg's \code{image2} muxer fills the
+pattern. FFmpeg decides the frame count when it decodes the video, and you
+do not list the frames. The function writes frames to \code{outdir} as
+\code{<prefix>_<n>.<format>}, where \code{<n>} is a zero-padded integer
+starting at 1. The glossary in \code{vignette("tidymedia")} explains media
+terms such as frame rate.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -63,9 +65,10 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 sample_frames(video, tempdir(), fps = 2, run = FALSE)
 }
 \seealso{
-\code{\link[=ffm_fps]{ffm_fps()}}, the builder it uses to set the sampling rate;
-\code{\link[=extract_frame]{extract_frame()}} for a single frame and \code{\link[=extract_frame_batch]{extract_frame_batch()}} for a
-caller-enumerated set; \code{\link[=sample_frames_batch]{sample_frames_batch()}} for the many-file form.
+\code{\link[=ffm_fps]{ffm_fps()}}, the pipeline function it uses to set the sampling rate.
+\code{\link[=extract_frame]{extract_frame()}} for a single frame, and \code{\link[=extract_frame_batch]{extract_frame_batch()}} for a
+set of frames that you list. \code{\link[=sample_frames_batch]{sample_frames_batch()}} for the many-file
+form.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

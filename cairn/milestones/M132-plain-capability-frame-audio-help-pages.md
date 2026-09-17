@@ -26,7 +26,7 @@ The M132 help-page domain uses plain English for an R user who does not know FFm
 - [x] AC3: Each page in the M132 domain whose `--prose` output at head matches a glossary stem names the glossary.
 - [x] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M132 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
 - [x] AC5: For every `man/*.Rd` file outside the M132 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
-- [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
+- [x] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
 
@@ -70,6 +70,7 @@ Reviewed 2026-09-17 at `29bd0880`. The branch was cut from `efb2b2c4`, which is 
 - AC3: 10 pages have a glossary stem in their `--prose` output, and each has a sentence with `glossary` and `vignette("tidymedia")` in its `tools::Rd2txt()` text. `ffmpeg` and `extract_frame` have no stem and do not name the glossary.
 - AC4: the base pages give 3 identifiers, `tidymedia.check_tracks`, `tidymedia.hardware_encoders` and `tidymedia_dropped_audio`. `git grep -wF` finds each one in `man/*.Rd` at head.
 - AC5: `git diff --name-only efb2b2c4 HEAD -- man/` lists 12 files, all in the domain. No page outside the domain changed, so there is nothing to compare.
+- AC6: `devtools::document()` left `man/` unchanged, and `git status` was clean after all four runs. `devtools::test()` gave 0 failures, 12 warnings, 5 skips and 13866 passes. `devtools::check()` gave 0 errors, 0 warnings and 0 notes. `pkgdown::check_pkgdown()` found no problems. The four ran one after the other with no other R session working.
 
 ### Gate
 

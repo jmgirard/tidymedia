@@ -21,11 +21,11 @@ The M134 help-page domain uses plain English for an R user who does not know FFm
 
 ## Acceptance criteria
 
-- [ ] AC1: Every page on the M134 domain list exists at head, and the prose sweep over the M134 domain at head exits with status 0 or 1 and prints no `[term …]` or `[dash in Rd source]` line.
-- [ ] AC2: Every page on the M134 domain list exists at head, and the prose sweep over the M134 domain at head exits with status 0 or 1 and prints no `[<n> words]` line.
-- [ ] AC3: Each page in the M134 domain whose `--prose` output at head matches a glossary stem names the glossary.
-- [ ] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M134 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
-- [ ] AC5: For every `man/*.Rd` file outside the M134 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
+- [x] AC1: Every page on the M134 domain list exists at head, and the prose sweep over the M134 domain at head exits with status 0 or 1 and prints no `[term …]` or `[dash in Rd source]` line.
+- [x] AC2: Every page on the M134 domain list exists at head, and the prose sweep over the M134 domain at head exits with status 0 or 1 and prints no `[<n> words]` line.
+- [x] AC3: Each page in the M134 domain whose `--prose` output at head matches a glossary stem names the glossary.
+- [x] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M134 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
+- [x] AC5: For every `man/*.Rd` file outside the M134 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
 - [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
@@ -59,3 +59,11 @@ The M134 help-page domain uses plain English for an R user who does not know FFm
 ## Decisions
 
 ## Review
+
+- 2026-09-17: step 1 sync. `origin/master` at `7b2f9b0d`, the base commit; the branch is 0 behind and 4 ahead. No merge needed.
+- AC1: pass. All 10 domain pages exist at head. `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R` over the 10 pages read 621 sentences, printed no `[term …]`, no `[dash in Rd source]` and no other finding, and exited 0.
+- AC2: pass. The same run printed no `[<n> words]` line.
+- AC3: pass. The `--prose` output of 9 pages matches a glossary stem, and each of the 9 has a sentence that names the glossary. `concatenate_videos_batch` matches no stem.
+- AC4: pass. The two patterns match nothing in the 10 pages at `7b2f9b0d`, so there is no identifier to find at head.
+- AC5: pass. `git diff --name-only 7b2f9b0d HEAD -- man/` lists only the 10 domain pages, so no page outside the domain is compared.
+

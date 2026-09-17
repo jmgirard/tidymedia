@@ -1,13 +1,17 @@
 # Extract Audio From Many Files From a Jobs Table
 
-Pull the audio track out of many input files from a single jobs tibble —
-the **batch** (table-driven) sibling of
-[`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
-for when you have more than one file. Each row is one input; `input` and
-`output` columns are required. This is a thin wrapper over
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per input, sharing the same
-map/drop-video pipeline as the scalar verb.
+Take the audio track out of many input files, using one jobs table. This
+is the **batch** form of
+[`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
+for when you have more than one file. Each row is one input. The `input`
+and `output` columns are required. The function is a thin wrapper over
+[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+It builds one reproducible command for each input, with the same steps
+as
+[`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md):
+select the audio track and drop the video. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, container and stream copy.
 
 ## Usage
 
@@ -26,27 +30,28 @@ extract_audio_batch(
 
 - jobs:
 
-  A data frame with one row per input and (at least) an `input` column
-  (source path) and an `output` column (destination path). An `output`
-  column is **required** — unlike the video batch verbs, an audio
-  destination cannot be auto-named because its extension is the
-  instruction (it picks the container, and with `audio_codec = "copy"`
-  must match the source codec). An optional `audio_codec` column
-  overrides the `audio_codec` argument per row; rows omitting it fall
-  back to the argument, and `NA` in a cell leaves that row's codec unset
-  (the column form of `audio_codec = NULL`). An optional `audio_stream`
-  column likewise overrides the `audio_stream` argument per row, where
-  `NA` keeps that row on the first audio track. Two rows given the same
-  `output` path are refused before any row runs. Any other columns are
-  ignored.
+  A data frame with one row per input. It needs at least an `input`
+  column (source path) and an `output` column (destination path). The
+  `output` column is **required**. Unlike the video batch functions,
+  this function cannot name an audio destination for you, because the
+  extension is the instruction. The extension picks the container, and
+  with `audio_codec = "copy"` it must match the source codec. An
+  optional `audio_codec` column overrides the `audio_codec` argument per
+  row. Rows without a value use the argument. `NA` in a cell leaves that
+  row's codec unset, which is the column form of `audio_codec = NULL`.
+  An optional `audio_stream` column overrides the `audio_stream`
+  argument per row in the same way, and `NA` keeps that row on the first
+  audio track. The function refuses two rows with the same `output`
+  path, before any row runs. The function ignores any other columns.
 
 - audio_codec:
 
-  The audio codec applied to every row unless `jobs` carries an
-  `audio_codec` column, in which case `NA` in a cell leaves that row's
-  codec unset. `"copy"` (default) stream-copies the audio losslessly;
-  name an encoder (e.g. `"aac"`) to transcode; or pass `NULL` to emit no
-  `-codec:a` and let the output container's default encoder decide.
+  The audio codec applied to every row, unless `jobs` has an
+  `audio_codec` column. In that column, `NA` in a cell leaves that row's
+  codec unset. `"copy"` (default) copies the audio stream with no
+  quality loss. Name an encoder (e.g. `"aac"`) to re-encode. Or pass
+  `NULL` to write no `-codec:a`, so the output container's default
+  encoder decides.
 
 - audio_stream:
 
@@ -128,11 +133,11 @@ one function.
 ## See also
 
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
-the scalar verb it wraps;
+the single-input form it wraps.
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
-the batch runner;
+the batch runner.
 [`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md)
-to transcode audio in batch.
+to re-encode audio in batch.
 
 Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

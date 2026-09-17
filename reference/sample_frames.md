@@ -1,9 +1,9 @@
 # Sample frames from a video at a fixed rate
 
-Sample a video at a fixed rate (`fps`) or interval (`interval`, seconds
-between frames) into a numbered image sequence — the front door to
-per-frame coding and computer-vision feature pipelines. Provide exactly
-one of `fps` or `interval`.
+Sample a video into a numbered image sequence. Sample at a fixed rate
+(`fps`) or at a fixed interval (`interval`, seconds between frames).
+This is the first step for per-frame coding and for computer-vision
+feature pipelines. Provide exactly one of `fps` or `interval`.
 
 ## Usage
 
@@ -27,8 +27,8 @@ sample_frames(
 
 - outdir:
 
-  A string naming the directory to write the image sequence to. It is
-  created (recursively) if it does not exist.
+  A string naming the directory to write the image sequence to. The
+  function creates it (recursively) if it does not exist.
 
 - fps:
 
@@ -38,9 +38,9 @@ sample_frames(
 
 - interval:
 
-  The number of seconds between sampled frames (a positive number); the
-  reciprocal is used as the frame rate. Provide exactly one of `fps` or
-  `interval`.
+  The number of seconds between sampled frames (a positive number). The
+  function uses the reciprocal as the frame rate. Provide exactly one of
+  `fps` or `interval`.
 
 - format:
 
@@ -64,25 +64,27 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 ## Details
 
-Unlike
 [`extract_frame`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md)
-(one frame) and
+saves one frame, and
 [`extract_frame_batch`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md)
-(a caller-enumerated set of frames), this verb emits a *single* FFmpeg
-command whose output is a printf-style pattern that FFmpeg's `image2`
-muxer fills — the frame count is decided at decode time, not enumerated
-by the caller. Frames are written to `outdir` as
+saves a set of frames that you list. This function is different. It
+builds a *single* FFmpeg command whose output is a printf-style file
+name pattern. FFmpeg's `image2` muxer fills the pattern. FFmpeg decides
+the frame count when it decodes the video, and you do not list the
+frames. The function writes frames to `outdir` as
 `<prefix>_<n>.<format>`, where `<n>` is a zero-padded integer starting
-at 1.
+at 1. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as frame rate.
 
 ## See also
 
 [`ffm_fps()`](https://jmgirard.github.io/tidymedia/reference/ffm_fps.md),
-the builder it uses to set the sampling rate;
+the pipeline function it uses to set the sampling rate.
 [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md)
-for a single frame and
+for a single frame, and
 [`extract_frame_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md)
-for a caller-enumerated set;
+for a set of frames that you list.
 [`sample_frames_batch()`](https://jmgirard.github.io/tidymedia/reference/sample_frames_batch.md)
 for the many-file form.
 
@@ -123,5 +125,5 @@ Other task functions:
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 # run = FALSE returns the reproducible command instead of executing it
 sample_frames(video, tempdir(), fps = 2, run = FALSE)
-#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"fps=2\" -qscale:v 2 \"/tmp/Rtmpw8LQcP/sample_%06d.png\""
+#> [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"fps=2\" -qscale:v 2 \"/tmp/RtmpuTL0JX/sample_%06d.png\""
 ```

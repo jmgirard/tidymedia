@@ -1,13 +1,18 @@
 # Convert the Audio of Many Files From a Jobs Table
 
-Extract or transcode the audio track of many input files from a single
-jobs tibble — the **batch** (table-driven) sibling of
-[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
-for when you have more than one file. Each row is one input; `input` and
-`output` columns are required. This is a thin wrapper over
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per input, sharing the same audio-map
-pipeline (and per-value `audio_codec` validation) as the scalar verb.
+Extract or re-encode the audio track of many input files, using one jobs
+table. This is the **batch** form of
+[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+for when you have more than one file. Each row is one input. The `input`
+and `output` columns are required. The function is a thin wrapper over
+[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+It builds one reproducible command for each input. Each command uses the
+same audio steps as
+[`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+and the function checks each `audio_codec` value in the same way. The
+glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec and stream.
 
 ## Usage
 
@@ -26,25 +31,26 @@ convert_audio_batch(
 
 - jobs:
 
-  A data frame with one row per input and (at least) an `input` column
-  (source path) and an `output` column (destination path). An `output`
-  column is **required** — an audio destination cannot be auto-named
-  because its extension picks the output format. An optional
-  `audio_codec` column overrides the `audio_codec` argument per row,
-  where `NA` spells "use the highest-VBR-quality default"; rows omitting
-  it fall back to the argument. An optional `audio_stream` column
-  likewise overrides the `audio_stream` argument per row, where `NA`
-  keeps that row on the first audio track. Two rows given the same
-  `output` path are refused before any row runs. Any other columns are
-  ignored — except a `format` column, retired with the argument of the
-  same name, which is an error rather than a silent no-op.
+  A data frame with one row per input. It needs at least an `input`
+  column (source path) and an `output` column (destination path). The
+  `output` column is **required**. The function cannot name an audio
+  destination for you, because its extension picks the output format. An
+  optional `audio_codec` column overrides the `audio_codec` argument per
+  row. There, `NA` means "use the highest-VBR-quality default". Rows
+  without a value use the argument. An optional `audio_stream` column
+  overrides the `audio_stream` argument per row in the same way, and
+  `NA` keeps that row on the first audio track. The function refuses two
+  rows with the same `output` path, before any row runs. The function
+  ignores any other columns, with one exception. A `format` column is an
+  error, not a silent no-op. The package retired that column with the
+  argument of the same name.
 
 - audio_codec:
 
-  The output audio codec applied to every row unless `jobs` carries an
-  `audio_codec` column. `NULL` (default) infers the codec from each
-  `output` extension at highest VBR quality; name a codec (e.g. `"aac"`,
-  `"flac"`) to pin `-c:a`.
+  The output audio codec applied to every row, unless `jobs` has an
+  `audio_codec` column. With `NULL` (default), FFmpeg infers the codec
+  from each `output` extension, at the highest VBR quality. Name a codec
+  (e.g. `"aac"`, `"flac"`) to set `-c:a`.
 
 - audio_stream:
 
@@ -126,9 +132,9 @@ one function.
 ## See also
 
 [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
-the scalar verb it wraps;
+the single-input form it wraps.
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
-the batch runner;
+the batch runner.
 [`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md)
 to stream-copy audio in batch.
 

@@ -1,13 +1,15 @@
 # Extract Still Frames From Many Videos From a Jobs Table
 
-Grab one still image per row across many input files from a single jobs
-tibble — the **batch** (table-driven) sibling of
-[`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md)
-for when your frames span more than one input. Each row is one frame;
-the required columns name its source and the moment to capture. This is
-a thin wrapper over
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per frame.
+Save one still image for each row, across many input files, using one
+jobs table. This is the **batch** form of
+[`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md),
+for when your frames come from more than one input. Each row is one
+frame. The required columns name its source and the moment to capture.
+The function is a thin wrapper over
+[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+It builds one reproducible command for each frame. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as frame rate.
 
 ## Usage
 
@@ -19,37 +21,40 @@ extract_frame_batch(jobs, format = "png", run = TRUE, parallel = FALSE, ...)
 
 - jobs:
 
-  A data frame with one row per frame and (at least) an `input` column
-  (source path) plus **exactly one** of a `timestamp` column (seconds,
-  or FFmpeg time-duration strings) or a `frame` column (whole frame
-  numbers, converted per row to a timestamp via the input's frame rate,
+  A data frame with one row per frame. It needs at least an `input`
+  column (source path). It also needs **exactly one** of a `timestamp`
+  column and a `frame` column. A `timestamp` holds seconds, or FFmpeg
+  time-duration strings. A `frame` holds whole frame numbers. The
+  function converts each one to a timestamp with the input's frame rate,
   as
   [`extract_frame`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md)
-  does). An optional `output` column names the destination image; when
-  absent, one is derived per row by appending `_<n>.<format>` to each
-  input's basename, with the frame number restarting at 1 for each input
-  file. Two rows whose destination is the same path are refused before
-  any row runs: a repeated `output`, or two derived names that match, as
-  `clip.mp4` and `clip.mkv` both give `clip_1.png`. Any other columns
-  are ignored.
+  does. An optional `output` column names the destination image. When it
+  is absent, the function derives one per row by appending
+  `_<n>.<format>` to each input's basename. The frame number restarts at
+  1 for each input file. The function refuses two rows whose destination
+  is the same path, before any row runs. That covers a repeated
+  `output`, and two derived names that match. For example, `clip.mp4`
+  and `clip.mkv` both give `clip_1.png`. The function ignores any other
+  columns.
 
 - format:
 
-  A string giving the image file extension used when `output` is derived
-  (ignored when `jobs` carries an `output` column). (default = `"png"`)
+  A string giving the image file extension used when the function
+  derives `output`. The function ignores it when `jobs` has an `output`
+  column. (default = `"png"`)
 
 - run:
 
   A logical: run each frame's command through FFmpeg (`TRUE`, default)
-  or only compile them for inspection (`FALSE`).
+  or only build the commands for inspection (`FALSE`).
 
 - parallel:
 
   A logical passed to
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-  grab frames in parallel with furrr (`TRUE`) or sequentially (`FALSE`,
-  default). Parallelism follows the active
-  [`future`](https://future.futureverse.org/reference/plan.html) plan;
+  save frames in parallel with furrr (`TRUE`) or one after another
+  (`FALSE`, default). Parallel work follows the active
+  [`future`](https://future.futureverse.org/reference/plan.html) plan.
   `TRUE` under the default sequential plan runs one frame at a time and
   warns.
 
@@ -76,11 +81,11 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 ## See also
 
 [`extract_frame()`](https://jmgirard.github.io/tidymedia/reference/extract_frame.md)
-for the single-frame form;
+for the single-frame form.
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-for the batch runner and the arguments forwarded through `...`;
+for the batch runner and the arguments passed on through `...`.
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
-for the segment-cutting sibling.
+for the batch function that cuts segments.
 
 Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

@@ -1,7 +1,9 @@
 # Get a data frame of all installed codecs
 
-Query a list of installed codecs from FFmpeg and construct a tidy data
-frame containing information about these codecs.
+Ask FFmpeg for its list of installed codecs, and return the list as a
+data frame with information about each codec. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec and encoder.
 
 ## Usage
 
@@ -13,8 +15,8 @@ ffmpeg_codecs(sort_by_type = TRUE)
 
 - sort_by_type:
 
-  A logical indicating whether the tibble should be sorted by type and
-  then by name (`TRUE`) or just by name (`FALSE`). (default = `TRUE`)
+  A logical. `TRUE` sorts the tibble by type and then by name. `FALSE`
+  sorts it by name only. (default = `TRUE`)
 
 ## Value
 
@@ -64,7 +66,7 @@ for the encoder list,
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)
 to set a codec in a pipeline, and
 [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
-for the Layer 0 escape hatch.
+for the direct command.
 
 Other capability functions:
 [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md),

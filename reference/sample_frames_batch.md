@@ -1,12 +1,14 @@
 # Sample frames from many videos at a fixed rate from a jobs table
 
-Sample many videos into numbered image sequences from a single jobs
-tibble — the **batch** (table-driven) sibling of
+Sample many videos into numbered image sequences, using one jobs table.
+This is the **batch** form of
 [`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md).
-Each row is one input video sampled at a fixed rate into its own image
-sequence. This is a thin wrapper over
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per input.
+Each row is one input video, sampled at a fixed rate into its own image
+sequence. The function is a thin wrapper over
+[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+It builds one reproducible command for each input. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as frame rate.
 
 ## Usage
 
@@ -27,28 +29,29 @@ sample_frames_batch(
 
 - jobs:
 
-  A data frame with one row per input and (at least) an `input` column
-  (source path). Optional columns: `outdir` (the output directory for
-  that row's sequence; when absent, one is derived as
-  `<input-base>_frames` beside each input), and `fps` / `interval`
-  (per-row rate overrides). Any other columns are ignored. Two rows
-  whose image sequences would share a file-name pattern are refused
-  before any row runs: the same output directory path (from the column,
-  the `outdir` argument, or derived) and the same input file name
-  without its extension.
+  A data frame with one row per input. It needs at least an `input`
+  column (source path). An optional `outdir` column gives the output
+  directory for that row's sequence. When it is absent, the function
+  derives one as `<input-base>_frames` beside each input. Optional `fps`
+  and `interval` columns override the rate per row. The function ignores
+  any other columns. The function refuses two rows whose image sequences
+  would share a file-name pattern, before any row runs. Two rows share a
+  pattern when they have the same output directory path and the same
+  input file name without its extension. The directory path can come
+  from the column, from the `outdir` argument, or from the derived name.
 
 - fps, interval:
 
   The sampling rate applied to every row, as in
-  [`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md);
-  a per-row column of the same name overrides it. Supply exactly one of
+  [`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md).
+  A per-row column of the same name overrides it. Supply exactly one of
   the two (as an argument or a column). (default = `NULL`)
 
 - outdir:
 
-  An optional single output directory for all rows (overridden by an
-  `outdir` column); when both are absent, per-input directories are
-  derived. (default = `NULL`)
+  An optional single output directory for all rows. An `outdir` column
+  overrides it. When both are absent, the function derives one directory
+  per input. (default = `NULL`)
 
 - format:
 
@@ -65,9 +68,9 @@ sample_frames_batch(
 
   A logical passed to
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-  sample in parallel with furrr (`TRUE`) or sequentially (`FALSE`,
-  default). Parallelism follows the active
-  [`future`](https://future.futureverse.org/reference/plan.html) plan;
+  sample in parallel with furrr (`TRUE`) or one after another (`FALSE`,
+  default). Parallel work follows the active
+  [`future`](https://future.futureverse.org/reference/plan.html) plan.
   `TRUE` under the default sequential plan runs one at a time and warns.
 
 - ...:
@@ -88,19 +91,20 @@ also has the resolved `outdir` column. When `run = TRUE`, it has a
 
 ## Details
 
-Supply the sampling rate once as the scalar `fps` or `interval` argument
-(applied to every row), or per row as an `fps` or `interval` column that
-overrides the scalar of the same name. Exactly one of the two — fps *or*
-interval — may be supplied across arguments and columns.
+Supply the sampling rate once as the single `fps` or `interval`
+argument, which applies to every row. Or supply it per row as an `fps`
+or `interval` column, which overrides the argument of the same name.
+Supply exactly one of the two, fps *or* interval, across arguments and
+columns.
 
 ## See also
 
 [`sample_frames()`](https://jmgirard.github.io/tidymedia/reference/sample_frames.md)
-for the single-video form;
+for the single-video form.
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-for the batch runner and the arguments forwarded through `...`;
+for the batch runner and the arguments passed on through `...`.
 [`extract_frame_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md)
-for the enumerated-frame sibling.
+for the batch function that takes a list of frames.
 
 Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

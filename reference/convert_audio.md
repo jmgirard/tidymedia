@@ -1,10 +1,12 @@
 # Extract or convert a media file's audio track
 
-Maps the audio stream of `infile` into `outfile`. By default
-(`audio_codec = NULL`) the output format follows the `outfile` file
-extension at highest VBR quality (`-q:a 0`) — e.g. an `.mp3` extension
-yields an MP3. Pass `audio_codec` to pin the output audio codec
-explicitly, regardless of the extension.
+Write the audio stream of `infile` into `outfile`. By default
+(`audio_codec = NULL`), the output format follows the `outfile` file
+extension, at the highest VBR quality (`-q:a 0`). For example, an `.mp3`
+extension gives an MP3. Pass `audio_codec` to set the output audio codec
+yourself, whatever the extension is. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec and stream.
 
 ## Usage
 
@@ -32,9 +34,10 @@ convert_audio(
 
   An optional string naming the output audio codec (e.g. `"libmp3lame"`,
   `"aac"`, `"flac"`), passed to FFmpeg's `-c:a`. When `NULL` (default),
-  the codec is inferred from the `outfile` extension and encoded at
-  highest VBR quality. Unlike the other transform verbs, `NULL` here is
-  *not* the "leave the codec unset" sentinel — it selects `-q:a 0`.
+  FFmpeg infers the codec from the `outfile` extension and encodes at
+  the highest VBR quality. On the other task functions, `NULL` means
+  "leave the codec unset". Here `NULL` does *not* leave the codec unset.
+  `NULL` selects `-q:a 0`.
 
 - audio_stream:
 
@@ -75,8 +78,9 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 ## Details
 
-When `infile` carries more than one audio track, `audio_stream` names
-which one to take; with no selector the **first** one is taken.
+When `infile` has more than one audio track, `audio_stream` names which
+one to take. With no `audio_stream`, the function takes the **first**
+one.
 
 When no `audio_stream` is named and the input has tracks that the output
 will not carry, the function warns. The check costs **one FFprobe call
@@ -97,9 +101,9 @@ one function.
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)
 and
 [`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md),
-the builders it wraps;
+the pipeline functions it wraps.
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
-to copy audio without re-encoding;
+to copy audio without re-encoding.
 [`convert_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/convert_audio_batch.md)
 for the many-file form.
 

@@ -1,9 +1,9 @@
 # Run a raw FFmpeg command
 
-Send a raw argument string to the FFmpeg command-line program. This is
-the Layer 0 escape hatch: the string is passed to FFmpeg verbatim (after
-the executable path), so the caller is responsible for quoting and
-option order.
+Send a raw argument string to the FFmpeg command-line program. This is a
+direct command. The function passes the string to FFmpeg unchanged,
+after the path of the FFmpeg program. So you are responsible for the
+quoting and the order of the options.
 
 ## Usage
 
@@ -26,10 +26,9 @@ A character vector containing the text output by FFmpeg.
 [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
 and
 [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
-for structured capability queries, and the `ffm_*` pipeline builders
-(e.g.
-[`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md))
-for a safer command layer.
+ask FFmpeg what it supports. The `ffm_*()` pipeline functions, such as
+[`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md),
+are a safer way to build a command.
 
 Other direct command functions:
 [`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md),
@@ -38,7 +37,7 @@ Other direct command functions:
 ## Examples
 
 ``` r
-# Layer 0 escape hatch: the string is passed to FFmpeg verbatim
+# A direct command: the function passes the string to FFmpeg unchanged
 ffmpeg("-version")
 #>  [1] "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
 #>  [2] "built with gcc 13 (Ubuntu 13.2.0-23ubuntu3)"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  

@@ -1,8 +1,11 @@
 # Extract the audio stream from a media file
 
-Pulls one audio track out of `infile`, dropping the video. When the
-input carries more than one audio track, `audio_stream` names which one
-to take; with no selector the **first** audio track is taken.
+Take one audio track out of `infile`, and drop the video. When the input
+has more than one audio track, `audio_stream` names which one to take.
+With no `audio_stream`, the function takes the **first** audio track.
+The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, container and stream copy.
 
 ## Usage
 
@@ -28,11 +31,11 @@ extract_audio(
 
 - audio_codec:
 
-  A string naming the audio codec for the output stream (default
-  `"copy"`, i.e. remux without re-encoding), or `NULL` to emit no
-  `-codec:a` and let the output container's default encoder decide —
-  useful when the source codec cannot be copied into the extension you
-  asked for.
+  A string naming the audio codec for the output stream. The default
+  `"copy"` copies the stream into the new container without re-encoding.
+  `NULL` writes no `-codec:a`, so the output container's default encoder
+  decides. That is useful when FFmpeg cannot copy the source codec into
+  the extension you asked for.
 
 - audio_stream:
 
@@ -92,9 +95,9 @@ one function.
 [`ffm_drop()`](https://jmgirard.github.io/tidymedia/reference/ffm_drop.md)
 and
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
-the builders it wraps;
+the pipeline functions it wraps.
 [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
-to re-encode the extracted audio;
+to re-encode the extracted audio.
 [`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md)
 for the many-file form.
 

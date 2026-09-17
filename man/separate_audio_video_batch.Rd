@@ -77,8 +77,9 @@ A \link[tibble:tibble-package]{tibble} with \strong{two rows per input},
 one per stream. It has the reshaped \code{input}, a single \code{output}
 path, a \code{stream} marker (\code{"audio"} or \code{"video"}), and an
 added \code{command} column. When \code{run = TRUE}, it also has a
-\code{success} column, and \code{verified} or the provenance manifest when
-requested via \code{...}. When \code{jobs} supplies either codec column, a
+\code{success} column. It also has \code{verified} and the provenance
+manifest, each when requested via \code{...}. When \code{jobs} supplies
+either codec column, a
 single \code{codec} column carries each row's resolved encoder for its own
 stream (\code{NA} where none is set). When \code{audio_stream} is supplied
 as either the argument or a \code{jobs} column, an \code{audio_stream}
@@ -132,7 +133,8 @@ headline count follows the rows actually named.
 
 Each bullet states what that row \emph{did}: its track count, and that every
 track was mapped into one output. It never states why FFmpeg refused.
-Several causes look alike from here. They are a stream copy into a container
+Several causes look alike from here. Examples are a stream copy into a
+container
 that will not hold the source codec, an unknown encoder and a missing output
 directory.
 
@@ -167,8 +169,8 @@ separate_audio_video_batch(jobs, run = FALSE)
 \code{\link[=separate_audio_video]{separate_audio_video()}}, the one-file function it wraps.
 \code{\link[=ffm_batch]{ffm_batch()}}, the batch runner.
 \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} argument.
-\code{\link[=segment_video_batch]{segment_video_batch()}} for the other batch function that gives several
-outputs per input.
+\code{\link[=segment_video_batch]{segment_video_batch()}} for the other batch function where one input file
+can give several outputs.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

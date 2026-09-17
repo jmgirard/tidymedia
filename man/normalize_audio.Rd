@@ -106,8 +106,9 @@ LUFS, true peak and sample rate.
 }
 \details{
 The default targets follow EBU Recommendation R 128 (2014). They are
-\code{target_loudness = -23} LUFS, \code{true_peak = -1} dBTP and
-\code{loudness_range = 7}. Loudness is measured per ITU-R BS.1770-4. This is
+\code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP. Loudness
+is measured per ITU-R BS.1770-4. The default \code{loudness_range} is
+\code{7}. This is
 single-pass (dynamic) \code{loudnorm}. The same input and arguments always
 compile to one reproducible command, with no separate measurement pass. The
 filter changes the audio, so FFmpeg re-encodes it. Set \code{audio_codec} to

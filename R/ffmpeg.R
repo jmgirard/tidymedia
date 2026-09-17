@@ -2390,8 +2390,9 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #'
 #' @details
 #' The default targets follow EBU Recommendation R 128 (2014). They are
-#' \code{target_loudness = -23} LUFS, \code{true_peak = -1} dBTP and
-#' \code{loudness_range = 7}. Loudness is measured per ITU-R BS.1770-4. This is
+#' \code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP. Loudness
+#' is measured per ITU-R BS.1770-4. The default \code{loudness_range} is
+#' \code{7}. This is
 #' single-pass (dynamic) \code{loudnorm}. The same input and arguments always
 #' compile to one reproducible command, with no separate measurement pass. The
 #' filter changes the audio, so FFmpeg re-encodes it. Set \code{audio_codec} to
@@ -6279,8 +6280,9 @@ format_for_web_batch <- function(jobs,
 #'   one per stream. It has the reshaped \code{input}, a single \code{output}
 #'   path, a \code{stream} marker (\code{"audio"} or \code{"video"}), and an
 #'   added \code{command} column. When \code{run = TRUE}, it also has a
-#'   \code{success} column, and \code{verified} or the provenance manifest when
-#'   requested via \code{...}. When \code{jobs} supplies either codec column, a
+#'   \code{success} column. It also has \code{verified} and the provenance
+#'   manifest, each when requested via \code{...}. When \code{jobs} supplies
+#'   either codec column, a
 #'   single \code{codec} column carries each row's resolved encoder for its own
 #'   stream (\code{NA} where none is set). When \code{audio_stream} is supplied
 #'   as either the argument or a \code{jobs} column, an \code{audio_stream}
@@ -6293,8 +6295,8 @@ format_for_web_batch <- function(jobs,
 #' @seealso [separate_audio_video()], the one-file function it wraps.
 #'   [ffm_batch()], the batch runner.
 #'   [has_hardware_encoder()] for the \code{hardware} argument.
-#'   [segment_video_batch()] for the other batch function that gives several
-#'   outputs per input.
+#'   [segment_video_batch()] for the other batch function where one input file
+#'   can give several outputs.
 #' @section Failed audio outputs:
 #' A row whose audio command does not finish cleanly is recorded as
 #' \code{success = FALSE}, and the batch does not abort. One warning for the
@@ -6324,7 +6326,8 @@ format_for_web_batch <- function(jobs,
 #'
 #' Each bullet states what that row \emph{did}: its track count, and that every
 #' track was mapped into one output. It never states why FFmpeg refused.
-#' Several causes look alike from here. They are a stream copy into a container
+#' Several causes look alike from here. Examples are a stream copy into a
+#' container
 #' that will not hold the source codec, an unknown encoder and a missing output
 #' directory.
 #'

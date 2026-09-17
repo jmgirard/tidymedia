@@ -1,6 +1,6 @@
 # M133: The separate-audio-video and normalize-audio help pages read as plain English
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** M129
 - **Driving RR:** —
@@ -42,7 +42,7 @@ The M133 help-page domain uses plain English for an R user who does not know FFm
 - [x] T1: Record in a new M133 ledger section the base commit, the domain page list, the AC4 identifiers and the sweep output over the domain at the base commit.
 - [x] T2: Rewrite `separate_audio_video()` and its batch page.
 - [x] T3: Rewrite `normalize_audio()` and its batch page.
-- [ ] T4: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words, and a sentence that names the glossary stays. A base claim found false gets a ledger row and a line in the follow-up candidate row. Fill the ledger. Run the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
+- [x] T4: A test that pins changed wording now pins the new wording of the same property. A test whose claim left the user docs is removed, with a ledger row. A test named in a `cairn/DECISIONS.md` entry is rewritten, never removed. The claim audit reader also says, for each changed sentence, whether it makes the same claim as the base text; a sentence that adds or changes a claim about what the package does is put back to the base claim in plain words, and a sentence that names the glossary stays. A base claim found false gets a ledger row and a line in the follow-up candidate row. Fill the ledger. Run the sweep and its base comparisons, `devtools::document()`, `devtools::check()`, `devtools::test()` with no other R session working, and `pkgdown::check_pkgdown()`.
 
 ## Work log
 
@@ -51,6 +51,9 @@ The M133 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-17: T1 done. The `### M133` ledger section records the base commit, the 4 pages, the 10 AC4 identifiers and the base sweep (324 sentences, 63 `[<n> words]`, 33 `[term …]`, 7 dash lines).
 - 2026-09-17: T2 done. `?separate_audio_video` and its batch page sweep clean (149 and 132 sentences). Both name the glossary. The four-condition sentences became lists. The phrase `not \emph{how} FFmpeg exited` stays on the batch page because `test-ffmpeg-exit-condition.R` pins it.
 - 2026-09-17: T3 done. `?normalize_audio` and its batch page sweep clean (106 and 137 sentences). Both name the glossary. Three phrases that `test-ffmpeg-exit-condition.R` pins stay, each on one source line.
+- 2026-09-17: [O] delegation: fresh-context claim audit reader, read-only. I checked its 4 findings against the base text and applied all 4.
+- claim audit: 116 claims read, 4 corrected — R/ffmpeg.R, man/normalize_audio.Rd, man/normalize_audio_batch.Rd, man/separate_audio_video.Rd, man/separate_audio_video_batch.Rd
+- 2026-09-17: T4 done. No test file changed. Sweep at head: 526 sentences, no finding, exit 0. `check()` 0/0/0, `test()` 0 failures, `check_pkgdown()` no problems, `document()` no diff. One doubtful base claim on `?normalize_audio_batch` went to the ledger and the follow-up candidate row. Status set to review.
 
 ## Decisions
 

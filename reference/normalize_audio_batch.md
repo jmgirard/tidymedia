@@ -1,16 +1,19 @@
 # Normalize Many Files' Audio Loudness From a Jobs Table
 
-Loudness-normalize the audio of many input files (EBU R128) from a
-single jobs tibble — the **batch** (table-driven) sibling of
-[`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
+Normalize the audio loudness of many input files (EBU R128) from a
+single jobs tibble. This is the **batch** (table-driven) form of
+[`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
 for when you have more than one file to normalize. Each row is one
-input; the only required column names its source. This is a thin wrapper
-over
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per input, sharing the same `loudnorm`
-pipeline (and per-value validation) as the scalar verb. Set
-`two_pass = TRUE` for accurate measured/linear normalization across the
-whole table (see `two_pass`).
+input, and the only required column names its source. The function is a
+thin wrapper over
+[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+It gives one reproducible compiled command per input. Each row uses the
+same `loudnorm` pipeline, and the same check of each value, as
+[`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md).
+Set `two_pass = TRUE` for accurate measured/linear normalization across
+the whole table (see `two_pass`). The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as LUFS, encoder and sample rate.
 
 ## Usage
 
@@ -36,25 +39,25 @@ normalize_audio_batch(
 - jobs:
 
   A data frame with one row per input and (at least) an `input` column
-  (source path). An optional `output` column names the destination; when
-  absent, one is derived per row by appending `_normalized` to each
-  input's basename, keeping the input's extension (e.g. `clip.mkv`
-  becomes `clip_normalized.mkv`) — note that the derived name keeps a
-  *video* extension while the file itself holds audio only, so name an
-  `output` column explicitly when that matters. Two rows naming the same
-  output path are refused before any row runs (with `two_pass = TRUE`,
-  before the analysis pass): a path repeated in the `output` column, or
-  a repeated `input` when there is no `output` column. Each of the five
-  loudness knobs — `target_loudness`, `true_peak`, `loudness_range`,
-  `channels`, `sample_rate` — may also appear as a column to override
-  the corresponding argument on a per-row basis; rows (or knobs) that
-  omit the column fall back to the argument's value. An optional
-  `audio_codec` column (character) names each row's output audio
-  encoder, with `NA` meaning "leave the encoder unset"; rows omitting it
-  fall back to the `audio_codec` argument. An optional numeric
-  `audio_stream` column (`NA` to normalize that row's first audio track)
-  likewise overrides the `audio_stream` argument per row. Any other
-  columns are ignored.
+  (source path). An optional `output` column names the destination.
+  Without it, the function derives one per row. It appends `_normalized`
+  to the basename of each input and keeps the extension of the input
+  (e.g. `clip.mkv` becomes `clip_normalized.mkv`). The derived name
+  keeps a *video* extension while the file itself holds audio only. So
+  name an `output` column yourself when that matters. The function
+  refuses two rows that name the same output path before any row runs.
+  With `two_pass = TRUE`, that is before the analysis pass. The refusal
+  covers a path repeated in the `output` column, or a repeated `input`
+  when there is no `output` column. Five loudness arguments can also
+  appear as a column that overrides the argument per row. They are
+  `target_loudness`, `true_peak`, `loudness_range`, `channels` and
+  `sample_rate`. Rows that omit the column fall back to the value of the
+  argument. An optional `audio_codec` column (character) names the
+  output audio encoder of each row. There, `NA` means "leave the encoder
+  unset". Rows that omit it fall back to the `audio_codec` argument. An
+  optional numeric `audio_stream` column likewise overrides the
+  `audio_stream` argument per row. There, `NA` normalizes the first
+  audio track of that row. Any other columns are ignored.
 
 - target_loudness, true_peak, loudness_range:
 
@@ -73,58 +76,60 @@ normalize_audio_batch(
 
   The output sample rate in Hz applied to every row, unless `jobs`
   carries a `sample_rate` column. `NULL` (default) lets `loudnorm`
-  choose (it resamples, up to 192 kHz encoder-capped — not the source
-  rate); set this to pin the output rate.
+  choose. It resamples, up to 192 kHz and capped by the encoder, and
+  does not keep the source rate. Set this argument to fix the output
+  rate.
 
 - audio_codec:
 
   The output audio encoder applied to every row, unless `jobs` carries
-  an `audio_codec` column, e.g. `"aac"`. `NULL` (default) emits no
-  `-codec:a`, leaving the output container's default encoder in place.
-  `"copy"` is an error: loudness normalization filters the audio, so it
-  must be re-encoded. See
+  an `audio_codec` column, e.g. `"aac"`. `NULL` (default) sets no
+  `-codec:a`, which leaves the default encoder of the output container
+  in place. `"copy"` is an error. Loudness normalization filters the
+  audio, so it must be re-encoded. See
   [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md).
 
 - two_pass:
 
-  A logical selecting the batch normalization mode for *every* row
-  (`two_pass` is a whole-table switch, not a per-row column). `FALSE`
-  (default) keeps the single-pass `loudnorm` pipeline. `TRUE` runs the
-  accurate two-pass (measured/linear) path as a two-phase fan-out: an
-  *analysis pass* first measures every input's loudness (honoring
-  `parallel` and each row's targets), and a *correction pass* then feeds
-  those measurements back with `linear=true` so each output hits its EBU
-  R128 target precisely — the table-wide sibling of
-  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)'s
-  `two_pass`. The five measured values are surfaced on the result as
-  columns `measured_I`, `measured_TP`, `measured_LRA`,
-  `measured_thresh`, and `offset`. Because it must measure each input,
-  two-pass **always runs the analysis pass through FFmpeg** (it needs
-  the binary and readable inputs), even when `run = FALSE`. If any row's
-  analysis fails or yields no parseable measurement, the call aborts —
-  naming the offending row(s) — before any correction command is built.
-  That abort is classed `tidymedia_loudnorm_no_measurement` — the same
-  class the scalar
+  A logical that selects the normalization mode for *every* row. It
+  applies to the whole table and is not a per-row column. `FALSE`
+  (default) keeps the single-pass `loudnorm` pipeline. `TRUE` runs
+  accurate two-pass (measured/linear) normalization in two phases. An
+  *analysis pass* first measures the loudness of every input. It honors
+  `parallel` and the targets of each row. A *correction pass* then feeds
+  those measurements back with `linear=true`, so each output hits its
+  EBU R128 target precisely. This is the table-wide form of `two_pass`
+  in
+  [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md).
+  The result shows the five measured values as columns `measured_I`,
+  `measured_TP`, `measured_LRA`, `measured_thresh` and `offset`.
+  Two-pass must measure each input. So it **always runs the analysis
+  pass through FFmpeg**, even when `run = FALSE`. It needs the binary
+  and readable inputs. If the analysis of any row fails or gives no
+  measurement that can be parsed, the call aborts and names those rows.
+  It aborts before it builds any correction command. That abort has
+  class `tidymedia_loudnorm_no_measurement`, the same class that
   [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
-  raises for this event — and carries the same row numbers on `tm_rows`,
-  alongside `tm_row_status`: each row's FFmpeg exit status, or `NA`
-  where the row exited zero but printed nothing parseable. It carries no
-  single exit status on `tm_status`, and is not classed
-  `tidymedia_ffmpeg_exit`, because it also fires for rows that exited
-  zero: a batch can mix causes, so there is no one number to report. The
-  scalar form carries both only where FFmpeg exited non-zero; where it
-  exited zero and printed nothing parseable the scalar abort carries the
-  shared class alone, with no `tm_status` either. **Silent** rows are
-  the exception: a silent input (analysis loudness `-inf`) cannot be
-  normalized to a target, but one silent row does not abort the batch —
-  the non-silent rows are normalized, the silent rows are marked in a
-  logical `silent` column (with `success = FALSE` and no output
-  written), and a warning names them. This is where the batch form and
-  the scalar form differ:
+  raises for this event. It carries the same row numbers on `tm_rows`,
+  alongside `tm_row_status`. That field has the FFmpeg exit status of
+  each row, or `NA` where the row exited zero but printed nothing that
+  can be parsed. It carries no single exit status on `tm_status`, and it
+  does not have class `tidymedia_ffmpeg_exit`. The reason is that it
+  also fires for rows that exited zero. A batch can mix causes, so there
+  is no one number to report. The one-file form carries both only where
+  FFmpeg exited non-zero. Where FFmpeg exited zero and printed nothing
+  that can be parsed, the one-file abort carries the shared class alone,
+  with no `tm_status` either. **Silent** rows are the exception. A
+  silent input (analysis loudness `-inf`) cannot be normalized to a
+  target, but one silent row does not abort the batch. The function
+  normalizes the rows that are not silent. It marks the silent rows in a
+  logical `silent` column, with `success = FALSE` and no output written,
+  and a warning names them. This is where the batch form and the
+  one-file form differ.
   [`normalize_audio`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
-  aborts on a silent input, because one silent input is the whole call,
-  while here the other rows still have work to do. The single-pass
-  default touches no binary under `run = FALSE`.
+  aborts on a silent input, because one silent input is the whole call.
+  Here, the other rows still have work to do. The single-pass default
+  touches no binary under `run = FALSE`.
 
 - audio_stream:
 
@@ -179,7 +184,7 @@ normalize_audio_batch(
   [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
   normalize in parallel with furrr (`TRUE`) or sequentially (`FALSE`,
   default). Parallelism follows the active
-  [`future`](https://future.futureverse.org/reference/plan.html) plan;
+  [`future`](https://future.futureverse.org/reference/plan.html) plan.
   `TRUE` under the default sequential plan runs one input at a time and
   warns. Set a plan first, e.g. `future::plan(future::multisession)`.
 
@@ -197,34 +202,34 @@ returned by
 `jobs` with an added `command` column. When `output` was derived, it
 also has the resolved `output` column. When `run = TRUE`, it has a
 `success` column, plus any columns the forwarded arguments add, such as
-`verified`. Under `two_pass = TRUE` the result also carries the five
-measured columns (`measured_I` etc.) and a logical `silent` column, and
-the `command` column holds the linear correction commands (`NA` for
-silent rows, which carry `NA` measurements and are not normalized). The
-two-pass result's schema is independent of how many rows are silent: the
-opt-in `verified` column (under `verify`) and provenance manifest (under
-`manifest`, read with
+`verified`. Under `two_pass = TRUE`, the result also carries the five
+measured columns (`measured_I` etc.) and a logical `silent` column. The
+`command` column then holds the linear correction commands. It is `NA`
+for silent rows, which carry `NA` measurements and are not normalized.
+The columns of the two-pass result do not depend on how many rows are
+silent. The `verified` column (under `verify`) and the provenance
+manifest (under `manifest`, read with
 [`ffm_manifest`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md))
-are present whenever requested, even when *every* row is silent – silent
-rows simply carry `NA` for those outputs.
+are present whenever requested. That holds even when *every* row is
+silent. Silent rows carry `NA` for those outputs.
 
 ## Details
 
-When a row names no `audio_stream` and its input turns out to carry
-tracks the output will not, the verb warns **once** for the whole batch,
-naming every affected row. Naming a track silences it – the
-`audio_stream` argument, or an `audio_stream` cell on every row – as
-does `suppressWarnings(classes = "tidymedia_dropped_audio")`. The check
-costs **one FFprobe call per distinct input** it has to probe. A
-repeated input is probed once, and a row that names a track is not
+The function warns **once** for the whole batch when a row names no
+`audio_stream` and its input carries tracks that the output will not.
+The warning names every affected row. Naming a track silences it. Use
+the `audio_stream` argument, or an `audio_stream` cell on every row.
+`suppressWarnings(classes = "tidymedia_dropped_audio")` silences it too.
+The check costs **one FFprobe call per distinct input** it has to probe.
+A repeated input is probed once, and a row that names a track is not
 probed at all. The warning is given when FFprobe is available and the
 input can be probed. Otherwise the check is skipped silently. Those
 probes run **one at a time, before any row starts**, so `parallel` does
 not reach them. A sweep long enough to look like a hang reports its
-progress. The check never runs under `run = FALSE`, never changes any
-compiled command, and is skipped entirely when every row names a track.
-Under `two_pass = TRUE` it lands *before* Phase 1, so it arrives while
-adding `audio_stream` can still save the analysis pass.
+progress. The check never runs under `run = FALSE` and never changes any
+compiled command. It is skipped entirely when every row names a track.
+Under `two_pass = TRUE`, the warning comes *before* the analysis pass.
+So it arrives while adding `audio_stream` can still save that pass.
 
 To switch the check off and skip the whole sweep, use
 `options(tidymedia.check_tracks = FALSE)` for the session. Use
@@ -239,11 +244,11 @@ maximum level of audio signals*; ITU-R BS.1770-4.
 ## See also
 
 [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
-for the single-input form;
+for the single-input form.
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-for the batch runner and the arguments forwarded through `...`;
+for the batch runner and the arguments forwarded through `...`.
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
-for the video-side table-driven sibling.
+for the table-driven form on the video side.
 
 Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

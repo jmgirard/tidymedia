@@ -1,17 +1,20 @@
 # Normalize a file's audio loudness (EBU R128)
 
 Normalize the perceived loudness of a file's audio toward an EBU R128
-target using FFmpeg's single-pass `loudnorm` filter, optionally
-downmixing the channel count and resampling. The output holds **one
+target. The function uses FFmpeg's single-pass `loudnorm` filter. It can
+also downmix the channel count and resample. The output holds **one
 audio stream and no video**, whatever the input and whatever container
-`outfile` names – so this is an audio-producing verb like
+`outfile` names. So the output of this function is audio, as with
 [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
 and
-[`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
-not a pass-through one. To normalize a recording's soundtrack *and* keep
-its picture, normalize to an audio file and mux it back with the
+[`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md).
+It does not carry the other streams through. To normalize a recording's
+soundtrack *and* keep its picture, first normalize to an audio file.
+Then put the audio back with the picture using the
 [`ffmpeg`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
-escape hatch.
+direct command. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as LUFS, true peak and sample rate.
 
 ## Usage
 
@@ -41,11 +44,11 @@ normalize_audio(
 
 - outfile:
 
-  A string containing the path of the audio file to write. Any container
-  FFmpeg can write is accepted and the compiled command does not depend
-  on which – an audio container (`.wav`, `.flac`) holds the result
-  exactly as a video container (`.mkv`) does, the latter simply carrying
-  one audio stream and nothing else.
+  A string containing the path of the audio file to write. The function
+  accepts any container that FFmpeg can write. The compiled command does
+  not depend on which container it is. An audio container (`.wav`,
+  `.flac`) holds the result exactly as a video container (`.mkv`) does.
+  The video container carries one audio stream and nothing else.
 
 - target_loudness:
 
@@ -68,44 +71,45 @@ normalize_audio(
 
 - sample_rate:
 
-  The output sample rate in Hz, e.g. `48000` (a positive whole number),
-  or `NULL` (default) to let `loudnorm` choose (it resamples, up to 192
-  kHz encoder-capped – not the source rate). Set this to pin the output
-  rate.
+  The output sample rate in Hz, e.g. `48000` (a positive whole number).
+  `NULL` (default) lets `loudnorm` choose. It resamples, up to 192 kHz
+  and capped by the encoder, and does not keep the source rate. Set this
+  argument to fix the output rate.
 
 - audio_codec:
 
   An optional string naming the output audio encoder (e.g. `"aac"`,
   `"libmp3lame"`, `"flac"`), passed to FFmpeg's `-codec:a`. `NULL`
-  (default) emits no `-codec:a`, leaving the output container's default
-  encoder in place. `"copy"` is an error: loudness normalization filters
-  the audio, so the stream must be re-encoded and cannot be copied.
+  (default) sets no `-codec:a`, which leaves the default encoder of the
+  output container in place. `"copy"` is an error. Loudness
+  normalization filters the audio, so the stream must be re-encoded and
+  cannot be copied.
 
 - two_pass:
 
-  A logical: when `TRUE`, use accurate two-pass (measured/linear)
-  normalization instead of the default single-pass (`FALSE`). A first
-  *analysis pass* measures the input's loudness, and a second
-  *correction pass* feeds those measurements back with `linear=true` so
-  the output hits the EBU R128 target precisely. Two-pass therefore
-  **always runs the analysis pass through FFmpeg** (it needs the binary
-  and readable input), even when `run = FALSE`: in that case the
-  analysis still runs and the returned value is the exact correction
-  command, left unexecuted. The single-pass default touches no binary
+  A logical. When `TRUE`, the function uses accurate two-pass
+  (measured/linear) normalization. The default (`FALSE`) is single-pass.
+  A first *analysis pass* measures the loudness of the input. A second
+  *correction pass* feeds those measurements back with `linear=true`, so
+  the output hits the EBU R128 target precisely. So two-pass **always
+  runs the analysis pass through FFmpeg**, even when `run = FALSE`. It
+  needs the binary and a readable input. Under `run = FALSE`, the
+  analysis still runs. The returned value is the exact correction
+  command, which is not run. The single-pass default touches no binary
   under `run = FALSE`. If the input is **silent**, the analysis pass
-  measures its loudness as `-inf`; normalizing silence to a target is
-  undefined, so two-pass aborts with a clear error (the single-pass
-  default leaves silence untouched). The batch form differs here:
+  measures its loudness as `-inf`. Normalizing silence to a target is
+  undefined, so two-pass aborts with a clear error. The single-pass
+  default leaves silence untouched. The batch form differs here.
   [`normalize_audio_batch`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md)
-  does not abort on a silent row — it sets that row aside, marks it in a
-  `silent` column, and normalizes the rest. When the analysis pass
-  yields no usable measurement at all, the abort is classed
-  `tidymedia_loudnorm_no_measurement` — the same class the batch form
-  raises, so one handler covers both. Where FFmpeg exited non-zero it
-  also carries `tidymedia_ffmpeg_exit` and the exit number on
-  `tm_status`; where FFmpeg exited zero but printed no parseable
-  measurement block it carries the shared class alone. The silence abort
-  above is neither: a silent input *was* measured.
+  does not abort on a silent row. It sets that row aside, marks it in a
+  `silent` column, and normalizes the rest. When the analysis pass gives
+  no usable measurement at all, the abort has class
+  `tidymedia_loudnorm_no_measurement`. The batch form raises the same
+  class, so one handler covers both. Where FFmpeg exited non-zero, the
+  abort also carries `tidymedia_ffmpeg_exit`, and the exit number on
+  `tm_status`. Where FFmpeg exited zero but printed no measurement block
+  that can be parsed, the abort carries the shared class alone. The
+  silence abort above is neither: a silent input *was* measured.
 
 - audio_stream:
 
@@ -157,33 +161,32 @@ values.
 
 ## Details
 
-The default targets follow EBU Recommendation R 128 (2014) –
-`target_loudness = -23` LUFS and `true_peak = -1` dBTP, loudness
-measured per ITU-R BS.1770-4 – with `loudness_range = 7`. This is
-single-pass (dynamic) `loudnorm`: the same input and arguments always
+The default targets follow EBU Recommendation R 128 (2014). They are
+`target_loudness = -23` LUFS and `true_peak = -1` dBTP. Loudness is
+measured per ITU-R BS.1770-4. The default `loudness_range` is `7`. This
+is single-pass (dynamic) `loudnorm`. The same input and arguments always
 compile to one reproducible command, with no separate measurement pass.
-Because the audio is filtered it is re-encoded; set `audio_codec` to
-name the output encoder, or leave it `NULL` to use the output
-container's default. Leaving `channels` at `NULL` preserves the source
-channel layout. Note that FFmpeg's `loudnorm` filter resamples its
-output (up to 192 kHz, capped by the encoder), so the output sample rate
-is *not* the source rate unless you pin it: set `sample_rate` to control
-the output rate.
+The filter changes the audio, so FFmpeg re-encodes it. Set `audio_codec`
+to name the output encoder, or leave it `NULL` to use the default of the
+output container. Leaving `channels` at `NULL` keeps the source channel
+layout. FFmpeg's `loudnorm` filter resamples its output, up to 192 kHz,
+capped by the encoder. So the output sample rate is *not* the source
+rate unless you set it. Set `sample_rate` to control the output rate.
 
-When no `audio_stream` is named and `infile` turns out to carry tracks
-the output will not, the verb warns – the same warning
+The function warns when no `audio_stream` is named and `infile` carries
+tracks that the output will not.
 [`extract_audio`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
 and
 [`convert_audio`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
-emit. Naming a track with `audio_stream` silences it, as does
-`suppressWarnings(classes = "tidymedia_dropped_audio")`. The check costs
-**one FFprobe call per distinct input**, which is one call here, because
-this function takes a single `infile`. The warning is given when FFprobe
-is available and the input can be probed. Otherwise the check is skipped
-silently. It never runs under `run = FALSE`, and never changes the
-compiled command. Under `two_pass = TRUE` it lands *before* the analysis
-pass, so it arrives while adding `audio_stream` can still save that
-pass.
+emit the same warning. Naming a track with `audio_stream` silences it,
+as does `suppressWarnings(classes = "tidymedia_dropped_audio")`. The
+check costs **one FFprobe call per distinct input**, which is one call
+here, because this function takes a single `infile`. The warning is
+given when FFprobe is available and the input can be probed. Otherwise
+the check is skipped silently. It never runs under `run = FALSE`, and
+never changes the compiled command. Under `two_pass = TRUE`, the warning
+comes *before* the analysis pass. So it arrives while adding
+`audio_stream` can still save that pass.
 
 To switch the check off and skip its FFprobe call, use
 `options(tidymedia.check_tracks = FALSE)` for the session. Use
@@ -198,13 +201,13 @@ maximum level of audio signals*; ITU-R BS.1770-4.
 ## See also
 
 [`ffm_loudnorm()`](https://jmgirard.github.io/tidymedia/reference/ffm_loudnorm.md),
-the builder it wraps;
+the pipeline function it wraps.
 [`normalize_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md)
-for the many-file form;
+for the many-file form.
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
 and
 [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
-the other verbs whose output is one audio stream.
+the other task functions whose output is one audio stream.
 
 Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

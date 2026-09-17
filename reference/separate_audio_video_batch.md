@@ -1,16 +1,20 @@
 # Separate Audio and Video for Many Files From a Jobs Table
 
 Split the audio and video streams of many input files from a single jobs
-tibble — the **batch** (table-driven) sibling of
-[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
-for when you have more than one file. Each row is one input that fans
-out into **two** outputs; `input`, `audiofile`, and `videofile` columns
-are all required. This is a thin wrapper over
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-every input row is reshaped into two single-output jobs (one per
-stream), so a jobs table of `N` rows returns `2N` rows — one
-reproducible compiled command per stream — sharing the same per-stream
-map/stream-copy pipeline as the scalar verb.
+tibble. This is the **batch** (table-driven) form of
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+for when you have more than one file. Each row is one input that gives
+**two** outputs. The `input`, `audiofile` and `videofile` columns are
+all required. The function is a thin wrapper over
+[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+It turns every input row into two single-output jobs, one per stream. So
+a jobs table of `N` rows returns `2N` rows, with one reproducible
+compiled command per stream. Each stream uses the same map and
+stream-copy pipeline as
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md).
+The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, container and stream copy.
 
 ## Usage
 
@@ -32,48 +36,48 @@ separate_audio_video_batch(
 
 - jobs:
 
-  A data frame with one row per input and (at least) an `input` column
-  (source path) plus `audiofile` and `videofile` columns naming the two
-  destinations. All three are **required** — like
+  A data frame with one row per input. It has at least an `input` column
+  (source path), plus `audiofile` and `videofile` columns that name the
+  two destinations. All three are **required**. Like
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
-  this verb derives no output paths, because a copied stream's container
-  extension is the instruction (it must match the source codec). No two
-  of a table's destinations may be the same path – an `audiofile` and a
-  `videofile` in one row, or any two across rows; such a table is
-  refused before any row runs. Optional `audio_codec` and `video_codec`
-  columns (character; `NA` to emit no codec option for that stream)
-  override the arguments of the same name per row; rows omitting a
-  column fall back to that argument. An optional numeric `audio_stream`
-  column (`NA` to keep every audio track in that row's `audiofile`)
-  likewise overrides the `audio_stream` argument per row. Any other
-  columns are ignored — except a `reencode` column, retired with the
-  argument of the same name, which is an error rather than a silent
-  no-op.
+  this function derives no output paths, because the container extension
+  of a copied stream is the instruction. That extension must match the
+  source codec. No two destinations in a table can be the same path.
+  That covers an `audiofile` and a `videofile` in one row, and any two
+  across rows. The function refuses such a table before any row runs.
+  Optional `audio_codec` and `video_codec` columns override the
+  arguments of the same name per row. They are character, with `NA` to
+  set no codec option for that stream. Rows that omit a column fall back
+  to that argument. An optional numeric `audio_stream` column likewise
+  overrides the `audio_stream` argument per row. There, `NA` keeps every
+  audio track in that row's `audiofile`. Any other columns are ignored,
+  with one exception. A `reencode` column, retired with the argument of
+  the same name, is an error and not a silent no-op.
 
 - audio_codec:
 
-  A string naming the encoder for every `audiofile` unless `jobs`
-  carries an `audio_codec` column. The default `"copy"` stream-copies
-  the audio losslessly; `NULL` emits no `-codec:a`. See
+  A string that names the encoder for every `audiofile`, unless `jobs`
+  carries an `audio_codec` column. The default `"copy"` copies the audio
+  stream with no quality loss. `NULL` sets no `-codec:a`. See
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md).
 
 - video_codec:
 
-  A string naming the encoder for every `videofile` unless `jobs`
-  carries a `video_codec` column. The default `"copy"` stream-copies the
-  video losslessly; `NULL` emits no `-codec:v`. See
+  A string that names the encoder for every `videofile`, unless `jobs`
+  carries a `video_codec` column. The default `"copy"` copies the video
+  stream with no quality loss. `NULL` sets no `-codec:v`. See
   [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md).
 
 - hardware, fallback:
 
-  The encoder backend for every `videofile` and its fallback behavior,
-  applied to the whole batch (a property of the machine, not of a row,
-  so neither is read as a `jobs` column). See
+  The encoder backend for every `videofile` and its fallback behavior.
+  They apply to the whole batch. They are a property of the machine, not
+  of a row, so neither is read as a `jobs` column. See
   [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md).
-  Because `hardware` is batch-wide, and a stream copy runs no encoder, a
-  non-`"none"` `hardware` conflicts with any row whose video codec
-  resolves to `"copy"` — including the default — so a jobs table mixing
-  copied and re-encoded video must be split into separate calls.
+  `hardware` is batch-wide, and a stream copy runs no encoder. So a
+  `hardware` other than `"none"` conflicts with any row whose video
+  codec resolves to `"copy"`. That includes the default. So split a jobs
+  table that mixes copied and re-encoded video into separate calls.
   Resolving a hardware backend asks this FFmpeg build which encoders it
   has. So the first such call that re-encodes the video runs FFmpeg
   while the command is built, even under `run = FALSE`. The answer is
@@ -85,7 +89,7 @@ separate_audio_video_batch(
   contradict itself by asking for GPU encoding alongside a stream copy.
   Such a call is refused for the contradiction first, whether or not
   this machine has the encoder. The stream-copy conflict above is caught
-  first, so such a call aborts without probing.
+  first, so such a call aborts without asking FFmpeg.
 
 - audio_stream:
 
@@ -150,77 +154,90 @@ separate_audio_video_batch(
 ## Value
 
 A [tibble](https://tibble.tidyverse.org/reference/tibble-package.html)
-with **two rows per input** (one per stream): the reshaped `input`, a
-single `output` path, a `stream` marker (`"audio"` or `"video"`), and an
-added `command` column — plus, when `run = TRUE`, a `success` column
-(and `verified` / provenance manifest when requested via `...`). When
-`jobs` supplies either codec column, a single `codec` column carries
-each row's resolved encoder for its own stream (`NA` where none is
-emitted). When `audio_stream` is supplied as either the argument or a
-`jobs` column, an `audio_stream` column likewise carries each row's
-resolved track: the selected index on an audio row, and `NA` both on
-every video row (which takes no audio) and on an audio row that named no
-track — so `NA` does not by itself mark a video row; read the `stream`
-column for that. The columns match the other `_batch` verbs' output plus
-the `stream` marker. See
+with **two rows per input**, one per stream. It has the reshaped
+`input`, a single `output` path, a `stream` marker (`"audio"` or
+`"video"`), and an added `command` column. When `run = TRUE`, it also
+has a `success` column. A run also gives `verified` and the provenance
+manifest, each when requested via `...`. When `jobs` supplies either
+codec column, a single `codec` column carries each row's resolved
+encoder for its own stream (`NA` where none is set). When `audio_stream`
+is supplied as either the argument or a `jobs` column, an `audio_stream`
+column likewise carries each row's resolved track. That is the selected
+index on an audio row. It is `NA` on every video row, which takes no
+audio, and on an audio row that named no track. So `NA` does not by
+itself mark a video row. Read the `stream` column for that. The columns
+match the output of the other `_batch` functions, plus the `stream`
+marker. See
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
 
 ## Failed audio outputs
 
 A row whose audio command does not finish cleanly is recorded as
-`success = FALSE` rather than aborting the batch. Such a row is named in
-a warning emitted **once** for the whole batch, listing every affected
+`success = FALSE`, and the batch does not abort. One warning for the
+whole batch, emitted **once**, names such rows. It lists every affected
 input row and the ways out.
 
-A row reaches that warning only when all four of these hold: it named no
-`audio_stream`, the row is recorded `success = FALSE`, its input carries
-more than one audio track, and its `audiofile`'s extension is not among
-the containers named here as holding several — `.mka`, `.m4a`, `.mp4`,
-`.mov`, `.mkv`, `.webm`, `.ogg`, `.opus` and `.ts`. No exit status is
-among those conditions, and the difference from
+A row reaches that warning only when all four of these hold:
+
+- It named no `audio_stream`.
+
+- The row is recorded `success = FALSE`.
+
+- Its input carries more than one audio track.
+
+- The extension of its `audiofile` is not among the containers named
+  here as holding several audio streams.
+
+Those containers are `.mka`, `.m4a`, `.mp4`, `.mov`, `.mkv`, `.webm`,
+`.ogg`, `.opus` and `.ts`. No exit status is among those conditions, and
+the difference from
 [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
-is deliberate: the batch runner records *whether* a row succeeded and
-not how, so a non-zero exit, a hard error and a reached limit are all
-recorded the same way, and a row put here by any of them is treated
-alike. The nine are an exclusion list and not a survey: FFmpeg writes
-several audio streams into other containers too (`.avi` and `.nut` among
-them), and a row failing on one of those is still named. The container
-condition keeps a row off the list when it is already doing what the
-warning would advise; such a row is silently not named, and a batch
-whose failed audio rows all write to those nine warns not at all. The
-headline count follows the rows actually named.
+is deliberate. The batch runner records *whether* a row succeeded and
+not how. So it records a non-zero exit, a hard error and a reached limit
+the same way. It treats alike a row put here by any of them. The nine
+are an exclusion list and not a survey. FFmpeg writes several audio
+streams into other containers too, `.avi` and `.nut` among them. A row
+that fails on one of those is still named. The container condition keeps
+a row off the list when it already does what the warning advises. Such a
+row is silently not named. A batch whose failed audio rows all write to
+those nine does not warn at all. The headline count follows the rows
+actually named.
 
-What each bullet states is what that row *did* — its track count, and
-that every track was mapped into one output — never why FFmpeg refused.
-A stream copy into a container that will not hold the source codec, an
-unknown encoder and a missing output directory all look alike from here.
+Each bullet of the warning states what that row *did*: its track count,
+and that every track was mapped into one output. It never states why
+FFmpeg refused. Several causes look alike from here. Examples are a
+stream copy into a container that will not hold the source codec, an
+unknown encoder and a missing output directory.
 
-The check runs FFprobe on the failed rows only, so it is emitted when
-FFprobe is available and the input can be probed, and skipped silently
-otherwise — so the warning may simply not appear, and its absence is
-never itself a second failure. It never runs under `run = FALSE` and
-never changes any compiled command. Suppress it with
+The check runs FFprobe on the failed rows only. So the function emits
+the warning when FFprobe is available and the input can be probed, and
+skips it silently otherwise. The warning may not appear, and its absence
+is never itself a second failure. The check never runs under
+`run = FALSE` and never changes any compiled command. Suppress the
+warning with
 `suppressWarnings(classes = "tidymedia_multitrack_separation")`.
 
-The warning names the same event as
-[`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)'s
-error and answers to the same class, but it carries no exit status: no
+The warning names the same event as the error of
+[`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+and answers to the same class. But it carries no exit status: no
 `tm_status` field, and no `tidymedia_ffmpeg_exit` class. The batch
-runner records, per row, *whether* the row succeeded — the `success`
-column — not *how* FFmpeg exited, so by the time this warning is
-assembled the exit number is gone. Catch a specific row's exit status
-with the scalar verb instead.
+runner records, per row, *whether* the row succeeded, not *how* FFmpeg
+exited. The `success` column holds that record. So the exit number is
+gone by the time this warning is assembled. To catch a specific row's
+exit status, use
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md).
 
 ## See also
 
 [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
-the scalar verb it wraps;
+the one-file function it wraps.
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
-the batch runner;
+the batch runner.
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware` toggle;
+for the `hardware` argument.
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
-for the other fan-out batch verb.
+for the other batch function where one input file can give several
+outputs.
 
 Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

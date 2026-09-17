@@ -1,15 +1,17 @@
 # Split a media file into separate audio and video files
 
-By default each stream is copied, not re-encoded
-(`audio_codec = "copy"`, `video_codec = "copy"`): separation is lossless
-and fast, but each output container must support the source codec (e.g.
-write AAC audio from an MP4 to `.aac` or `.m4a`, not `.mp3`). Name an
-encoder instead (`audio_codec = "libmp3lame"`) to transcode that stream,
-or pass `NULL` to emit no codec option at all and let the output
-extension pick the encoder. Each argument governs only its own output
-file. Where the video is re-encoded, `hardware = "nvenc"` or
-`"videotoolbox"` moves that encode onto a GPU; the audio output is never
-affected.
+By default, each stream is copied, not re-encoded
+(`audio_codec = "copy"`, `video_codec = "copy"`). A copy loses no
+quality and is fast. Each output container must then support the source
+codec. For example, write AAC audio from an MP4 to `.aac` or `.m4a`, not
+to `.mp3`. To re-encode a stream, name an encoder
+(`audio_codec = "libmp3lame"`). Pass `NULL` to set no codec option, so
+the output extension picks the encoder. Each argument governs only its
+own output file. Where the video is re-encoded, `hardware = "nvenc"` or
+`"videotoolbox"` moves that encode onto a GPU. The audio output is never
+affected. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, container and stream copy.
 
 ## Usage
 
@@ -43,30 +45,30 @@ separate_audio_video(
 
 - audio_codec:
 
-  A string naming the encoder for `audiofile`, passed to FFmpeg's
-  `-codec:a`. The default `"copy"` stream-copies the audio losslessly; a
-  codec name (e.g. `"libmp3lame"`) transcodes it; `NULL` emits no
-  `-codec:a`, leaving the encoder to the `audiofile` extension.
+  A string that names the encoder for `audiofile`. It goes to FFmpeg's
+  `-codec:a`. The default `"copy"` copies the audio stream with no
+  quality loss. A codec name (e.g. `"libmp3lame"`) re-encodes it. `NULL`
+  sets no `-codec:a`, so the `audiofile` extension picks the encoder.
 
 - video_codec:
 
-  A string naming the encoder for `videofile`, passed to FFmpeg's
-  `-codec:v`. The default `"copy"` stream-copies the video losslessly; a
-  codec name (e.g. `"libx264"`) transcodes it; `NULL` emits no
-  `-codec:v`, leaving the encoder to the `videofile` extension.
+  A string that names the encoder for `videofile`. It goes to FFmpeg's
+  `-codec:v`. The default `"copy"` copies the video stream with no
+  quality loss. A codec name (e.g. `"libx264"`) re-encodes it. `NULL`
+  sets no `-codec:v`, so the `videofile` extension picks the encoder.
 
 - hardware:
 
-  The encoder backend for `videofile`: `"none"` (default, the software
-  `video_codec`), `"nvenc"` for NVIDIA GPU encoding, or `"videotoolbox"`
-  for Apple GPU encoding, each using that backend's encoder for
-  `video_codec`'s family (e.g. `"libx264"` becomes `"h264_nvenc"` or
-  `"h264_videotoolbox"`), assuming the H.264 family when
-  `video_codec = NULL`. Only video is encoded on the GPU, so this never
-  affects `audiofile`. Because this verb's video default is a stream
-  copy, which runs no encoder at all, a non-`"none"` `hardware`
-  alongside `video_codec = "copy"` is an error: name an encoder or pass
-  `video_codec = NULL`. See
+  The encoder backend for `videofile`. `"none"` (default) uses the
+  software `video_codec`. `"nvenc"` uses NVIDIA GPU encoding, and
+  `"videotoolbox"` uses Apple GPU encoding. Each uses its own encoder
+  for the family of `video_codec`. For example, `"libx264"` becomes
+  `"h264_nvenc"` or `"h264_videotoolbox"`. With `video_codec = NULL`,
+  the family is H.264. Only video is encoded on the GPU, so this never
+  affects `audiofile`. The default `video_codec = "copy"` is a stream
+  copy, which runs no encoder at all. So a `hardware` other than
+  `"none"` with `video_codec = "copy"` is an error. Name an encoder or
+  pass `video_codec = NULL`. See
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
   for availability and its caveats. Resolving a hardware backend asks
   this FFmpeg build which encoders it has. So the first such call that
@@ -75,7 +77,7 @@ separate_audio_video(
   session. See
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
   to discard it. The stream-copy conflict above is caught first, so such
-  a call aborts without probing.
+  a call aborts without asking FFmpeg.
 
 - fallback:
 
@@ -133,83 +135,90 @@ separate_audio_video(
 ## Value
 
 A named character vector of the two compiled commands (`audio`,
-`video`); invisible when `run = TRUE`. Under `run = TRUE` the audio
-command runs first and the video command runs second, whether or not the
-audio command succeeded. A failed audio command still aborts the call,
-and the video command has written `videofile` by then unless it failed
-too; see *When the audio output fails*.
+`video`). It is invisible when `run = TRUE`. Under `run = TRUE`, the
+audio command runs first and the video command runs second. The video
+command runs whether or not the audio command succeeded. A failed audio
+command still aborts the call. By then, the video command has written
+`videofile`, unless it failed too. See *When the audio output fails*.
 
 ## When the audio output fails
 
-The two commands run in order — audio first, video second — and the
-video command runs even when the audio one has already failed, so a
-failed audio half does not cost you the video. On that path the call
-still aborts with the audio failure, and that error carries one added
-line naming the video file that was written. When the video command
-fails as well, the added line is not there, the audio failure is still
-the error you get, and FFmpeg's own output for the failed video command
-is printed above it.
+The two commands run in order: audio first, video second. The video
+command runs even when the audio command failed, so a failed audio half
+does not cost you the video. In that case, the call still aborts with
+the audio failure. That error carries one added line that names the
+video file that was written. When the video command fails too, the added
+line is not there. The audio failure is still the error you get.
+FFmpeg's own output for the failed video command is printed above it.
 
-A reached wall-clock limit on the audio command is held like any other
-audio failure, so the video command still runs — on a fresh limit of its
-own, since
+A time limit reached on the audio command is held like any other audio
+failure, so the video command still runs. The video command gets a fresh
+limit of its own, because
 [`with_timeout()`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md)
-bounds each spawned program rather than the call. A call whose audio
-half reaches the limit can therefore wait up to two limits rather than
-one.
+limits each program that the call starts, not the call. So a call whose
+audio half reaches the limit can wait up to two limits, not one.
 
-What a failed command leaves at its own output path is the same rule on
-either path: a partial file that run wrote is removed, while a file that
-was already at that path and that FFmpeg never wrote to is left exactly
-as it was. So neither failure path promises the path is empty afterwards
-— only that nothing half-written is left there. The audio failure's own
-error says which of the two happened to `audiofile`. What became of the
-video command is on the same error's `tm_video_error` field: the
-condition that command raised when it failed too, and `NULL` when it
-succeeded.
+A failed command treats its own output path by the same rule on either
+path. It removes a partial file that the run wrote. It leaves a file
+that was already at that path, and that FFmpeg never wrote to, exactly
+as it was. So neither failure path promises that the path is empty
+afterwards. It promises only that nothing half-written is left there.
+The audio failure's own error says which of the two happened to
+`audiofile`. The same error's `tm_video_error` field says what became of
+the video command. It holds the condition that command raised when it
+failed too, and `NULL` when it succeeded.
 
-Because the default keeps every audio track, writing a multi-track input
-to a container that holds only one (`.aac`, `.mp3`, `.wav`) makes FFmpeg
-fail. When that happens the error additionally reports how many audio
-tracks `infile` carries and names the two ways out — `audio_stream` to
-write one track, or a container such as `.mka` or `.m4a` to keep them
-all.
+The default keeps every audio track. So FFmpeg fails when it writes a
+multi-track input to a container that holds only one track (`.aac`,
+`.mp3`, `.wav`). When that happens, the error also reports how many
+audio tracks `infile` carries, and it names the two ways out. Use
+`audio_stream` to write one track, or use a container such as `.mka` or
+`.m4a` to keep them all.
 
-That extra report is attached only when all four of these hold: no
-`audio_stream` was named, FFmpeg returned a non-zero exit status,
-`infile` carries more than one audio track, and `audiofile`'s extension
-is not among the containers named here as holding several — `.mka`,
-`.m4a`, `.mp4`, `.mov`, `.mkv`, `.webm`, `.ogg`, `.opus` and `.ts`.
-Those nine are an exclusion list and not a survey: FFmpeg writes several
-audio streams into other containers too (`.avi` and `.nut` among them),
-and a failure on one of those still gets the report. The container
-condition keeps the report off a call that is already doing what the
-report would advise: writing to one of the nine, the failure cannot be
-the container refusing a second audio stream, so whatever FFmpeg did
-object to would go unnamed. Fail any of the four and the error you get
-is the one the run itself raised, whatever that error is — same class,
-same status field, same message, but for the line saying the video
-output was written, which a failing audio half carries when the video
-command wrote its file and the audio failure is an rlang condition.
-(When the leg that fails is the exit status itself, there is no exit
-status to carry: a run that never reached FFmpeg has none.)
+The error carries that extra report only when all four of these hold:
 
-What the report states is what the call *did* — the track count, and
-that every track was mapped into one output — never why FFmpeg refused.
+- No `audio_stream` was named.
+
+- FFmpeg returned a non-zero exit status.
+
+- `infile` carries more than one audio track.
+
+- The extension of `audiofile` is not among the containers named here as
+  holding several audio streams.
+
+Those containers are `.mka`, `.m4a`, `.mp4`, `.mov`, `.mkv`, `.webm`,
+`.ogg`, `.opus` and `.ts`. The nine are an exclusion list and not a
+survey. FFmpeg writes several audio streams into other containers too,
+`.avi` and `.nut` among them. A failure on one of those still gets the
+report. The container condition keeps the report off a call that already
+does what the report advises. When a call writes to one of the nine, the
+failure cannot be the container refusing a second audio stream. The
+report would then leave unnamed whatever FFmpeg did object to.
+
+If any of the four does not hold, the error you get is the one the run
+itself raised, whatever that error is. It has the same class, the same
+status field and the same message. The one difference is the line saying
+that the video output was written. A failing audio half carries that
+line when the video command wrote its file and the audio failure is an
+rlang condition. When the exit status is the one that does not hold,
+there is no exit status to carry. A run that never reached FFmpeg has
+none.
+
+The report states what the call *did*: the track count, and that every
+track was mapped into one output. It never states why FFmpeg refused.
 FFmpeg's own error and exit status are printed beneath it and carried on
-the condition, and they remain the only authority on the cause. Several
-causes look alike from here: a stream copy into a container that will
-not hold the source codec (the default `audio_codec = "copy"` into
-`.mp3`, say) fails on a multi-track input too, and so do an unknown
-encoder and a missing output directory.
+the condition. They remain the only authority on the cause. Several
+causes look alike from here. A stream copy into a container that will
+not hold the source codec fails on a multi-track input too. The default
+`audio_codec = "copy"` into `.mp3` is one example. An unknown encoder
+and a missing output directory fail the same way.
 
 The condition carries two class names, so a caller can catch it at
-either width. It is `tidymedia_ffmpeg_exit`, the class every non-zero
-FFmpeg exit raises, which is what an exit-status handler catches — the
-number is on the condition's `tm_status` field. It is also
-`tidymedia_multitrack_separation`, the class of the enriched diagnostic
-itself, which is what to catch when it is this failure in particular you
-want:
+either width. It is `tidymedia_ffmpeg_exit`, the class that every
+non-zero FFmpeg exit raises. An exit-status handler catches that class,
+and the number is on the condition's `tm_status` field. It is also
+`tidymedia_multitrack_separation`, the class of this report itself.
+Catch that class when it is this failure in particular you want:
 
 
     tryCatch(
@@ -218,31 +227,32 @@ want:
     )
 
 When the report is omitted, the error that reaches the caller is the one
-the run itself raised, but for that video-output line: a non-zero exit
-still answers to `tidymedia_ffmpeg_exit`, and a failure that is not an
-exit at all answers to neither class here: an FFmpeg the package cannot
-locate raises an error carrying no `tidymedia_` class at all, and a
-reached limit raises `tidymedia_timeout`.
+the run itself raised, apart from that video-output line. A non-zero
+exit still answers to `tidymedia_ffmpeg_exit`. A failure that is not an
+exit answers to neither class here. An FFmpeg that the package cannot
+locate raises an error with no `tidymedia_` class at all. A reached
+limit raises `tidymedia_timeout`.
 
-Counting the tracks means running FFprobe, so this is **best-effort**:
-it is added when FFprobe is available and `infile` can be probed, and
-omitted silently otherwise, leaving FFmpeg's own error alone — so the
-report may simply not appear, and its absence is never itself a second
-failure. It never runs under `run = FALSE`, never changes the compiled
-commands, and is skipped entirely when `audio_stream` names a track
-(with one track mapped, the track count cannot be what FFmpeg objected
-to) or when `audiofile` names one of the multi-stream containers above.
+Counting the tracks means running FFprobe, so the report is not
+guaranteed. The error has it when FFprobe is available and `infile` can
+be probed. Otherwise the package omits it silently and leaves FFmpeg's
+own error alone. So the report may not appear, and its absence is never
+itself a second failure. The count never runs under `run = FALSE` and
+never changes the compiled commands. It is skipped when `audio_stream`
+names a track, or when `audiofile` names one of the multi-stream
+containers above. With one track mapped, the track count cannot be what
+FFmpeg objected to.
 
 ## See also
 
 [`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md)
 and
 [`ffm_codec()`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
-the builders it wraps;
+the pipeline functions it wraps.
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware` toggle;
+for the `hardware` argument.
 [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md)
-to pull out just the audio;
+to pull out just the audio.
 [`probe_audio()`](https://jmgirard.github.io/tidymedia/reference/probe_container.md)
 to list an input's audio tracks.
 

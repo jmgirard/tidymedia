@@ -490,3 +490,18 @@ The code does not settle this claim. It keeps its meaning at head, and it is the
 | Page | Claim | Evidence |
 |---|---|---|
 | `hardware_encoder` | A container that does not take H.264, such as `.webm`, needs an HEVC-family or AV1-family `video_codec`. | WebM does not take HEVC, so only AV1 fits the example, and only `nvenc` has an AV1 encoder (`hardware_backend_families()` in `R/ffmpeg.R`). |
+
+### M133
+
+The base commit is `4b932266`. At that commit, the domain is the 4 `man/*.Rd` files whose header names `R/ffmpeg.R` and whose base name matches the M133 filter: `normalize_audio`, `normalize_audio_batch`, `separate_audio_video` and `separate_audio_video_batch`.
+
+#### Sweep output at the base commit (AC1, AC2, AC3, AC4)
+
+The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` over the 4 files that `git show 4b932266:man/<page>.Rd` wrote to a temporary folder. It read 324 sentences and exited 1 with 103 findings: 63 `[<n> words]`, 33 `[term …]` and 7 `[dash in Rd source]`. The same command gives the full output again. Stems are the glossary stems in each page's `--prose` output. The AC4 identifiers are `tidymedia.check_tracks`, `tidymedia_dropped_audio`, `tidymedia_ffmpeg_exit`, `tidymedia_loudnorm_no_measurement`, `tidymedia_multitrack_separation`, `tidymedia_timeout`, `tm_row_status`, `tm_rows`, `tm_status` and `tm_video_error`. No page named the glossary.
+
+| Page | Words | Term | Dash | Stems (AC3) | Result |
+|---|---|---|---|---|---|
+| normalize_audio | 11 | 3 | 4 | `container`, `encod`, `LUFS`, `sampl(e\|ing) rate`, `stream`, `true peak` | |
+| normalize_audio_batch | 14 | 8 | 2 | `container`, `encod`, `LUFS`, `sampl(e\|ing) rate`, `stream` | |
+| separate_audio_video | 20 | 11 | 0 | `codec`, `container`, `encod`, `stream` | |
+| separate_audio_video_batch | 18 | 11 | 1 | `codec`, `container`, `encod`, `stream` | |

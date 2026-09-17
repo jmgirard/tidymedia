@@ -6629,7 +6629,9 @@ concatenate_pipeline <- function(infiles, outfile) {
 #' faster than re-encoding but requires that the files have the same parameters
 #' (width, height, etc.) and formats/codecs. To concatenate videos using
 #' re-encoding, see the [concat video
-#' filter](https://ffmpeg.org/ffmpeg-filters.html#concat)
+#' filter](https://ffmpeg.org/ffmpeg-filters.html#concat). The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec and
+#' re-encode.
 #'
 #' @param infiles A character vector containing the file paths to video files.
 #'   `r infiles_check_sentences()`
@@ -6637,7 +6639,7 @@ concatenate_pipeline <- function(infiles, outfile) {
 #'   concatenated video file to.
 #' @inheritParams crop_video
 #' @return `r command_return()`
-#' @seealso [ffm_concat()], the builder it wraps.
+#' @seealso [ffm_concat()], the pipeline function it wraps.
 #' @family task functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -6719,14 +6721,16 @@ compare_videos_pipeline <- function(infiles, outfile,
 
 #' Build a side-by-side comparison video
 #'
-#' Stack two or more videos into a single comparison video — side-by-side
-#' (\code{direction = "horizontal"}) or one above the other
-#' (\code{direction = "vertical"}) — a common need when reviewing annotations or
-#' before/after processing. Built on the blessed stacking verbs
-#' (\code{\link{ffm_hstack}} / \code{\link{ffm_vstack}}).
+#' Stack two or more videos into a single comparison video. The videos go
+#' side-by-side (\code{direction = "horizontal"}) or one above the other
+#' (\code{direction = "vertical"}). This is a common need when reviewing
+#' annotations or before/after processing. Built on the stacking pipeline
+#' functions (\code{\link{ffm_hstack}} / \code{\link{ffm_vstack}}). The glossary
+#' in \code{vignette("tidymedia")} explains media terms such as codec, encoder
+#' and stream copy.
 #'
 #' By default the two inputs are resized to share an edge (equal heights for a
-#' horizontal stack, equal widths for a vertical one); resizing currently
+#' horizontal stack, equal widths for a vertical one). Resizing currently
 #' supports exactly two inputs, so pass \code{resize = FALSE} to compare more.
 #' Audio is dropped unless \code{audio_input} names an input to carry; a carried
 #' track is stream-copied unless \code{audio_codec} names an encoder.
@@ -6745,8 +6749,8 @@ compare_videos_pipeline <- function(infiles, outfile,
 #'   encoder in that case is an error.
 #' @inheritParams crop_video
 #' @return `r command_return()`
-#' @seealso [ffm_hstack()] and [ffm_vstack()], the builders it wraps;
-#'   [has_hardware_encoder()] for the \code{hardware} toggle;
+#' @seealso [ffm_hstack()] and [ffm_vstack()], the pipeline functions it wraps;
+#'   [has_hardware_encoder()] for the \code{hardware} argument;
 #'   [picture_in_picture()] for insetting instead of stacking.
 #' @family task functions
 #' @family audio selection functions
@@ -6858,10 +6862,12 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #' Inset one video over another (picture-in-picture)
 #'
 #' Composite a smaller \code{overlay} video onto a \code{main} video in one
-#' corner (or the center) — the classic picture-in-picture layout for pairing a
-#' speaker with a screen recording, or a stimulus with a webcam. Built on the
-#' blessed \code{\link{ffm_overlay}} verb, which resizes the overlay to a
-#' fraction of the main video's width and positions it.
+#' corner (or the center). This is the classic picture-in-picture layout for
+#' pairing a speaker with a screen recording, or a stimulus with a webcam. Built
+#' on the \code{\link{ffm_overlay}} pipeline function, which resizes the overlay
+#' to a fraction of the main video's width and positions it. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec, encoder and
+#' stream copy.
 #'
 #' Audio is dropped unless \code{audio_input} names an input to carry (\code{0} = the
 #' main video, \code{1} = the overlay). A carried track is
@@ -6880,8 +6886,9 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
 #' @param audio_input `r audio_input_param()`
 #' @inheritParams compare_videos
 #' @return `r command_return()`
-#' @seealso [ffm_overlay()], the builder it wraps; [has_hardware_encoder()] for the
-#'   \code{hardware} toggle; [compare_videos()] for
+#' @seealso [ffm_overlay()], the pipeline function it wraps;
+#'   [has_hardware_encoder()] for the
+#'   \code{hardware} argument; [compare_videos()] for
 #'   side-by-side stacking.
 #' @family task functions
 #' @family audio selection functions
@@ -6926,26 +6933,28 @@ picture_in_picture <- function(main, overlay, outfile,
 
 #' Concatenate Many Videos From a Jobs Table
 #'
-#' Join clips end to end for many outputs from a single jobs tibble — the
-#' **batch** (table-driven) sibling of [concatenate_videos()] for when you have
-#' more than one concatenation to produce. Unlike the single-input batch verbs,
-#' each row's inputs are **many**, so \code{jobs} carries an \code{inputs}
-#' list-column (each cell a character vector of source paths) plus an
-#' \code{output} column (D015). This is a thin wrapper over
+#' Join clips end to end for many outputs from a single jobs tibble. This is the
+#' **batch** (table-driven) form of [concatenate_videos()], for when you have
+#' more than one concatenation to produce. Unlike the single-input batch
+#' functions, each row's inputs are **many**. So \code{jobs} carries an
+#' \code{inputs} list-column (each cell a character vector of source paths)
+#' plus an \code{output} column. This is a thin wrapper over
 #' \code{\link{ffm_batch}}: one reproducible concat-demuxer command per row,
-#' sharing the copy + map-0 pipeline with the scalar verb.
+#' sharing the copy + map-0 pipeline with [concatenate_videos()].
 #'
 #' @param jobs A data frame with one row per output and (at least) an
-#'   \code{inputs} list-column — each cell a character vector of the source
-#'   paths to join, in order — and an \code{output} column (destination path).
-#'   An \code{output} column is required; this verb derives no destination. Two
-#'   rows given the same \code{output} path are refused before any row runs.
+#'   \code{inputs} list-column and an \code{output} column (destination path).
+#'   Each \code{inputs} cell is a character vector of the source paths to join,
+#'   in order.
+#'   An \code{output} column is required; this function derives no destination.
+#'   Two rows given the same \code{output} path are refused before any row runs.
 #'   Any other columns are ignored.
 #' @inheritParams extract_audio_batch
 #' @return `r jobs_return()`
-#' @seealso [concatenate_videos()], the scalar verb it wraps; [ffm_batch()], the
-#'   batch runner; [compare_videos_batch()] and [picture_in_picture_batch()],
-#'   the other fan-in batch siblings.
+#' @seealso [concatenate_videos()], the one-output function it wraps; [ffm_batch()],
+#'   the batch runner; [compare_videos_batch()] and
+#'   [picture_in_picture_batch()], the other batch functions that take several
+#'   inputs per row.
 #' @family task functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -6982,16 +6991,19 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 
 #' Build Many Comparison Videos From a Jobs Table
 #'
-#' Stack videos side by side for many outputs from a single jobs tibble — the
-#' **batch** (table-driven) sibling of [compare_videos()] for when you have more
-#' than one comparison to produce. Each row carries an \code{inputs} list-column
-#' (each cell two or more video paths) plus an \code{output} column (D015).
+#' Stack videos side by side for many outputs from a single jobs tibble. This is
+#' the **batch** (table-driven) form of [compare_videos()], for when you have
+#' more than one comparison to produce. Each row carries an \code{inputs}
+#' list-column (each cell two or more video paths) plus an \code{output} column.
 #' This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible stacking
-#' command per row, sharing the pipeline with the scalar verb.
+#' command per row, sharing the pipeline with [compare_videos()]. The glossary
+#' in \code{vignette("tidymedia")} explains media terms such as codec, encoder
+#' and stream copy.
 #'
 #' @param jobs A data frame with one row per output and (at least) an
-#'   \code{inputs} list-column — each cell a character vector of **two or more**
-#'   video paths — and an \code{output} column (destination path). Optional
+#'   \code{inputs} list-column and an \code{output} column (destination path).
+#'   Each \code{inputs} cell is a character vector of **two or more** video
+#'   paths. Optional
 #'   \code{direction}, \code{resize}, \code{audio_input}, \code{video_codec}, and
 #'   \code{audio_codec} columns override the
 #'   like-named arguments per row (a row omitting one falls back to the
@@ -7005,23 +7017,23 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #' @param audio_input `r audio_input_param(batch = TRUE, extra = "Each row's value is validated against that row's input count.")`
 #' @param audio_codec A string naming the codec for the carried audio track,
 #'   applied to every row lacking an \code{audio_codec} column. \code{"copy"}
-#'   (default) stream-copies it. Name an encoder to transcode it, or
+#'   (default) stream-copies it. Name an encoder to re-encode it, or
 #'   \code{NULL} to leave the codec unset. A row carrying no audio emits no
 #'   \code{-codec:a}, and naming an encoder on such a row is an error.
 #' @param hardware,fallback `r batch_hardware_param("compare_videos")`
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
 #'   `r contradiction_sentences("audio_codec")`
-#'   A per-row value error — an \code{audio_input} index past that row's input count,
-#'   a \code{direction} outside the two accepted values — likewise reports ahead
-#'   of the encoder check.
+#'   A per-row value error likewise reports ahead of the encoder check. Examples
+#'   are an \code{audio_input} index past that row's input count, and a
+#'   \code{direction} outside the two accepted values.
 #'   `r value_error_order_sentences()`
 #' @inheritParams extract_audio_batch
 #' @inheritParams crop_video_batch
 #' @return `r jobs_return()`
-#' @seealso [compare_videos()], the scalar verb it wraps; [ffm_batch()], the
-#'   batch runner; [has_hardware_encoder()] for the \code{hardware} toggle;
-#'   [concatenate_videos_batch()] and [picture_in_picture_batch()],
-#'   the other fan-in batch siblings.
+#' @seealso [compare_videos()], the one-output function it wraps; [ffm_batch()],
+#'   the batch runner; [has_hardware_encoder()] for the \code{hardware}
+#'   argument. [concatenate_videos_batch()] and [picture_in_picture_batch()],
+#'   the other batch functions that take several inputs per row.
 #' @family task functions
 #' @family audio selection functions
 #' @examples
@@ -7183,12 +7195,14 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #' Inset One Video Over Another For Many Outputs From a Jobs Table
 #'
 #' Composite an inset (overlay) video onto a main video for many outputs from a
-#' single jobs tibble — the **batch** (table-driven) sibling of
-#' [picture_in_picture()] for when you have more than one to produce. Its two
+#' single jobs tibble. This is the **batch** (table-driven) form of
+#' [picture_in_picture()], for when you have more than one to produce. Its two
 #' inputs have distinct roles, so \code{jobs} carries fixed \code{main} and
-#' \code{overlay} columns (not a list-column; D015) plus an \code{output} column.
+#' \code{overlay} columns (not a list-column) plus an \code{output} column.
 #' This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible overlay
-#' command per row, sharing the pipeline with the scalar verb.
+#' command per row, sharing the pipeline with [picture_in_picture()]. The
+#' glossary in \code{vignette("tidymedia")} explains media terms such as codec,
+#' encoder and stream copy.
 #'
 #' @param jobs A data frame with one row per output and (at least) \code{main}
 #'   (background path), \code{overlay} (inset path), and \code{output}
@@ -7208,16 +7222,17 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #' @param hardware,fallback `r batch_hardware_param("picture_in_picture")`
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
 #'   `r contradiction_sentences("audio_codec")`
-#'   A per-row value error — a negative \code{margin}, an \code{audio_input} index
-#'   outside the two inputs, a \code{position} outside the five accepted values
-#'   — likewise reports ahead of the encoder check.
+#'   A per-row value error likewise reports ahead of the encoder check. Examples
+#'   are a negative \code{margin}, an \code{audio_input} index outside the two
+#'   inputs, and a \code{position} outside the five accepted values.
 #'   `r value_error_order_sentences()`
 #' @inheritParams compare_videos_batch
 #' @return `r jobs_return()`
-#' @seealso [picture_in_picture()], the scalar verb it wraps; [ffm_batch()], the
-#'   batch runner; [has_hardware_encoder()] for the \code{hardware} toggle;
-#'   [concatenate_videos_batch()] and [compare_videos_batch()],
-#'   the other fan-in batch siblings.
+#' @seealso [picture_in_picture()], the one-output function it wraps;
+#'   [ffm_batch()], the batch runner; [has_hardware_encoder()] for the
+#'   \code{hardware} argument. [concatenate_videos_batch()] and
+#'   [compare_videos_batch()], the other batch functions that take several
+#'   inputs per row.
 #' @family task functions
 #' @family audio selection functions
 #' @examples

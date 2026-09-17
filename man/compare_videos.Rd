@@ -49,15 +49,17 @@ or return the compiled command without running it (\code{FALSE}).}
 The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
-Stack two or more videos into a single comparison video — side-by-side
-(\code{direction = "horizontal"}) or one above the other
-(\code{direction = "vertical"}) — a common need when reviewing annotations or
-before/after processing. Built on the blessed stacking verbs
-(\code{\link{ffm_hstack}} / \code{\link{ffm_vstack}}).
+Stack two or more videos into a single comparison video. The videos go
+side-by-side (\code{direction = "horizontal"}) or one above the other
+(\code{direction = "vertical"}). This is a common need when reviewing
+annotations or before/after processing. Built on the stacking pipeline
+functions (\code{\link{ffm_hstack}} / \code{\link{ffm_vstack}}). The glossary
+in \code{vignette("tidymedia")} explains media terms such as codec, encoder
+and stream copy.
 }
 \details{
 By default the two inputs are resized to share an edge (equal heights for a
-horizontal stack, equal widths for a vertical one); resizing currently
+horizontal stack, equal widths for a vertical one). Resizing currently
 supports exactly two inputs, so pass \code{resize = FALSE} to compare more.
 Audio is dropped unless \code{audio_input} names an input to carry; a carried
 track is stream-copied unless \code{audio_codec} names an encoder.
@@ -67,8 +69,8 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 compare_videos(c(video, video), "compare.mp4", run = FALSE)
 }
 \seealso{
-\code{\link[=ffm_hstack]{ffm_hstack()}} and \code{\link[=ffm_vstack]{ffm_vstack()}}, the builders it wraps;
-\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
+\code{\link[=ffm_hstack]{ffm_hstack()}} and \code{\link[=ffm_vstack]{ffm_vstack()}}, the pipeline functions it wraps;
+\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} argument;
 \code{\link[=picture_in_picture]{picture_in_picture()}} for insetting instead of stacking.
 
 Other task functions:

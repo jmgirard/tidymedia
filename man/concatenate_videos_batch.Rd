@@ -8,10 +8,11 @@ concatenate_videos_batch(jobs, run = TRUE, parallel = FALSE, ...)
 }
 \arguments{
 \item{jobs}{A data frame with one row per output and (at least) an
-\code{inputs} list-column — each cell a character vector of the source
-paths to join, in order — and an \code{output} column (destination path).
-An \code{output} column is required; this verb derives no destination. Two
-rows given the same \code{output} path are refused before any row runs.
+\code{inputs} list-column and an \code{output} column (destination path).
+Each \code{inputs} cell is a character vector of the source paths to join,
+in order.
+An \code{output} column is required; this function derives no destination.
+Two rows given the same \code{output} path are refused before any row runs.
 Any other columns are ignored.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
@@ -28,14 +29,14 @@ or only compile them for inspection (\code{FALSE}).}
 The \code{jobs} tibble with an added \code{command} column. When \code{run = TRUE}, it also has a \code{success} column, plus \code{verified} or a provenance manifest, each when requested through \code{...}. See \code{\link{ffm_batch}}.
 }
 \description{
-Join clips end to end for many outputs from a single jobs tibble — the
-\strong{batch} (table-driven) sibling of \code{\link[=concatenate_videos]{concatenate_videos()}} for when you have
-more than one concatenation to produce. Unlike the single-input batch verbs,
-each row's inputs are \strong{many}, so \code{jobs} carries an \code{inputs}
-list-column (each cell a character vector of source paths) plus an
-\code{output} column (D015). This is a thin wrapper over
+Join clips end to end for many outputs from a single jobs tibble. This is the
+\strong{batch} (table-driven) form of \code{\link[=concatenate_videos]{concatenate_videos()}}, for when you have
+more than one concatenation to produce. Unlike the single-input batch
+functions, each row's inputs are \strong{many}. So \code{jobs} carries an
+\code{inputs} list-column (each cell a character vector of source paths)
+plus an \code{output} column. This is a thin wrapper over
 \code{\link{ffm_batch}}: one reproducible concat-demuxer command per row,
-sharing the copy + map-0 pipeline with the scalar verb.
+sharing the copy + map-0 pipeline with \code{\link[=concatenate_videos]{concatenate_videos()}}.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -43,9 +44,10 @@ jobs <- tibble::tibble(inputs = list(c(video, video)), output = "joined.mp4")
 concatenate_videos_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=concatenate_videos]{concatenate_videos()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}}, the
-batch runner; \code{\link[=compare_videos_batch]{compare_videos_batch()}} and \code{\link[=picture_in_picture_batch]{picture_in_picture_batch()}},
-the other fan-in batch siblings.
+\code{\link[=concatenate_videos]{concatenate_videos()}}, the one-output function it wraps; \code{\link[=ffm_batch]{ffm_batch()}},
+the batch runner; \code{\link[=compare_videos_batch]{compare_videos_batch()}} and
+\code{\link[=picture_in_picture_batch]{picture_in_picture_batch()}}, the other batch functions that take several
+inputs per row.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

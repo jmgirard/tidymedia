@@ -24,14 +24,16 @@ Combine multiple video files one after another without needing to re-encode
 them by using the \href{https://ffmpeg.org/ffmpeg-formats.html#concat-1}{concat demuxer}. This will be much
 faster than re-encoding but requires that the files have the same parameters
 (width, height, etc.) and formats/codecs. To concatenate videos using
-re-encoding, see the \href{https://ffmpeg.org/ffmpeg-filters.html#concat}{concat video filter}
+re-encoding, see the \href{https://ffmpeg.org/ffmpeg-filters.html#concat}{concat video filter}. The glossary in
+\code{vignette("tidymedia")} explains media terms such as codec and
+re-encode.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
 }
 \seealso{
-\code{\link[=ffm_concat]{ffm_concat()}}, the builder it wraps.
+\code{\link[=ffm_concat]{ffm_concat()}}, the pipeline function it wraps.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

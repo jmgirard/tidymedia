@@ -44,16 +44,16 @@ unset, so each output keeps its container's default encoder.}
 
 \item{audio_codec}{A string naming the codec for the carried audio track,
 applied to every row lacking an \code{audio_codec} column. \code{"copy"}
-(default) stream-copies it. Name an encoder to transcode it, or
+(default) stream-copies it. Name an encoder to re-encode it, or
 \code{NULL} to leave the codec unset. A row carrying no audio emits no
 \code{-codec:a}, and naming an encoder on such a row is an error.}
 
 \item{hardware, fallback}{The encoder backend and its fallback behavior, applied to the whole batch. They are a property of the machine, not of a row, so neither is read as a \code{jobs} column. See \code{\link[=picture_in_picture]{picture_in_picture()}}.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
 A call can also contradict itself by naming an \code{audio_codec} with no audio carried into the output. Such a call is refused for the contradiction first, whether or not this machine has the encoder.
-A per-row value error — a negative \code{margin}, an \code{audio_input} index
-outside the two inputs, a \code{position} outside the five accepted values
-— likewise reports ahead of the encoder check.
+A per-row value error likewise reports ahead of the encoder check. Examples
+are a negative \code{margin}, an \code{audio_input} index outside the two
+inputs, and a \code{position} outside the five accepted values.
 A value error and a contradiction resolve the same way whether the value arrived as an argument or in a \code{jobs} column. The contradiction reports first.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
@@ -71,12 +71,14 @@ The \code{jobs} tibble with an added \code{command} column. When \code{run = TRU
 }
 \description{
 Composite an inset (overlay) video onto a main video for many outputs from a
-single jobs tibble — the \strong{batch} (table-driven) sibling of
-\code{\link[=picture_in_picture]{picture_in_picture()}} for when you have more than one to produce. Its two
+single jobs tibble. This is the \strong{batch} (table-driven) form of
+\code{\link[=picture_in_picture]{picture_in_picture()}}, for when you have more than one to produce. Its two
 inputs have distinct roles, so \code{jobs} carries fixed \code{main} and
-\code{overlay} columns (not a list-column; D015) plus an \code{output} column.
+\code{overlay} columns (not a list-column) plus an \code{output} column.
 This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible overlay
-command per row, sharing the pipeline with the scalar verb.
+command per row, sharing the pipeline with \code{\link[=picture_in_picture]{picture_in_picture()}}. The
+glossary in \code{vignette("tidymedia")} explains media terms such as codec,
+encoder and stream copy.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -84,10 +86,11 @@ jobs <- tibble::tibble(main = video, overlay = video, output = "pip.mp4")
 picture_in_picture_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=picture_in_picture]{picture_in_picture()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}}, the
-batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
-\code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}} and \code{\link[=compare_videos_batch]{compare_videos_batch()}},
-the other fan-in batch siblings.
+\code{\link[=picture_in_picture]{picture_in_picture()}}, the one-output function it wraps;
+\code{\link[=ffm_batch]{ffm_batch()}}, the batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the
+\code{hardware} argument. \code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}} and
+\code{\link[=compare_videos_batch]{compare_videos_batch()}}, the other batch functions that take several
+inputs per row.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

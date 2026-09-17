@@ -20,8 +20,9 @@ compare_videos_batch(
 }
 \arguments{
 \item{jobs}{A data frame with one row per output and (at least) an
-\code{inputs} list-column — each cell a character vector of \strong{two or more}
-video paths — and an \code{output} column (destination path). Optional
+\code{inputs} list-column and an \code{output} column (destination path).
+Each \code{inputs} cell is a character vector of \strong{two or more} video
+paths. Optional
 \code{direction}, \code{resize}, \code{audio_input}, \code{video_codec}, and
 \code{audio_codec} columns override the
 like-named arguments per row (a row omitting one falls back to the
@@ -42,16 +43,16 @@ unset, so each output keeps its container's default encoder.}
 
 \item{audio_codec}{A string naming the codec for the carried audio track,
 applied to every row lacking an \code{audio_codec} column. \code{"copy"}
-(default) stream-copies it. Name an encoder to transcode it, or
+(default) stream-copies it. Name an encoder to re-encode it, or
 \code{NULL} to leave the codec unset. A row carrying no audio emits no
 \code{-codec:a}, and naming an encoder on such a row is an error.}
 
 \item{hardware, fallback}{The encoder backend and its fallback behavior, applied to the whole batch. They are a property of the machine, not of a row, so neither is read as a \code{jobs} column. See \code{\link[=compare_videos]{compare_videos()}}.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
 A call can also contradict itself by naming an \code{audio_codec} with no audio carried into the output. Such a call is refused for the contradiction first, whether or not this machine has the encoder.
-A per-row value error — an \code{audio_input} index past that row's input count,
-a \code{direction} outside the two accepted values — likewise reports ahead
-of the encoder check.
+A per-row value error likewise reports ahead of the encoder check. Examples
+are an \code{audio_input} index past that row's input count, and a
+\code{direction} outside the two accepted values.
 A value error and a contradiction resolve the same way whether the value arrived as an argument or in a \code{jobs} column. The contradiction reports first.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
@@ -68,12 +69,14 @@ or only compile them for inspection (\code{FALSE}).}
 The \code{jobs} tibble with an added \code{command} column. When \code{run = TRUE}, it also has a \code{success} column, plus \code{verified} or a provenance manifest, each when requested through \code{...}. See \code{\link{ffm_batch}}.
 }
 \description{
-Stack videos side by side for many outputs from a single jobs tibble — the
-\strong{batch} (table-driven) sibling of \code{\link[=compare_videos]{compare_videos()}} for when you have more
-than one comparison to produce. Each row carries an \code{inputs} list-column
-(each cell two or more video paths) plus an \code{output} column (D015).
+Stack videos side by side for many outputs from a single jobs tibble. This is
+the \strong{batch} (table-driven) form of \code{\link[=compare_videos]{compare_videos()}}, for when you have
+more than one comparison to produce. Each row carries an \code{inputs}
+list-column (each cell two or more video paths) plus an \code{output} column.
 This is a thin wrapper over \code{\link{ffm_batch}}: one reproducible stacking
-command per row, sharing the pipeline with the scalar verb.
+command per row, sharing the pipeline with \code{\link[=compare_videos]{compare_videos()}}. The glossary
+in \code{vignette("tidymedia")} explains media terms such as codec, encoder
+and stream copy.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -81,10 +84,10 @@ jobs <- tibble::tibble(inputs = list(c(video, video)), output = "compare.mp4")
 compare_videos_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=compare_videos]{compare_videos()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}}, the
-batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
-\code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}} and \code{\link[=picture_in_picture_batch]{picture_in_picture_batch()}},
-the other fan-in batch siblings.
+\code{\link[=compare_videos]{compare_videos()}}, the one-output function it wraps; \code{\link[=ffm_batch]{ffm_batch()}},
+the batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware}
+argument. \code{\link[=concatenate_videos_batch]{concatenate_videos_batch()}} and \code{\link[=picture_in_picture_batch]{picture_in_picture_batch()}},
+the other batch functions that take several inputs per row.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

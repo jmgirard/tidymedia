@@ -1280,8 +1280,9 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
 #'   \code{"libmp3lame"}, \code{"aac"}, \code{"flac"}), passed to FFmpeg's
 #'   \code{-c:a}. When \code{NULL} (default), FFmpeg infers the codec from the
 #'   \code{outfile} extension and encodes at the highest VBR quality. On the
-#'   other task functions, \code{NULL} means "leave the codec unset". Here it
-#'   does \emph{not} mean that. It selects \code{-q:a 0}.
+#'   other task functions, \code{NULL} means "leave the codec unset". Here
+#'   \code{NULL} does \emph{not} leave the codec unset. \code{NULL} selects
+#'   \code{-q:a 0}.
 #' @param audio_stream `r audio_stream_param("take", "takes", "first")`
 #' @return `r command_return()`
 #' @seealso [ffm_codec()] and [ffm_map()], the pipeline functions it wraps.
@@ -2930,7 +2931,8 @@ hardware_codec_families <- function() {
 #' tests), set \code{options(tidymedia.hardware_encoders = )} to a character
 #' vector of encoder names to treat as available.
 #'
-#' These task functions use them for their \code{hardware} argument:
+#' The \code{hardware} argument of the task functions uses the same encoder
+#' names and the same check. These task functions have that argument:
 #' \code{\link{standardize_video}}, \code{\link{format_for_web}},
 #' \code{\link{anonymize_video}}, \code{\link{crop_video}},
 #' \code{\link{segment_video}}, \code{\link{compare_videos}},
@@ -2960,9 +2962,10 @@ hardware_codec_families <- function() {
 #'   backend has no encoder for. That pair is a wrong argument, not a machine
 #'   without something. So both give the error that \code{codec} describes
 #'   above. \code{has_hardware_encoder()} returns \code{FALSE} only for a pair
-#'   that the package supports and this FFmpeg build does not list.
+#'   that the chosen backend has an encoder for and this FFmpeg build does not
+#'   list.
 #' @seealso \code{\link{ffmpeg_encoders}} for the full encoder list.
-#'   These task functions use this page for their \code{hardware} argument:
+#'   These task functions have the \code{hardware} argument:
 #'   \code{\link{standardize_video}}, \code{\link{format_for_web}},
 #'   \code{\link{anonymize_video}}, \code{\link{crop_video}},
 #'   \code{\link{segment_video}}, \code{\link{compare_videos}},

@@ -59,6 +59,9 @@ The M132 help-page domain uses plain English for an R user who does not know FFm
 - 2026-09-17: T5 done. No test pins changed wording. The sweep over 12 pages reads 480 sentences and exits 0. `devtools::test()` gave 0 failures and 5 nvenc skips, run before the 3 audit wording fixes. `devtools::check()` after them gave 0 errors, 0 warnings and 0 notes, and left `man/` unchanged. `pkgdown::check_pkgdown()` found no problems. One doubtful base claim on `?hardware_encoder` went to the ledger and the `ffm_*()` help-text follow-up row.
 - 2026-09-17: the simple-english lint hook reports hits in plan-owned text and old log lines of the tracking files. Implement left them, because it does not own that text.
 
+- 2026-09-17: review gate: the user chose "Fix 4, then merge". O1, O2, O3 and P1 fixed in `R/ffmpeg.R`. O4, O5 and O6 rejected.
+- 2026-09-17: step-7 approval: m132-plain-capability-frame-audio-help-pages approved for merge
+
 ## Decisions
 
 ## Review
@@ -86,4 +89,7 @@ Three fresh reviewers read the branch: [O] diff, [S] history and [S] prior revie
 - O4 `R/ffmpeg.R:1282`, `?convert_audio` `audio_codec`. "the other transform verbs" became "the other task functions". The reviewer checked `extract_audio()`, `normalize_audio()` and the shared codec text, and the wider claim holds there.
 - O5 `R/ffmpeg.R:109`, `?sample_frames`. "the front door to per-frame coding" became "This is the first step for per-frame coding". The reviewer judges the two equal.
 - O6 The reviewer read the file with AC6 not ticked. The AC6 run was still going at that time.
+- Dispositions, chosen by the user at the gate on 2026-09-17: O1, O2, O3 and P1 fix now. O4 and O5 rejected, because the claim is the same. O6 rejected, because AC6 is now ticked against its evidence.
+- Fixes: O1 now reads "The `hardware` argument of the task functions uses the same encoder names and the same check. These task functions have that argument:". O2 reads "These task functions have the `hardware` argument:". O3 reads "a pair that the chosen backend has an encoder for and this FFmpeg build does not list". P1 reads "Here `NULL` does not leave the codec unset. `NULL` selects `-q:a 0`."
+- After the fixes: `document()` run twice leaves no further diff, the sweep over the 12 pages reads 481 sentences and exits 0, and the docs tests give 0 failures in 117. The ledger count and the `hardware_encoder` row were corrected in place.
 - P1 `?convert_audio` `audio_codec`. "Here it does not mean that. It selects `-q:a 0`." has "it" and "that" in a row. The M131 review fixed the same pattern on `?ffm_loudnorm`. The reviewer has low confidence in this one.

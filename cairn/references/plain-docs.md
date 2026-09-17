@@ -469,13 +469,13 @@ The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` o
 | ffmpeg | 1 | 2 | 0 | — | No finding. No stem. "Layer 0 escape hatch" became "direct command". |
 | ffmpeg_codecs | 0 | 2 | 0 | `codec`, `encod` | No finding. Names the glossary. |
 | ffmpeg_encoders | 0 | 2 | 0 | `codec`, `encod` | No finding. Names the glossary. |
-| hardware_encoder | 4 | 1 | 0 | `codec`, `container`, `encod` | No finding. Names the glossary. "toggle" became "argument", "verbs" became "task functions", and "the table holds" became "the package supports". |
+| hardware_encoder | 4 | 1 | 0 | `codec`, `container`, `encod` | No finding. Names the glossary. "toggle" became "argument", "verbs" became "task functions", and "the table holds" became "the chosen backend has an encoder for" (corrected M132 review: it was "the package supports"). |
 | sample_frames | 3 | 3 | 0 | `frame rate`, `sampl(e\|ing) rate` | No finding. Names the glossary. "front door" became "first step". |
 | sample_frames_batch | 3 | 2 | 0 | `sampl(e\|ing) rate` | No finding. Names the glossary. |
 
 #### Results at head (T5)
 
-- AC1, AC2: the sweep over the 12 pages at head reads 480 sentences, prints no finding and exits 0.
+- AC1, AC2: the sweep over the 12 pages at head reads 481 sentences, prints no finding and exits 0 (corrected M132 review: 480 before the review wording fixes).
 - AC3: the 10 pages with a stem at head each name the glossary. `ffmpeg` and `extract_frame` have no stem.
 - AC4: `git grep -wF` finds `tidymedia.check_tracks`, `tidymedia.hardware_encoders` and `tidymedia_dropped_audio` in `man/*.Rd` at head.
 - AC5: `git diff --name-only efb2b2c4 HEAD -- man/` lists only the 12 domain pages.

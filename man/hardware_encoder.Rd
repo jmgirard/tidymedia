@@ -30,7 +30,8 @@ logical. Neither returns for a \code{codec} that the chosen \code{hardware}
 backend has no encoder for. That pair is a wrong argument, not a machine
 without something. So both give the error that \code{codec} describes
 above. \code{has_hardware_encoder()} returns \code{FALSE} only for a pair
-that the package supports and this FFmpeg build does not list.
+that the chosen backend has an encoder for and this FFmpeg build does not
+list.
 }
 \description{
 These functions help with optional hardware video encoding.
@@ -52,7 +53,8 @@ with no capable GPU. To override detection in a known environment (or in
 tests), set \code{options(tidymedia.hardware_encoders = )} to a character
 vector of encoder names to treat as available.
 
-These task functions use them for their \code{hardware} argument:
+The \code{hardware} argument of the task functions uses the same encoder
+names and the same check. These task functions have that argument:
 \code{\link{standardize_video}}, \code{\link{format_for_web}},
 \code{\link{anonymize_video}}, \code{\link{crop_video}},
 \code{\link{segment_video}}, \code{\link{compare_videos}},
@@ -73,7 +75,7 @@ has_hardware_encoder("h264", "nvenc")
 }
 \seealso{
 \code{\link{ffmpeg_encoders}} for the full encoder list.
-These task functions use this page for their \code{hardware} argument:
+These task functions have the \code{hardware} argument:
 \code{\link{standardize_video}}, \code{\link{format_for_web}},
 \code{\link{anonymize_video}}, \code{\link{crop_video}},
 \code{\link{segment_video}}, \code{\link{compare_videos}},

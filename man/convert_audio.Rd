@@ -21,8 +21,9 @@ convert_audio(
 \code{"libmp3lame"}, \code{"aac"}, \code{"flac"}), passed to FFmpeg's
 \code{-c:a}. When \code{NULL} (default), FFmpeg infers the codec from the
 \code{outfile} extension and encodes at the highest VBR quality. On the
-other task functions, \code{NULL} means "leave the codec unset". Here it
-does \emph{not} mean that. It selects \code{-q:a 0}.}
+other task functions, \code{NULL} means "leave the codec unset". Here
+\code{NULL} does \emph{not} leave the codec unset. \code{NULL} selects
+\code{-q:a 0}.}
 
 \item{audio_stream}{The audio track to take, as a number that counts from \code{0} among the \emph{audio tracks} of the input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) takes the \strong{first} audio track. The first-track family reads \code{NULL} this way: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The every-track family reads it as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 

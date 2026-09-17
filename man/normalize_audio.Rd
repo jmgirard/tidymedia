@@ -23,11 +23,11 @@ normalize_audio(
 input with no audio stream is an FFmpeg error, not a silent copy of the
 video.}
 
-\item{outfile}{A string containing the path of the audio file to write. Any
-container FFmpeg can write is accepted and the compiled command does not
-depend on which -- an audio container (\code{.wav}, \code{.flac}) holds the
-result exactly as a video container (\code{.mkv}) does, the latter simply
-carrying one audio stream and nothing else.}
+\item{outfile}{A string containing the path of the audio file to write. The
+function accepts any container that FFmpeg can write. The compiled command
+does not depend on which container it is. An audio container (\code{.wav},
+\code{.flac}) holds the result exactly as a video container (\code{.mkv})
+does. The video container carries one audio stream and nothing else.}
 
 \item{target_loudness}{The target integrated loudness, in LUFS
 (a number in \code{-70}..\code{-5}; default \code{-23}, the EBU
@@ -43,40 +43,41 @@ ceiling).}
 \item{channels}{The output channel count, e.g. \code{1} to downmix to mono (a
 positive whole number), or \code{NULL} (default) to keep the source layout.}
 
-\item{sample_rate}{The output sample rate in Hz, e.g. \code{48000} (a positive
-whole number), or \code{NULL} (default) to let \code{loudnorm} choose (it
-resamples, up to 192 kHz encoder-capped -- not the source rate). Set this to
-pin the output rate.}
+\item{sample_rate}{The output sample rate in Hz, e.g. \code{48000} (a
+positive whole number). \code{NULL} (default) lets \code{loudnorm} choose.
+It resamples, up to 192 kHz and capped by the encoder, and does not keep
+the source rate. Set this argument to fix the output rate.}
 
 \item{audio_codec}{An optional string naming the output audio encoder (e.g.
 \code{"aac"}, \code{"libmp3lame"}, \code{"flac"}), passed to FFmpeg's
-\code{-codec:a}. \code{NULL} (default) emits no \code{-codec:a}, leaving
-the output container's default encoder in place. \code{"copy"} is an error:
-loudness normalization filters the audio, so the stream must be re-encoded
-and cannot be copied.}
+\code{-codec:a}. \code{NULL} (default) sets no \code{-codec:a}, which
+leaves the default encoder of the output container in place.
+\code{"copy"} is an error. Loudness normalization filters the audio, so
+the stream must be re-encoded and cannot be copied.}
 
-\item{two_pass}{A logical: when \code{TRUE}, use accurate two-pass
-(measured/linear) normalization instead of the default single-pass
-(\code{FALSE}). A first \emph{analysis pass} measures the input's loudness,
-and a second \emph{correction pass} feeds those measurements back with
-\code{linear=true} so the output hits the EBU R128 target precisely.
-Two-pass therefore \strong{always runs the analysis pass through FFmpeg}
-(it needs the binary and readable input), even when \code{run = FALSE}: in
-that case the analysis still runs and the returned value is the exact
-correction command, left unexecuted. The single-pass default touches no
-binary under \code{run = FALSE}. If the input is \strong{silent}, the
-analysis pass measures its loudness as \code{-inf}; normalizing silence to
-a target is undefined, so two-pass aborts with a clear error (the
-single-pass default leaves silence untouched). The batch form differs here:
-\code{\link{normalize_audio_batch}} does not abort on a silent row — it
-sets that row aside, marks it in a \code{silent} column, and normalizes the
-rest. When the analysis pass yields no usable measurement at all, the abort
-is classed \code{tidymedia_loudnorm_no_measurement} — the same class the
-batch form raises, so one handler covers both. Where FFmpeg exited non-zero
-it also carries \code{tidymedia_ffmpeg_exit} and the exit number on
-\code{tm_status}; where FFmpeg exited zero but printed no parseable
-measurement block it carries the shared class alone. The silence abort
-above is neither: a silent input \emph{was} measured.}
+\item{two_pass}{A logical. When \code{TRUE}, the function uses accurate
+two-pass (measured/linear) normalization. The default (\code{FALSE}) is
+single-pass. A first \emph{analysis pass} measures the loudness of the
+input. A second \emph{correction pass} feeds those measurements back with
+\code{linear=true}, so the output hits the EBU R128 target precisely.
+So two-pass \strong{always runs the analysis pass through FFmpeg}, even
+when \code{run = FALSE}. It needs the binary and a readable input. Under
+\code{run = FALSE}, the analysis still runs. The returned value is the
+exact correction command, which is not run. The single-pass default
+touches no binary under \code{run = FALSE}. If the input is
+\strong{silent}, the analysis pass measures its loudness as \code{-inf}.
+Normalizing silence to a target is undefined, so two-pass aborts with a
+clear error. The single-pass default leaves silence untouched. The batch
+form differs here. \code{\link{normalize_audio_batch}}
+does not abort on a silent row. It sets that row aside, marks it in a \code{silent} column,
+and normalizes the rest. When the analysis pass gives no usable
+measurement at all, the abort has class
+\code{tidymedia_loudnorm_no_measurement}. The batch form raises the same
+class, so one handler covers both. Where FFmpeg exited non-zero, the abort
+also carries \code{tidymedia_ffmpeg_exit}, and the exit number on
+\code{tm_status}. Where FFmpeg exited zero but printed no measurement
+block that can be parsed, the abort carries the shared class alone. The
+silence abort above is neither: a silent input \emph{was} measured.}
 
 \item{audio_stream}{The audio track to normalize, as a number that counts from \code{0} among the \emph{audio tracks} of the input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) normalizes the \strong{first} audio track. The first-track family reads \code{NULL} this way: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The every-track family reads it as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. This function reads \code{NULL} as the first track only. The two-pass analysis measures each audio track, but the correction uses one set of measurements. Normalizing several tracks at once would apply one track's measurements to all of them. Under \code{two_pass = TRUE}, the analysis pass measures this same track. Only the named track reaches the output, and no video does, whatever the container. So an output name with a video extension gives a video file that holds only audio. An input with no audio at all is an FFmpeg error. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
@@ -91,37 +92,40 @@ The compiled FFmpeg command (invisibly when \code{run = TRUE}). Under
 measured values.
 }
 \description{
-Normalize the perceived loudness of a file's audio toward an EBU R128 target
-using FFmpeg's single-pass \code{loudnorm} filter, optionally downmixing the
-channel count and resampling. The output holds \strong{one audio stream and
-no video}, whatever the input and whatever container \code{outfile} names --
-so this is an audio-producing verb like \code{\link{extract_audio}} and
-\code{\link{convert_audio}}, not a pass-through one. To normalize a
-recording's soundtrack \emph{and} keep its picture, normalize to an audio
-file and mux it back with the \code{\link{ffmpeg}} escape hatch.
+Normalize the perceived loudness of a file's audio toward an EBU R128 target.
+The function uses FFmpeg's single-pass \code{loudnorm} filter. It can also
+downmix the channel count and resample. The output holds \strong{one audio
+stream and no video}, whatever the input and whatever container
+\code{outfile} names. So the output of this function is audio, as with
+\code{\link{extract_audio}} and \code{\link{convert_audio}}. It does not
+carry the other streams through. To normalize a recording's soundtrack
+\emph{and} keep its picture, first normalize to an audio file. Then put the
+audio back with the picture using the \code{\link{ffmpeg}} direct command.
+The glossary in \code{vignette("tidymedia")} explains media terms such as
+LUFS, true peak and sample rate.
 }
 \details{
-The default targets follow EBU Recommendation R 128 (2014) --
-\code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP, loudness
-measured per ITU-R BS.1770-4 -- with \code{loudness_range = 7}. This is
-single-pass (dynamic) \code{loudnorm}: the same input and arguments always
-compile to one reproducible command, with no separate measurement pass.
-Because the audio is filtered it is re-encoded; set \code{audio_codec} to
-name the output encoder, or leave it \code{NULL} to use the output
-container's default. Leaving \code{channels} at \code{NULL} preserves the
-source channel layout. Note that FFmpeg's \code{loudnorm} filter resamples its output (up to
-192 kHz, capped by the encoder), so the output sample rate is \emph{not} the
-source rate unless you pin it: set \code{sample_rate} to control the output
+The default targets follow EBU Recommendation R 128 (2014). They are
+\code{target_loudness = -23} LUFS, \code{true_peak = -1} dBTP and
+\code{loudness_range = 7}. Loudness is measured per ITU-R BS.1770-4. This is
+single-pass (dynamic) \code{loudnorm}. The same input and arguments always
+compile to one reproducible command, with no separate measurement pass. The
+filter changes the audio, so FFmpeg re-encodes it. Set \code{audio_codec} to
+name the output encoder, or leave it \code{NULL} to use the default of the
+output container. Leaving \code{channels} at \code{NULL} keeps the source
+channel layout. FFmpeg's \code{loudnorm} filter resamples its output, up to
+192 kHz, capped by the encoder. So the output sample rate is \emph{not} the
+source rate unless you set it. Set \code{sample_rate} to control the output
 rate.
 
-When no \code{audio_stream} is named and \code{infile} turns out to carry
-tracks the output will not, the verb warns -- the same warning
-\code{\link{extract_audio}} and \code{\link{convert_audio}} emit. Naming a
-track with \code{audio_stream} silences it, as does
+The function warns when no \code{audio_stream} is named and \code{infile}
+carries tracks that the output will not. \code{\link{extract_audio}} and
+\code{\link{convert_audio}} emit the same warning. Naming a track with
+\code{audio_stream} silences it, as does
 \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
 The check costs \strong{one FFprobe call per distinct input}, which is one call here, because this function takes a single \code{infile}. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. It never runs under \code{run = FALSE},
-and never changes the compiled command. Under \code{two_pass = TRUE} it lands
-\emph{before} the analysis pass, so it arrives while adding
+and never changes the compiled command. Under \code{two_pass = TRUE}, the
+warning comes \emph{before} the analysis pass. So it arrives while adding
 \code{audio_stream} can still save that pass.
 
 To switch the check off and skip its FFprobe call, use \code{options(tidymedia.check_tracks = FALSE)} for the session. Use \code{withr::local_options(tidymedia.check_tracks = FALSE)} for the rest of one function.
@@ -140,9 +144,10 @@ normalize_audio(video, "normalized.m4a", audio_codec = "aac", run = FALSE)
 EBU Recommendation R 128 (2014), \emph{Loudness normalisation and permitted maximum level of audio signals}; ITU-R BS.1770-4.
 }
 \seealso{
-\code{\link[=ffm_loudnorm]{ffm_loudnorm()}}, the builder it wraps; \code{\link[=normalize_audio_batch]{normalize_audio_batch()}}
-for the many-file form; \code{\link[=extract_audio]{extract_audio()}} and \code{\link[=convert_audio]{convert_audio()}}, the other
-verbs whose output is one audio stream.
+\code{\link[=ffm_loudnorm]{ffm_loudnorm()}}, the pipeline function it wraps.
+\code{\link[=normalize_audio_batch]{normalize_audio_batch()}} for the many-file form.
+\code{\link[=extract_audio]{extract_audio()}} and \code{\link[=convert_audio]{convert_audio()}}, the other task functions whose
+output is one audio stream.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

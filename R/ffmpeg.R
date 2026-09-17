@@ -2376,37 +2376,40 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 
 #' Normalize a file's audio loudness (EBU R128)
 #'
-#' Normalize the perceived loudness of a file's audio toward an EBU R128 target
-#' using FFmpeg's single-pass \code{loudnorm} filter, optionally downmixing the
-#' channel count and resampling. The output holds \strong{one audio stream and
-#' no video}, whatever the input and whatever container \code{outfile} names --
-#' so this is an audio-producing verb like \code{\link{extract_audio}} and
-#' \code{\link{convert_audio}}, not a pass-through one. To normalize a
-#' recording's soundtrack \emph{and} keep its picture, normalize to an audio
-#' file and mux it back with the \code{\link{ffmpeg}} escape hatch.
+#' Normalize the perceived loudness of a file's audio toward an EBU R128 target.
+#' The function uses FFmpeg's single-pass \code{loudnorm} filter. It can also
+#' downmix the channel count and resample. The output holds \strong{one audio
+#' stream and no video}, whatever the input and whatever container
+#' \code{outfile} names. So the output of this function is audio, as with
+#' \code{\link{extract_audio}} and \code{\link{convert_audio}}. It does not
+#' carry the other streams through. To normalize a recording's soundtrack
+#' \emph{and} keep its picture, first normalize to an audio file. Then put the
+#' audio back with the picture using the \code{\link{ffmpeg}} direct command.
+#' The glossary in \code{vignette("tidymedia")} explains media terms such as
+#' LUFS, true peak and sample rate.
 #'
 #' @details
-#' The default targets follow EBU Recommendation R 128 (2014) --
-#' \code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP, loudness
-#' measured per ITU-R BS.1770-4 -- with \code{loudness_range = 7}. This is
-#' single-pass (dynamic) \code{loudnorm}: the same input and arguments always
-#' compile to one reproducible command, with no separate measurement pass.
-#' Because the audio is filtered it is re-encoded; set \code{audio_codec} to
-#' name the output encoder, or leave it \code{NULL} to use the output
-#' container's default. Leaving \code{channels} at \code{NULL} preserves the
-#' source channel layout. Note that FFmpeg's \code{loudnorm} filter resamples its output (up to
-#' 192 kHz, capped by the encoder), so the output sample rate is \emph{not} the
-#' source rate unless you pin it: set \code{sample_rate} to control the output
+#' The default targets follow EBU Recommendation R 128 (2014). They are
+#' \code{target_loudness = -23} LUFS, \code{true_peak = -1} dBTP and
+#' \code{loudness_range = 7}. Loudness is measured per ITU-R BS.1770-4. This is
+#' single-pass (dynamic) \code{loudnorm}. The same input and arguments always
+#' compile to one reproducible command, with no separate measurement pass. The
+#' filter changes the audio, so FFmpeg re-encodes it. Set \code{audio_codec} to
+#' name the output encoder, or leave it \code{NULL} to use the default of the
+#' output container. Leaving \code{channels} at \code{NULL} keeps the source
+#' channel layout. FFmpeg's \code{loudnorm} filter resamples its output, up to
+#' 192 kHz, capped by the encoder. So the output sample rate is \emph{not} the
+#' source rate unless you set it. Set \code{sample_rate} to control the output
 #' rate.
 #'
-#' When no \code{audio_stream} is named and \code{infile} turns out to carry
-#' tracks the output will not, the verb warns -- the same warning
-#' \code{\link{extract_audio}} and \code{\link{convert_audio}} emit. Naming a
-#' track with \code{audio_stream} silences it, as does
+#' The function warns when no \code{audio_stream} is named and \code{infile}
+#' carries tracks that the output will not. \code{\link{extract_audio}} and
+#' \code{\link{convert_audio}} emit the same warning. Naming a track with
+#' \code{audio_stream} silences it, as does
 #' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
 #' `r dropped_audio_cost_sentences()` It never runs under \code{run = FALSE},
-#' and never changes the compiled command. Under \code{two_pass = TRUE} it lands
-#' \emph{before} the analysis pass, so it arrives while adding
+#' and never changes the compiled command. Under \code{two_pass = TRUE}, the
+#' warning comes \emph{before} the analysis pass. So it arrives while adding
 #' \code{audio_stream} can still save that pass.
 #'
 #' `r check_tracks_off_paragraph()`
@@ -2414,11 +2417,11 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #' @param infile A string containing the path to a media file (with audio). An
 #'   input with no audio stream is an FFmpeg error, not a silent copy of the
 #'   video.
-#' @param outfile A string containing the path of the audio file to write. Any
-#'   container FFmpeg can write is accepted and the compiled command does not
-#'   depend on which -- an audio container (\code{.wav}, \code{.flac}) holds the
-#'   result exactly as a video container (\code{.mkv}) does, the latter simply
-#'   carrying one audio stream and nothing else.
+#' @param outfile A string containing the path of the audio file to write. The
+#'   function accepts any container that FFmpeg can write. The compiled command
+#'   does not depend on which container it is. An audio container (\code{.wav},
+#'   \code{.flac}) holds the result exactly as a video container (\code{.mkv})
+#'   does. The video container carries one audio stream and nothing else.
 #' @param target_loudness The target integrated loudness, in LUFS
 #'   (`r loudnorm_bounds_rd("target_loudness")`; default \code{-23}, the EBU
 #'   R128 target).
@@ -2429,38 +2432,39 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #'   (`r loudnorm_bounds_rd("loudness_range")`; default \code{7}).
 #' @param channels The output channel count, e.g. \code{1} to downmix to mono (a
 #'   positive whole number), or \code{NULL} (default) to keep the source layout.
-#' @param sample_rate The output sample rate in Hz, e.g. \code{48000} (a positive
-#'   whole number), or \code{NULL} (default) to let \code{loudnorm} choose (it
-#'   resamples, up to 192 kHz encoder-capped -- not the source rate). Set this to
-#'   pin the output rate.
+#' @param sample_rate The output sample rate in Hz, e.g. \code{48000} (a
+#'   positive whole number). \code{NULL} (default) lets \code{loudnorm} choose.
+#'   It resamples, up to 192 kHz and capped by the encoder, and does not keep
+#'   the source rate. Set this argument to fix the output rate.
 #' @param audio_codec An optional string naming the output audio encoder (e.g.
 #'   \code{"aac"}, \code{"libmp3lame"}, \code{"flac"}), passed to FFmpeg's
-#'   \code{-codec:a}. \code{NULL} (default) emits no \code{-codec:a}, leaving
-#'   the output container's default encoder in place. \code{"copy"} is an error:
-#'   loudness normalization filters the audio, so the stream must be re-encoded
-#'   and cannot be copied.
-#' @param two_pass A logical: when \code{TRUE}, use accurate two-pass
-#'   (measured/linear) normalization instead of the default single-pass
-#'   (\code{FALSE}). A first \emph{analysis pass} measures the input's loudness,
-#'   and a second \emph{correction pass} feeds those measurements back with
-#'   \code{linear=true} so the output hits the EBU R128 target precisely.
-#'   Two-pass therefore \strong{always runs the analysis pass through FFmpeg}
-#'   (it needs the binary and readable input), even when \code{run = FALSE}: in
-#'   that case the analysis still runs and the returned value is the exact
-#'   correction command, left unexecuted. The single-pass default touches no
-#'   binary under \code{run = FALSE}. If the input is \strong{silent}, the
-#'   analysis pass measures its loudness as \code{-inf}; normalizing silence to
-#'   a target is undefined, so two-pass aborts with a clear error (the
-#'   single-pass default leaves silence untouched). The batch form differs here:
-#'   \code{\link{normalize_audio_batch}} does not abort on a silent row — it
-#'   sets that row aside, marks it in a \code{silent} column, and normalizes the
-#'   rest. When the analysis pass yields no usable measurement at all, the abort
-#'   is classed \code{tidymedia_loudnorm_no_measurement} — the same class the
-#'   batch form raises, so one handler covers both. Where FFmpeg exited non-zero
-#'   it also carries \code{tidymedia_ffmpeg_exit} and the exit number on
-#'   \code{tm_status}; where FFmpeg exited zero but printed no parseable
-#'   measurement block it carries the shared class alone. The silence abort
-#'   above is neither: a silent input \emph{was} measured.
+#'   \code{-codec:a}. \code{NULL} (default) sets no \code{-codec:a}, which
+#'   leaves the default encoder of the output container in place.
+#'   \code{"copy"} is an error. Loudness normalization filters the audio, so
+#'   the stream must be re-encoded and cannot be copied.
+#' @param two_pass A logical. When \code{TRUE}, the function uses accurate
+#'   two-pass (measured/linear) normalization. The default (\code{FALSE}) is
+#'   single-pass. A first \emph{analysis pass} measures the loudness of the
+#'   input. A second \emph{correction pass} feeds those measurements back with
+#'   \code{linear=true}, so the output hits the EBU R128 target precisely.
+#'   So two-pass \strong{always runs the analysis pass through FFmpeg}, even
+#'   when \code{run = FALSE}. It needs the binary and a readable input. Under
+#'   \code{run = FALSE}, the analysis still runs. The returned value is the
+#'   exact correction command, which is not run. The single-pass default
+#'   touches no binary under \code{run = FALSE}. If the input is
+#'   \strong{silent}, the analysis pass measures its loudness as \code{-inf}.
+#'   Normalizing silence to a target is undefined, so two-pass aborts with a
+#'   clear error. The single-pass default leaves silence untouched. The batch
+#'   form differs here. \code{\link{normalize_audio_batch}}
+#'   does not abort on a silent row. It sets that row aside, marks it in a \code{silent} column,
+#'   and normalizes the rest. When the analysis pass gives no usable
+#'   measurement at all, the abort has class
+#'   \code{tidymedia_loudnorm_no_measurement}. The batch form raises the same
+#'   class, so one handler covers both. Where FFmpeg exited non-zero, the abort
+#'   also carries \code{tidymedia_ffmpeg_exit}, and the exit number on
+#'   \code{tm_status}. Where FFmpeg exited zero but printed no measurement
+#'   block that can be parsed, the abort carries the shared class alone. The
+#'   silence abort above is neither: a silent input \emph{was} measured.
 #' @param audio_stream `r audio_stream_param("normalize", "normalizes", "first", extra = audio_stream_extras$normalize_one_track)`
 #' @param run A logical: run the (correction) command through FFmpeg
 #'   (\code{TRUE}, default) or return the compiled command without running it
@@ -2469,9 +2473,10 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}). Under
 #'   \code{two_pass = TRUE} this is the correction command built from the
 #'   measured values.
-#' @seealso [ffm_loudnorm()], the builder it wraps; [normalize_audio_batch()]
-#'   for the many-file form; [extract_audio()] and [convert_audio()], the other
-#'   verbs whose output is one audio stream.
+#' @seealso [ffm_loudnorm()], the pipeline function it wraps.
+#'   [normalize_audio_batch()] for the many-file form.
+#'   [extract_audio()] and [convert_audio()], the other task functions whose
+#'   output is one audio stream.
 #' @references `r ebu_r128_reference()`
 #' @family task functions
 #' @family audio selection functions
@@ -4834,49 +4839,53 @@ derive_normalized_names <- function(input) {
 
 #' Normalize Many Files' Audio Loudness From a Jobs Table
 #'
-#' Loudness-normalize the audio of many input files (EBU R128) from a single
-#' jobs tibble — the **batch** (table-driven) sibling of [normalize_audio()] for
-#' when you have more than one file to normalize. Each row is one input; the
-#' only required column names its source. This is a thin wrapper over
-#' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
-#' the same \code{loudnorm} pipeline (and per-value validation) as the scalar
-#' verb. Set \code{two_pass = TRUE} for accurate measured/linear normalization
-#' across the whole table (see \code{two_pass}).
+#' Normalize the audio loudness of many input files (EBU R128) from a single
+#' jobs tibble. This is the \strong{batch} (table-driven) form of
+#' [normalize_audio()], for when you have more than one file to normalize. Each
+#' row is one input, and the only required column names its source. The function
+#' is a thin wrapper over \code{\link{ffm_batch}}. It gives one reproducible
+#' compiled command per input. Each row uses the same \code{loudnorm} pipeline,
+#' and the same check of each value, as [normalize_audio()]. Set
+#' \code{two_pass = TRUE} for accurate measured/linear normalization across the
+#' whole table (see \code{two_pass}). The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as LUFS, encoder and
+#' sample rate.
 #'
-#' When a row names no \code{audio_stream} and its input turns out to carry
-#' tracks the output will not, the verb warns \strong{once} for the whole batch,
-#' naming every affected row. Naming a track silences it -- the
-#' \code{audio_stream} argument, or an \code{audio_stream} cell on every row --
-#' as does \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#' The function warns \strong{once} for the whole batch when a row names no
+#' \code{audio_stream} and its input carries tracks that the output will not.
+#' The warning names every affected row. Naming a track silences it. Use the
+#' \code{audio_stream} argument, or an \code{audio_stream} cell on every row.
+#' \code{suppressWarnings(classes = "tidymedia_dropped_audio")} silences it
+#' too.
 #' `r dropped_audio_cost_sentences(batch = TRUE)` The check never runs under
-#' \code{run = FALSE}, never changes any compiled command, and is skipped
-#' entirely when every row names a track. Under \code{two_pass = TRUE} it lands
-#' \emph{before} Phase 1, so it arrives while adding \code{audio_stream} can
-#' still save the analysis pass.
+#' \code{run = FALSE} and never changes any compiled command. It is skipped
+#' entirely when every row names a track. Under \code{two_pass = TRUE}, the
+#' warning comes \emph{before} the analysis pass. So it arrives while adding
+#' \code{audio_stream} can still save that pass.
 #'
 #' `r check_tracks_off_paragraph(batch = TRUE)`
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path). An optional \code{output} column names
-#'   the destination; when absent, one is derived per row by appending
-#'   \code{_normalized} to each input's basename, keeping the input's extension
-#'   (e.g. \code{clip.mkv} becomes \code{clip_normalized.mkv}) — note that the
-#'   derived name keeps a \emph{video} extension while the file itself holds
-#'   audio only, so name an \code{output} column explicitly when that matters.
-#'   Two rows naming the same output path are refused before any row runs
-#'   (with \code{two_pass = TRUE}, before the analysis pass): a path repeated in
-#'   the \code{output} column, or a repeated \code{input} when there is no
-#'   \code{output} column. Each of the five
-#'   loudness knobs — \code{target_loudness}, \code{true_peak},
-#'   \code{loudness_range}, \code{channels}, \code{sample_rate} — may also appear
-#'   as a column to override the corresponding argument on a per-row basis; rows
-#'   (or knobs) that omit the column fall back to the argument's value. An
-#'   optional \code{audio_codec} column (character) names each row's output
-#'   audio encoder, with \code{NA} meaning "leave the encoder unset"; rows
-#'   omitting it fall back to the \code{audio_codec} argument. An optional
-#'   numeric \code{audio_stream} column (\code{NA} to normalize that row's first
-#'   audio track) likewise overrides the \code{audio_stream} argument per row.
-#'   Any other columns are ignored.
+#'   the destination. Without it, the function derives one per row. It appends
+#'   \code{_normalized} to the basename of each input and keeps the extension
+#'   of the input (e.g. \code{clip.mkv} becomes \code{clip_normalized.mkv}).
+#'   The derived name keeps a \emph{video} extension while the file itself
+#'   holds audio only. So name an \code{output} column yourself when that
+#'   matters. The function refuses two rows that name the same output path
+#'   before any row runs. With \code{two_pass = TRUE}, that is before the
+#'   analysis pass. The refusal covers a path repeated in the \code{output}
+#'   column, or a repeated \code{input} when there is no \code{output} column.
+#'   Five loudness arguments can also appear as a column that overrides the
+#'   argument per row. They are \code{target_loudness}, \code{true_peak},
+#'   \code{loudness_range}, \code{channels} and \code{sample_rate}. Rows that
+#'   omit the column fall back to the value of the argument. An optional
+#'   \code{audio_codec} column (character) names the output audio encoder of
+#'   each row. There, \code{NA} means "leave the encoder unset". Rows that omit
+#'   it fall back to the \code{audio_codec} argument. An optional numeric
+#'   \code{audio_stream} column likewise overrides the \code{audio_stream}
+#'   argument per row. There, \code{NA} normalizes the first audio track of
+#'   that row. Any other columns are ignored.
 #' @param target_loudness,true_peak,loudness_range The EBU R128 loudness targets
 #'   applied to every row, unless \code{jobs} carries a column of the same name
 #'   (see \code{jobs}). Defaults follow EBU Recommendation R 128 (2014):
@@ -4887,50 +4896,52 @@ derive_normalized_names <- function(input) {
 #'   mono. \code{NULL} (default) keeps each source's channel layout.
 #' @param sample_rate The output sample rate in Hz applied to every row, unless
 #'   \code{jobs} carries a \code{sample_rate} column. \code{NULL} (default) lets
-#'   \code{loudnorm} choose (it resamples, up to 192 kHz encoder-capped — not the
-#'   source rate); set this to pin the output rate.
+#'   \code{loudnorm} choose. It resamples, up to 192 kHz and capped by the
+#'   encoder, and does not keep the source rate. Set this argument to fix the
+#'   output rate.
 #' @param audio_codec The output audio encoder applied to every row, unless
 #'   \code{jobs} carries an \code{audio_codec} column, e.g. \code{"aac"}.
-#'   \code{NULL} (default) emits no \code{-codec:a}, leaving the output
-#'   container's default encoder in place. \code{"copy"} is an error: loudness
-#'   normalization filters the audio, so it must be re-encoded. See
+#'   \code{NULL} (default) sets no \code{-codec:a}, which leaves the default
+#'   encoder of the output container in place. \code{"copy"} is an error.
+#'   Loudness normalization filters the audio, so it must be re-encoded. See
 #'   \code{\link{normalize_audio}}.
-#' @param two_pass A logical selecting the batch normalization mode for
-#'   \emph{every} row (\code{two_pass} is a whole-table switch, not a per-row
-#'   column). \code{FALSE} (default) keeps the single-pass \code{loudnorm}
-#'   pipeline. \code{TRUE} runs the accurate two-pass (measured/linear) path as a
-#'   two-phase fan-out: an \emph{analysis pass} first measures every input's
-#'   loudness (honoring \code{parallel} and each row's targets), and a
-#'   \emph{correction pass} then feeds those measurements back with
-#'   \code{linear=true} so each output hits its EBU R128 target precisely — the
-#'   table-wide sibling of \code{\link{normalize_audio}}'s \code{two_pass}. The
-#'   five measured values are surfaced on the result as columns \code{measured_I},
-#'   \code{measured_TP}, \code{measured_LRA}, \code{measured_thresh}, and
-#'   \code{offset}. Because it must measure each input, two-pass
-#'   \strong{always runs the analysis pass through FFmpeg} (it needs the binary
-#'   and readable inputs), even when \code{run = FALSE}. If any row's analysis
-#'   fails or yields no parseable measurement, the call aborts — naming the
-#'   offending row(s) — before any correction command is built. That abort is
-#'   classed \code{tidymedia_loudnorm_no_measurement} — the same class the scalar
-#'   \code{\link{normalize_audio}} raises for this event — and carries the same
-#'   row numbers on \code{tm_rows}, alongside \code{tm_row_status}: each row's
-#'   FFmpeg exit status, or \code{NA} where the row exited zero but printed
-#'   nothing parseable. It carries no single exit status on \code{tm_status},
-#'   and is not classed \code{tidymedia_ffmpeg_exit}, because it also fires for
-#'   rows that exited zero: a batch can mix causes, so there is no one number to
-#'   report. The scalar form carries both only where FFmpeg exited non-zero;
-#'   where it exited zero and printed nothing parseable the scalar abort
-#'   carries the shared class alone, with no \code{tm_status} either.
-#'   \strong{Silent}
-#'   rows are the exception: a silent input (analysis loudness \code{-inf})
-#'   cannot be normalized to a target, but one silent row does not abort the
-#'   batch — the non-silent rows are normalized, the silent rows are marked in a
-#'   logical \code{silent} column (with \code{success = FALSE} and no output
-#'   written), and a warning names them. This is where the batch form and the
-#'   scalar form differ: \code{\link{normalize_audio}} aborts on a silent
-#'   input, because one silent input is the whole call, while here the other
-#'   rows still have work to do. The single-pass default touches no binary under
-#'   \code{run = FALSE}.
+#' @param two_pass A logical that selects the normalization mode for
+#'   \emph{every} row. It applies to the whole table and is not a per-row
+#'   column. \code{FALSE} (default) keeps the single-pass \code{loudnorm}
+#'   pipeline. \code{TRUE} runs accurate two-pass (measured/linear)
+#'   normalization in two phases. An \emph{analysis pass} first measures the
+#'   loudness of every input. It honors \code{parallel} and the targets of each
+#'   row. A \emph{correction pass} then feeds those measurements back with
+#'   \code{linear=true}, so each output hits its EBU R128 target precisely.
+#'   This is the table-wide form of \code{two_pass} in
+#'   \code{\link{normalize_audio}}. The result shows the five measured values
+#'   as columns \code{measured_I}, \code{measured_TP}, \code{measured_LRA},
+#'   \code{measured_thresh} and \code{offset}. Two-pass must measure each
+#'   input. So it \strong{always runs the analysis pass through FFmpeg}, even
+#'   when \code{run = FALSE}. It needs the binary and readable inputs. If the
+#'   analysis of any row fails or gives no measurement that can be parsed, the
+#'   call aborts and names those rows. It aborts before it builds any
+#'   correction command. That abort has class
+#'   \code{tidymedia_loudnorm_no_measurement}, the same class that
+#'   \code{\link{normalize_audio}} raises for this event. It carries the row
+#'   numbers on \code{tm_rows}, alongside \code{tm_row_status}. That field has
+#'   the FFmpeg exit status of each row, or \code{NA} where the row exited zero
+#'   but printed nothing that can be parsed. It carries no single exit status
+#'   on \code{tm_status}, and it does not have class
+#'   \code{tidymedia_ffmpeg_exit}. The reason is that it also fires for
+#'   rows that exited zero. A batch can mix causes, so there is no one number to
+#'   report. The one-file form carries both only where FFmpeg exited non-zero.
+#'   Where FFmpeg exited zero and printed nothing that can be parsed, the
+#'   one-file abort carries the shared class alone, with no \code{tm_status}
+#'   either. \strong{Silent} rows are the exception. A silent input (analysis
+#'   loudness \code{-inf}) cannot be normalized to a target, but one silent row
+#'   does not abort the batch. The function normalizes the rows that are not
+#'   silent. It marks the silent rows in a logical \code{silent} column, with
+#'   \code{success = FALSE} and no output written, and a warning names them.
+#'   This is where the batch form and the one-file form differ.
+#'   \code{\link{normalize_audio}} aborts on a silent input, because one silent
+#'   input is the whole call. Here, the other rows still have work to do. The
+#'   single-pass default touches no binary under \code{run = FALSE}.
 #' @param audio_stream `r audio_stream_param("normalize", "normalizes", "first", batch = TRUE, extra = audio_stream_extras$normalize_one_track)`
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}). Under
@@ -4939,24 +4950,25 @@ derive_normalized_names <- function(input) {
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: normalize in
 #'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
 #'   default). Parallelism follows the active \code{\link[future:plan]{future}}
-#'   plan; \code{TRUE} under the default sequential plan runs one input at a time
-#'   and warns. Set a plan first, e.g.
+#'   plan. \code{TRUE} under the default sequential plan runs one input at a
+#'   time and warns. Set a plan first, e.g.
 #'   \code{future::plan(future::multisession)}.
 #' @inheritParams anonymize_video_batch
-#' @return `r batch_return("output")` Under \code{two_pass = TRUE}
-#'   the result also carries the five measured columns (\code{measured_I} etc.)
-#'   and a logical \code{silent} column, and the \code{command} column holds the
-#'   linear correction commands (\code{NA} for silent rows, which carry \code{NA}
-#'   measurements and are not normalized). The two-pass result's schema is
-#'   independent of how many rows are silent: the opt-in \code{verified} column
-#'   (under \code{verify}) and provenance manifest (under \code{manifest}, read
-#'   with \code{\link{ffm_manifest}}) are present whenever requested, even when
-#'   \emph{every} row is silent -- silent rows simply carry \code{NA} for those
-#'   outputs.
+#' @return `r batch_return("output")` Under \code{two_pass = TRUE}, the result
+#'   also carries the five measured columns (\code{measured_I} etc.) and a
+#'   logical \code{silent} column. The \code{command} column then holds the
+#'   linear correction commands. It is \code{NA} for silent rows, which carry
+#'   \code{NA} measurements and are not normalized. The columns of the two-pass
+#'   result do not depend on how many rows are silent. The \code{verified}
+#'   column (under \code{verify}) and the provenance manifest (under
+#'   \code{manifest}, read with \code{\link{ffm_manifest}}) are present
+#'   whenever requested. That holds even when \emph{every} row is silent.
+#'   Silent rows carry \code{NA} for those outputs.
 #' @references `r ebu_r128_reference()`
-#' @seealso [normalize_audio()] for the single-input form; [ffm_batch()] for the
-#'   batch runner and the arguments forwarded through \code{...};
-#'   [standardize_video_batch()] for the video-side table-driven sibling.
+#' @seealso [normalize_audio()] for the single-input form.
+#'   [ffm_batch()] for the batch runner and the arguments forwarded through
+#'   \code{...}.
+#'   [standardize_video_batch()] for the table-driven form on the video side.
 #' @family task functions
 #' @family audio selection functions
 #' @examples

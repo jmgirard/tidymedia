@@ -460,15 +460,33 @@ The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` o
 
 | Page | Words | Term | Dash | Stems (AC3) | Result |
 |---|---|---|---|---|---|
-| convert_audio | 0 | 3 | 0 | `codec`, `encod`, `stream` | |
-| convert_audio_batch | 3 | 3 | 0 | `codec`, `stream` | |
-| extract_audio | 1 | 1 | 0 | `codec`, `container`, `encod`, `stream` | |
-| extract_audio_batch | 4 | 2 | 0 | `codec`, `container`, `encod`, `stream` | |
-| extract_frame | 0 | 0 | 0 | — | |
-| extract_frame_batch | 4 | 1 | 0 | `frame rate` | |
-| ffmpeg | 1 | 2 | 0 | — | |
-| ffmpeg_codecs | 0 | 2 | 0 | `codec`, `encod` | |
-| ffmpeg_encoders | 0 | 2 | 0 | `codec`, `encod` | |
-| hardware_encoder | 4 | 1 | 0 | `codec`, `container`, `encod` | |
-| sample_frames | 3 | 3 | 0 | `frame rate`, `sampl(e\|ing) rate` | |
-| sample_frames_batch | 3 | 2 | 0 | `sampl(e\|ing) rate` | |
+| convert_audio | 0 | 3 | 0 | `codec`, `encod`, `stream` | No finding. Names the glossary. "sentinel" became a plain statement of what `NULL` means here. |
+| convert_audio_batch | 3 | 3 | 0 | `codec`, `stream` | No finding. Names the glossary. "scalar verb" became "`convert_audio()`". |
+| extract_audio | 1 | 1 | 0 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. "remux" became "copies the stream into the new container". |
+| extract_audio_batch | 4 | 2 | 0 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. "transcode" became "re-encode". |
+| extract_frame | 0 | 0 | 0 | — | No finding. No stem. "builder" became "pipeline function". |
+| extract_frame_batch | 4 | 1 | 0 | `frame rate` | No finding. Names the glossary. |
+| ffmpeg | 1 | 2 | 0 | — | No finding. No stem. "Layer 0 escape hatch" became "direct command". |
+| ffmpeg_codecs | 0 | 2 | 0 | `codec`, `encod` | No finding. Names the glossary. |
+| ffmpeg_encoders | 0 | 2 | 0 | `codec`, `encod` | No finding. Names the glossary. |
+| hardware_encoder | 4 | 1 | 0 | `codec`, `container`, `encod` | No finding. Names the glossary. "toggle" became "argument", "verbs" became "task functions", and "the table holds" became "the package supports". |
+| sample_frames | 3 | 3 | 0 | `frame rate`, `sampl(e\|ing) rate` | No finding. Names the glossary. "front door" became "first step". |
+| sample_frames_batch | 3 | 2 | 0 | `sampl(e\|ing) rate` | No finding. Names the glossary. |
+
+#### Results at head (T5)
+
+- AC1, AC2: the sweep over the 12 pages at head reads 480 sentences, prints no finding and exits 0.
+- AC3: the 10 pages with a stem at head each name the glossary. `ffmpeg` and `extract_frame` have no stem.
+- AC4: `git grep -wF` finds `tidymedia.check_tracks`, `tidymedia.hardware_encoders` and `tidymedia_dropped_audio` in `man/*.Rd` at head.
+- AC5: `git diff --name-only efb2b2c4 HEAD -- man/` lists only the 12 domain pages.
+- Tests: no test pins wording that changed, so no test was changed or removed.
+- Shared text: the `run`, `parallel` and `...` arguments of `extract_audio_batch()` stay as they were, because pages outside the domain inherit them.
+- Claim audit: a fresh reader read about 118 claims and found no false claim that the branch added. It found 1 added claim on `?ffmpeg` (that the two capability functions return data frames) and 2 unclear sentences on `?hardware_encoder`. The added claim was put back to the base claim, and the 2 sentences were reworded.
+
+#### Base claims found false
+
+The code does not settle this claim. It keeps its meaning at head, and it is the M132 part of the `ffm_*()` help-text follow-up row in `cairn/ROADMAP.md`.
+
+| Page | Claim | Evidence |
+|---|---|---|
+| `hardware_encoder` | A container that does not take H.264, such as `.webm`, needs an HEVC-family or AV1-family `video_codec`. | WebM does not take HEVC, so only AV1 fits the example, and only `nvenc` has an AV1 encoder (`hardware_backend_families()` in `R/ffmpeg.R`). |

@@ -52,7 +52,7 @@ with no capable GPU. To override detection in a known environment (or in
 tests), set \code{options(tidymedia.hardware_encoders = )} to a character
 vector of encoder names to treat as available.
 
-The \code{hardware} argument of these task functions uses them:
+These task functions use them for their \code{hardware} argument:
 \code{\link{standardize_video}}, \code{\link{format_for_web}},
 \code{\link{anonymize_video}}, \code{\link{crop_video}},
 \code{\link{segment_video}}, \code{\link{compare_videos}},
@@ -73,7 +73,7 @@ has_hardware_encoder("h264", "nvenc")
 }
 \seealso{
 \code{\link{ffmpeg_encoders}} for the full encoder list.
-The \code{hardware} argument of these functions uses this page's functions:
+These task functions use this page for their \code{hardware} argument:
 \code{\link{standardize_video}}, \code{\link{format_for_web}},
 \code{\link{anonymize_video}}, \code{\link{crop_video}},
 \code{\link{segment_video}}, \code{\link{compare_videos}},

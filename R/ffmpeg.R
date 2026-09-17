@@ -10,8 +10,8 @@
 #'
 #' @param command A string containing the arguments to pass to FFmpeg.
 #' @return A character vector containing the text output by FFmpeg.
-#' @seealso [ffmpeg_codecs()] and [ffmpeg_encoders()] return what FFmpeg
-#'   supports as data frames. The `ffm_*()` pipeline functions, such as
+#' @seealso [ffmpeg_codecs()] and [ffmpeg_encoders()] ask FFmpeg what it
+#'   supports. The `ffm_*()` pipeline functions, such as
 #'   [ffm_run()], are a safer way to build a command.
 #' @family direct command functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
@@ -2930,7 +2930,7 @@ hardware_codec_families <- function() {
 #' tests), set \code{options(tidymedia.hardware_encoders = )} to a character
 #' vector of encoder names to treat as available.
 #'
-#' The \code{hardware} argument of these task functions uses them:
+#' These task functions use them for their \code{hardware} argument:
 #' \code{\link{standardize_video}}, \code{\link{format_for_web}},
 #' \code{\link{anonymize_video}}, \code{\link{crop_video}},
 #' \code{\link{segment_video}}, \code{\link{compare_videos}},
@@ -2962,7 +2962,7 @@ hardware_codec_families <- function() {
 #'   above. \code{has_hardware_encoder()} returns \code{FALSE} only for a pair
 #'   that the package supports and this FFmpeg build does not list.
 #' @seealso \code{\link{ffmpeg_encoders}} for the full encoder list.
-#'   The \code{hardware} argument of these functions uses this page's functions:
+#'   These task functions use this page for their \code{hardware} argument:
 #'   \code{\link{standardize_video}}, \code{\link{format_for_web}},
 #'   \code{\link{anonymize_video}}, \code{\link{crop_video}},
 #'   \code{\link{segment_video}}, \code{\link{compare_videos}},

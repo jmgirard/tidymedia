@@ -25,8 +25,8 @@ ffmpeg("-version")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}} and \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}} return what FFmpeg
-supports as data frames. The \verb{ffm_*()} pipeline functions, such as
+\code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}} and \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}} ask FFmpeg what it
+supports. The \verb{ffm_*()} pipeline functions, such as
 \code{\link[=ffm_run]{ffm_run()}}, are a safer way to build a command.
 
 Other direct command functions:

@@ -973,124 +973,133 @@ ffmpeg_exit_status <- function(cnd) {
 
 #' Split a media file into separate audio and video files
 #'
-#' By default each stream is copied, not re-encoded (\code{audio_codec =
-#' "copy"}, \code{video_codec = "copy"}): separation is lossless and fast, but
-#' each output container must support the source codec (e.g. write AAC audio
-#' from an MP4 to \code{.aac} or \code{.m4a}, not \code{.mp3}). Name an encoder
-#' instead (\code{audio_codec = "libmp3lame"}) to transcode that stream, or pass
-#' \code{NULL} to emit no codec option at all and let the output extension pick
-#' the encoder. Each argument governs only its own output file. Where the video
-#' is re-encoded, \code{hardware = "nvenc"} or \code{"videotoolbox"} moves
-#' that encode onto a GPU; the audio output is never affected.
+#' By default, each stream is copied, not re-encoded (\code{audio_codec =
+#' "copy"}, \code{video_codec = "copy"}). A copy loses no quality and is fast.
+#' Each output container must then support the source codec. For example, write
+#' AAC audio from an MP4 to \code{.aac} or \code{.m4a}, not to \code{.mp3}. To
+#' re-encode a stream, name an encoder (\code{audio_codec = "libmp3lame"}). Pass
+#' \code{NULL} to set no codec option, so the output extension picks the
+#' encoder. Each argument governs only its own output file. Where the video is
+#' re-encoded, \code{hardware = "nvenc"} or \code{"videotoolbox"} moves that
+#' encode onto a GPU. The audio output is never affected. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec, container
+#' and stream copy.
 #'
 #' @inheritParams extract_audio
 #' @param audiofile `r write_path_param("audio")`
 #' @param videofile `r write_path_param("video")`
-#' @param audio_codec A string naming the encoder for \code{audiofile}, passed
-#'   to FFmpeg's \code{-codec:a}. The default \code{"copy"} stream-copies the
-#'   audio losslessly; a codec name (e.g. \code{"libmp3lame"}) transcodes it;
-#'   \code{NULL} emits no \code{-codec:a}, leaving the encoder to the
-#'   \code{audiofile} extension.
-#' @param video_codec A string naming the encoder for \code{videofile}, passed
-#'   to FFmpeg's \code{-codec:v}. The default \code{"copy"} stream-copies the
-#'   video losslessly; a codec name (e.g. \code{"libx264"}) transcodes it;
-#'   \code{NULL} emits no \code{-codec:v}, leaving the encoder to the
-#'   \code{videofile} extension.
-#' @param hardware The encoder backend for \code{videofile}: \code{"none"}
-#'   (default, the software \code{video_codec}), \code{"nvenc"} for NVIDIA
-#'   GPU encoding, or \code{"videotoolbox"} for Apple GPU encoding, each
-#'   using that backend's encoder for \code{video_codec}'s family (e.g.
+#' @param audio_codec A string that names the encoder for \code{audiofile}. It
+#'   goes to FFmpeg's \code{-codec:a}. The default \code{"copy"} copies the
+#'   audio stream with no quality loss. A codec name (e.g.
+#'   \code{"libmp3lame"}) re-encodes it. \code{NULL} sets no \code{-codec:a},
+#'   so the \code{audiofile} extension picks the encoder.
+#' @param video_codec A string that names the encoder for \code{videofile}. It
+#'   goes to FFmpeg's \code{-codec:v}. The default \code{"copy"} copies the
+#'   video stream with no quality loss. A codec name (e.g. \code{"libx264"})
+#'   re-encodes it. \code{NULL} sets no \code{-codec:v}, so the
+#'   \code{videofile} extension picks the encoder.
+#' @param hardware The encoder backend for \code{videofile}. \code{"none"}
+#'   (default) uses the software \code{video_codec}. \code{"nvenc"} uses NVIDIA
+#'   GPU encoding, and \code{"videotoolbox"} uses Apple GPU encoding. Each uses
+#'   its own encoder for the family of \code{video_codec}. For example,
 #'   \code{"libx264"} becomes \code{"h264_nvenc"} or
-#'   \code{"h264_videotoolbox"}), assuming the H.264 family when
-#'   \code{video_codec = NULL}. Only video is encoded on the GPU, so this
-#'   never affects \code{audiofile}. Because this verb's video default is a
-#'   stream copy, which runs no encoder at all, a non-\code{"none"}
-#'   \code{hardware} alongside \code{video_codec = "copy"} is an error: name
-#'   an encoder or pass \code{video_codec = NULL}. See
+#'   \code{"h264_videotoolbox"}. With \code{video_codec = NULL}, the family is
+#'   H.264. Only video is encoded on the GPU, so this never affects
+#'   \code{audiofile}. The default \code{video_codec = "copy"} is a stream
+#'   copy, which runs no encoder at all. So a \code{hardware} other than
+#'   \code{"none"} with \code{video_codec = "copy"} is an error. Name an
+#'   encoder or pass \code{video_codec = NULL}. See
 #'   \code{\link{has_hardware_encoder}} for availability and its caveats.
 #'   `r hardware_probe_sentences()`
 #'   The stream-copy conflict above is caught first, so such a call aborts
-#'   without probing.
+#'   without asking FFmpeg.
 #' @param fallback `r fallback_param("software", unset = "injecting")`
 #' @param audio_stream `r audio_stream_param("write to \\code{audiofile}", "keeps", "every", extra = audio_stream_extras$separation_container)`
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
 #' @return A named character vector of the two compiled commands
-#'   (\code{audio}, \code{video}); invisible when \code{run = TRUE}. Under
-#'   \code{run = TRUE} the audio command runs first and the video command runs
-#'   second, whether or not the audio command succeeded. A failed audio command
-#'   still aborts the call, and the video command has written \code{videofile}
-#'   by then unless it failed too; see \emph{When the audio output fails}.
-#' @seealso [ffm_map()] and [ffm_codec()], the builders it wraps;
-#'   [has_hardware_encoder()] for the \code{hardware} toggle;
-#'   [extract_audio()] to pull out just the audio;
+#'   (\code{audio}, \code{video}). It is invisible when \code{run = TRUE}. Under
+#'   \code{run = TRUE}, the audio command runs first and the video command runs
+#'   second. The video command runs whether or not the audio command succeeded.
+#'   A failed audio command still aborts the call. By then, the video command
+#'   has written \code{videofile}, unless it failed too. See \emph{When the
+#'   audio output fails}.
+#' @seealso [ffm_map()] and [ffm_codec()], the pipeline functions it wraps.
+#'   [has_hardware_encoder()] for the \code{hardware} argument.
+#'   [extract_audio()] to pull out just the audio.
 #'   [probe_audio()] to list an input's audio tracks.
 #' @section When the audio output fails:
-#' The two commands run in order — audio first, video second — and the video
-#' command runs even when the audio one has already failed, so a failed audio
-#' half does not cost you the video. On that path the call still aborts with the
-#' audio failure, and that error carries one added line naming the video file
-#' that was written. When the video command fails as well, the added line is not
-#' there, the audio failure is still the error you get, and FFmpeg's own output
-#' for the failed video command is printed above it.
+#' The two commands run in order: audio first, video second. The video command
+#' runs even when the audio command failed, so a failed audio half does not cost
+#' you the video. In that case, the call still aborts with the audio failure.
+#' That error carries one added line that names the video file that was written.
+#' When the video command fails too, the added line is not there. The audio
+#' failure is still the error you get. FFmpeg's own output for the failed video
+#' command is printed above it.
 #'
-#' A reached wall-clock limit on the audio command is held like any other audio
-#' failure, so the video command still runs — on a fresh limit of its own, since
-#' \code{\link{with_timeout}()} bounds each spawned program rather than the
-#' call. A call whose audio half reaches the limit can therefore wait up to two
-#' limits rather than one.
+#' A time limit reached on the audio command is held like any other audio
+#' failure, so the video command still runs. The video command gets a fresh
+#' limit of its own, because \code{\link{with_timeout}()} limits each program
+#' that the call starts, not the call. So a call whose audio half reaches the
+#' limit can wait up to two limits, not one.
 #'
-#' What a failed command leaves at its own output path is the same rule on
-#' either path: a partial file that run wrote is removed, while a file that was
-#' already at that path and that FFmpeg never wrote to is left exactly as it
-#' was. So neither failure path promises the path is empty afterwards — only
-#' that nothing half-written is left there. The audio failure's own error says
-#' which of the two happened to \code{audiofile}. What became of the video
-#' command is on the same error's \code{tm_video_error} field: the condition
-#' that command raised when it failed too, and \code{NULL} when it succeeded.
+#' A failed command treats its own output path by the same rule on either path.
+#' It removes a partial file that the run wrote. It leaves a file that was
+#' already at that path, and that FFmpeg never wrote to, exactly as it was. So
+#' neither failure path promises that the path is empty afterwards. It promises
+#' only that nothing half-written is left there. The audio failure's own error
+#' says which of the two happened to \code{audiofile}. The same error's
+#' \code{tm_video_error} field says what became of the video command. It holds
+#' the condition that command raised when it failed too, and \code{NULL} when it
+#' succeeded.
 #'
-#' Because the default keeps every audio track, writing a multi-track input to a
-#' container that holds only one (\code{.aac}, \code{.mp3}, \code{.wav}) makes
-#' FFmpeg fail. When that happens the error additionally reports how many audio
-#' tracks \code{infile} carries and names the two ways out — \code{audio_stream}
-#' to write one track, or a container such as \code{.mka} or \code{.m4a} to keep
-#' them all.
+#' The default keeps every audio track. So FFmpeg fails when it writes a
+#' multi-track input to a container that holds only one track (\code{.aac},
+#' \code{.mp3}, \code{.wav}). When that happens, the error also reports how many
+#' audio tracks \code{infile} carries, and it names the two ways out. Use
+#' \code{audio_stream} to write one track, or use a container such as
+#' \code{.mka} or \code{.m4a} to keep them all.
 #'
-#' That extra report is attached only when all four of these hold: no
-#' \code{audio_stream} was named, FFmpeg returned a non-zero exit status,
-#' \code{infile} carries more than one audio track, and \code{audiofile}'s
-#' extension is not among the containers named here as holding several —
-#' `r multi_audio_rd_list()`. Those `r multi_audio_rd_count()`
-#' are an exclusion list and not a survey: FFmpeg writes several audio streams
-#' into other containers too
-#' (\code{.avi} and \code{.nut} among them), and a failure on one of those still
-#' gets the report. The container condition keeps the report off a call that is
-#' already doing what the report would advise: writing to one of the
-#' `r multi_audio_rd_count()`, the failure cannot be the container refusing a
-#' second audio stream, so whatever
-#' FFmpeg did object to would go unnamed. Fail any of the four and the error you
-#' get is the one the run itself raised, whatever that error is — same class,
-#' same status field, same message, but for the line saying the video output was
-#' written, which a failing audio half carries when the video command wrote its
-#' file and the audio failure is an rlang condition. (When the leg that fails is
-#' the exit status itself, there is no exit status to carry: a run that never
-#' reached FFmpeg has none.)
+#' The error carries that extra report only when all four of these hold:
+#' \itemize{
+#'   \item No \code{audio_stream} was named.
+#'   \item FFmpeg returned a non-zero exit status.
+#'   \item \code{infile} carries more than one audio track.
+#'   \item The extension of \code{audiofile} is not among the containers named
+#'     here as holding several audio streams.
+#' }
+#' Those containers are `r multi_audio_rd_list()`. The
+#' `r multi_audio_rd_count()` are an exclusion list and not a survey. FFmpeg
+#' writes several audio streams into other containers too, \code{.avi} and
+#' \code{.nut} among them. A failure on one of those still gets the report. The
+#' container condition keeps the report off a call that already does what the
+#' report advises. When a call writes to one of the `r multi_audio_rd_count()`,
+#' the failure cannot be the container refusing a second audio stream. The
+#' report would then leave unnamed whatever FFmpeg did object to.
 #'
-#' What the report states is what the call \emph{did} — the track count, and that
-#' every track was mapped into one output — never why FFmpeg refused. FFmpeg's
-#' own error and exit status are printed beneath it and carried on the condition,
-#' and they remain the only authority on the cause. Several causes look alike
-#' from here: a stream copy into a container that will not hold the source codec
-#' (the default \code{audio_codec = "copy"} into \code{.mp3}, say) fails on a
-#' multi-track input too, and so do an unknown encoder and a missing output
-#' directory.
+#' If any of the four does not hold, the error you get is the one the run itself
+#' raised, whatever that error is. It has the same class, the same status field
+#' and the same message. The one difference is the line saying that the video
+#' output was written. A failing audio half carries that line when the video
+#' command wrote its file and the audio failure is an rlang condition. When the
+#' exit status is the one that does not hold, there is no exit status to carry.
+#' A run that never reached FFmpeg has none.
+#'
+#' The report states what the call \emph{did}: the track count, and that every
+#' track was mapped into one output. It never states why FFmpeg refused.
+#' FFmpeg's own error and exit status are printed beneath it and carried on the
+#' condition. They remain the only authority on the cause. Several causes look
+#' alike from here. A stream copy into a container that will not hold the source
+#' codec fails on a multi-track input too. The default \code{audio_codec =
+#' "copy"} into \code{.mp3} is one example. An unknown encoder and a missing
+#' output directory fail the same way.
 #'
 #' The condition carries two class names, so a caller can catch it at either
-#' width. It is \code{tidymedia_ffmpeg_exit}, the class every non-zero FFmpeg
-#' exit raises, which is what an exit-status handler catches — the number is on
-#' the condition's \code{tm_status} field. It is also
-#' \code{tidymedia_multitrack_separation}, the class of the enriched diagnostic
-#' itself, which is what to catch when it is this failure in particular you want:
+#' width. It is \code{tidymedia_ffmpeg_exit}, the class that every non-zero
+#' FFmpeg exit raises. An exit-status handler catches that class, and the number
+#' is on the condition's \code{tm_status} field. It is also
+#' \code{tidymedia_multitrack_separation}, the class of this report itself.
+#' Catch that class when it is this failure in particular you want:
 #'
 #' \preformatted{
 #' tryCatch(
@@ -1100,20 +1109,20 @@ ffmpeg_exit_status <- function(cnd) {
 #' }
 #'
 #' When the report is omitted, the error that reaches the caller is the one the
-#' run itself raised, but for that video-output line: a non-zero exit still
-#' answers to \code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at
-#' all answers to neither class here: an FFmpeg the package cannot locate raises an error
-#' carrying no \code{tidymedia_} class at all, and a reached limit raises
-#' \code{tidymedia_timeout}.
+#' run itself raised, apart from that video-output line. A non-zero exit still
+#' answers to \code{tidymedia_ffmpeg_exit}. A failure that is not an exit
+#' answers to neither class here. An FFmpeg that the package cannot locate
+#' raises an error with no \code{tidymedia_} class at all. A reached limit
+#' raises \code{tidymedia_timeout}.
 #'
-#' Counting the tracks means running FFprobe, so this is \strong{best-effort}: it
-#' is added when FFprobe is available and \code{infile} can be probed, and
-#' omitted silently otherwise, leaving FFmpeg's own error alone — so the report
-#' may simply not appear, and its absence is never itself a second failure. It
-#' never runs under \code{run = FALSE}, never changes the compiled commands, and
-#' is skipped entirely when \code{audio_stream} names a track (with one track
-#' mapped, the track count cannot be what FFmpeg objected to) or when
-#' \code{audiofile} names one of the multi-stream containers above.
+#' Counting the tracks means running FFprobe, so the report is not guaranteed.
+#' The error has it when FFprobe is available and \code{infile} can be probed.
+#' Otherwise the package omits it silently and leaves FFmpeg's own error alone.
+#' So the report may not appear, and its absence is never itself a second
+#' failure. The count never runs under \code{run = FALSE} and never changes the
+#' compiled commands. It is skipped when \code{audio_stream} names a track, or
+#' when \code{audiofile} names one of the multi-stream containers above. With
+#' one track mapped, the track count cannot be what FFmpeg objected to.
 #' @family task functions
 #' @family audio selection functions
 #' @examples
@@ -2367,37 +2376,41 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 
 #' Normalize a file's audio loudness (EBU R128)
 #'
-#' Normalize the perceived loudness of a file's audio toward an EBU R128 target
-#' using FFmpeg's single-pass \code{loudnorm} filter, optionally downmixing the
-#' channel count and resampling. The output holds \strong{one audio stream and
-#' no video}, whatever the input and whatever container \code{outfile} names --
-#' so this is an audio-producing verb like \code{\link{extract_audio}} and
-#' \code{\link{convert_audio}}, not a pass-through one. To normalize a
-#' recording's soundtrack \emph{and} keep its picture, normalize to an audio
-#' file and mux it back with the \code{\link{ffmpeg}} escape hatch.
+#' Normalize the perceived loudness of a file's audio toward an EBU R128 target.
+#' The function uses FFmpeg's single-pass \code{loudnorm} filter. It can also
+#' downmix the channel count and resample. The output holds \strong{one audio
+#' stream and no video}, whatever the input and whatever container
+#' \code{outfile} names. So the output of this function is audio, as with
+#' \code{\link{extract_audio}} and \code{\link{convert_audio}}. It does not
+#' carry the other streams through. To normalize a recording's soundtrack
+#' \emph{and} keep its picture, first normalize to an audio file. Then put the
+#' audio back with the picture using the \code{\link{ffmpeg}} direct command.
+#' The glossary in \code{vignette("tidymedia")} explains media terms such as
+#' LUFS, true peak and sample rate.
 #'
 #' @details
-#' The default targets follow EBU Recommendation R 128 (2014) --
-#' \code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP, loudness
-#' measured per ITU-R BS.1770-4 -- with \code{loudness_range = 7}. This is
-#' single-pass (dynamic) \code{loudnorm}: the same input and arguments always
-#' compile to one reproducible command, with no separate measurement pass.
-#' Because the audio is filtered it is re-encoded; set \code{audio_codec} to
-#' name the output encoder, or leave it \code{NULL} to use the output
-#' container's default. Leaving \code{channels} at \code{NULL} preserves the
-#' source channel layout. Note that FFmpeg's \code{loudnorm} filter resamples its output (up to
-#' 192 kHz, capped by the encoder), so the output sample rate is \emph{not} the
-#' source rate unless you pin it: set \code{sample_rate} to control the output
+#' The default targets follow EBU Recommendation R 128 (2014). They are
+#' \code{target_loudness = -23} LUFS and \code{true_peak = -1} dBTP. Loudness
+#' is measured per ITU-R BS.1770-4. The default \code{loudness_range} is
+#' \code{7}. This is
+#' single-pass (dynamic) \code{loudnorm}. The same input and arguments always
+#' compile to one reproducible command, with no separate measurement pass. The
+#' filter changes the audio, so FFmpeg re-encodes it. Set \code{audio_codec} to
+#' name the output encoder, or leave it \code{NULL} to use the default of the
+#' output container. Leaving \code{channels} at \code{NULL} keeps the source
+#' channel layout. FFmpeg's \code{loudnorm} filter resamples its output, up to
+#' 192 kHz, capped by the encoder. So the output sample rate is \emph{not} the
+#' source rate unless you set it. Set \code{sample_rate} to control the output
 #' rate.
 #'
-#' When no \code{audio_stream} is named and \code{infile} turns out to carry
-#' tracks the output will not, the verb warns -- the same warning
-#' \code{\link{extract_audio}} and \code{\link{convert_audio}} emit. Naming a
-#' track with \code{audio_stream} silences it, as does
+#' The function warns when no \code{audio_stream} is named and \code{infile}
+#' carries tracks that the output will not. \code{\link{extract_audio}} and
+#' \code{\link{convert_audio}} emit the same warning. Naming a track with
+#' \code{audio_stream} silences it, as does
 #' \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
 #' `r dropped_audio_cost_sentences()` It never runs under \code{run = FALSE},
-#' and never changes the compiled command. Under \code{two_pass = TRUE} it lands
-#' \emph{before} the analysis pass, so it arrives while adding
+#' and never changes the compiled command. Under \code{two_pass = TRUE}, the
+#' warning comes \emph{before} the analysis pass. So it arrives while adding
 #' \code{audio_stream} can still save that pass.
 #'
 #' `r check_tracks_off_paragraph()`
@@ -2405,11 +2418,11 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #' @param infile A string containing the path to a media file (with audio). An
 #'   input with no audio stream is an FFmpeg error, not a silent copy of the
 #'   video.
-#' @param outfile A string containing the path of the audio file to write. Any
-#'   container FFmpeg can write is accepted and the compiled command does not
-#'   depend on which -- an audio container (\code{.wav}, \code{.flac}) holds the
-#'   result exactly as a video container (\code{.mkv}) does, the latter simply
-#'   carrying one audio stream and nothing else.
+#' @param outfile A string containing the path of the audio file to write. The
+#'   function accepts any container that FFmpeg can write. The compiled command
+#'   does not depend on which container it is. An audio container (\code{.wav},
+#'   \code{.flac}) holds the result exactly as a video container (\code{.mkv})
+#'   does. The video container carries one audio stream and nothing else.
 #' @param target_loudness The target integrated loudness, in LUFS
 #'   (`r loudnorm_bounds_rd("target_loudness")`; default \code{-23}, the EBU
 #'   R128 target).
@@ -2420,38 +2433,39 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #'   (`r loudnorm_bounds_rd("loudness_range")`; default \code{7}).
 #' @param channels The output channel count, e.g. \code{1} to downmix to mono (a
 #'   positive whole number), or \code{NULL} (default) to keep the source layout.
-#' @param sample_rate The output sample rate in Hz, e.g. \code{48000} (a positive
-#'   whole number), or \code{NULL} (default) to let \code{loudnorm} choose (it
-#'   resamples, up to 192 kHz encoder-capped -- not the source rate). Set this to
-#'   pin the output rate.
+#' @param sample_rate The output sample rate in Hz, e.g. \code{48000} (a
+#'   positive whole number). \code{NULL} (default) lets \code{loudnorm} choose.
+#'   It resamples, up to 192 kHz and capped by the encoder, and does not keep
+#'   the source rate. Set this argument to fix the output rate.
 #' @param audio_codec An optional string naming the output audio encoder (e.g.
 #'   \code{"aac"}, \code{"libmp3lame"}, \code{"flac"}), passed to FFmpeg's
-#'   \code{-codec:a}. \code{NULL} (default) emits no \code{-codec:a}, leaving
-#'   the output container's default encoder in place. \code{"copy"} is an error:
-#'   loudness normalization filters the audio, so the stream must be re-encoded
-#'   and cannot be copied.
-#' @param two_pass A logical: when \code{TRUE}, use accurate two-pass
-#'   (measured/linear) normalization instead of the default single-pass
-#'   (\code{FALSE}). A first \emph{analysis pass} measures the input's loudness,
-#'   and a second \emph{correction pass} feeds those measurements back with
-#'   \code{linear=true} so the output hits the EBU R128 target precisely.
-#'   Two-pass therefore \strong{always runs the analysis pass through FFmpeg}
-#'   (it needs the binary and readable input), even when \code{run = FALSE}: in
-#'   that case the analysis still runs and the returned value is the exact
-#'   correction command, left unexecuted. The single-pass default touches no
-#'   binary under \code{run = FALSE}. If the input is \strong{silent}, the
-#'   analysis pass measures its loudness as \code{-inf}; normalizing silence to
-#'   a target is undefined, so two-pass aborts with a clear error (the
-#'   single-pass default leaves silence untouched). The batch form differs here:
-#'   \code{\link{normalize_audio_batch}} does not abort on a silent row — it
-#'   sets that row aside, marks it in a \code{silent} column, and normalizes the
-#'   rest. When the analysis pass yields no usable measurement at all, the abort
-#'   is classed \code{tidymedia_loudnorm_no_measurement} — the same class the
-#'   batch form raises, so one handler covers both. Where FFmpeg exited non-zero
-#'   it also carries \code{tidymedia_ffmpeg_exit} and the exit number on
-#'   \code{tm_status}; where FFmpeg exited zero but printed no parseable
-#'   measurement block it carries the shared class alone. The silence abort
-#'   above is neither: a silent input \emph{was} measured.
+#'   \code{-codec:a}. \code{NULL} (default) sets no \code{-codec:a}, which
+#'   leaves the default encoder of the output container in place.
+#'   \code{"copy"} is an error. Loudness normalization filters the audio, so
+#'   the stream must be re-encoded and cannot be copied.
+#' @param two_pass A logical. When \code{TRUE}, the function uses accurate
+#'   two-pass (measured/linear) normalization. The default (\code{FALSE}) is
+#'   single-pass. A first \emph{analysis pass} measures the loudness of the
+#'   input. A second \emph{correction pass} feeds those measurements back with
+#'   \code{linear=true}, so the output hits the EBU R128 target precisely.
+#'   So two-pass \strong{always runs the analysis pass through FFmpeg}, even
+#'   when \code{run = FALSE}. It needs the binary and a readable input. Under
+#'   \code{run = FALSE}, the analysis still runs. The returned value is the
+#'   exact correction command, which is not run. The single-pass default
+#'   touches no binary under \code{run = FALSE}. If the input is
+#'   \strong{silent}, the analysis pass measures its loudness as \code{-inf}.
+#'   Normalizing silence to a target is undefined, so two-pass aborts with a
+#'   clear error. The single-pass default leaves silence untouched. The batch
+#'   form differs here. \code{\link{normalize_audio_batch}}
+#'   does not abort on a silent row. It sets that row aside, marks it in a \code{silent} column,
+#'   and normalizes the rest. When the analysis pass gives no usable
+#'   measurement at all, the abort has class
+#'   \code{tidymedia_loudnorm_no_measurement}. The batch form raises the same
+#'   class, so one handler covers both. Where FFmpeg exited non-zero, the abort
+#'   also carries \code{tidymedia_ffmpeg_exit}, and the exit number on
+#'   \code{tm_status}. Where FFmpeg exited zero but printed no measurement
+#'   block that can be parsed, the abort carries the shared class alone. The
+#'   silence abort above is neither: a silent input \emph{was} measured.
 #' @param audio_stream `r audio_stream_param("normalize", "normalizes", "first", extra = audio_stream_extras$normalize_one_track)`
 #' @param run A logical: run the (correction) command through FFmpeg
 #'   (\code{TRUE}, default) or return the compiled command without running it
@@ -2460,9 +2474,10 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
 #' @return The compiled FFmpeg command (invisibly when \code{run = TRUE}). Under
 #'   \code{two_pass = TRUE} this is the correction command built from the
 #'   measured values.
-#' @seealso [ffm_loudnorm()], the builder it wraps; [normalize_audio_batch()]
-#'   for the many-file form; [extract_audio()] and [convert_audio()], the other
-#'   verbs whose output is one audio stream.
+#' @seealso [ffm_loudnorm()], the pipeline function it wraps.
+#'   [normalize_audio_batch()] for the many-file form.
+#'   [extract_audio()] and [convert_audio()], the other task functions whose
+#'   output is one audio stream.
 #' @references `r ebu_r128_reference()`
 #' @family task functions
 #' @family audio selection functions
@@ -4825,49 +4840,53 @@ derive_normalized_names <- function(input) {
 
 #' Normalize Many Files' Audio Loudness From a Jobs Table
 #'
-#' Loudness-normalize the audio of many input files (EBU R128) from a single
-#' jobs tibble — the **batch** (table-driven) sibling of [normalize_audio()] for
-#' when you have more than one file to normalize. Each row is one input; the
-#' only required column names its source. This is a thin wrapper over
-#' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
-#' the same \code{loudnorm} pipeline (and per-value validation) as the scalar
-#' verb. Set \code{two_pass = TRUE} for accurate measured/linear normalization
-#' across the whole table (see \code{two_pass}).
+#' Normalize the audio loudness of many input files (EBU R128) from a single
+#' jobs tibble. This is the \strong{batch} (table-driven) form of
+#' [normalize_audio()], for when you have more than one file to normalize. Each
+#' row is one input, and the only required column names its source. The function
+#' is a thin wrapper over \code{\link{ffm_batch}}. It gives one reproducible
+#' compiled command per input. Each row uses the same \code{loudnorm} pipeline,
+#' and the same check of each value, as [normalize_audio()]. Set
+#' \code{two_pass = TRUE} for accurate measured/linear normalization across the
+#' whole table (see \code{two_pass}). The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as LUFS, encoder and
+#' sample rate.
 #'
-#' When a row names no \code{audio_stream} and its input turns out to carry
-#' tracks the output will not, the verb warns \strong{once} for the whole batch,
-#' naming every affected row. Naming a track silences it -- the
-#' \code{audio_stream} argument, or an \code{audio_stream} cell on every row --
-#' as does \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
+#' The function warns \strong{once} for the whole batch when a row names no
+#' \code{audio_stream} and its input carries tracks that the output will not.
+#' The warning names every affected row. Naming a track silences it. Use the
+#' \code{audio_stream} argument, or an \code{audio_stream} cell on every row.
+#' \code{suppressWarnings(classes = "tidymedia_dropped_audio")} silences it
+#' too.
 #' `r dropped_audio_cost_sentences(batch = TRUE)` The check never runs under
-#' \code{run = FALSE}, never changes any compiled command, and is skipped
-#' entirely when every row names a track. Under \code{two_pass = TRUE} it lands
-#' \emph{before} Phase 1, so it arrives while adding \code{audio_stream} can
-#' still save the analysis pass.
+#' \code{run = FALSE} and never changes any compiled command. It is skipped
+#' entirely when every row names a track. Under \code{two_pass = TRUE}, the
+#' warning comes \emph{before} the analysis pass. So it arrives while adding
+#' \code{audio_stream} can still save that pass.
 #'
 #' `r check_tracks_off_paragraph(batch = TRUE)`
 #'
 #' @param jobs A data frame with one row per input and (at least) an
 #'   \code{input} column (source path). An optional \code{output} column names
-#'   the destination; when absent, one is derived per row by appending
-#'   \code{_normalized} to each input's basename, keeping the input's extension
-#'   (e.g. \code{clip.mkv} becomes \code{clip_normalized.mkv}) — note that the
-#'   derived name keeps a \emph{video} extension while the file itself holds
-#'   audio only, so name an \code{output} column explicitly when that matters.
-#'   Two rows naming the same output path are refused before any row runs
-#'   (with \code{two_pass = TRUE}, before the analysis pass): a path repeated in
-#'   the \code{output} column, or a repeated \code{input} when there is no
-#'   \code{output} column. Each of the five
-#'   loudness knobs — \code{target_loudness}, \code{true_peak},
-#'   \code{loudness_range}, \code{channels}, \code{sample_rate} — may also appear
-#'   as a column to override the corresponding argument on a per-row basis; rows
-#'   (or knobs) that omit the column fall back to the argument's value. An
-#'   optional \code{audio_codec} column (character) names each row's output
-#'   audio encoder, with \code{NA} meaning "leave the encoder unset"; rows
-#'   omitting it fall back to the \code{audio_codec} argument. An optional
-#'   numeric \code{audio_stream} column (\code{NA} to normalize that row's first
-#'   audio track) likewise overrides the \code{audio_stream} argument per row.
-#'   Any other columns are ignored.
+#'   the destination. Without it, the function derives one per row. It appends
+#'   \code{_normalized} to the basename of each input and keeps the extension
+#'   of the input (e.g. \code{clip.mkv} becomes \code{clip_normalized.mkv}).
+#'   The derived name keeps a \emph{video} extension while the file itself
+#'   holds audio only. So name an \code{output} column yourself when that
+#'   matters. The function refuses two rows that name the same output path
+#'   before any row runs. With \code{two_pass = TRUE}, that is before the
+#'   analysis pass. The refusal covers a path repeated in the \code{output}
+#'   column, or a repeated \code{input} when there is no \code{output} column.
+#'   Five loudness arguments can also appear as a column that overrides the
+#'   argument per row. They are \code{target_loudness}, \code{true_peak},
+#'   \code{loudness_range}, \code{channels} and \code{sample_rate}. Rows that
+#'   omit the column fall back to the value of the argument. An optional
+#'   \code{audio_codec} column (character) names the output audio encoder of
+#'   each row. There, \code{NA} means "leave the encoder unset". Rows that omit
+#'   it fall back to the \code{audio_codec} argument. An optional numeric
+#'   \code{audio_stream} column likewise overrides the \code{audio_stream}
+#'   argument per row. There, \code{NA} normalizes the first audio track of
+#'   that row. Any other columns are ignored.
 #' @param target_loudness,true_peak,loudness_range The EBU R128 loudness targets
 #'   applied to every row, unless \code{jobs} carries a column of the same name
 #'   (see \code{jobs}). Defaults follow EBU Recommendation R 128 (2014):
@@ -4878,50 +4897,52 @@ derive_normalized_names <- function(input) {
 #'   mono. \code{NULL} (default) keeps each source's channel layout.
 #' @param sample_rate The output sample rate in Hz applied to every row, unless
 #'   \code{jobs} carries a \code{sample_rate} column. \code{NULL} (default) lets
-#'   \code{loudnorm} choose (it resamples, up to 192 kHz encoder-capped — not the
-#'   source rate); set this to pin the output rate.
+#'   \code{loudnorm} choose. It resamples, up to 192 kHz and capped by the
+#'   encoder, and does not keep the source rate. Set this argument to fix the
+#'   output rate.
 #' @param audio_codec The output audio encoder applied to every row, unless
 #'   \code{jobs} carries an \code{audio_codec} column, e.g. \code{"aac"}.
-#'   \code{NULL} (default) emits no \code{-codec:a}, leaving the output
-#'   container's default encoder in place. \code{"copy"} is an error: loudness
-#'   normalization filters the audio, so it must be re-encoded. See
+#'   \code{NULL} (default) sets no \code{-codec:a}, which leaves the default
+#'   encoder of the output container in place. \code{"copy"} is an error.
+#'   Loudness normalization filters the audio, so it must be re-encoded. See
 #'   \code{\link{normalize_audio}}.
-#' @param two_pass A logical selecting the batch normalization mode for
-#'   \emph{every} row (\code{two_pass} is a whole-table switch, not a per-row
-#'   column). \code{FALSE} (default) keeps the single-pass \code{loudnorm}
-#'   pipeline. \code{TRUE} runs the accurate two-pass (measured/linear) path as a
-#'   two-phase fan-out: an \emph{analysis pass} first measures every input's
-#'   loudness (honoring \code{parallel} and each row's targets), and a
-#'   \emph{correction pass} then feeds those measurements back with
-#'   \code{linear=true} so each output hits its EBU R128 target precisely — the
-#'   table-wide sibling of \code{\link{normalize_audio}}'s \code{two_pass}. The
-#'   five measured values are surfaced on the result as columns \code{measured_I},
-#'   \code{measured_TP}, \code{measured_LRA}, \code{measured_thresh}, and
-#'   \code{offset}. Because it must measure each input, two-pass
-#'   \strong{always runs the analysis pass through FFmpeg} (it needs the binary
-#'   and readable inputs), even when \code{run = FALSE}. If any row's analysis
-#'   fails or yields no parseable measurement, the call aborts — naming the
-#'   offending row(s) — before any correction command is built. That abort is
-#'   classed \code{tidymedia_loudnorm_no_measurement} — the same class the scalar
-#'   \code{\link{normalize_audio}} raises for this event — and carries the same
-#'   row numbers on \code{tm_rows}, alongside \code{tm_row_status}: each row's
-#'   FFmpeg exit status, or \code{NA} where the row exited zero but printed
-#'   nothing parseable. It carries no single exit status on \code{tm_status},
-#'   and is not classed \code{tidymedia_ffmpeg_exit}, because it also fires for
-#'   rows that exited zero: a batch can mix causes, so there is no one number to
-#'   report. The scalar form carries both only where FFmpeg exited non-zero;
-#'   where it exited zero and printed nothing parseable the scalar abort
-#'   carries the shared class alone, with no \code{tm_status} either.
-#'   \strong{Silent}
-#'   rows are the exception: a silent input (analysis loudness \code{-inf})
-#'   cannot be normalized to a target, but one silent row does not abort the
-#'   batch — the non-silent rows are normalized, the silent rows are marked in a
-#'   logical \code{silent} column (with \code{success = FALSE} and no output
-#'   written), and a warning names them. This is where the batch form and the
-#'   scalar form differ: \code{\link{normalize_audio}} aborts on a silent
-#'   input, because one silent input is the whole call, while here the other
-#'   rows still have work to do. The single-pass default touches no binary under
-#'   \code{run = FALSE}.
+#' @param two_pass A logical that selects the normalization mode for
+#'   \emph{every} row. It applies to the whole table and is not a per-row
+#'   column. \code{FALSE} (default) keeps the single-pass \code{loudnorm}
+#'   pipeline. \code{TRUE} runs accurate two-pass (measured/linear)
+#'   normalization in two phases. An \emph{analysis pass} first measures the
+#'   loudness of every input. It honors \code{parallel} and the targets of each
+#'   row. A \emph{correction pass} then feeds those measurements back with
+#'   \code{linear=true}, so each output hits its EBU R128 target precisely.
+#'   This is the table-wide form of \code{two_pass} in
+#'   \code{\link{normalize_audio}}. The result shows the five measured values
+#'   as columns \code{measured_I}, \code{measured_TP}, \code{measured_LRA},
+#'   \code{measured_thresh} and \code{offset}. Two-pass must measure each
+#'   input. So it \strong{always runs the analysis pass through FFmpeg}, even
+#'   when \code{run = FALSE}. It needs the binary and readable inputs. If the
+#'   analysis of any row fails or gives no measurement that can be parsed, the
+#'   call aborts and names those rows. It aborts before it builds any
+#'   correction command. That abort has class
+#'   \code{tidymedia_loudnorm_no_measurement}, the same class that
+#'   \code{\link{normalize_audio}} raises for this event. It carries the same
+#'   row numbers on \code{tm_rows}, alongside \code{tm_row_status}. That field has
+#'   the FFmpeg exit status of each row, or \code{NA} where the row exited zero
+#'   but printed nothing that can be parsed. It carries no single exit status
+#'   on \code{tm_status}, and it does not have class
+#'   \code{tidymedia_ffmpeg_exit}. The reason is that it also fires for
+#'   rows that exited zero. A batch can mix causes, so there is no one number to
+#'   report. The one-file form carries both only where FFmpeg exited non-zero.
+#'   Where FFmpeg exited zero and printed nothing that can be parsed, the
+#'   one-file abort carries the shared class alone, with no \code{tm_status}
+#'   either. \strong{Silent} rows are the exception. A silent input (analysis
+#'   loudness \code{-inf}) cannot be normalized to a target, but one silent row
+#'   does not abort the batch. The function normalizes the rows that are not
+#'   silent. It marks the silent rows in a logical \code{silent} column, with
+#'   \code{success = FALSE} and no output written, and a warning names them.
+#'   This is where the batch form and the one-file form differ.
+#'   \code{\link{normalize_audio}} aborts on a silent input, because one silent
+#'   input is the whole call. Here, the other rows still have work to do. The
+#'   single-pass default touches no binary under \code{run = FALSE}.
 #' @param audio_stream `r audio_stream_param("normalize", "normalizes", "first", batch = TRUE, extra = audio_stream_extras$normalize_one_track)`
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}). Under
@@ -4930,24 +4951,25 @@ derive_normalized_names <- function(input) {
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: normalize in
 #'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
 #'   default). Parallelism follows the active \code{\link[future:plan]{future}}
-#'   plan; \code{TRUE} under the default sequential plan runs one input at a time
-#'   and warns. Set a plan first, e.g.
+#'   plan. \code{TRUE} under the default sequential plan runs one input at a
+#'   time and warns. Set a plan first, e.g.
 #'   \code{future::plan(future::multisession)}.
 #' @inheritParams anonymize_video_batch
-#' @return `r batch_return("output")` Under \code{two_pass = TRUE}
-#'   the result also carries the five measured columns (\code{measured_I} etc.)
-#'   and a logical \code{silent} column, and the \code{command} column holds the
-#'   linear correction commands (\code{NA} for silent rows, which carry \code{NA}
-#'   measurements and are not normalized). The two-pass result's schema is
-#'   independent of how many rows are silent: the opt-in \code{verified} column
-#'   (under \code{verify}) and provenance manifest (under \code{manifest}, read
-#'   with \code{\link{ffm_manifest}}) are present whenever requested, even when
-#'   \emph{every} row is silent -- silent rows simply carry \code{NA} for those
-#'   outputs.
+#' @return `r batch_return("output")` Under \code{two_pass = TRUE}, the result
+#'   also carries the five measured columns (\code{measured_I} etc.) and a
+#'   logical \code{silent} column. The \code{command} column then holds the
+#'   linear correction commands. It is \code{NA} for silent rows, which carry
+#'   \code{NA} measurements and are not normalized. The columns of the two-pass
+#'   result do not depend on how many rows are silent. The \code{verified}
+#'   column (under \code{verify}) and the provenance manifest (under
+#'   \code{manifest}, read with \code{\link{ffm_manifest}}) are present
+#'   whenever requested. That holds even when \emph{every} row is silent.
+#'   Silent rows carry \code{NA} for those outputs.
 #' @references `r ebu_r128_reference()`
-#' @seealso [normalize_audio()] for the single-input form; [ffm_batch()] for the
-#'   batch runner and the arguments forwarded through \code{...};
-#'   [standardize_video_batch()] for the video-side table-driven sibling.
+#' @seealso [normalize_audio()] for the single-input form.
+#'   [ffm_batch()] for the batch runner and the arguments forwarded through
+#'   \code{...}.
+#'   [standardize_video_batch()] for the table-driven form on the video side.
 #' @family task functions
 #' @family audio selection functions
 #' @examples
@@ -6202,115 +6224,128 @@ format_for_web_batch <- function(jobs,
 #' Separate Audio and Video for Many Files From a Jobs Table
 #'
 #' Split the audio and video streams of many input files from a single jobs
-#' tibble — the **batch** (table-driven) sibling of [separate_audio_video()] for
-#' when you have more than one file. Each row is one input that fans out into
-#' **two** outputs; \code{input}, \code{audiofile}, and \code{videofile} columns
-#' are all required. This is a thin wrapper over \code{\link{ffm_batch}}: every
-#' input row is reshaped into two single-output jobs (one per stream), so a jobs
-#' table of \code{N} rows returns \code{2N} rows — one reproducible compiled
-#' command per stream — sharing the same per-stream map/stream-copy pipeline as
-#' the scalar verb.
+#' tibble. This is the \strong{batch} (table-driven) form of
+#' [separate_audio_video()], for when you have more than one file. Each row is
+#' one input that gives \strong{two} outputs. The \code{input},
+#' \code{audiofile} and \code{videofile} columns are all required. The function
+#' is a thin wrapper over \code{\link{ffm_batch}}. It turns every input row into
+#' two single-output jobs, one per stream. So a jobs table of \code{N} rows
+#' returns \code{2N} rows, with one reproducible compiled command per stream.
+#' Each stream uses the same map and stream-copy pipeline as
+#' [separate_audio_video()]. The glossary in \code{vignette("tidymedia")}
+#' explains media terms such as codec, container and stream copy.
 #'
-#' @param jobs A data frame with one row per input and (at least) an
-#'   \code{input} column (source path) plus \code{audiofile} and \code{videofile}
-#'   columns naming the two destinations. All three are **required** — like
-#'   \code{\link{separate_audio_video}}, this verb derives no output paths,
-#'   because a copied stream's container extension is the instruction (it must
-#'   match the source codec). No two of a table's destinations may be the same
-#'   path -- an \code{audiofile} and a \code{videofile} in one row, or any two
-#'   across rows; such a table is refused before any row runs. Optional
-#'   \code{audio_codec} and \code{video_codec}
-#'   columns (character; \code{NA} to emit no codec option for that stream)
-#'   override the arguments of the same name per row; rows omitting a column fall
-#'   back to that argument. An optional numeric \code{audio_stream} column
-#'   (\code{NA} to keep every audio track in that row's \code{audiofile})
-#'   likewise overrides the \code{audio_stream} argument per row. Any other
-#'   columns are ignored — except a \code{reencode} column, retired with the
-#'   argument of the same name, which is an error rather than a silent no-op.
-#' @param audio_codec A string naming the encoder for every \code{audiofile}
-#'   unless \code{jobs} carries an \code{audio_codec} column. The default
-#'   \code{"copy"} stream-copies the audio losslessly; \code{NULL} emits no
-#'   \code{-codec:a}. See \code{\link{separate_audio_video}}.
-#' @param video_codec A string naming the encoder for every \code{videofile}
-#'   unless \code{jobs} carries a \code{video_codec} column. The default
-#'   \code{"copy"} stream-copies the video losslessly; \code{NULL} emits no
-#'   \code{-codec:v}. See \code{\link{separate_audio_video}}.
+#' @param jobs A data frame with one row per input. It has at least an
+#'   \code{input} column (source path), plus \code{audiofile} and
+#'   \code{videofile} columns that name the two destinations. All three are
+#'   \strong{required}. Like \code{\link{separate_audio_video}}, this function
+#'   derives no output paths, because the container extension of a copied stream
+#'   is the instruction. That extension must match the source codec. No two destinations in
+#'   a table can be the same path. That covers an \code{audiofile} and a
+#'   \code{videofile} in one row, and any two across rows. The function refuses
+#'   such a table before any row runs. Optional \code{audio_codec} and
+#'   \code{video_codec} columns override the arguments of the same name per row.
+#'   They are character, with \code{NA} to set no codec option for that stream.
+#'   Rows that omit a column fall back to that argument. An optional numeric
+#'   \code{audio_stream} column likewise overrides the \code{audio_stream}
+#'   argument per row. There, \code{NA} keeps every audio track in that row's
+#'   \code{audiofile}. Any other columns are ignored, with one exception. A
+#'   \code{reencode} column, retired with the argument of the same name, is an
+#'   error and not a silent no-op.
+#' @param audio_codec A string that names the encoder for every
+#'   \code{audiofile}, unless \code{jobs} carries an \code{audio_codec} column.
+#'   The default \code{"copy"} copies the audio stream with no quality loss.
+#'   \code{NULL} sets no \code{-codec:a}. See
+#'   \code{\link{separate_audio_video}}.
+#' @param video_codec A string that names the encoder for every
+#'   \code{videofile}, unless \code{jobs} carries a \code{video_codec} column.
+#'   The default \code{"copy"} copies the video stream with no quality loss.
+#'   \code{NULL} sets no \code{-codec:v}. See
+#'   \code{\link{separate_audio_video}}.
 #' @param hardware,fallback The encoder backend for every \code{videofile} and
-#'   its fallback behavior, applied to the whole batch (a property of the
-#'   machine, not of a row, so neither is read as a \code{jobs} column). See
-#'   [separate_audio_video()]. Because \code{hardware} is batch-wide, and a
-#'   stream copy runs no encoder, a non-\code{"none"} \code{hardware}
-#'   conflicts with any row whose video codec resolves to \code{"copy"} —
-#'   including the default — so a jobs table mixing copied and re-encoded
-#'   video must be split into separate calls.
+#'   its fallback behavior. They apply to the whole batch. They are a property
+#'   of the machine, not of a row, so neither is read as a \code{jobs} column.
+#'   See [separate_audio_video()]. \code{hardware} is batch-wide, and a stream
+#'   copy runs no encoder. So a \code{hardware} other than \code{"none"}
+#'   conflicts with any row whose video codec resolves to \code{"copy"}. That
+#'   includes the default. So split a jobs table that mixes copied and
+#'   re-encoded video into separate calls.
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
 #'   `r contradiction_sentences("copy")`
 #'   The stream-copy conflict above is caught first, so such a call aborts
-#'   without probing.
+#'   without asking FFmpeg.
 #' @param audio_stream `r audio_stream_param("write to each \\code{audiofile}", "keeps", "every", batch = TRUE, extra = audio_stream_extras$separation_container)`
 #' @inheritParams extract_audio_batch
-#' @return A [tibble][tibble::tibble-package] with \strong{two rows per input}
-#'   (one per stream): the reshaped \code{input}, a single \code{output} path, a
-#'   \code{stream} marker (\code{"audio"} or \code{"video"}), and an added
-#'   \code{command} column — plus, when \code{run = TRUE}, a \code{success}
-#'   column (and \code{verified} / provenance manifest when requested via
-#'   \code{...}). When \code{jobs} supplies either codec column, a single
-#'   \code{codec} column carries each row's resolved encoder for its own stream
-#'   (\code{NA} where none is emitted). When \code{audio_stream} is supplied as
-#'   either the argument or a \code{jobs} column, an \code{audio_stream} column
-#'   likewise carries each row's resolved track: the selected index on an audio
-#'   row, and \code{NA} both on every video row (which takes no audio) and on an
-#'   audio row that named no track — so \code{NA} does not by itself mark a video
-#'   row; read the \code{stream} column for that. The columns match the other
-#'   \code{_batch} verbs' output plus the \code{stream} marker. See
-#'   \code{\link{ffm_batch}}.
-#' @seealso [separate_audio_video()], the scalar verb it wraps; [ffm_batch()],
-#'   the batch runner; [has_hardware_encoder()] for the \code{hardware} toggle;
-#'   [segment_video_batch()] for the other fan-out batch verb.
+#' @return A [tibble][tibble::tibble-package] with \strong{two rows per input},
+#'   one per stream. It has the reshaped \code{input}, a single \code{output}
+#'   path, a \code{stream} marker (\code{"audio"} or \code{"video"}), and an
+#'   added \code{command} column. When \code{run = TRUE}, it also has a
+#'   \code{success} column. A run also gives \code{verified} and the
+#'   provenance manifest, each when requested via \code{...}. When \code{jobs} supplies
+#'   either codec column, a
+#'   single \code{codec} column carries each row's resolved encoder for its own
+#'   stream (\code{NA} where none is set). When \code{audio_stream} is supplied
+#'   as either the argument or a \code{jobs} column, an \code{audio_stream}
+#'   column likewise carries each row's resolved track. That is the selected
+#'   index on an audio row. It is \code{NA} on every video row, which takes no
+#'   audio, and on an audio row that named no track. So \code{NA} does not by
+#'   itself mark a video row. Read the \code{stream} column for that. The
+#'   columns match the output of the other \code{_batch} functions, plus the
+#'   \code{stream} marker. See \code{\link{ffm_batch}}.
+#' @seealso [separate_audio_video()], the one-file function it wraps.
+#'   [ffm_batch()], the batch runner.
+#'   [has_hardware_encoder()] for the \code{hardware} argument.
+#'   [segment_video_batch()] for the other batch function where one input file
+#'   can give several outputs.
 #' @section Failed audio outputs:
 #' A row whose audio command does not finish cleanly is recorded as
-#' \code{success = FALSE} rather than aborting the batch. Such a row is named in
-#' a warning emitted \strong{once} for the whole batch, listing every affected
+#' \code{success = FALSE}, and the batch does not abort. One warning for the
+#' whole batch, emitted \strong{once}, names such rows. It lists every affected
 #' input row and the ways out.
 #'
-#' A row reaches that warning only when all four of these hold: it named no
-#' \code{audio_stream}, the row is recorded \code{success = FALSE}, its input
-#' carries more than one audio track, and its \code{audiofile}'s extension is not
-#' among the containers named here as holding several —
-#' `r multi_audio_rd_list()`.
-#' No exit status is among those conditions, and the difference from
-#' \code{\link{separate_audio_video}} is deliberate: the batch runner records
-#' \emph{whether} a row succeeded and not how, so a non-zero exit, a hard error
-#' and a reached limit are all recorded the same way, and a row put here by any
-#' of them is treated alike. The `r multi_audio_rd_count()`
-#' are an exclusion list and not a survey:
-#' FFmpeg writes several audio streams into other containers too (\code{.avi} and
-#' \code{.nut} among them), and a row failing on one of those is still named. The
-#' container condition keeps a row off the list when it is already doing what the
-#' warning would advise; such a row is silently not named, and a batch whose
-#' failed audio rows all write to those `r multi_audio_rd_count()` warns not at
-#' all. The headline
-#' count follows the rows actually named.
+#' A row reaches that warning only when all four of these hold:
+#' \itemize{
+#'   \item It named no \code{audio_stream}.
+#'   \item The row is recorded \code{success = FALSE}.
+#'   \item Its input carries more than one audio track.
+#'   \item The extension of its \code{audiofile} is not among the containers
+#'     named here as holding several audio streams.
+#' }
+#' Those containers are `r multi_audio_rd_list()`. No exit status is among those
+#' conditions, and the difference from \code{\link{separate_audio_video}} is
+#' deliberate. The batch runner records \emph{whether} a row succeeded and not
+#' how. So it records a non-zero exit, a hard error and a reached limit the same
+#' way. It treats alike a row put here by any of them. The
+#' `r multi_audio_rd_count()` are an exclusion list and not a survey. FFmpeg
+#' writes several audio streams into other containers too, \code{.avi} and
+#' \code{.nut} among them. A row that fails on one of those is still named. The
+#' container condition keeps a row off the list when it already does what the
+#' warning advises. Such a row is silently not named. A batch whose failed audio
+#' rows all write to those `r multi_audio_rd_count()` does not warn at all. The
+#' headline count follows the rows actually named.
 #'
-#' What each bullet states is what that row \emph{did} — its track count, and
-#' that every track was mapped into one output — never why FFmpeg refused. A
-#' stream copy into a container that will not hold the source codec, an unknown
-#' encoder and a missing output directory all look alike from here.
+#' Each bullet of the warning states what that row \emph{did}: its track count, and that every
+#' track was mapped into one output. It never states why FFmpeg refused.
+#' Several causes look alike from here. Examples are a stream copy into a
+#' container
+#' that will not hold the source codec, an unknown encoder and a missing output
+#' directory.
 #'
-#' The check runs FFprobe on the failed rows only, so it is emitted when FFprobe
-#' is available and the input can be probed, and skipped silently otherwise — so
-#' the warning may simply not appear, and its absence is never itself a second
-#' failure. It never runs under \code{run = FALSE} and never changes any compiled
-#' command. Suppress it with \code{suppressWarnings(classes =
-#' "tidymedia_multitrack_separation")}.
+#' The check runs FFprobe on the failed rows only. So the function emits the
+#' warning when FFprobe is available and the input can be probed, and skips it
+#' silently otherwise. The warning may not appear, and its absence is never
+#' itself a second failure. The check never runs under \code{run = FALSE} and
+#' never changes any compiled command. Suppress the warning with
+#' \code{suppressWarnings(classes = "tidymedia_multitrack_separation")}.
 #'
-#' The warning names the same event as \code{\link{separate_audio_video}}'s
-#' error and answers to the same class, but it carries no exit status: no
-#' \code{tm_status} field, and no \code{tidymedia_ffmpeg_exit} class. The batch
-#' runner records, per row, \emph{whether} the row succeeded — the
-#' \code{success} column — not \emph{how} FFmpeg exited, so by the time this
-#' warning is assembled the exit number is gone. Catch a specific row's exit
-#' status with the scalar verb instead.
+#' The warning names the same event as the error of
+#' \code{\link{separate_audio_video}} and answers to the same class. But it
+#' carries no exit status: no \code{tm_status} field, and no
+#' \code{tidymedia_ffmpeg_exit} class. The batch runner records, per row,
+#' \emph{whether} the row succeeded, not \emph{how} FFmpeg exited. The
+#' \code{success} column holds that record. So the exit number is gone by the
+#' time this warning is assembled. To catch a specific row's exit status, use
+#' [separate_audio_video()].
 #' @family task functions
 #' @family audio selection functions
 #' @examples

@@ -490,3 +490,37 @@ The code does not settle this claim. It keeps its meaning at head, and it is the
 | Page | Claim | Evidence |
 |---|---|---|
 | `hardware_encoder` | A container that does not take H.264, such as `.webm`, needs an HEVC-family or AV1-family `video_codec`. | WebM does not take HEVC, so only AV1 fits the example, and only `nvenc` has an AV1 encoder (`hardware_backend_families()` in `R/ffmpeg.R`). |
+
+### M133
+
+The base commit is `4b932266`. At that commit, the domain is the 4 `man/*.Rd` files whose header names `R/ffmpeg.R` and whose base name matches the M133 filter: `normalize_audio`, `normalize_audio_batch`, `separate_audio_video` and `separate_audio_video_batch`.
+
+#### Sweep output at the base commit (AC1, AC2, AC3, AC4)
+
+The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` over the 4 files that `git show 4b932266:man/<page>.Rd` wrote to a temporary folder. It read 324 sentences and exited 1 with 103 findings: 63 `[<n> words]`, 33 `[term …]` and 7 `[dash in Rd source]`. The same command gives the full output again. Stems are the glossary stems in each page's `--prose` output. The AC4 identifiers are `tidymedia.check_tracks`, `tidymedia_dropped_audio`, `tidymedia_ffmpeg_exit`, `tidymedia_loudnorm_no_measurement`, `tidymedia_multitrack_separation`, `tidymedia_timeout`, `tm_row_status`, `tm_rows`, `tm_status` and `tm_video_error`. No page named the glossary.
+
+| Page | Words | Term | Dash | Stems (AC3) | Result |
+|---|---|---|---|---|---|
+| normalize_audio | 11 | 3 | 4 | `container`, `encod`, `LUFS`, `sampl(e\|ing) rate`, `stream`, `true peak` |  No finding. Names the glossary. "escape hatch" became "direct command", "mux it back" became "put the audio back with the picture", and "verb" became "function". |
+| normalize_audio_batch | 14 | 8 | 2 | `container`, `encod`, `LUFS`, `sampl(e\|ing) rate`, `stream` |  No finding. Names the glossary. "sibling" became "form", "knobs" became "arguments", "scalar" became "one-file", and "Phase 1" became "the analysis pass". |
+| separate_audio_video | 20 | 11 | 0 | `codec`, `container`, `encod`, `stream` |  No finding. Names the glossary. "transcode" became "re-encode", "builders" became "pipeline functions", "best-effort" became "not guaranteed", and "spawned program" became "program that the call starts". The four conditions became a list. |
+| separate_audio_video_batch | 18 | 11 | 1 | `codec`, `container`, `encod`, `stream` |  No finding. Names the glossary. "fans out" became "gives two outputs", and "scalar verb" became "`separate_audio_video()`" in the text and "the one-file function it wraps" in See Also (corrected M133 review). The four conditions became a list. |
+
+#### Results at head (T4)
+
+- AC1, AC2: the sweep over the 4 pages at head reads 526 sentences, prints no finding and exits 0.
+- AC3: all 4 pages have a stem at head, and each names the glossary.
+- AC4: `git grep -wF` finds all 10 identifiers in `man/*.Rd` at head.
+- AC5: `git diff --name-only 4b932266 HEAD -- man/` lists only the 4 domain pages.
+- AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` gave 0 errors, 0 warnings and 0 notes. `devtools::test()` gave 0 failures. `pkgdown::check_pkgdown()` found no problems. The check and test runs came before a last rewrap of two roxygen source lines, which changed white space only in `separate_audio_video_batch.Rd`.
+- Tests: no test file changed. `test-ffmpeg-exit-condition.R` pins four phrases on these pages: "not \\emph{how} FFmpeg exited", "carries no single exit status", "rows that exited zero" and "does not abort on a silent row". The rewrite keeps each phrase, on one source line.
+- Shared text: the text from `R/task-doc.R` helpers and the `run` arguments stay as they were.
+- Claim audit: a fresh reader read 116 claims and found no false claim that the branch added, and no dropped claim that changed meaning. It found 4 changed claims, all corrected and re-read once. The M133 review then found that the and/or correction had dropped the `run = TRUE` condition on `verified` and the manifest. The review put it back, with three smaller wording fixes ("Each bullet of the warning", "the same row numbers", and the reason the function derives no output paths). On `?normalize_audio`, `loudness_range = 7` had moved under the R 128 attribution. On `?separate_audio_video_batch`, the `segment_video_batch()` See Also line stated an output count per row, "or" had replaced the and/or of `verified` and the manifest, and "They are" had closed an open list of causes.
+
+#### Base claims found false
+
+The code does not settle this claim. It keeps its meaning at head, and it is the M133 part of the `ffm_*()` help-text follow-up row in `cairn/ROADMAP.md`.
+
+| Page | Claim | Evidence |
+|---|---|---|
+| `normalize_audio_batch` | The defaults that follow EBU R 128 (2014) include `loudness_range = 7` LU. | The M133 reader says R 128 sets the -23 LUFS and -1 dBTP pair, and 7 is the default of `loudnorm`. `?normalize_audio` keeps the 7 outside the attribution, at the base commit and at head. |

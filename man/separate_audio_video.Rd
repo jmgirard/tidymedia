@@ -23,33 +23,33 @@ separate_audio_video(
 
 \item{videofile}{A string containing the path of the video file to write.}
 
-\item{audio_codec}{A string naming the encoder for \code{audiofile}, passed
-to FFmpeg's \code{-codec:a}. The default \code{"copy"} stream-copies the
-audio losslessly; a codec name (e.g. \code{"libmp3lame"}) transcodes it;
-\code{NULL} emits no \code{-codec:a}, leaving the encoder to the
-\code{audiofile} extension.}
+\item{audio_codec}{A string that names the encoder for \code{audiofile}. It
+goes to FFmpeg's \code{-codec:a}. The default \code{"copy"} copies the
+audio stream with no quality loss. A codec name (e.g.
+\code{"libmp3lame"}) re-encodes it. \code{NULL} sets no \code{-codec:a},
+so the \code{audiofile} extension picks the encoder.}
 
-\item{video_codec}{A string naming the encoder for \code{videofile}, passed
-to FFmpeg's \code{-codec:v}. The default \code{"copy"} stream-copies the
-video losslessly; a codec name (e.g. \code{"libx264"}) transcodes it;
-\code{NULL} emits no \code{-codec:v}, leaving the encoder to the
-\code{videofile} extension.}
+\item{video_codec}{A string that names the encoder for \code{videofile}. It
+goes to FFmpeg's \code{-codec:v}. The default \code{"copy"} copies the
+video stream with no quality loss. A codec name (e.g. \code{"libx264"})
+re-encodes it. \code{NULL} sets no \code{-codec:v}, so the
+\code{videofile} extension picks the encoder.}
 
-\item{hardware}{The encoder backend for \code{videofile}: \code{"none"}
-(default, the software \code{video_codec}), \code{"nvenc"} for NVIDIA
-GPU encoding, or \code{"videotoolbox"} for Apple GPU encoding, each
-using that backend's encoder for \code{video_codec}'s family (e.g.
+\item{hardware}{The encoder backend for \code{videofile}. \code{"none"}
+(default) uses the software \code{video_codec}. \code{"nvenc"} uses NVIDIA
+GPU encoding, and \code{"videotoolbox"} uses Apple GPU encoding. Each uses
+its own encoder for the family of \code{video_codec}. For example,
 \code{"libx264"} becomes \code{"h264_nvenc"} or
-\code{"h264_videotoolbox"}), assuming the H.264 family when
-\code{video_codec = NULL}. Only video is encoded on the GPU, so this
-never affects \code{audiofile}. Because this verb's video default is a
-stream copy, which runs no encoder at all, a non-\code{"none"}
-\code{hardware} alongside \code{video_codec = "copy"} is an error: name
-an encoder or pass \code{video_codec = NULL}. See
+\code{"h264_videotoolbox"}. With \code{video_codec = NULL}, the family is
+H.264. Only video is encoded on the GPU, so this never affects
+\code{audiofile}. The default \code{video_codec = "copy"} is a stream
+copy, which runs no encoder at all. So a \code{hardware} other than
+\code{"none"} with \code{video_codec = "copy"} is an error. Name an
+encoder or pass \code{video_codec = NULL}. See
 \code{\link{has_hardware_encoder}} for availability and its caveats.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 The stream-copy conflict above is caught first, so such a call aborts
-without probing.}
+without asking FFmpeg.}
 
 \item{fallback}{A logical. When a \code{hardware} other than \code{"none"} is requested but its encoder is unavailable, \code{TRUE} encodes in software with a message. \code{FALSE} (default) aborts instead. With \code{video_codec = NULL}, the fallback leaves the codec unset rather than injecting one. A \code{video_codec} in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever \code{fallback} says.}
 
@@ -60,90 +60,99 @@ or return the compiled commands without running them (\code{FALSE}).}
 }
 \value{
 A named character vector of the two compiled commands
-(\code{audio}, \code{video}); invisible when \code{run = TRUE}. Under
-\code{run = TRUE} the audio command runs first and the video command runs
-second, whether or not the audio command succeeded. A failed audio command
-still aborts the call, and the video command has written \code{videofile}
-by then unless it failed too; see \emph{When the audio output fails}.
+(\code{audio}, \code{video}). It is invisible when \code{run = TRUE}. Under
+\code{run = TRUE}, the audio command runs first and the video command runs
+second. The video command runs whether or not the audio command succeeded.
+A failed audio command still aborts the call. By then, the video command
+has written \code{videofile}, unless it failed too. See \emph{When the
+audio output fails}.
 }
 \description{
-By default each stream is copied, not re-encoded (\code{audio_codec =
-"copy"}, \code{video_codec = "copy"}): separation is lossless and fast, but
-each output container must support the source codec (e.g. write AAC audio
-from an MP4 to \code{.aac} or \code{.m4a}, not \code{.mp3}). Name an encoder
-instead (\code{audio_codec = "libmp3lame"}) to transcode that stream, or pass
-\code{NULL} to emit no codec option at all and let the output extension pick
-the encoder. Each argument governs only its own output file. Where the video
-is re-encoded, \code{hardware = "nvenc"} or \code{"videotoolbox"} moves
-that encode onto a GPU; the audio output is never affected.
+By default, each stream is copied, not re-encoded (\code{audio_codec =
+"copy"}, \code{video_codec = "copy"}). A copy loses no quality and is fast.
+Each output container must then support the source codec. For example, write
+AAC audio from an MP4 to \code{.aac} or \code{.m4a}, not to \code{.mp3}. To
+re-encode a stream, name an encoder (\code{audio_codec = "libmp3lame"}). Pass
+\code{NULL} to set no codec option, so the output extension picks the
+encoder. Each argument governs only its own output file. Where the video is
+re-encoded, \code{hardware = "nvenc"} or \code{"videotoolbox"} moves that
+encode onto a GPU. The audio output is never affected. The glossary in
+\code{vignette("tidymedia")} explains media terms such as codec, container
+and stream copy.
 }
 \section{When the audio output fails}{
 
-The two commands run in order — audio first, video second — and the video
-command runs even when the audio one has already failed, so a failed audio
-half does not cost you the video. On that path the call still aborts with the
-audio failure, and that error carries one added line naming the video file
-that was written. When the video command fails as well, the added line is not
-there, the audio failure is still the error you get, and FFmpeg's own output
-for the failed video command is printed above it.
+The two commands run in order: audio first, video second. The video command
+runs even when the audio command failed, so a failed audio half does not cost
+you the video. In that case, the call still aborts with the audio failure.
+That error carries one added line that names the video file that was written.
+When the video command fails too, the added line is not there. The audio
+failure is still the error you get. FFmpeg's own output for the failed video
+command is printed above it.
 
-A reached wall-clock limit on the audio command is held like any other audio
-failure, so the video command still runs — on a fresh limit of its own, since
-\code{\link{with_timeout}()} bounds each spawned program rather than the
-call. A call whose audio half reaches the limit can therefore wait up to two
-limits rather than one.
+A time limit reached on the audio command is held like any other audio
+failure, so the video command still runs. The video command gets a fresh
+limit of its own, because \code{\link{with_timeout}()} limits each program
+that the call starts, not the call. So a call whose audio half reaches the
+limit can wait up to two limits, not one.
 
-What a failed command leaves at its own output path is the same rule on
-either path: a partial file that run wrote is removed, while a file that was
-already at that path and that FFmpeg never wrote to is left exactly as it
-was. So neither failure path promises the path is empty afterwards — only
-that nothing half-written is left there. The audio failure's own error says
-which of the two happened to \code{audiofile}. What became of the video
-command is on the same error's \code{tm_video_error} field: the condition
-that command raised when it failed too, and \code{NULL} when it succeeded.
+A failed command treats its own output path by the same rule on either path.
+It removes a partial file that the run wrote. It leaves a file that was
+already at that path, and that FFmpeg never wrote to, exactly as it was. So
+neither failure path promises that the path is empty afterwards. It promises
+only that nothing half-written is left there. The audio failure's own error
+says which of the two happened to \code{audiofile}. The same error's
+\code{tm_video_error} field says what became of the video command. It holds
+the condition that command raised when it failed too, and \code{NULL} when it
+succeeded.
 
-Because the default keeps every audio track, writing a multi-track input to a
-container that holds only one (\code{.aac}, \code{.mp3}, \code{.wav}) makes
-FFmpeg fail. When that happens the error additionally reports how many audio
-tracks \code{infile} carries and names the two ways out — \code{audio_stream}
-to write one track, or a container such as \code{.mka} or \code{.m4a} to keep
-them all.
+The default keeps every audio track. So FFmpeg fails when it writes a
+multi-track input to a container that holds only one track (\code{.aac},
+\code{.mp3}, \code{.wav}). When that happens, the error also reports how many
+audio tracks \code{infile} carries, and it names the two ways out. Use
+\code{audio_stream} to write one track, or use a container such as
+\code{.mka} or \code{.m4a} to keep them all.
 
-That extra report is attached only when all four of these hold: no
-\code{audio_stream} was named, FFmpeg returned a non-zero exit status,
-\code{infile} carries more than one audio track, and \code{audiofile}'s
-extension is not among the containers named here as holding several —
-\code{.mka}, \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm}, \code{.ogg}, \code{.opus} and \code{.ts}. Those nine
-are an exclusion list and not a survey: FFmpeg writes several audio streams
-into other containers too
-(\code{.avi} and \code{.nut} among them), and a failure on one of those still
-gets the report. The container condition keeps the report off a call that is
-already doing what the report would advise: writing to one of the
-nine, the failure cannot be the container refusing a
-second audio stream, so whatever
-FFmpeg did object to would go unnamed. Fail any of the four and the error you
-get is the one the run itself raised, whatever that error is — same class,
-same status field, same message, but for the line saying the video output was
-written, which a failing audio half carries when the video command wrote its
-file and the audio failure is an rlang condition. (When the leg that fails is
-the exit status itself, there is no exit status to carry: a run that never
-reached FFmpeg has none.)
+The error carries that extra report only when all four of these hold:
+\itemize{
+\item No \code{audio_stream} was named.
+\item FFmpeg returned a non-zero exit status.
+\item \code{infile} carries more than one audio track.
+\item The extension of \code{audiofile} is not among the containers named
+here as holding several audio streams.
+}
+Those containers are \code{.mka}, \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm}, \code{.ogg}, \code{.opus} and \code{.ts}. The
+nine are an exclusion list and not a survey. FFmpeg
+writes several audio streams into other containers too, \code{.avi} and
+\code{.nut} among them. A failure on one of those still gets the report. The
+container condition keeps the report off a call that already does what the
+report advises. When a call writes to one of the nine,
+the failure cannot be the container refusing a second audio stream. The
+report would then leave unnamed whatever FFmpeg did object to.
 
-What the report states is what the call \emph{did} — the track count, and that
-every track was mapped into one output — never why FFmpeg refused. FFmpeg's
-own error and exit status are printed beneath it and carried on the condition,
-and they remain the only authority on the cause. Several causes look alike
-from here: a stream copy into a container that will not hold the source codec
-(the default \code{audio_codec = "copy"} into \code{.mp3}, say) fails on a
-multi-track input too, and so do an unknown encoder and a missing output
-directory.
+If any of the four does not hold, the error you get is the one the run itself
+raised, whatever that error is. It has the same class, the same status field
+and the same message. The one difference is the line saying that the video
+output was written. A failing audio half carries that line when the video
+command wrote its file and the audio failure is an rlang condition. When the
+exit status is the one that does not hold, there is no exit status to carry.
+A run that never reached FFmpeg has none.
+
+The report states what the call \emph{did}: the track count, and that every
+track was mapped into one output. It never states why FFmpeg refused.
+FFmpeg's own error and exit status are printed beneath it and carried on the
+condition. They remain the only authority on the cause. Several causes look
+alike from here. A stream copy into a container that will not hold the source
+codec fails on a multi-track input too. The default \code{audio_codec =
+"copy"} into \code{.mp3} is one example. An unknown encoder and a missing
+output directory fail the same way.
 
 The condition carries two class names, so a caller can catch it at either
-width. It is \code{tidymedia_ffmpeg_exit}, the class every non-zero FFmpeg
-exit raises, which is what an exit-status handler catches — the number is on
-the condition's \code{tm_status} field. It is also
-\code{tidymedia_multitrack_separation}, the class of the enriched diagnostic
-itself, which is what to catch when it is this failure in particular you want:
+width. It is \code{tidymedia_ffmpeg_exit}, the class that every non-zero
+FFmpeg exit raises. An exit-status handler catches that class, and the number
+is on the condition's \code{tm_status} field. It is also
+\code{tidymedia_multitrack_separation}, the class of this report itself.
+Catch that class when it is this failure in particular you want:
 
 \preformatted{
 tryCatch(
@@ -153,20 +162,20 @@ tryCatch(
 }
 
 When the report is omitted, the error that reaches the caller is the one the
-run itself raised, but for that video-output line: a non-zero exit still
-answers to \code{tidymedia_ffmpeg_exit}, and a failure that is not an exit at
-all answers to neither class here: an FFmpeg the package cannot locate raises an error
-carrying no \code{tidymedia_} class at all, and a reached limit raises
-\code{tidymedia_timeout}.
+run itself raised, apart from that video-output line. A non-zero exit still
+answers to \code{tidymedia_ffmpeg_exit}. A failure that is not an exit
+answers to neither class here. An FFmpeg that the package cannot locate
+raises an error with no \code{tidymedia_} class at all. A reached limit
+raises \code{tidymedia_timeout}.
 
-Counting the tracks means running FFprobe, so this is \strong{best-effort}: it
-is added when FFprobe is available and \code{infile} can be probed, and
-omitted silently otherwise, leaving FFmpeg's own error alone — so the report
-may simply not appear, and its absence is never itself a second failure. It
-never runs under \code{run = FALSE}, never changes the compiled commands, and
-is skipped entirely when \code{audio_stream} names a track (with one track
-mapped, the track count cannot be what FFmpeg objected to) or when
-\code{audiofile} names one of the multi-stream containers above.
+Counting the tracks means running FFprobe, so the report is not guaranteed.
+The error has it when FFprobe is available and \code{infile} can be probed.
+Otherwise the package omits it silently and leaves FFmpeg's own error alone.
+So the report may not appear, and its absence is never itself a second
+failure. The count never runs under \code{run = FALSE} and never changes the
+compiled commands. It is skipped when \code{audio_stream} names a track, or
+when \code{audiofile} names one of the multi-stream containers above. With
+one track mapped, the track count cannot be what FFmpeg objected to.
 }
 
 \examples{
@@ -180,9 +189,9 @@ separate_audio_video(video, "audio.aac", "video.mp4",
                      audio_stream = 1, run = FALSE)
 }
 \seealso{
-\code{\link[=ffm_map]{ffm_map()}} and \code{\link[=ffm_codec]{ffm_codec()}}, the builders it wraps;
-\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
-\code{\link[=extract_audio]{extract_audio()}} to pull out just the audio;
+\code{\link[=ffm_map]{ffm_map()}} and \code{\link[=ffm_codec]{ffm_codec()}}, the pipeline functions it wraps.
+\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} argument.
+\code{\link[=extract_audio]{extract_audio()}} to pull out just the audio.
 \code{\link[=probe_audio]{probe_audio()}} to list an input's audio tracks.
 
 Other task functions:

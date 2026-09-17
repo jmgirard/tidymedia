@@ -7,9 +7,8 @@
 ffmpeg_codecs(sort_by_type = TRUE)
 }
 \arguments{
-\item{sort_by_type}{A logical indicating whether the tibble should be sorted
-by type and then by name (\code{TRUE}) or just by name (\code{FALSE}).
-(default = \code{TRUE})}
+\item{sort_by_type}{A logical. \code{TRUE} sorts the tibble by type and then
+by name. \code{FALSE} sorts it by name only. (default = \code{TRUE})}
 }
 \value{
 A \link[tibble:tibble-package]{tibble} with the following variables:
@@ -25,8 +24,9 @@ whether each codec supports lossy compression} \item{lossless}{A logical
 vector indicating whether each codec supports lossless compression}
 }
 \description{
-Query a list of installed codecs from FFmpeg and construct a tidy data frame
-containing information about these codecs.
+Ask FFmpeg for its list of installed codecs, and return the list as a data
+frame with information about each codec. The glossary in
+\code{vignette("tidymedia")} explains media terms such as codec and encoder.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
@@ -36,7 +36,7 @@ ffmpeg_codecs(sort_by_type = FALSE)
 }
 \seealso{
 \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}} for the encoder list, \code{\link[=ffm_codec]{ffm_codec()}} to set a
-codec in a pipeline, and \code{\link[=ffmpeg]{ffmpeg()}} for the Layer 0 escape hatch.
+codec in a pipeline, and \code{\link[=ffmpeg]{ffmpeg()}} for the direct command.
 
 Other capability functions:
 \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}},

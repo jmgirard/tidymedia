@@ -3,18 +3,19 @@
 
 #' Run a raw FFmpeg command
 #'
-#' Send a raw argument string to the FFmpeg command-line program. This is the
-#' Layer 0 escape hatch: the string is passed to FFmpeg verbatim (after the
-#' executable path), so the caller is responsible for quoting and option order.
+#' Send a raw argument string to the FFmpeg command-line program. This is a
+#' direct command. The function passes the string to FFmpeg unchanged, after
+#' the path of the FFmpeg program. So you are responsible for the quoting and
+#' the order of the options.
 #'
 #' @param command A string containing the arguments to pass to FFmpeg.
 #' @return A character vector containing the text output by FFmpeg.
-#' @seealso [ffmpeg_codecs()] and [ffmpeg_encoders()] for structured capability
-#'   queries, and the `ffm_*` pipeline builders (e.g. [ffm_run()]) for a safer
-#'   command layer.
+#' @seealso [ffmpeg_codecs()] and [ffmpeg_encoders()] ask FFmpeg what it
+#'   supports. The `ffm_*()` pipeline functions, such as
+#'   [ffm_run()], are a safer way to build a command.
 #' @family direct command functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
-#' # Layer 0 escape hatch: the string is passed to FFmpeg verbatim
+#' # A direct command: the function passes the string to FFmpeg unchanged
 #' ffmpeg("-version")
 #' @export
 ffmpeg <- function(command) {
@@ -50,7 +51,7 @@ ffmpeg <- function(command) {
 #' @param frame Either an integerish frame number or \code{NULL}. Provide
 #'   exactly one of \code{timestamp} or \code{frame}.
 #' @return `r command_return()`
-#' @seealso [ffm_seek()], the builder it uses to grab the frame;
+#' @seealso [ffm_seek()], the pipeline function it uses to get the frame.
 #'   [extract_frame_batch()] for the many-file (batch) form.
 #' @family task functions
 #' @examples
@@ -103,28 +104,30 @@ frame_pipeline <- function(input, output, timestamp) {
 
 #' Sample frames from a video at a fixed rate
 #'
-#' Sample a video at a fixed rate (\code{fps}) or interval (\code{interval},
-#' seconds between frames) into a numbered image sequence — the front door to
-#' per-frame coding and computer-vision feature pipelines. Provide exactly one
-#' of \code{fps} or \code{interval}.
+#' Sample a video into a numbered image sequence. Sample at a fixed rate
+#' (\code{fps}) or at a fixed interval (\code{interval}, seconds between
+#' frames). This is the first step for per-frame coding and for computer-vision
+#' feature pipelines. Provide exactly one of \code{fps} or \code{interval}.
 #'
-#' Unlike \code{\link{extract_frame}} (one frame) and
-#' \code{\link{extract_frame_batch}} (a caller-enumerated set of frames), this
-#' verb emits a \emph{single} FFmpeg command whose output is a printf-style
-#' pattern that FFmpeg's \code{image2} muxer fills — the frame count is decided
-#' at decode time, not enumerated by the caller. Frames are written to
-#' \code{outdir} as \code{<prefix>_<n>.<format>}, where \code{<n>} is a
-#' zero-padded integer starting at 1.
+#' \code{\link{extract_frame}} saves one frame, and
+#' \code{\link{extract_frame_batch}} saves a set of frames that you list. This
+#' function is different. It builds a \emph{single} FFmpeg command whose output
+#' is a printf-style file name pattern. FFmpeg's \code{image2} muxer fills the
+#' pattern. FFmpeg decides the frame count when it decodes the video, and you
+#' do not list the frames. The function writes frames to \code{outdir} as
+#' \code{<prefix>_<n>.<format>}, where \code{<n>} is a zero-padded integer
+#' starting at 1. The glossary in \code{vignette("tidymedia")} explains media
+#' terms such as frame rate.
 #'
 #' @inheritParams crop_video
 #' @param outdir A string naming the directory to write the image sequence to.
-#'   It is created (recursively) if it does not exist.
+#'   The function creates it (recursively) if it does not exist.
 #' @param fps The sampling rate, in frames per second: either a positive number
 #'   or an FFmpeg framerate expression string (for example \code{"30000/1001"}).
 #'   Provide exactly one of \code{fps} or \code{interval}.
 #' @param interval The number of seconds between sampled frames (a positive
-#'   number); the reciprocal is used as the frame rate. Provide exactly one of
-#'   \code{fps} or \code{interval}.
+#'   number). The function uses the reciprocal as the frame rate. Provide
+#'   exactly one of \code{fps} or \code{interval}.
 #' @param format A string giving the output image file extension (one of
 #'   \code{"png"}, \code{"jpg"}, \code{"jpeg"}, \code{"bmp"}, \code{"tif"},
 #'   \code{"tiff"}, \code{"webp"}). (default = \code{"png"})
@@ -132,9 +135,10 @@ frame_pipeline <- function(input, output, timestamp) {
 #'   \code{NULL} to derive it from \code{infile}'s basename. (default =
 #'   \code{NULL})
 #' @return `r command_return()`
-#' @seealso [ffm_fps()], the builder it uses to set the sampling rate;
-#'   [extract_frame()] for a single frame and [extract_frame_batch()] for a
-#'   caller-enumerated set; [sample_frames_batch()] for the many-file form.
+#' @seealso [ffm_fps()], the pipeline function it uses to set the sampling rate.
+#'   [extract_frame()] for a single frame, and [extract_frame_batch()] for a
+#'   set of frames that you list. [sample_frames_batch()] for the many-file
+#'   form.
 #' @family task functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -496,9 +500,11 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy",
 
 #' Extract the audio stream from a media file
 #'
-#' Pulls one audio track out of \code{infile}, dropping the video. When the
-#' input carries more than one audio track, \code{audio_stream} names which one
-#' to take; with no selector the \strong{first} audio track is taken.
+#' Take one audio track out of \code{infile}, and drop the video. When the
+#' input has more than one audio track, \code{audio_stream} names which one to
+#' take. With no \code{audio_stream}, the function takes the \strong{first}
+#' audio track. The glossary in \code{vignette("tidymedia")} explains media
+#' terms such as codec, container and stream copy.
 #'
 #' `r dropped_audio_paragraph()`
 #'
@@ -507,15 +513,15 @@ extract_audio_pipeline <- function(input, output, audio_codec = "copy",
 #' @inheritParams crop_video
 #' @param infile A string containing the path to a media file.
 #' @param outfile `r write_path_param("audio")`
-#' @param audio_codec A string naming the audio codec for the output stream
-#'   (default \code{"copy"}, i.e. remux without re-encoding), or \code{NULL} to
-#'   emit no \code{-codec:a} and let the output container's default encoder
-#'   decide — useful when the source codec cannot be copied into the extension
-#'   you asked for.
+#' @param audio_codec A string naming the audio codec for the output stream.
+#'   The default \code{"copy"} copies the stream into the new container
+#'   without re-encoding. \code{NULL} writes no \code{-codec:a}, so the output
+#'   container's default encoder decides. That is useful when FFmpeg cannot
+#'   copy the source codec into the extension you asked for.
 #' @param audio_stream `r audio_stream_param("take", "takes", "first")`
 #' @return `r command_return()`
-#' @seealso [ffm_drop()] and [ffm_codec()], the builders it wraps;
-#'   [convert_audio()] to re-encode the extracted audio;
+#' @seealso [ffm_drop()] and [ffm_codec()], the pipeline functions it wraps.
+#'   [convert_audio()] to re-encode the extracted audio.
 #'   [extract_audio_batch()] for the many-file form.
 #' @family task functions
 #' @family audio selection functions
@@ -1254,14 +1260,16 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
 
 #' Extract or convert a media file's audio track
 #'
-#' Maps the audio stream of \code{infile} into \code{outfile}. By default
-#' (\code{audio_codec = NULL}) the output format follows the \code{outfile} file
-#' extension at highest VBR quality (\code{-q:a 0}) — e.g. an \code{.mp3}
-#' extension yields an MP3. Pass \code{audio_codec} to pin the output audio
-#' codec explicitly, regardless of the extension.
+#' Write the audio stream of \code{infile} into \code{outfile}. By default
+#' (\code{audio_codec = NULL}), the output format follows the \code{outfile}
+#' file extension, at the highest VBR quality (\code{-q:a 0}). For example, an
+#' \code{.mp3} extension gives an MP3. Pass \code{audio_codec} to set the output
+#' audio codec yourself, whatever the extension is. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec and stream.
 #'
-#' When \code{infile} carries more than one audio track, \code{audio_stream}
-#' names which one to take; with no selector the \strong{first} one is taken.
+#' When \code{infile} has more than one audio track, \code{audio_stream} names
+#' which one to take. With no \code{audio_stream}, the function takes the
+#' \strong{first} one.
 #'
 #' `r dropped_audio_paragraph()`
 #'
@@ -1270,14 +1278,15 @@ convert_audio_pipeline <- function(input, output, audio_codec = NULL,
 #' @inheritParams extract_audio
 #' @param audio_codec An optional string naming the output audio codec (e.g.
 #'   \code{"libmp3lame"}, \code{"aac"}, \code{"flac"}), passed to FFmpeg's
-#'   \code{-c:a}. When \code{NULL} (default), the codec is inferred from the
-#'   \code{outfile} extension and encoded at highest VBR quality. Unlike the
-#'   other transform verbs, \code{NULL} here is \emph{not} the "leave the codec
-#'   unset" sentinel — it selects \code{-q:a 0}.
+#'   \code{-c:a}. When \code{NULL} (default), FFmpeg infers the codec from the
+#'   \code{outfile} extension and encodes at the highest VBR quality. On the
+#'   other task functions, \code{NULL} means "leave the codec unset". Here
+#'   \code{NULL} does \emph{not} leave the codec unset. \code{NULL} selects
+#'   \code{-q:a 0}.
 #' @param audio_stream `r audio_stream_param("take", "takes", "first")`
 #' @return `r command_return()`
-#' @seealso [ffm_codec()] and [ffm_map()], the builders it wraps;
-#'   [extract_audio()] to copy audio without re-encoding;
+#' @seealso [ffm_codec()] and [ffm_map()], the pipeline functions it wraps.
+#'   [extract_audio()] to copy audio without re-encoding.
 #'   [convert_audio_batch()] for the many-file form.
 #' @family task functions
 #' @family audio selection functions
@@ -2694,12 +2703,12 @@ normalize_audio_pipeline <- function(input, output,
 
 #' Get a data frame of all installed codecs
 #'
-#' Query a list of installed codecs from FFmpeg and construct a tidy data frame
-#' containing information about these codecs.
+#' Ask FFmpeg for its list of installed codecs, and return the list as a data
+#' frame with information about each codec. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec and encoder.
 #'
-#' @param sort_by_type A logical indicating whether the tibble should be sorted
-#'   by type and then by name (\code{TRUE}) or just by name (\code{FALSE}).
-#'   (default = \code{TRUE})
+#' @param sort_by_type A logical. \code{TRUE} sorts the tibble by type and then
+#'   by name. \code{FALSE} sorts it by name only. (default = \code{TRUE})
 #' @return A [tibble][tibble::tibble-package] with the following variables:
 #'   \item{name}{A character vector including the name/code of each codec}
 #'   \item{details}{A character vector including details about each codec}
@@ -2712,7 +2721,7 @@ normalize_audio_pipeline <- function(input, output,
 #'   whether each codec supports lossy compression} \item{lossless}{A logical
 #'   vector indicating whether each codec supports lossless compression}
 #' @seealso [ffmpeg_encoders()] for the encoder list, [ffm_codec()] to set a
-#'   codec in a pipeline, and [ffmpeg()] for the Layer 0 escape hatch.
+#'   codec in a pipeline, and [ffmpeg()] for the direct command.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' head(ffmpeg_codecs())
@@ -2783,8 +2792,9 @@ ffmpeg_codecs <- function(sort_by_type = TRUE) {
 
 #' Get a data frame of all installed encoders
 #'
-#' Query a list of installed encoders from FFmpeg and construct a tidy data
-#' frame containing information about these encoders.
+#' Ask FFmpeg for its list of installed encoders, and return the list as a data
+#' frame with information about each encoder. The glossary in
+#' \code{vignette("tidymedia")} explains media terms such as codec and encoder.
 #'
 #' @inheritParams ffmpeg_codecs
 #' @return A [tibble][tibble::tibble-package] with the following variables:
@@ -2800,7 +2810,7 @@ ffmpeg_codecs <- function(sort_by_type = TRUE) {
 #'   \item{direct_render}{A logical vector indicating whether each encoders
 #'   supports direct rending method 1}
 #' @seealso [ffmpeg_codecs()] for the codec list, [ffm_codec()] to set a codec
-#'   in a pipeline, and [ffmpeg()] for the Layer 0 escape hatch.
+#'   in a pipeline, and [ffmpeg()] for the direct command.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' head(ffmpeg_encoders())
@@ -2903,59 +2913,64 @@ hardware_codec_families <- function() {
 
 #' Hardware video encoders
 #'
-#' Helpers for opt-in hardware video encoding. \code{hardware_encoder()} maps a
-#' codec family to its hardware encoder name; \code{has_hardware_encoder()}
-#' reports whether that encoder is available in the local FFmpeg build. Two
-#' backends are supported: NVIDIA nvenc (H.264, HEVC and AV1) and Apple
-#' videotoolbox (H.264 and HEVC), so \code{hardware_encoder("h264", "nvenc")}
-#' is \code{"h264_nvenc"} and \code{hardware_encoder("h264",
-#' "videotoolbox")} is \code{"h264_videotoolbox"}.
+#' These functions help with optional hardware video encoding.
+#' \code{hardware_encoder()} gives the hardware encoder name for a codec family.
+#' \code{has_hardware_encoder()} reports whether that encoder is available in
+#' the local FFmpeg build. The package supports two backends: NVIDIA nvenc
+#' (H.264, HEVC and AV1) and Apple videotoolbox (H.264 and HEVC). So
+#' \code{hardware_encoder("h264", "nvenc")} is \code{"h264_nvenc"}, and
+#' \code{hardware_encoder("h264", "videotoolbox")} is
+#' \code{"h264_videotoolbox"}. The glossary in \code{vignette("tidymedia")}
+#' explains media terms such as codec, container and hardware encoder.
 #'
-#' \code{has_hardware_encoder()} is a \emph{cheap} check: it asks whether FFmpeg lists the
-#' encoder (via \code{\link{ffmpeg_encoders}}), which reflects how FFmpeg was
-#' built, not whether working hardware and a driver are present at run time.
-#' An encode can still fail at run time on a machine with no capable GPU. To
-#' override detection in a known environment (or in tests), set
-#' \code{options(tidymedia.hardware_encoders = )} to a character vector of encoder
-#' names to treat as available.
+#' \code{has_hardware_encoder()} is a \emph{cheap} check. It asks whether FFmpeg
+#' lists the encoder (via \code{\link{ffmpeg_encoders}}). That list reflects how
+#' FFmpeg was built. It does not reflect whether working hardware and a driver
+#' are present at run time. An encode can still fail at run time on a machine
+#' with no capable GPU. To override detection in a known environment (or in
+#' tests), set \code{options(tidymedia.hardware_encoders = )} to a character
+#' vector of encoder names to treat as available.
 #'
-#' These back the \code{hardware} toggle on
+#' The \code{hardware} argument of the task functions uses the same encoder
+#' names and the same check. These task functions have that argument:
 #' \code{\link{standardize_video}}, \code{\link{format_for_web}},
 #' \code{\link{anonymize_video}}, \code{\link{crop_video}},
 #' \code{\link{segment_video}}, \code{\link{compare_videos}},
 #' \code{\link{picture_in_picture}}, and \code{\link{separate_audio_video}}
-#' (and their \code{_batch} siblings). On the
-#' verbs whose \code{video_codec} defaults to \code{NULL} (no codec named), the
-#' H.264 family is assumed, so a non-H.264
-#' container (e.g. \code{.webm}) needs an explicit HEVC- or AV1-family
-#' \code{video_codec} (AV1 only under \code{"nvenc"}). Hardware
-#' \emph{decoding} (\code{-hwaccel}) and GPU filter pipelines are out of scope;
-#' use the \code{\link{ffmpeg}} escape hatch for those.
+#' (and their \code{_batch} forms). Some of these functions have a
+#' \code{video_codec} that defaults to \code{NULL} (no codec named), and they
+#' assume the H.264 family. So a container that does not take H.264 (e.g.
+#' \code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}.
+#' AV1 works only under \code{"nvenc"}. Hardware \emph{decoding}
+#' (\code{-hwaccel}) and GPU filter pipelines are out of scope. Use the
+#' \code{\link{ffmpeg}} direct command for those.
 #'
 #' @param codec The video codec family: one of \code{"h264"}, \code{"hevc"},
 #'   \code{"av1"}, or \code{"prores"}. These are the families the package
-#'   recognizes, not the families a given backend covers: a family the chosen
-#'   \code{hardware} backend has no encoder for is refused naming both the
-#'   backend and the family (e.g. \code{"av1"} under \code{"videotoolbox"}).
-#'   \code{"prores"} is refused by both backends today.
+#'   recognizes, not the families a given backend covers. If the chosen
+#'   \code{hardware} backend has no encoder for a family, the function refuses
+#'   the call. The error names both the backend and the family (e.g.
+#'   \code{"av1"} under \code{"videotoolbox"}). Both backends refuse
+#'   \code{"prores"} today.
 #' @param hardware The backend: \code{"nvenc"} or \code{"videotoolbox"}.
-#'   Required, with no default. Narrower than the verbs' \code{hardware}
-#'   argument: \code{"none"} is the verbs' off position, meaning "use no
-#'   backend", which has no meaning here, so it is refused.
-#' @return \code{hardware_encoder()} a single encoder-name string (e.g.
-#'   \code{"h264_nvenc"}); \code{has_hardware_encoder()} a length-one logical.
-#'   Neither returns for a \code{codec} the chosen \code{hardware} backend has
-#'   no encoder for: that pair is a wrong argument rather than a machine
-#'   without something, so both raise the error \code{codec} describes above.
-#'   \code{has_hardware_encoder()} returns \code{FALSE} only for a pair the
-#'   table holds and this FFmpeg build does not list.
-#' @seealso \code{\link{ffmpeg_encoders}} for the full encoder list,
+#'   Required, with no default. This set is narrower than the \code{hardware}
+#'   argument of the task functions. There, \code{"none"} means "use no
+#'   backend". That has no meaning here, so the function refuses it.
+#' @return \code{hardware_encoder()} returns a single encoder-name string (e.g.
+#'   \code{"h264_nvenc"}). \code{has_hardware_encoder()} returns a length-one
+#'   logical. Neither returns for a \code{codec} that the chosen \code{hardware}
+#'   backend has no encoder for. That pair is a wrong argument, not a machine
+#'   without something. So both give the error that \code{codec} describes
+#'   above. \code{has_hardware_encoder()} returns \code{FALSE} only for a pair
+#'   that the chosen backend has an encoder for and this FFmpeg build does not
+#'   list.
+#' @seealso \code{\link{ffmpeg_encoders}} for the full encoder list.
+#'   These task functions have the \code{hardware} argument:
 #'   \code{\link{standardize_video}}, \code{\link{format_for_web}},
 #'   \code{\link{anonymize_video}}, \code{\link{crop_video}},
 #'   \code{\link{segment_video}}, \code{\link{compare_videos}},
 #'   \code{\link{picture_in_picture}}, and
-#'   \code{\link{separate_audio_video}} for the
-#'   \code{hardware} toggle that uses these.
+#'   \code{\link{separate_audio_video}}.
 #' @family capability functions
 #' @examplesIf nzchar(Sys.which("ffmpeg"))
 #' hardware_encoder("h264", "nvenc")
@@ -4028,40 +4043,42 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
 
 #' Extract Still Frames From Many Videos From a Jobs Table
 #'
-#' Grab one still image per row across many input files from a single jobs
-#' tibble — the **batch** (table-driven) sibling of [extract_frame()] for when
-#' your
-#' frames span more than one input. Each row is one frame; the required columns
-#' name its source and the moment to capture. This is a thin wrapper over
-#' \code{\link{ffm_batch}}: one reproducible compiled command per frame.
+#' Save one still image for each row, across many input files, using one jobs
+#' table. This is the **batch** form of [extract_frame()], for when your frames
+#' come from more than one input. Each row is one frame. The required columns
+#' name its source and the moment to capture. The function is a thin wrapper
+#' over \code{\link{ffm_batch}}. It builds one reproducible command for each
+#' frame. The glossary in \code{vignette("tidymedia")} explains media terms
+#' such as frame rate.
 #'
-#' @param jobs A data frame with one row per frame and (at least) an
-#'   \code{input} column (source path) plus \strong{exactly one} of a
-#'   \code{timestamp} column (seconds, or \pkg{FFmpeg} time-duration strings) or
-#'   a \code{frame} column (whole frame numbers, converted per row to a
-#'   timestamp via the input's frame rate, as \code{\link{extract_frame}} does).
-#'   An optional \code{output} column names the destination image; when absent,
-#'   one is derived per row by appending \code{_<n>.<format>} to each input's
-#'   basename, with the frame number restarting at 1 for each input file. Two
-#'   rows whose destination is the same path are refused before any row runs:
-#'   a repeated \code{output}, or two derived names that match, as
-#'   \code{clip.mp4} and \code{clip.mkv} both give \code{clip_1.png}. Any other
-#'   columns are ignored.
-#' @param format A string giving the image file extension used when \code{output}
-#'   is derived (ignored when \code{jobs} carries an \code{output} column).
-#'   (default = \code{"png"})
+#' @param jobs A data frame with one row per frame. It needs at least an
+#'   \code{input} column (source path). It also needs \strong{exactly one} of a
+#'   \code{timestamp} column and a \code{frame} column. A \code{timestamp}
+#'   holds seconds, or \pkg{FFmpeg} time-duration strings. A \code{frame} holds
+#'   whole frame numbers. The function converts each one to a timestamp with
+#'   the input's frame rate, as \code{\link{extract_frame}} does. An optional
+#'   \code{output} column names the destination image. When it is absent, the
+#'   function derives one per row by appending \code{_<n>.<format>} to each
+#'   input's basename. The frame number restarts at 1 for each input file. The
+#'   function refuses two rows whose destination is the same path, before any
+#'   row runs. That covers a repeated \code{output}, and two derived names that
+#'   match. For example, \code{clip.mp4} and \code{clip.mkv} both give
+#'   \code{clip_1.png}. The function ignores any other columns.
+#' @param format A string giving the image file extension used when the
+#'   function derives \code{output}. The function ignores it when \code{jobs}
+#'   has an \code{output} column. (default = \code{"png"})
 #' @param run A logical: run each frame's command through FFmpeg (\code{TRUE},
-#'   default) or only compile them for inspection (\code{FALSE}).
-#' @param parallel A logical passed to \code{\link{ffm_batch}}: grab frames in
-#'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
-#'   default). Parallelism follows the active \code{\link[future:plan]{future}}
-#'   plan; \code{TRUE} under the default sequential plan runs one frame at a time
-#'   and warns.
+#'   default) or only build the commands for inspection (\code{FALSE}).
+#' @param parallel A logical passed to \code{\link{ffm_batch}}: save frames in
+#'   parallel with \pkg{furrr} (\code{TRUE}) or one after another (\code{FALSE},
+#'   default). Parallel work follows the active
+#'   \code{\link[future:plan]{future}} plan. \code{TRUE} under the default
+#'   sequential plan runs one frame at a time and warns.
 #' @inheritParams anonymize_video_batch
 #' @return `r batch_return("output")`
-#' @seealso [extract_frame()] for the single-frame form; [ffm_batch()] for the
-#'   batch runner and the arguments forwarded through \code{...};
-#'   [segment_video_batch()] for the segment-cutting sibling.
+#' @seealso [extract_frame()] for the single-frame form. [ffm_batch()] for the
+#'   batch runner and the arguments passed on through \code{...}.
+#'   [segment_video_batch()] for the batch function that cuts segments.
 #' @references `r time_duration_reference()`
 #' @family task functions
 #' @examples
@@ -4198,45 +4215,49 @@ derive_frames_dir <- function(input) {
 
 #' Sample frames from many videos at a fixed rate from a jobs table
 #'
-#' Sample many videos into numbered image sequences from a single jobs tibble —
-#' the **batch** (table-driven) sibling of [sample_frames()]. Each row is one
-#' input video sampled at a fixed rate into its own image sequence. This is a
-#' thin wrapper over \code{\link{ffm_batch}}: one reproducible compiled command
-#' per input.
+#' Sample many videos into numbered image sequences, using one jobs table. This
+#' is the **batch** form of [sample_frames()]. Each row is one input video,
+#' sampled at a fixed rate into its own image sequence. The function is a thin
+#' wrapper over \code{\link{ffm_batch}}. It builds one reproducible command for
+#' each input. The glossary in \code{vignette("tidymedia")} explains media terms
+#' such as frame rate.
 #'
-#' Supply the sampling rate once as the scalar \code{fps} or \code{interval}
-#' argument (applied to every row), or per row as an \code{fps} or
-#' \code{interval} column that overrides the scalar of the same name. Exactly one
-#' of the two — fps \emph{or} interval — may be supplied across arguments and
+#' Supply the sampling rate once as the single \code{fps} or \code{interval}
+#' argument, which applies to every row. Or supply it per row as an \code{fps}
+#' or \code{interval} column, which overrides the argument of the same name.
+#' Supply exactly one of the two, fps \emph{or} interval, across arguments and
 #' columns.
 #'
-#' @param jobs A data frame with one row per input and (at least) an
-#'   \code{input} column (source path). Optional columns: \code{outdir} (the
-#'   output directory for that row's sequence; when absent, one is derived as
-#'   \code{<input-base>_frames} beside each input), and \code{fps} /
-#'   \code{interval} (per-row rate overrides). Any other columns are ignored.
-#'   Two rows whose image sequences would share a file-name pattern are refused
-#'   before any row runs: the same output directory path (from the column, the
-#'   \code{outdir} argument, or derived) and the same input file name without
-#'   its extension.
+#' @param jobs A data frame with one row per input. It needs at least an
+#'   \code{input} column (source path). An optional \code{outdir} column gives
+#'   the output directory for that row's sequence. When it is absent, the
+#'   function derives one as \code{<input-base>_frames} beside each input.
+#'   Optional \code{fps} and \code{interval} columns override the rate per row.
+#'   The function ignores any other columns. The function refuses two rows
+#'   whose image sequences would share a file-name pattern, before any row
+#'   runs. Two rows share a pattern when they have the same output directory
+#'   path and the same input file name without its extension. The directory
+#'   path can come from the column, from the \code{outdir} argument, or from
+#'   the derived name.
 #' @param fps,interval The sampling rate applied to every row, as in
-#'   [sample_frames()]; a per-row column of the same name overrides it. Supply
+#'   [sample_frames()]. A per-row column of the same name overrides it. Supply
 #'   exactly one of the two (as an argument or a column). (default = \code{NULL})
-#' @param outdir An optional single output directory for all rows (overridden by
-#'   an \code{outdir} column); when both are absent, per-input directories are
-#'   derived. (default = \code{NULL})
+#' @param outdir An optional single output directory for all rows. An
+#'   \code{outdir} column overrides it. When both are absent, the function
+#'   derives one directory per input. (default = \code{NULL})
 #' @param format A string giving the output image file extension, as in
 #'   [sample_frames()]. (default = \code{"png"})
 #' @inheritParams anonymize_video_batch
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: sample in
-#'   parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
-#'   default). Parallelism follows the active \code{\link[future:plan]{future}}
-#'   plan; \code{TRUE} under the default sequential plan runs one at a time and
-#'   warns.
+#'   parallel with \pkg{furrr} (\code{TRUE}) or one after another (\code{FALSE},
+#'   default). Parallel work follows the active
+#'   \code{\link[future:plan]{future}} plan. \code{TRUE} under the default
+#'   sequential plan runs one at a time and warns.
 #' @return `r batch_return("outdir")`
-#' @seealso [sample_frames()] for the single-video form; [ffm_batch()] for the
-#'   batch runner and the arguments forwarded through \code{...};
-#'   [extract_frame_batch()] for the enumerated-frame sibling.
+#' @seealso [sample_frames()] for the single-video form. [ffm_batch()] for the
+#'   batch runner and the arguments passed on through \code{...}.
+#'   [extract_frame_batch()] for the batch function that takes a list of
+#'   frames.
 #' @family task functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -5624,36 +5645,39 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 
 #' Extract Audio From Many Files From a Jobs Table
 #'
-#' Pull the audio track out of many input files from a single jobs tibble — the
-#' **batch** (table-driven) sibling of [extract_audio()] for when you have more
-#' than one file. Each row is one input; \code{input} and \code{output} columns
-#' are required. This is a thin wrapper over \code{\link{ffm_batch}}: one
-#' reproducible compiled command per input, sharing the same map/drop-video
-#' pipeline as the scalar verb.
+#' Take the audio track out of many input files, using one jobs table. This is
+#' the **batch** form of [extract_audio()], for when you have more than one
+#' file. Each row is one input. The \code{input} and \code{output} columns are
+#' required. The function is a thin wrapper over \code{\link{ffm_batch}}. It
+#' builds one reproducible command for each input, with the same steps as
+#' \code{extract_audio()}: select the audio track and drop the video. The
+#' glossary in \code{vignette("tidymedia")} explains media terms such as codec,
+#' container and stream copy.
 #'
 #' `r dropped_audio_paragraph(batch = TRUE)`
 #'
 #' `r check_tracks_off_paragraph(batch = TRUE)`
 #'
-#' @param jobs A data frame with one row per input and (at least) an
+#' @param jobs A data frame with one row per input. It needs at least an
 #'   \code{input} column (source path) and an \code{output} column (destination
-#'   path). An \code{output} column is **required** — unlike the video batch
-#'   verbs, an audio destination cannot be auto-named because its extension is
-#'   the instruction (it picks the container, and with \code{audio_codec =
-#'   "copy"} must match the source codec). An optional \code{audio_codec} column
-#'   overrides the \code{audio_codec} argument per row; rows omitting it fall
-#'   back to the argument, and \code{NA} in a cell leaves that row's codec unset
-#'   (the column form of \code{audio_codec = NULL}). An optional
-#'   \code{audio_stream} column likewise overrides the \code{audio_stream}
-#'   argument per row, where \code{NA} keeps that row on the first audio track.
-#'   Two rows given the same \code{output} path are refused before any row
-#'   runs. Any other columns are ignored.
-#' @param audio_codec The audio codec applied to every row unless \code{jobs}
-#'   carries an \code{audio_codec} column, in which case \code{NA} in a cell
-#'   leaves that row's codec unset. \code{"copy"} (default) stream-copies the
-#'   audio losslessly; name an encoder (e.g. \code{"aac"}) to transcode; or pass
-#'   \code{NULL} to emit no \code{-codec:a} and let the output container's
-#'   default encoder decide.
+#'   path). The \code{output} column is **required**. Unlike the video batch
+#'   functions, this function cannot name an audio destination for you,
+#'   because the extension is the instruction. The extension picks the
+#'   container, and with \code{audio_codec = "copy"} it must match the source
+#'   codec. An optional \code{audio_codec} column overrides the
+#'   \code{audio_codec} argument per row. Rows without a value use the
+#'   argument. \code{NA} in a cell leaves that row's codec unset, which is the
+#'   column form of \code{audio_codec = NULL}. An optional \code{audio_stream}
+#'   column overrides the \code{audio_stream} argument per row in the same
+#'   way, and \code{NA} keeps that row on the first audio track. The function
+#'   refuses two rows with the same \code{output} path, before any row runs.
+#'   The function ignores any other columns.
+#' @param audio_codec The audio codec applied to every row, unless \code{jobs}
+#'   has an \code{audio_codec} column. In that column, \code{NA} in a cell
+#'   leaves that row's codec unset. \code{"copy"} (default) copies the audio
+#'   stream with no quality loss. Name an encoder (e.g. \code{"aac"}) to
+#'   re-encode. Or pass \code{NULL} to write no \code{-codec:a}, so the output
+#'   container's default encoder decides.
 #' @param audio_stream `r audio_stream_param("take", "takes", "first", batch = TRUE)`
 #' @param run A logical: run each command through FFmpeg (\code{TRUE}, default)
 #'   or only compile them for inspection (\code{FALSE}).
@@ -5663,8 +5687,8 @@ check_fanin_jobs <- function(jobs, min_inputs = 1L, verb = NULL,
 #' @param ... Additional arguments forwarded to \code{\link{ffm_batch}} (e.g.
 #'   \code{verify}, \code{manifest}, \code{progress}).
 #' @return `r jobs_return()`
-#' @seealso [extract_audio()], the scalar verb it wraps; [ffm_batch()], the batch
-#'   runner; [convert_audio_batch()] to transcode audio in batch.
+#' @seealso [extract_audio()], the single-input form it wraps. [ffm_batch()],
+#'   the batch runner. [convert_audio_batch()] to re-encode audio in batch.
 #' @family task functions
 #' @family audio selection functions
 #' @examples
@@ -5742,40 +5766,44 @@ extract_audio_batch <- function(jobs, audio_codec = "copy",
 
 #' Convert the Audio of Many Files From a Jobs Table
 #'
-#' Extract or transcode the audio track of many input files from a single jobs
-#' tibble — the **batch** (table-driven) sibling of [convert_audio()] for when
-#' you have more than one file. Each row is one input; \code{input} and
-#' \code{output} columns are required. This is a thin wrapper over
-#' \code{\link{ffm_batch}}: one reproducible compiled command per input, sharing
-#' the same audio-map pipeline (and per-value \code{audio_codec} validation) as
-#' the scalar verb.
+#' Extract or re-encode the audio track of many input files, using one jobs
+#' table. This is the **batch** form of [convert_audio()], for when you have
+#' more than one file. Each row is one input. The \code{input} and
+#' \code{output} columns are required. The function is a thin wrapper over
+#' \code{\link{ffm_batch}}. It builds one reproducible command for each input.
+#' Each command uses the same audio steps as \code{convert_audio()}, and the
+#' function checks each \code{audio_codec} value in the same way. The glossary
+#' in \code{vignette("tidymedia")} explains media terms such as codec and
+#' stream.
 #'
 #' `r dropped_audio_paragraph(batch = TRUE)`
 #'
 #' `r check_tracks_off_paragraph(batch = TRUE)`
 #'
-#' @param jobs A data frame with one row per input and (at least) an
+#' @param jobs A data frame with one row per input. It needs at least an
 #'   \code{input} column (source path) and an \code{output} column (destination
-#'   path). An \code{output} column is **required** — an audio destination
-#'   cannot be auto-named because its extension picks the output format. An
-#'   optional \code{audio_codec} column overrides the \code{audio_codec}
-#'   argument per row, where \code{NA} spells "use the highest-VBR-quality
-#'   default"; rows omitting it fall back to the argument. An optional
-#'   \code{audio_stream} column likewise overrides the \code{audio_stream}
-#'   argument per row, where \code{NA} keeps that row on the first audio track.
-#'   Two rows given the same \code{output} path are refused before any row
-#'   runs. Any other columns are
-#'   ignored — except a \code{format} column, retired with the argument of the
-#'   same name, which is an error rather than a silent no-op.
-#' @param audio_codec The output audio codec applied to every row unless
-#'   \code{jobs} carries an \code{audio_codec} column. \code{NULL} (default)
-#'   infers the codec from each \code{output} extension at highest VBR quality;
-#'   name a codec (e.g. \code{"aac"}, \code{"flac"}) to pin \code{-c:a}.
+#'   path). The \code{output} column is **required**. The function cannot name
+#'   an audio destination for you, because its extension picks the output
+#'   format. An optional \code{audio_codec} column overrides the
+#'   \code{audio_codec} argument per row. There, \code{NA} means "use the
+#'   highest-VBR-quality default". Rows without a value use the argument. An
+#'   optional \code{audio_stream} column overrides the \code{audio_stream}
+#'   argument per row in the same way, and \code{NA} keeps that row on the
+#'   first audio track. The function refuses two rows with the same
+#'   \code{output} path, before any row runs. The function ignores any other
+#'   columns, with one exception. A \code{format} column is an error, not a
+#'   silent no-op. The package retired that column with the argument of the
+#'   same name.
+#' @param audio_codec The output audio codec applied to every row, unless
+#'   \code{jobs} has an \code{audio_codec} column. With \code{NULL} (default),
+#'   FFmpeg infers the codec from each \code{output} extension, at the highest
+#'   VBR quality. Name a codec (e.g. \code{"aac"}, \code{"flac"}) to set
+#'   \code{-c:a}.
 #' @param audio_stream `r audio_stream_param("take", "takes", "first", batch = TRUE)`
 #' @inheritParams extract_audio_batch
 #' @return `r jobs_return()`
-#' @seealso [convert_audio()], the scalar verb it wraps; [ffm_batch()], the batch
-#'   runner; [extract_audio_batch()] to stream-copy audio in batch.
+#' @seealso [convert_audio()], the single-input form it wraps. [ffm_batch()],
+#'   the batch runner. [extract_audio_batch()] to stream-copy audio in batch.
 #' @family task functions
 #' @family audio selection functions
 #' @examples

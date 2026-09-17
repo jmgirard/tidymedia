@@ -16,23 +16,25 @@ sample_frames_batch(
 )
 }
 \arguments{
-\item{jobs}{A data frame with one row per input and (at least) an
-\code{input} column (source path). Optional columns: \code{outdir} (the
-output directory for that row's sequence; when absent, one is derived as
-\code{<input-base>_frames} beside each input), and \code{fps} /
-\code{interval} (per-row rate overrides). Any other columns are ignored.
-Two rows whose image sequences would share a file-name pattern are refused
-before any row runs: the same output directory path (from the column, the
-\code{outdir} argument, or derived) and the same input file name without
-its extension.}
+\item{jobs}{A data frame with one row per input. It needs at least an
+\code{input} column (source path). An optional \code{outdir} column gives
+the output directory for that row's sequence. When it is absent, the
+function derives one as \code{<input-base>_frames} beside each input.
+Optional \code{fps} and \code{interval} columns override the rate per row.
+The function ignores any other columns. The function refuses two rows
+whose image sequences would share a file-name pattern, before any row
+runs. Two rows share a pattern when they have the same output directory
+path and the same input file name without its extension. The directory
+path can come from the column, from the \code{outdir} argument, or from
+the derived name.}
 
 \item{fps, interval}{The sampling rate applied to every row, as in
-\code{\link[=sample_frames]{sample_frames()}}; a per-row column of the same name overrides it. Supply
+\code{\link[=sample_frames]{sample_frames()}}. A per-row column of the same name overrides it. Supply
 exactly one of the two (as an argument or a column). (default = \code{NULL})}
 
-\item{outdir}{An optional single output directory for all rows (overridden by
-an \code{outdir} column); when both are absent, per-input directories are
-derived. (default = \code{NULL})}
+\item{outdir}{An optional single output directory for all rows. An
+\code{outdir} column overrides it. When both are absent, the function
+derives one directory per input. (default = \code{NULL})}
 
 \item{format}{A string giving the output image file extension, as in
 \code{\link[=sample_frames]{sample_frames()}}. (default = \code{"png"})}
@@ -41,10 +43,10 @@ derived. (default = \code{NULL})}
 default) or only compile them for inspection (\code{FALSE}).}
 
 \item{parallel}{A logical passed to \code{\link{ffm_batch}}: sample in
-parallel with \pkg{furrr} (\code{TRUE}) or sequentially (\code{FALSE},
-default). Parallelism follows the active \code{\link[future:plan]{future}}
-plan; \code{TRUE} under the default sequential plan runs one at a time and
-warns.}
+parallel with \pkg{furrr} (\code{TRUE}) or one after another (\code{FALSE},
+default). Parallel work follows the active
+\code{\link[future:plan]{future}} plan. \code{TRUE} under the default
+sequential plan runs one at a time and warns.}
 
 \item{...}{Additional arguments forwarded to \code{\link{ffm_batch}}, such as
 \code{verify}, \code{manifest}, \code{checksums}, and \code{progress}.}
@@ -53,17 +55,18 @@ warns.}
 The \link[tibble:tibble-package]{tibble} returned by \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column. When \code{outdir} was derived, it also has the resolved \code{outdir} column. When \code{run = TRUE}, it has a \code{success} column, plus any columns the forwarded arguments add, such as \code{verified}.
 }
 \description{
-Sample many videos into numbered image sequences from a single jobs tibble —
-the \strong{batch} (table-driven) sibling of \code{\link[=sample_frames]{sample_frames()}}. Each row is one
-input video sampled at a fixed rate into its own image sequence. This is a
-thin wrapper over \code{\link{ffm_batch}}: one reproducible compiled command
-per input.
+Sample many videos into numbered image sequences, using one jobs table. This
+is the \strong{batch} form of \code{\link[=sample_frames]{sample_frames()}}. Each row is one input video,
+sampled at a fixed rate into its own image sequence. The function is a thin
+wrapper over \code{\link{ffm_batch}}. It builds one reproducible command for
+each input. The glossary in \code{vignette("tidymedia")} explains media terms
+such as frame rate.
 }
 \details{
-Supply the sampling rate once as the scalar \code{fps} or \code{interval}
-argument (applied to every row), or per row as an \code{fps} or
-\code{interval} column that overrides the scalar of the same name. Exactly one
-of the two — fps \emph{or} interval — may be supplied across arguments and
+Supply the sampling rate once as the single \code{fps} or \code{interval}
+argument, which applies to every row. Or supply it per row as an \code{fps}
+or \code{interval} column, which overrides the argument of the same name.
+Supply exactly one of the two, fps \emph{or} interval, across arguments and
 columns.
 }
 \examples{
@@ -76,9 +79,10 @@ jobs <- tibble::tibble(
 sample_frames_batch(jobs, fps = 2, run = FALSE)
 }
 \seealso{
-\code{\link[=sample_frames]{sample_frames()}} for the single-video form; \code{\link[=ffm_batch]{ffm_batch()}} for the
-batch runner and the arguments forwarded through \code{...};
-\code{\link[=extract_frame_batch]{extract_frame_batch()}} for the enumerated-frame sibling.
+\code{\link[=sample_frames]{sample_frames()}} for the single-video form. \code{\link[=ffm_batch]{ffm_batch()}} for the
+batch runner and the arguments passed on through \code{...}.
+\code{\link[=extract_frame_batch]{extract_frame_batch()}} for the batch function that takes a list of
+frames.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

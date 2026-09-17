@@ -17,45 +17,48 @@ separate_audio_video_batch(
 )
 }
 \arguments{
-\item{jobs}{A data frame with one row per input and (at least) an
-\code{input} column (source path) plus \code{audiofile} and \code{videofile}
-columns naming the two destinations. All three are \strong{required} — like
-\code{\link{separate_audio_video}}, this verb derives no output paths,
-because a copied stream's container extension is the instruction (it must
-match the source codec). No two of a table's destinations may be the same
-path -- an \code{audiofile} and a \code{videofile} in one row, or any two
-across rows; such a table is refused before any row runs. Optional
-\code{audio_codec} and \code{video_codec}
-columns (character; \code{NA} to emit no codec option for that stream)
-override the arguments of the same name per row; rows omitting a column fall
-back to that argument. An optional numeric \code{audio_stream} column
-(\code{NA} to keep every audio track in that row's \code{audiofile})
-likewise overrides the \code{audio_stream} argument per row. Any other
-columns are ignored — except a \code{reencode} column, retired with the
-argument of the same name, which is an error rather than a silent no-op.}
+\item{jobs}{A data frame with one row per input. It has at least an
+\code{input} column (source path), plus \code{audiofile} and
+\code{videofile} columns that name the two destinations. All three are
+\strong{required}. Like \code{\link{separate_audio_video}}, this function
+derives no output paths. The container extension of a copied stream is the
+instruction, because it must match the source codec. No two destinations in
+a table can be the same path. That covers an \code{audiofile} and a
+\code{videofile} in one row, and any two across rows. The function refuses
+such a table before any row runs. Optional \code{audio_codec} and
+\code{video_codec} columns override the arguments of the same name per row.
+They are character, with \code{NA} to set no codec option for that stream.
+Rows that omit a column fall back to that argument. An optional numeric
+\code{audio_stream} column likewise overrides the \code{audio_stream}
+argument per row. There, \code{NA} keeps every audio track in that row's
+\code{audiofile}. Any other columns are ignored, with one exception. A
+\code{reencode} column, retired with the argument of the same name, is an
+error and not a silent no-op.}
 
-\item{audio_codec}{A string naming the encoder for every \code{audiofile}
-unless \code{jobs} carries an \code{audio_codec} column. The default
-\code{"copy"} stream-copies the audio losslessly; \code{NULL} emits no
-\code{-codec:a}. See \code{\link{separate_audio_video}}.}
+\item{audio_codec}{A string that names the encoder for every
+\code{audiofile}, unless \code{jobs} carries an \code{audio_codec} column.
+The default \code{"copy"} copies the audio stream with no quality loss.
+\code{NULL} sets no \code{-codec:a}. See
+\code{\link{separate_audio_video}}.}
 
-\item{video_codec}{A string naming the encoder for every \code{videofile}
-unless \code{jobs} carries a \code{video_codec} column. The default
-\code{"copy"} stream-copies the video losslessly; \code{NULL} emits no
-\code{-codec:v}. See \code{\link{separate_audio_video}}.}
+\item{video_codec}{A string that names the encoder for every
+\code{videofile}, unless \code{jobs} carries a \code{video_codec} column.
+The default \code{"copy"} copies the video stream with no quality loss.
+\code{NULL} sets no \code{-codec:v}. See
+\code{\link{separate_audio_video}}.}
 
 \item{hardware, fallback}{The encoder backend for every \code{videofile} and
-its fallback behavior, applied to the whole batch (a property of the
-machine, not of a row, so neither is read as a \code{jobs} column). See
-\code{\link[=separate_audio_video]{separate_audio_video()}}. Because \code{hardware} is batch-wide, and a
-stream copy runs no encoder, a non-\code{"none"} \code{hardware}
-conflicts with any row whose video codec resolves to \code{"copy"} —
-including the default — so a jobs table mixing copied and re-encoded
-video must be split into separate calls.
+its fallback behavior. They apply to the whole batch. They are a property
+of the machine, not of a row, so neither is read as a \code{jobs} column.
+See \code{\link[=separate_audio_video]{separate_audio_video()}}. \code{hardware} is batch-wide, and a stream
+copy runs no encoder. So a \code{hardware} other than \code{"none"}
+conflicts with any row whose video codec resolves to \code{"copy"}. That
+includes the default. So split a jobs table that mixes copied and
+re-encoded video into separate calls.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
 A call can also contradict itself by asking for GPU encoding alongside a stream copy. Such a call is refused for the contradiction first, whether or not this machine has the encoder.
 The stream-copy conflict above is caught first, so such a call aborts
-without probing.}
+without asking FFmpeg.}
 
 \item{audio_stream}{The audio track to write to each \code{audiofile}, as a number that counts from \code{0} among the \emph{audio tracks} of each row's input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) keeps \strong{every} audio track. Without an \code{audio_stream} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row. It does not fall back to the argument. The every-track family reads \code{NULL} as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. A container that holds several audio streams (\code{.mka}, \code{.m4a}) gets them all. A container for one stream only (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail, so name a track to write one of those. Count only the input's \emph{audio} streams. Do not use the \code{index} column of \code{\link{probe_audio}}, which counts every stream. An input with no audio at all is an FFmpeg error here, because this function writes an audio file. Functions that write only a video file, such as \code{\link{standardize_video}}, do not fail in that case. \code{videofile} is never affected. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
@@ -70,78 +73,84 @@ or only compile them for inspection (\code{FALSE}).}
 \code{verify}, \code{manifest}, \code{progress}).}
 }
 \value{
-A \link[tibble:tibble-package]{tibble} with \strong{two rows per input}
-(one per stream): the reshaped \code{input}, a single \code{output} path, a
-\code{stream} marker (\code{"audio"} or \code{"video"}), and an added
-\code{command} column — plus, when \code{run = TRUE}, a \code{success}
-column (and \code{verified} / provenance manifest when requested via
-\code{...}). When \code{jobs} supplies either codec column, a single
-\code{codec} column carries each row's resolved encoder for its own stream
-(\code{NA} where none is emitted). When \code{audio_stream} is supplied as
-either the argument or a \code{jobs} column, an \code{audio_stream} column
-likewise carries each row's resolved track: the selected index on an audio
-row, and \code{NA} both on every video row (which takes no audio) and on an
-audio row that named no track — so \code{NA} does not by itself mark a video
-row; read the \code{stream} column for that. The columns match the other
-\code{_batch} verbs' output plus the \code{stream} marker. See
-\code{\link{ffm_batch}}.
+A \link[tibble:tibble-package]{tibble} with \strong{two rows per input},
+one per stream. It has the reshaped \code{input}, a single \code{output}
+path, a \code{stream} marker (\code{"audio"} or \code{"video"}), and an
+added \code{command} column. When \code{run = TRUE}, it also has a
+\code{success} column, and \code{verified} or the provenance manifest when
+requested via \code{...}. When \code{jobs} supplies either codec column, a
+single \code{codec} column carries each row's resolved encoder for its own
+stream (\code{NA} where none is set). When \code{audio_stream} is supplied
+as either the argument or a \code{jobs} column, an \code{audio_stream}
+column likewise carries each row's resolved track. That is the selected
+index on an audio row. It is \code{NA} on every video row, which takes no
+audio, and on an audio row that named no track. So \code{NA} does not by
+itself mark a video row. Read the \code{stream} column for that. The
+columns match the output of the other \code{_batch} functions, plus the
+\code{stream} marker. See \code{\link{ffm_batch}}.
 }
 \description{
 Split the audio and video streams of many input files from a single jobs
-tibble — the \strong{batch} (table-driven) sibling of \code{\link[=separate_audio_video]{separate_audio_video()}} for
-when you have more than one file. Each row is one input that fans out into
-\strong{two} outputs; \code{input}, \code{audiofile}, and \code{videofile} columns
-are all required. This is a thin wrapper over \code{\link{ffm_batch}}: every
-input row is reshaped into two single-output jobs (one per stream), so a jobs
-table of \code{N} rows returns \code{2N} rows — one reproducible compiled
-command per stream — sharing the same per-stream map/stream-copy pipeline as
-the scalar verb.
+tibble. This is the \strong{batch} (table-driven) form of
+\code{\link[=separate_audio_video]{separate_audio_video()}}, for when you have more than one file. Each row is
+one input that gives \strong{two} outputs. The \code{input},
+\code{audiofile} and \code{videofile} columns are all required. The function
+is a thin wrapper over \code{\link{ffm_batch}}. It turns every input row into
+two single-output jobs, one per stream. So a jobs table of \code{N} rows
+returns \code{2N} rows, with one reproducible compiled command per stream.
+Each stream uses the same map and stream-copy pipeline as
+\code{\link[=separate_audio_video]{separate_audio_video()}}. The glossary in \code{vignette("tidymedia")}
+explains media terms such as codec, container and stream copy.
 }
 \section{Failed audio outputs}{
 
 A row whose audio command does not finish cleanly is recorded as
-\code{success = FALSE} rather than aborting the batch. Such a row is named in
-a warning emitted \strong{once} for the whole batch, listing every affected
+\code{success = FALSE}, and the batch does not abort. One warning for the
+whole batch, emitted \strong{once}, names such rows. It lists every affected
 input row and the ways out.
 
-A row reaches that warning only when all four of these hold: it named no
-\code{audio_stream}, the row is recorded \code{success = FALSE}, its input
-carries more than one audio track, and its \code{audiofile}'s extension is not
-among the containers named here as holding several —
-\code{.mka}, \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm}, \code{.ogg}, \code{.opus} and \code{.ts}.
-No exit status is among those conditions, and the difference from
-\code{\link{separate_audio_video}} is deliberate: the batch runner records
-\emph{whether} a row succeeded and not how, so a non-zero exit, a hard error
-and a reached limit are all recorded the same way, and a row put here by any
-of them is treated alike. The nine
-are an exclusion list and not a survey:
-FFmpeg writes several audio streams into other containers too (\code{.avi} and
-\code{.nut} among them), and a row failing on one of those is still named. The
-container condition keeps a row off the list when it is already doing what the
-warning would advise; such a row is silently not named, and a batch whose
-failed audio rows all write to those nine warns not at
-all. The headline
-count follows the rows actually named.
+A row reaches that warning only when all four of these hold:
+\itemize{
+\item It named no \code{audio_stream}.
+\item The row is recorded \code{success = FALSE}.
+\item Its input carries more than one audio track.
+\item The extension of its \code{audiofile} is not among the containers
+named here as holding several audio streams.
+}
+Those containers are \code{.mka}, \code{.m4a}, \code{.mp4}, \code{.mov}, \code{.mkv}, \code{.webm}, \code{.ogg}, \code{.opus} and \code{.ts}. No exit status is among those
+conditions, and the difference from \code{\link{separate_audio_video}} is
+deliberate. The batch runner records \emph{whether} a row succeeded and not
+how. So it records a non-zero exit, a hard error and a reached limit the same
+way. It treats alike a row put here by any of them. The
+nine are an exclusion list and not a survey. FFmpeg
+writes several audio streams into other containers too, \code{.avi} and
+\code{.nut} among them. A row that fails on one of those is still named. The
+container condition keeps a row off the list when it already does what the
+warning advises. Such a row is silently not named. A batch whose failed audio
+rows all write to those nine does not warn at all. The
+headline count follows the rows actually named.
 
-What each bullet states is what that row \emph{did} — its track count, and
-that every track was mapped into one output — never why FFmpeg refused. A
-stream copy into a container that will not hold the source codec, an unknown
-encoder and a missing output directory all look alike from here.
+Each bullet states what that row \emph{did}: its track count, and that every
+track was mapped into one output. It never states why FFmpeg refused.
+Several causes look alike from here. They are a stream copy into a container
+that will not hold the source codec, an unknown encoder and a missing output
+directory.
 
-The check runs FFprobe on the failed rows only, so it is emitted when FFprobe
-is available and the input can be probed, and skipped silently otherwise — so
-the warning may simply not appear, and its absence is never itself a second
-failure. It never runs under \code{run = FALSE} and never changes any compiled
-command. Suppress it with \code{suppressWarnings(classes =
-"tidymedia_multitrack_separation")}.
+The check runs FFprobe on the failed rows only. So the function emits the
+warning when FFprobe is available and the input can be probed, and skips it
+silently otherwise. The warning may not appear, and its absence is never
+itself a second failure. The check never runs under \code{run = FALSE} and
+never changes any compiled command. Suppress the warning with
+\code{suppressWarnings(classes = "tidymedia_multitrack_separation")}.
 
-The warning names the same event as \code{\link{separate_audio_video}}'s
-error and answers to the same class, but it carries no exit status: no
-\code{tm_status} field, and no \code{tidymedia_ffmpeg_exit} class. The batch
-runner records, per row, \emph{whether} the row succeeded — the
-\code{success} column — not \emph{how} FFmpeg exited, so by the time this
-warning is assembled the exit number is gone. Catch a specific row's exit
-status with the scalar verb instead.
+The warning names the same event as the error of
+\code{\link{separate_audio_video}} and answers to the same class. But it
+carries no exit status: no \code{tm_status} field, and no
+\code{tidymedia_ffmpeg_exit} class. The batch runner records, per row,
+\emph{whether} the row succeeded, not \emph{how} FFmpeg exited. The
+\code{success} column holds that record. So the exit number is gone by the
+time this warning is assembled. To catch a specific row's exit status, use
+\code{\link[=separate_audio_video]{separate_audio_video()}}.
 }
 
 \examples{
@@ -155,9 +164,11 @@ jobs <- tibble::tibble(
 separate_audio_video_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=separate_audio_video]{separate_audio_video()}}, the scalar verb it wraps; \code{\link[=ffm_batch]{ffm_batch()}},
-the batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
-\code{\link[=segment_video_batch]{segment_video_batch()}} for the other fan-out batch verb.
+\code{\link[=separate_audio_video]{separate_audio_video()}}, the one-file function it wraps.
+\code{\link[=ffm_batch]{ffm_batch()}}, the batch runner.
+\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} argument.
+\code{\link[=segment_video_batch]{segment_video_batch()}} for the other batch function that gives several
+outputs per input.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

@@ -137,6 +137,19 @@ hardware encoder gives a picture that is a little worse than the software
 encoder `libx264` or `libx265`. So it suits previews and bulk conversion, and
 the software encoder suits a copy that you will keep or analyze frame by frame.
 
+These functions also take a `quality` argument. It is the encoder's own
+rate-control value, passed through unchanged. `libx264` and `libx265` read it
+as `-crf` (0 to 51). The nvenc encoders read it as `-cq` (0 to 51), and the
+videotoolbox encoders as `-q:v` (1 to 100). Each scale is its own, so pick the
+number for the encoder you named:
+
+```{r, eval = FALSE}
+standardize_video("raw.mp4", "std.mp4", hardware = "videotoolbox", quality = 60)
+```
+
+When `fallback = TRUE` falls back to software, the value is dropped and the
+message says so. Leave `quality` as `NULL` to keep the encoder's own default.
+
 tidymedia does not do hardware decoding or run filters on a graphics card. For
 those, use the direct command `ffmpeg()`.
 

@@ -82,18 +82,25 @@ quality_param <- function(fixed_h264 = FALSE) {
   rd_sentences(
     "A number, or \\code{NULL} (default) to leave the encoder's own default in place.",
     "It is the encoder's own rate-control value, passed through unchanged.",
-    paste0("\\code{libx264} and \\code{libx265} read it as \\code{-crf} (0 to 51), ",
-           "the nvenc encoders as \\code{-cq} (0 to 51), ",
-           "and the videotoolbox encoders as \\code{-q:v} (1 to 100)."),
+    if (fixed_h264) {
+      c("\\code{libx264} reads it as \\code{-crf} (0 to 51).",
+        paste0("\\code{h264_nvenc} reads it as \\code{-cq} (0 to 51), ",
+               "and \\code{h264_videotoolbox} as \\code{-q:v} (1 to 100)."))
+    } else {
+      c("\\code{libx264} and \\code{libx265} read it as \\code{-crf} (0 to 51).",
+        paste0("The nvenc encoders read it as \\code{-cq} (0 to 51), ",
+               "and the videotoolbox encoders as \\code{-q:v} (1 to 100)."))
+    },
     "Each scale is its own: the same number means something different on each encoder.",
     "A value outside the encoder's range is refused.",
     if (fixed_h264) {
       paste0("The encoder is \\code{libx264}, \\code{h264_nvenc} or ",
              "\\code{h264_videotoolbox}, as \\code{hardware} chooses.")
     } else {
-      paste0("An encoder outside those seven, such as \\code{libvpx-vp9}, ",
-             "or a \\code{video_codec} of \\code{\"copy\"} or \\code{NULL} ",
-             "under \\code{hardware = \"none\"}, is refused with \\code{quality} set.")
+      c(paste0("An encoder outside those seven, such as \\code{libvpx-vp9}, ",
+               "is refused with \\code{quality} set."),
+        paste0("So is a \\code{video_codec} of \\code{\"copy\"}, ",
+               "or of \\code{NULL} under \\code{hardware = \"none\"}."))
     },
     paste0("When \\code{fallback = TRUE} falls back to software, the value is ",
            "dropped and the message says so, because it belonged to the ",

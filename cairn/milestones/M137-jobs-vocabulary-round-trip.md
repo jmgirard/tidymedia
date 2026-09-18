@@ -224,3 +224,12 @@ The maintainer chose at the merge gate to fix O2, O3 and O9 before merging.
 - O6 rejected. The refusal it names is an unmodified line, and AC5 scopes the
   bullet to the no-match branch.
 - O7 and O8 rejected as style.
+
+Re-verified after the three fixes. `devtools::document()` rewrote
+`man/ffm_jobs.Rd` once and then produced no further diff.
+`Rscript tools/doc_prose_report.R man/ffm_jobs.Rd` printed
+"man/ffm_jobs.Rd: 50 sentences" and exited 0. `devtools::test()` reported 0
+failures and 17767 passing, unchanged. `devtools::check()` reported Status OK
+again: 0 errors, 0 warnings, 0 notes, in 8m 14s. `pkgdown::check_pkgdown()`
+found no problems, and `cairn_validate.py` passed every check. The code-side
+diff against `master` is 6 files, 217 insertions, 5 deletions.

@@ -25,6 +25,7 @@ picture_in_picture(
   audio_codec = "copy",
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   run = TRUE
 )
 ```
@@ -114,6 +115,20 @@ picture_in_picture(
   never changes silently. A `video_codec` in a family that the backend
   has no encoder for is a wrong argument, not an absent encoder. So it
   aborts whatever `fallback` says.
+
+- quality:
+
+  A number, or `NULL` (default) to leave the encoder's own default in
+  place. It is the encoder's own rate-control value, passed through
+  unchanged. `libx264` and `libx265` read it as `-crf` (0 to 51). The
+  nvenc encoders read it as `-cq` (0 to 51), and the videotoolbox
+  encoders as `-q:v` (1 to 100). Each scale is its own: the same number
+  means something different on each encoder. A value outside the
+  encoder's range is refused. An encoder outside those seven, such as
+  `libvpx-vp9`, is refused with `quality` set. So is a `video_codec` of
+  `"copy"`, or of `NULL` under `hardware = "none"`. When
+  `fallback = TRUE` falls back to software, the value is dropped and the
+  message says so, because it belonged to the hardware encoder's scale.
 
 - run:
 

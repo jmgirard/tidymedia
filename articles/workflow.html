@@ -187,6 +187,18 @@ rate, a hardware encoder gives a picture that is a little worse than the
 software encoder <code>libx264</code> or <code>libx265</code>. So it
 suits previews and bulk conversion, and the software encoder suits a
 copy that you will keep or analyze frame by frame.</p>
+<p>These functions also take a <code>quality</code> argument. It is the
+encoder’s own rate-control value, passed through unchanged.
+<code>libx264</code> and <code>libx265</code> read it as
+<code>-crf</code> (0 to 51). The nvenc encoders read it as
+<code>-cq</code> (0 to 51), and the videotoolbox encoders as
+<code>-q:v</code> (1 to 100). Each scale is its own, so pick the number
+for the encoder you named:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/standardize_video.html">standardize_video</a></span><span class="op">(</span><span class="st">"raw.mp4"</span>, <span class="st">"std.mp4"</span>, hardware <span class="op">=</span> <span class="st">"videotoolbox"</span>, quality <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span></code></pre></div>
+<p>When <code>fallback = TRUE</code> falls back to software, the value
+is dropped and the message says so. Leave <code>quality</code> as
+<code>NULL</code> to keep the encoder’s own default.</p>
 <p>tidymedia does not do hardware decoding or run filters on a graphics
 card. For those, use the direct command <code><a href="../reference/ffmpeg.html">ffmpeg()</a></code>.</p>
 </div>
@@ -201,7 +213,7 @@ broadcast standard uses.</p>
 <p>The output of <code><a href="../reference/normalize_audio.html">normalize_audio()</a></code> has one audio <a href="tidymedia.html#glossary">stream</a> and no video. So give it an
 audio file name. An <code>.mp4</code> name would give you a video file
 with sound and no picture:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/normalize_audio.html">normalize_audio</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_norm.wav"</span>,</span>
 <span>                target_loudness <span class="op">=</span> <span class="op">-</span><span class="fl">23</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -af \"loudnorm=I=-23:TP=-1:LRA=7,asetnsamples=n=4096:p=0\" -map \"0:a:0\" \"session01_camA_norm.wav\""</span></span></code></pre></div>
@@ -212,7 +224,7 @@ back with the video.</p>
 <code><a href="../reference/convert_audio.html">convert_audio()</a></code> converts the audio to the format that the
 output extension names. Here that is a <code>.wav</code> file for a
 speech recognition tool:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/convert_audio.html">convert_audio</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA.wav"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -q:a 0 -map \"0:a:0\" \"session01_camA.wav\""</span></span></code></pre></div>
 <p>If you need the audio as it is, <code><a href="../reference/extract_audio.html">extract_audio()</a></code> copies
@@ -224,13 +236,13 @@ it without converting it. See <code><a href="../articles/tidymedia.html">vignett
 <p>Coding facial expressions or gestures frame by frame needs still
 images. <code><a href="../reference/extract_frame.html">extract_frame()</a></code> saves one frame at a given time.
 This is useful for a picture in a coding manual:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/extract_frame.html">extract_frame</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_t30.png"</span>, timestamp <span class="op">=</span> <span class="fl">30</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -ss 30 -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -avoid_negative_ts make_zero -qmin 1 -q:v 1 -qscale:v 2 -frames:v 1 -huffman optimal \"session01_camA_t30.png\""</span></span></code></pre></div>
 <p><code><a href="../reference/sample_frames.html">sample_frames()</a></code> saves frames at a fixed rate, as
 numbered image files. Here it saves one frame per second, for coding by
 hand or by a computer vision tool:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sample_frames.html">sample_frames</a></span><span class="op">(</span><span class="st">"session01_camA_std.mp4"</span>, outdir <span class="op">=</span> <span class="st">"frames/session01_camA"</span>,</span>
 <span>              fps <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -243,14 +255,14 @@ cases.</p>
 <p><code><a href="../reference/strip_metadata.html">strip_metadata()</a></code> removes the file’s metadata, such as
 the camera model, GPS location and recording time. It does not change
 the audio or the video:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/strip_metadata.html">strip_metadata</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_clean.mp4"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -codec:v copy -codec:a copy -map_metadata -1 -map_chapters -1 -fflags +bitexact -map \"0\" \"session01_camA_clean.mp4\""</span></span></code></pre></div>
 <p><code><a href="../reference/anonymize_video.html">anonymize_video()</a></code> fills one or more rectangles with a
 solid color. It does not find or follow faces. You give the position of
 an area that does not move, such as a name caption on screen. You give
 the areas as a data frame, with one row for each box:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">regions</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
 <span>  x <span class="op">=</span> <span class="fl">16</span>, y <span class="op">=</span> <span class="fl">640</span>, width <span class="op">=</span> <span class="fl">360</span>, height <span class="op">=</span> <span class="fl">64</span>  <span class="co"># lower-left name caption</span></span>
 <span><span class="op">)</span></span>
@@ -264,7 +276,7 @@ the areas as a data frame, with one row for each box:</p>
 <p>If a session was recorded in parts, <code><a href="../reference/concatenate_videos.html">concatenate_videos()</a></code>
 joins the parts into one file. The parts must have the same codec, <a href="tidymedia.html#glossary">container</a>, picture size and frame
 rate. Here they do, because step 1 made them the same:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/concatenate_videos.html">concatenate_videos</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"session01_camA_part1.mp4"</span>, <span class="st">"session01_camA_part2.mp4"</span><span class="op">)</span>,</span>
 <span>  <span class="st">"session01_camA_full.mp4"</span></span>
@@ -272,7 +284,7 @@ rate. Here they do, because step 1 made them the same:</p>
 <p>Last, <code><a href="../reference/format_for_web.html">format_for_web()</a></code> makes an H.264 file that most
 browsers can play. It moves the file’s index to the start, so coders can
 watch it in a browser before it has fully downloaded:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/format_for_web.html">format_for_web</a></span><span class="op">(</span><span class="va">session</span>, <span class="st">"session01_camA_share.mp4"</span>, run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "-y -i \"/home/runner/work/_temp/Library/tidymedia/extdata/sample.mp4\" -vf \"crop=w=floor(in_w/2)*2:h=floor(in_h/2)*2:x=(in_w-out_w)/2:y=(in_h-out_h)/2\" -codec:v libx264 -codec:a aac -pix_fmt yuv420p -movflags +faststart -map \"0:v?\" -map \"0:a?\" \"session01_camA_share.mp4\""</span></span></code></pre></div>
 </div>

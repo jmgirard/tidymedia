@@ -72,6 +72,7 @@ media terms such as codec, pixel format and stream copy.</p>
 <span>  pixel_format <span class="op">=</span> <span class="st">"yuv420p"</span>,</span>
 <span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span>, <span class="st">"videotoolbox"</span><span class="op">)</span>,</span>
 <span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  quality <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  audio_stream <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -129,6 +130,10 @@ the container's default encoder decide.</p></dd>
 
 <dt id="arg-fallback">fallback<a class="anchor" aria-label="anchor" href="#arg-fallback"></a></dt>
 <dd><p>A logical. When a <code>hardware</code> other than <code>"none"</code> is requested but its encoder is unavailable, <code>TRUE</code> re-encodes with the software <code>video_codec</code> and a message. <code>FALSE</code> (default) aborts instead. This keeps output reproducible by never changing the codec silently. A <code>video_codec</code> in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever <code>fallback</code> says.</p></dd>
+
+
+<dt id="arg-quality">quality<a class="anchor" aria-label="anchor" href="#arg-quality"></a></dt>
+<dd><p>A number, or <code>NULL</code> (default) to leave the encoder's own default in place. It is the encoder's own rate-control value, passed through unchanged. <code>libx264</code> and <code>libx265</code> read it as <code>-crf</code> (0 to 51). The nvenc encoders read it as <code>-cq</code> (0 to 51), and the videotoolbox encoders as <code>-q:v</code> (1 to 100). Each scale is its own: the same number means something different on each encoder. A value outside the encoder's range is refused. An encoder outside those seven, such as <code>libvpx-vp9</code>, is refused with <code>quality</code> set. So is a <code>video_codec</code> of <code>"copy"</code>, or of <code>NULL</code> under <code>hardware = "none"</code>. When <code>fallback = TRUE</code> falls back to software, the value is dropped and the message says so, because it belonged to the hardware encoder's scale.</p></dd>
 
 
 <dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>

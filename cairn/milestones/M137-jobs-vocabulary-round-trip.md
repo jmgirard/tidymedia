@@ -21,11 +21,11 @@ A folder of files the package told the user to write becomes a jobs table.
 
 ## Acceptance criteria
 
-- [ ] AC1: For every element of `multi_audio_extensions` (`R/ffmpeg.R:664`, nine elements, which this milestone does not change), exactly one `media_extensions()` vector holds that element, and given a directory holding one readable file whose name ends in it, `ffm_jobs(directory, type = <the type of that holding vector>, extension = <element>)` and the same call with `extension = NULL` each return a one-row tibble whose `input` cell equals `file.path(normalizePath(directory, winslash = "/", mustWork = TRUE), <that file's basename>)`. The test derives each element's type from the vectors rather than from a hand-written table, so an element no vector holds fails by name. One element is spelled in mixed case and one is read from a subdirectory under `recursive = TRUE`. Covered by a test in `tests/testthat/test-ffm-jobs.R`.
-- [ ] AC2: `media_extensions("audio")` is identical to `c("wav", "mp3", "m4a", "aac", "flac", "ogg", "oga", "opus", "wma", "aiff", "aif", "mka")`, `media_extensions("video")` is identical to `c("mp4", "mov", "mkv", "avi", "m4v", "webm", "mpg", "mpeg", "wmv", "flv", "mts", "m2ts", "ts")`, and `media_extensions("image")` is identical to `c("png", "jpg", "jpeg", "tif", "tiff", "bmp", "gif", "webp")`, each expected vector written out in the test rather than derived from the function under test. For every element of `media_types()` the vector is character, non-empty, all lower case, free of duplicates, and disjoint from every other type's vector. Covered by a test in `tests/testthat/test-ffm-jobs.R`.
-- [ ] AC3: Every element of `multi_audio_extensions`, read from that vector at test time rather than from a copy, appears in exactly one `media_extensions()` vector, and the failure message names any element that appears in none. Covered by a test in `tests/testthat/test-ffm-jobs.R`.
-- [ ] AC4: A file the package wrote is listable by the package. Under `skip_if_no_ffmpeg()`, `separate_audio_video()` writing the three-track input from `make_multitrack_video()` to a `.mka` output inside its own `withr::local_tempdir()` produces a file that `ffm_jobs(<that directory>, type = "audio")` returns as the single row, its `input` cell naming that file. Covered by a test in `tests/testthat/test-separate-av-multitrack.R`.
-- [ ] AC5: When no file matches and `extension` was not supplied, `ffm_jobs()` aborts with a message naming the extensions it looked for and naming `list.files()` as the way to reach a container the scanned set omits. When `extension` was supplied, it aborts naming the extensions it looked for and adds no such bullet. Both aborts name `ffm_jobs` as the call. The supplied-`extension` branch is asserted for a type other than `"video"`. Covered by tests in `tests/testthat/test-ffm-jobs.R`.
+- [x] AC1: For every element of `multi_audio_extensions` (`R/ffmpeg.R:664`, nine elements, which this milestone does not change), exactly one `media_extensions()` vector holds that element, and given a directory holding one readable file whose name ends in it, `ffm_jobs(directory, type = <the type of that holding vector>, extension = <element>)` and the same call with `extension = NULL` each return a one-row tibble whose `input` cell equals `file.path(normalizePath(directory, winslash = "/", mustWork = TRUE), <that file's basename>)`. The test derives each element's type from the vectors rather than from a hand-written table, so an element no vector holds fails by name. One element is spelled in mixed case and one is read from a subdirectory under `recursive = TRUE`. Covered by a test in `tests/testthat/test-ffm-jobs.R`.
+- [x] AC2: `media_extensions("audio")` is identical to `c("wav", "mp3", "m4a", "aac", "flac", "ogg", "oga", "opus", "wma", "aiff", "aif", "mka")`, `media_extensions("video")` is identical to `c("mp4", "mov", "mkv", "avi", "m4v", "webm", "mpg", "mpeg", "wmv", "flv", "mts", "m2ts", "ts")`, and `media_extensions("image")` is identical to `c("png", "jpg", "jpeg", "tif", "tiff", "bmp", "gif", "webp")`, each expected vector written out in the test rather than derived from the function under test. For every element of `media_types()` the vector is character, non-empty, all lower case, free of duplicates, and disjoint from every other type's vector. Covered by a test in `tests/testthat/test-ffm-jobs.R`.
+- [x] AC3: Every element of `multi_audio_extensions`, read from that vector at test time rather than from a copy, appears in exactly one `media_extensions()` vector, and the failure message names any element that appears in none. Covered by a test in `tests/testthat/test-ffm-jobs.R`.
+- [x] AC4: A file the package wrote is listable by the package. Under `skip_if_no_ffmpeg()`, `separate_audio_video()` writing the three-track input from `make_multitrack_video()` to a `.mka` output inside its own `withr::local_tempdir()` produces a file that `ffm_jobs(<that directory>, type = "audio")` returns as the single row, its `input` cell naming that file. Covered by a test in `tests/testthat/test-separate-av-multitrack.R`.
+- [x] AC5: When no file matches and `extension` was not supplied, `ffm_jobs()` aborts with a message naming the extensions it looked for and naming `list.files()` as the way to reach a container the scanned set omits. When `extension` was supplied, it aborts naming the extensions it looked for and adds no such bullet. Both aborts name `ffm_jobs` as the call. The supplied-`extension` branch is asserted for a type other than `"video"`. Covered by tests in `tests/testthat/test-ffm-jobs.R`.
 - [ ] AC6: `devtools::document()` produces a `man/` diff confined to `man/ffm_jobs.Rd`, whose `\value` section states that a `.ts` file that is TypeScript source is returned as a video row. `NEWS.md` names both added containers and that same consequence. `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R man/ffm_jobs.Rd` prints only its sentence-count line and exits 0. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
@@ -91,3 +91,35 @@ falsified by a report of a caller blocked on a container the package neither
 writes nor names.
 
 ## Review
+
+Evidence gathered 2026-09-18 on `m137-jobs-vocabulary-round-trip` at f157bbdc.
+`master` had not moved since the branch was cut (both at 200f00ad), so no sync
+merge was needed.
+
+- AC1 met. A reviewer-written script, independent of the test file, walked all
+  nine elements of `multi_audio_extensions` read at run time. It derived each
+  element's type from the `media_extensions()` vectors. It made both the
+  narrowed call and the `extension = NULL` call for each element. All 18 calls
+  returned a one-row tibble whose `input` cell equalled the
+  `normalizePath(..., mustWork = TRUE)` path. The second element ran as `M4a`.
+  The ninth ran from a `nested/` subdirectory under `recursive = TRUE`.
+  `devtools::test(filter = "ffm-jobs")` reported 0 failures, 0 skips, 221
+  passing.
+- AC2 met. The same script compared each vector to the literal the criterion
+  writes out. Audio, video and image were all `identical()`. Each vector is
+  character, non-empty (13 video, 12 audio, 8 image), all lower case, free of
+  duplicates, and disjoint from every other type's vector.
+- AC3 met. The guard's own computation, run independently, returned a home count
+  of 1 for each of the nine elements. The homeless and multi-homed name lists
+  were both empty. The test file carrying the standing guard passed.
+- AC4 met. `devtools::test(filter = "separate-av-multitrack")` reported 0
+  failures, 0 skips, 481 passing. Zero skips means `skip_if_no_ffmpeg()` did not
+  fire, so the round-trip test ran. `separate_audio_video()` wrote the `.mka`
+  and `ffm_jobs()` returned it as the single row.
+- AC5 met. The wide call `ffm_jobs(<empty dir>, type = "video")` aborted naming
+  all thirteen video extensions. It carried the bullet "To reach a file type
+  that is not listed, use `list.files()` instead." The narrowed call
+  `ffm_jobs(<empty dir>, type = "audio", extension = c("mka", "wav"))` aborted
+  naming those two extensions and carried no `list.files` text. Both
+  `conditionCall()` values name `ffm_jobs`. The narrowed branch was asserted on
+  `type = "audio"`.

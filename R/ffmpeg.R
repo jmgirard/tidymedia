@@ -3233,13 +3233,29 @@ check_quality <- function(quality, encoder, call) {
 # codec-less re-encode verbs (M34/D016): no -codec:v is emitted, so the output
 # keeps its container's default encoder. It is resolved here, in the one
 # resolver seam, rather than in a second per-verb fork.
+#
+# resolve_hw_encoder_info() is the body: it answers the encoder name AND whether
+# it fell back, because the `quality` seam below needs the second answer (M135)
+# and the name alone cannot carry it -- a fallback from h264_nvenc to a
+# video_codec spelled "h264_nvenc" returns the intended name while encoding in
+# software. `quality` is threaded in only so the fallback message can say the
+# value was dropped; the flag itself is emitted by emit_quality(), never here.
+# resolve_hw_encoder() keeps its one-string contract for every other caller.
 resolve_hw_encoder <- function(video_codec,
                                hardware = c("none", "nvenc", "videotoolbox"),
                                fallback = FALSE, call = rlang::caller_env()) {
   hardware <- rlang::arg_match(hardware)
+  resolve_hw_encoder_info(video_codec, hardware, fallback, call = call)$encoder
+}
+
+resolve_hw_encoder_info <- function(video_codec,
+                                    hardware = c("none", "nvenc", "videotoolbox"),
+                                    fallback = FALSE, quality = NULL,
+                                    call = rlang::caller_env()) {
+  hardware <- rlang::arg_match(hardware)
   rlang::check_bool(fallback, call = call)
   if (hardware == "none") {
-    return(video_codec)
+    return(list(encoder = video_codec, fell_back = FALSE))
   }
   # The sentinel branch sits BEFORE codec_family(), which cannot infer a family
   # from nothing (it errors on NULL): under either backend the sentinel assumes
@@ -3264,9 +3280,17 @@ resolve_hw_encoder <- function(video_codec,
       } else {
         "{hardware} encoder {.val {tm_hardware_encoder(family, hardware, call = call)}} is not
          available; falling back to {.arg video_codec} = {.val {video_codec}}."
+      },
+      # The value was the hardware encoder's own scale, and no cross-encoder
+      # scale exists to carry it (M135 plan gate); saying so here is what keeps
+      # the lower-quality file from going unexplained.
+      "i" = if (!is.null(quality)) {
+        "{.arg quality} = {quality} is dropped: it was
+         {.val {tm_hardware_encoder(family, hardware, call = call)}}'s own
+         rate-control value, and the software encoder keeps its default."
       }
     ))
-    return(video_codec)
+    return(list(encoder = video_codec, fell_back = TRUE))
   }
   # The abort lives in check_hardware_available(), never in a copy here: the nine
   # fan-out verbs call that same function at their front doors (M57/D035), and
@@ -3286,6 +3310,21 @@ resolve_hw_encoder <- function(video_codec,
   # comment here used to claim `fallback = TRUE` always returned above; it
   # returns only when the predicate answers.
   check_hardware_available(video_codec, hardware, fallback, call = call)
+  list(encoder = tm_hardware_encoder(family, hardware, call = call),
+       fell_back = FALSE)
+}
+
+# intended_encoder(): the encoder a (video_codec, hardware) pair encodes with
+# when its backend is available -- resolve_hw_encoder_info()'s answer with the
+# machine left out of it. Pure, so check_quality() can read the table row
+# before the availability probe (D036). The family inference and the backend
+# lookup are the same two refusals the resolver makes, from the same frame.
+intended_encoder <- function(video_codec, hardware = "none",
+                             call = rlang::caller_env()) {
+  if (identical(hardware, "none")) {
+    return(video_codec)
+  }
+  family <- if (is.null(video_codec)) "h264" else codec_family(video_codec, call = call)
   tm_hardware_encoder(family, hardware, call = call)
 }
 
@@ -3382,9 +3421,10 @@ check_hardware_available <- function(video_codec, hardware = "none",
 # the up-front token check are handled once. Not an ffm_* name: this is Layer 2
 # computing an argument, not engine surface (D014, IP1).
 apply_video_codec <- function(object, video_codec, hardware = "none",
-                              fallback = FALSE, call = rlang::caller_env()) {
+                              fallback = FALSE, quality = NULL,
+                              call = rlang::caller_env()) {
   check_video_codec(video_codec, call = call)
-  emit_video_codec(object, video_codec, hardware, fallback, call = call)
+  emit_video_codec(object, video_codec, hardware, fallback, quality, call = call)
 }
 
 # The two halves, separately callable (M095). They are one call at the three
@@ -3426,14 +3466,45 @@ check_video_codec <- function(video_codec, call = rlang::caller_env()) {
 # "that encoder is not available" about a token that was never a codec name.
 # A caller that checked already pays a second check that cannot change its
 # answer; a caller that did not is no longer able to skip one.
+#
+# `quality` (M135) rides the same seam. Its check reads the table row for the
+# encoder this pair WOULD use, computed without the machine, so a wrong value
+# reports before the probe like every other argument complaint (D036); the
+# flag is emitted after the resolver answers, and only when it did not fall
+# back. With `quality = NULL` nothing here changes: intended_encoder() is not
+# even called, so the refusal order of a quality-less call is untouched.
 emit_video_codec <- function(object, video_codec, hardware = "none",
-                             fallback = FALSE, call = rlang::caller_env()) {
+                             fallback = FALSE, quality = NULL,
+                             call = rlang::caller_env()) {
   check_video_codec(video_codec, call = call)
-  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
-  if (is.null(video_codec)) {
+  if (!is.null(quality)) {
+    check_quality(quality, intended_encoder(video_codec, hardware, call = call),
+                  call = call)
+  }
+  info <- resolve_hw_encoder_info(video_codec, hardware, fallback, quality,
+                                  call = call)
+  if (is.null(info$encoder)) {
     return(object)
   }
-  ffm_codec(object, video = video_codec)
+  object <- ffm_codec(object, video = info$encoder)
+  emit_quality(object, info$encoder, quality, fell_back = info$fell_back)
+}
+
+# emit_quality(): add the encoder's rate-control flag to the pipeline through
+# ffm_output_options(), the engine's raw output-option slot -- Layer 2 computes
+# the flag and the value, Layer 1 assembles the command (IP1, M31 precedent).
+# The value is passed through unchanged. Nothing is emitted for NULL (the
+# encoder default applies) or after a fallback (the value belonged to the
+# hardware encoder's scale; resolve_hw_encoder_info() has already said so).
+# `encoder` is the RESOLVED name, checked against the table above, so the
+# lookup here cannot miss on the non-fallback arm.
+emit_quality <- function(object, encoder, quality, fell_back = FALSE) {
+  if (is.null(quality) || fell_back) {
+    return(object)
+  }
+  tbl <- quality_flags()
+  flag <- tbl$flag[tbl$encoder == encoder]
+  ffm_output_options(object, paste(flag, as.character(quality)))
 }
 
 # apply_audio_codec(): thread a verb's audio_codec choice into a pipeline. The

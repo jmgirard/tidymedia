@@ -47,16 +47,25 @@ tm_hw_encoder_ledger <- function() {
 # calls directly, with `allow_null = TRUE` for the sentinel.
 tm_hw_encoder_checkers <- function() c("check_video_codec", "check_token")
 
+# The resolver's two names (M135): resolve_hw_encoder_info() is the body, which
+# also answers whether it fell back, and resolve_hw_encoder() is the one-string
+# wrapper every older caller keeps. A site reaching either is in the domain; the
+# wrapper itself is the resolver's other door, not a caller, and is left out.
+tm_hw_encoder_resolvers <- function() {
+  c("resolve_hw_encoder", "resolve_hw_encoder_info")
+}
+
 # The computed domain: namespace functions whose own body names the resolver.
 tm_hw_encoder_sites <- function() {
   ns <- asNamespace("tidymedia")
   objs <- mget(ls(ns, all.names = TRUE), envir = ns, ifnotfound = list(NULL))
   fns <- objs[vapply(objs, is.function, logical(1))]
-  tm_sort_c(names(fns)[vapply(
+  sites <- names(fns)[vapply(
     fns,
-    function(f) "resolve_hw_encoder" %in% all.names(body(f)),
+    function(f) any(tm_hw_encoder_resolvers() %in% all.names(body(f))),
     logical(1)
-  )])
+  )]
+  tm_sort_c(setdiff(sites, tm_hw_encoder_resolvers()))
 }
 
 # Every call in a body, in source order.
@@ -79,7 +88,8 @@ tm_hw_encoder_resolve_calls <- function(f) {
   calls <- tm_calls_in_order(body(f))
   is_resolve <- vapply(
     calls,
-    function(cl) identical(cl[[1]], as.name("resolve_hw_encoder")),
+    function(cl) is.name(cl[[1]]) &&
+      as.character(cl[[1]]) %in% tm_hw_encoder_resolvers(),
     logical(1)
   )
   lapply(which(is_resolve), function(i) list(at = i, arg = calls[[i]][[2]]))

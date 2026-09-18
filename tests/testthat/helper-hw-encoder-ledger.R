@@ -29,12 +29,14 @@
 #                                           line of the body, above the
 #                                           resolver call (M106)
 #
-# One site since M135. format_for_web_pipeline() (literal: the recipe's own
-# "libx264") and anonymize_pipeline() (checked-above: check_token() at the top
-# of the body) each called the resolver directly until the `quality` seam gave
-# them a reason to go through the emit half instead; both dispositions still
-# hold there and are what test-hw-encoder-ledger.R's discrimination cases
-# exercise, on bodies that fail them.
+# One site since M135. format_for_web_pipeline() (once "literal": the recipe's
+# own "libx264") and anonymize_pipeline() (once "checked-above": check_token()
+# at the top of the body) each called the resolver directly until the `quality`
+# seam gave them a reason to go through emit_video_codec() instead. Neither
+# names the resolver now, so neither is in the domain and neither disposition
+# applies to them any more; test-hw-encoder-ledger.R's discrimination cases
+# run on emit_video_codec() and the wrapper instead, plus anonymize_pipeline()
+# as the body-with-no-resolver-call case.
 tm_hw_encoder_ledger <- function() {
   c(emit_video_codec = "emit-half")
 }

@@ -1,6 +1,6 @@
 # M135: The re-encoding task functions take a `quality` argument that passes the encoder's own rate-control value through
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -44,7 +44,7 @@ A caller sets the encoder's own quality number on a re-encoding task function wi
 - [x] T3: `quality` on `standardize_video()`, `format_for_web()`, `anonymize_video()` and `crop_video()`, through their pipelines (`R/ffmpeg.R:1499`, `:1850`, `:2027`, `:1387`), with the AC2 and AC3 grid tests for these four. Note `format_for_web()` fixes the family to H.264.
 - [x] T4: `quality` on `segment_video()`, `separate_audio_video()`, `compare_videos()` and `picture_in_picture()` (`R/ffmpeg.R:623`, `:3849`, `:6719`, `:6859`), the `reencode = FALSE` refusal on `segment_video()`, and the grid tests for these four. Pass `NULL` through any `do.call()` grid as `args["quality"] <- list(NULL)` (LESSONS M106).
 - [x] T5: A `quality_param()` helper in `R/task-doc.R` beside `hardware_param()` (`R/task-doc.R:56`), used by the 8 pages; the vignette sentences; the `NEWS.md` entry; `devtools::document()`; the prose sweep.
-- [ ] T6: `devtools::check()`, `devtools::test()` with no other R session working (LESSONS M124), and `pkgdown::check_pkgdown()`.
+- [x] T6: `devtools::check()`, `devtools::test()` with no other R session working (LESSONS M124), and `pkgdown::check_pkgdown()`.
 
 ## Work log
 
@@ -62,6 +62,9 @@ A caller sets the encoder's own quality number on a re-encoding task function wi
 - 2026-09-17: T5: `quality_param(fixed_h264 =)` rewritten so no sentence passes 25 words (the first draft had one at 27); the `format_for_web()` variant names its three H.264 encoders. Vignette section "Using video hardware" gains a `quality` paragraph naming `-crf`, `-cq` and `-q:v` with an `eval = FALSE` example. `NEWS.md` entry at the top of New features. `devtools::document()` run; `\item{quality}` on all 8 pages; `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R` over the 8 pages and `vignettes/workflow.Rmd` prints no finding, exit 0.
 - 2026-09-17: amendment (substantive, AC1 instrument): the literal filter expression gained `ifnotfound = list(NULL)` inside `mget()`, because as written it errored with `value for '.data' not found` on rlang's reexported active binding. The promise (8 verbs, `quality = NULL`) is unchanged. Gate chose amending over leaving review to work around the error.
 - 2026-09-17: re-audit: AC1 (full) — nothing (reader evaluated the amended expression at HEAD: 8 functions, all with `quality = NULL`; noted a benign `formals()` warning on the NULL entries, an error only under `options(warn = 2)`).
+- 2026-09-17: T6: `devtools::check()` 0 errors / 0 warnings / 0 notes (8m 6s, runs the suite); `devtools::test()` at T4 0 failures, 15441 passes; `pkgdown::check_pkgdown()` no problems; `devtools::document()` no diff.
+- 2026-09-17: claim audit: 50 claims read, 1 corrected — tests/testthat/helper-hw-encoder-ledger.R (a comment said the two former resolver sites' dispositions still hold and are exercised by the discrimination cases; they name no resolver now, so neither applies; rewritten, re-read once by the same reader). The reader also noted `test-quality-grid.R`'s header wording ("any FFmpeg process") is broader than the counter (the encoder probe), sound under `run = FALSE`; left as is.
+- 2026-09-17: status → review.
 
 ## Decisions
 

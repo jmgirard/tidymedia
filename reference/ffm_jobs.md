@@ -52,6 +52,17 @@ The call gives an error, instead of zero rows, when nothing matches.
 With `recursive = TRUE` the search follows a symbolic link to a
 directory, so a row can name a file outside `directory`.
 
+The scanned extensions include `.mka` as audio and `.ts` as video.
+[`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+recommends `.mka` or `.m4a` for multi-track audio, and this function
+reads both as audio, so it lists a folder of that output. Not every
+container that can hold several audio streams is audio here. `.ts`, like
+`.mp4` and `.mkv`, is video, so multi-track audio written to one of
+those is a row under `type = "video"`. The name `.ts` also belongs to
+TypeScript source files, and this function reads names rather than file
+contents. A folder of TypeScript sources therefore comes back as video
+rows when you ask for `type = "video"`.
+
 ## Details
 
 The table has only the `input` column.

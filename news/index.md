@@ -424,9 +424,19 @@
   default. `extension` narrows within that type (`"mp4"` and `".mp4"`
   both work, matched case-insensitively), and `recursive = TRUE`
   descends into subdirectories, including through a symbolic link to a
-  directory, so a row can then name a file outside the one given. A
-  directory that does not exist, a type outside the three, and a call
-  that matches no file are each an error naming
+  directory, so a row can then name a file outside the one given. The
+  extensions include `.mka` as audio and `.ts` as video.
+  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  recommends `.mka` or `.m4a` for multi-track audio and both read as
+  audio here, so the function lists a folder of that output. Not every
+  container that can hold several audio streams is audio here. `.ts`,
+  like `.mp4` and `.mkv`, is video. Multi-track audio written to one of
+  those is a row under `type = "video"`. The name `.ts` also belongs to
+  TypeScript source files. The function reads names rather than file
+  contents, so a folder of TypeScript sources comes back as video rows
+  when you ask for `type = "video"`. A directory that does not exist, a
+  type outside the three, and a call that matches no file are each an
+  error naming
   [`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md).
   The returned table carries `input` and nothing else, because
   [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)

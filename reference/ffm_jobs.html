@@ -99,6 +99,16 @@ Windows reports such a link as existing, so there it can still be a row.
 The call gives an error, instead of zero rows, when nothing matches. With
 <code>recursive = TRUE</code> the search follows a symbolic link to a directory,
 so a row can name a file outside <code>directory</code>.</p>
+<p>The scanned extensions include <code>.mka</code> as audio and <code>.ts</code> as
+video. <code><a href="separate_audio_video.html">separate_audio_video()</a></code> recommends <code>.mka</code> or <code>.m4a</code> for
+multi-track audio, and this function reads both as audio, so it lists a
+folder of that output. Not every container that can hold several audio
+streams is audio here. <code>.ts</code>, like <code>.mp4</code> and <code>.mkv</code>, is
+video, so multi-track audio written to one of those is a row under
+<code>type = "video"</code>. The name <code>.ts</code> also belongs to TypeScript
+source files, and this function reads names rather than file contents. A
+folder of TypeScript sources therefore comes back as video rows when you
+ask for <code>type = "video"</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

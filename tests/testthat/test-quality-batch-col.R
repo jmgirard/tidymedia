@@ -73,6 +73,49 @@ test_that("a cell is checked against its own row's resolved encoder, and names t
   expect_invisible(f(jobs, video_codec = NULL, hardware = "nvenc"))
 })
 
+test_that("a NaN cell is refused, naming the row, never read as the NULL sentinel", {
+  jobs <- quality_col_jobs(c(NaN, 23))
+  err <- rlang::catch_cnd(
+    check_batch_quality(jobs, NULL, codec_rows_of(jobs), "none")
+  )
+  expect_s3_class(err, "rlang_error")
+  expect_match(conditionMessage(err), "NaN", fixed = TRUE)
+  expect_match(conditionMessage(err), "First offending jobs row: 1.", fixed = TRUE)
+})
+
+test_that("a wrong argument is refused even when a column overrides it", {
+  jobs <- quality_col_jobs(c(NA, 23))
+  f <- function(quality) {
+    check_batch_quality(jobs, quality, codec_rows_of(jobs), "none")
+  }
+  for (bad in list("bogus", c(20, 23), Inf, TRUE)) {
+    err <- rlang::catch_cnd(f(bad))
+    expect_s3_class(err, "rlang_error")
+    expect_identical(rlang::call_name(err$call), "f")
+    expect_match(conditionMessage(err), "quality", fixed = TRUE)
+    expect_no_match(conditionMessage(err), "offending jobs row", fixed = TRUE)
+  }
+  # An in-type argument is not range-checked: the column decides every row.
+  expect_invisible(f(999))
+})
+
+test_that("an argument refused for one row's codec cell names that row", {
+  jobs <- quality_col_jobs(NULL)
+  jobs$quality <- NULL
+  jobs$video_codec <- c("libx264", "copy")
+  err <- rlang::catch_cnd(
+    check_batch_quality(jobs, 23, codec_rows_of(jobs), "none")
+  )
+  expect_match(conditionMessage(err), "copy", fixed = TRUE)
+  expect_match(conditionMessage(err), "First offending jobs row: 2.", fixed = TRUE)
+  jobs$video_codec <- c("libx264", NA)
+  err <- rlang::catch_cnd(
+    check_batch_quality(jobs, 23, codec_rows_of(jobs, NULL), "none")
+  )
+  expect_match(conditionMessage(err), "video_codec", fixed = TRUE)
+  expect_match(conditionMessage(err), "First offending jobs row: 2.", fixed = TRUE)
+})
+
 test_that("a wrong whole-batch argument is refused with no row locator", {
   jobs <- quality_col_jobs(c(NA, NA))
   jobs$quality <- NULL

@@ -5752,8 +5752,9 @@ batch_codec_cell <- function(value) {
 # the abort names the verb rather than purrr::pmap() (D076, M56). A "copy" cell
 # is handed to check_quality() as itself: intended_encoder() would ask
 # codec_family() for a family "copy" does not have, and the caller's error is
-# the copy, not the family. check_batch_cell() names the row only when the
-# value arrived in a column; an argument applies to every row.
+# the copy, not the family. check_batch_cell() names the row when the value
+# arrived in a column, or when an argument is refused for one row's own codec
+# cell; an argument refused for its value applies to every row and names none.
 #
 # `codec_rows` is the per-row resolved `video_codec` (batch_arg_rows() with
 # batch_codec_cell()), passed in rather than read here because
@@ -5761,14 +5762,33 @@ batch_codec_cell <- function(value) {
 check_batch_quality <- function(jobs, quality, codec_rows, hardware,
                                 call = rlang::caller_env()) {
   has_col <- "quality" %in% names(jobs)
+  codec_col <- "video_codec" %in% names(jobs)
   if (has_col) {
     ok <- function(x) is.numeric(x) || (is.logical(x) && all(is.na(x)))
     if (!ok(jobs$quality)) {
+      # The locator names the first cell that is not NA; a column of NA
+      # strings has no such cell, and the refusal then names no row.
       check_batch_cell(which(!is.na(jobs$quality))[1], cli::cli_abort(
         "The {.field quality} column of {.arg jobs} must be numeric
          ({.val {NA}} to leave that row's encoder default in place).",
         call = call
       ))
+    }
+    # NaN is numeric and is.na(NaN) is TRUE, so batch_stream_cell() would
+    # read it as the NULL sentinel; the scalar check refuses it, so this does.
+    if (is.numeric(jobs$quality) && any(is.nan(jobs$quality))) {
+      check_batch_cell(which(is.nan(jobs$quality))[1], cli::cli_abort(
+        "The {.field quality} column of {.arg jobs} must not contain
+         {.val {NaN}} ({.val {NA}} leaves that row's encoder default in place).",
+        call = call
+      ))
+    }
+    # A column overrides the argument on every row (D022), but the argument is
+    # still a value the caller passed: its type is checked as the scalar verb
+    # checks it, so no call refused without the column compiles with it.
+    if (!is.null(quality)) {
+      rlang::check_number_decimal(quality, allow_infinite = FALSE,
+                                  arg = "quality", call = call)
     }
   }
   rows <- if (has_col) {
@@ -5784,7 +5804,11 @@ check_batch_quality <- function(jobs, quality, codec_rows, hardware,
     } else {
       intended_encoder(vc, hardware, call = call)
     }
-    check_batch_cell(if (has_col) i else NA_integer_,
+    # The row is named when the value came from the column, or when the
+    # argument is refused for THAT row's codec cell (a copy or NA cell in a
+    # `video_codec` column): the offender is then the row, not the argument.
+    codec_side <- is.null(encoder) || identical(encoder, "copy")
+    check_batch_cell(if (has_col || (codec_col && codec_side)) i else NA_integer_,
                      check_quality(rows[[i]], encoder, call = call))
   }
   invisible(jobs)

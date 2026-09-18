@@ -5,8 +5,13 @@
 The note is "New submission". Measured on 2026-09-18 at tidymedia 0.2.0, R
 4.6.1, macOS arm64, in 2m 20s. That run had neither FFmpeg nor MediaInfo on the
 PATH, and no remembered program location, so it is the same condition a CRAN
-machine checks in. With both tools present the same check gives 0 notes and
+machine checks in. With both tools present the same check gives 0 notes. It also
 takes longer, because the execution tests then run.
+
+An earlier build of this version checked on win-builder R-devel in 14 minutes of
+test time. The tests that cost it enumerate this package's own argument surface
+and start no external program, so they now skip on CRAN and run on every other
+runner instead.
 
 ## Test environments
 
@@ -27,6 +32,9 @@ takes longer, because the execution tests then run.
 * `install_on_win()` downloads a Windows FFmpeg build on request only. No
   example or vignette runs it. The tests that call it aim at a local `file://`
   URL that does not exist, so no test reaches the network.
+* win-builder flags "tibbles" in the `Description` as possibly misspelled. It is
+  spelled as intended. A tibble is the data frame class of the 'tibble' package,
+  and the plural is the ordinary way to name what the metadata readers return.
 * The package writes outside a temporary directory only on the user's own
   request. `set_program()` and its wrappers record a binary location under
   `tools::R_user_dir("tidymedia", "config")`, and `install_on_win()` unpacks

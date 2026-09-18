@@ -53,6 +53,12 @@
 #'   The call gives an error, instead of zero rows, when nothing matches. With
 #'   \code{recursive = TRUE} the search follows a symbolic link to a directory,
 #'   so a row can name a file outside \code{directory}.
+#'
+#'   The scanned extensions cover every container this package itself writes,
+#'   which is why \code{.mka} counts as audio and \code{.ts} as video. The name
+#'   \code{.ts} also belongs to TypeScript source files, and this function reads
+#'   names rather than file contents. A folder of TypeScript sources therefore
+#'   comes back as video rows.
 #' @family pipeline functions
 #' @seealso [ffm_batch()], which consumes the returned table.
 #' @examples
@@ -141,10 +147,22 @@ tm_ffm_jobs <- function(directory, type, extension, recursive, call) {
   files <- files[file.exists(files) & !dir.exists(files)]
   if (length(files) == 0) {
     scope <- if (recursive) " or its subdirectories" else ""
-    cli::cli_abort(c(
+    bullets <- c(
       "No {type} files were found in {.file {directory}}{scope}.",
       "i" = "Looked for these extensions: {.val {wanted}}."
-    ), call = call)
+    )
+    if (is.null(extension)) {
+      # Only the caller who did not narrow the search can be looking for a
+      # container these lists do not carry, and that caller is the one the
+      # closed lists (M137-1) send to list.files(). A caller who passed
+      # `extension` chose the scanned set themselves, so naming the escape
+      # hatch would answer a question they did not ask.
+      bullets <- c(
+        bullets,
+        "i" = "To reach a file type that is not listed, use {.fn list.files} instead."
+      )
+    }
+    cli::cli_abort(bullets, call = call)
   }
 
   tibble::tibble(
@@ -159,15 +177,24 @@ tm_ffm_jobs <- function(directory, type, extension, recursive, call) {
 # outside the accepted set" and "extension outside the type" refusals name what
 # they accept. A caller with a container outside these lists uses list.files()
 # directly, as they did before this export existed.
+#
+# What admits a container to these lists (M137): the package writes it, or names
+# it in its own diagnostics. `mka` and `ts` were both added under that rule --
+# `multi_audio_extensions` (R/ffmpeg.R) names each of them as a container that
+# holds several audio streams, and separate_audio_video() recommends `.mka` by
+# name, so a folder of the package's own output was being refused by the
+# package's own scanner. The rule is deliberately narrower than closing the
+# lists over the extension families FFmpeg's muxers and demuxers declare, which
+# crosses media types (it puts `mka` in video and `mov` in audio).
 media_types <- function() c("video", "audio", "image")
 
 media_extensions <- function(type) {
   switch(
     type,
     video = c("mp4", "mov", "mkv", "avi", "m4v", "webm", "mpg", "mpeg",
-              "wmv", "flv", "mts", "m2ts"),
+              "wmv", "flv", "mts", "m2ts", "ts"),
     audio = c("wav", "mp3", "m4a", "aac", "flac", "ogg", "oga", "opus",
-              "wma", "aiff", "aif"),
+              "wma", "aiff", "aif", "mka"),
     image = c("png", "jpg", "jpeg", "tif", "tiff", "bmp", "gif", "webp")
   )
 }

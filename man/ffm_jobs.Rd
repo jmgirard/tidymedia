@@ -35,6 +35,12 @@ Windows reports such a link as existing, so there it can still be a row.
 The call gives an error, instead of zero rows, when nothing matches. With
 \code{recursive = TRUE} the search follows a symbolic link to a directory,
 so a row can name a file outside \code{directory}.
+
+The scanned extensions cover every container this package itself writes,
+which is why \code{.mka} counts as audio and \code{.ts} as video. The name
+\code{.ts} also belongs to TypeScript source files, and this function reads
+names rather than file contents. A folder of TypeScript sources therefore
+comes back as video rows.
 }
 \description{
 List the media files in a directory and return them as a jobs table for

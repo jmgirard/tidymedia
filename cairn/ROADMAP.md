@@ -11,7 +11,7 @@ _Last hygiene check: 2026-09-18 (M136 done and archived. PR #140 squash-merged w
 | M134 | The anonymize, segment, concatenate, compare and picture-in-picture help pages read as plain English | done | M129 | high | milestones/archive/M134-plain-video-composition-help-pages.md |
 | M135 | The re-encoding task functions take a `quality` argument that passes the encoder's own rate-control value through | done | — | normal | milestones/archive/M135-quality-argument-scalar-verbs.md |
 | M136 | The batch re-encoding functions take `quality` as an argument and as a jobs column | done | M135 | normal | milestones/archive/M136-quality-column-batch-verbs.md |
-| M137 | `ffm_jobs()` lists every container the package itself writes | planned | — | normal | milestones/M137-jobs-vocabulary-round-trip.md |
+| M137 | `ffm_jobs()` lists every container the package itself writes | in-progress | — | normal | milestones/M137-jobs-vocabulary-round-trip.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

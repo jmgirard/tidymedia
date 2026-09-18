@@ -504,12 +504,13 @@ test_that("media_extensions() returns the pinned vectors", {
   )
 })
 
-# The standing guard behind M137's round-trip rule: a container the package
-# writes, or names in its own diagnostics, is listable by the package. The
-# multi-track separation refusal names every element of
-# `multi_audio_extensions` as a container that holds several audio streams, so
-# each of them has to be somewhere in the scanned vocabulary. Reads the vector
-# at test time rather than a copy, so the guard keeps holding as it grows.
+# The standing guard behind M137's round-trip rule. `multi_audio_extensions`
+# (`R/ffmpeg.R`) is the package's own list of containers that hold several audio
+# streams: the multi-track separation refusal offers `.mka` and `.m4a` out of
+# it, and separate_audio_video()'s help page renders all nine. A container the
+# package puts forward that way has to sit somewhere in the scanned vocabulary,
+# or a folder of the package's own output is unlistable. Reads the vector at
+# test time rather than a copy, so the guard keeps holding as it grows.
 test_that("every multi-audio container is in exactly one media_extensions() vector", {
   exts <- tidymedia:::multi_audio_extensions
   homes <- vapply(

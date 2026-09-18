@@ -1,13 +1,13 @@
 # M137: `ffm_jobs()` lists every container the package itself writes
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP1
 - **Resolves:** —
 - **Surface tier:** user-facing — it changes which files an exported function returns
-- **Branch/PR:** —
+- **Branch/PR:** `m137-jobs-vocabulary-round-trip`
 
 ## Goal
 
@@ -43,7 +43,7 @@ A folder of files the package told the user to write becomes a jobs table.
 - [x] T2: The no-match abort in `tm_ffm_jobs()` (`R/ffm_jobs.R:143-149`): add the `list.files()` bullet, raised only when `extension` was `NULL`, so a caller who already narrowed the search is not told to narrow it. Tests for both branches, one of them on a non-`"video"` type (AC5).
 - [x] T3: The end-to-end round trip in `tests/testthat/test-separate-av-multitrack.R` (AC4), under `skip_if_no_ffmpeg()` and inside its own `withr::local_tempdir()` so the assertion is about the file this test wrote. `tests/testthat/test-ffm-jobs.R` stays binary-free, as its header comment states.
 - [x] T4: The `@return` sentence on the `.ts` collision (`R/ffm_jobs.R:44-55`); the `NEWS.md` entry; `devtools::document()`; the prose sweep over `man/ffm_jobs.Rd` (AC6).
-- [ ] T5: `devtools::check()`, `devtools::test()` with no other R session working (LESSONS M124), and `pkgdown::check_pkgdown()` (AC6).
+- [x] T5: `devtools::check()`, `devtools::test()` with no other R session working (LESSONS M124), and `pkgdown::check_pkgdown()` (AC6).
 
 ## Work log
 
@@ -60,6 +60,8 @@ A folder of files the package told the user to write becomes a jobs table.
 - 2026-09-18: T3 done. The end-to-end round trip added to `tests/testthat/test-separate-av-multitrack.R`. `separate_audio_video()` writes a `.mka` from `make_multitrack_video()` into its own temp directory, and `ffm_jobs()` returns it as the single row.
 - 2026-09-18: T4 done. `@return` and `NEWS.md` disclose that a `.ts` TypeScript source file comes back as a video row. That claim was read off a run returning two such files as video rows. `devtools::document()` touched `man/ffm_jobs.Rd` alone. The prose sweep printed its sentence-count line and exited 0.
 
+- 2026-09-18: T5 done. `devtools::check()` reported 1 NOTE twice, both times from the spelling test. The first was `TypeScript`, added to `inst/WORDLIST`. The second was `listable`, a coined word from a claim-audit correction, reworded rather than added to the wordlist. The third run reported Status OK with 0 errors, 0 warnings and 0 notes, its `testthat.R` leg included. `pkgdown::check_pkgdown()` found no problems. `devtools::test()` reported 0 failures with 17767 passing.
+- 2026-09-18: claim audit: 27 claims read, 2 corrected — R/ffm_jobs.R, man/ffm_jobs.Rd, NEWS.md, tests/testthat/test-ffm-jobs.R. The `@return` and `NEWS.md` line claiming the lists cover every container the package writes was false. The package writes whatever container the caller names in `output`. It now says the lists include `.mka` as audio and `.ts` as video. It also says the function lists a folder of the package's own multi-track audio output, which is what T3 asserts. A test comment said the multi-track refusal names all nine members of `multi_audio_extensions`. The refusal offers two of them, and the help page renders all nine, so the comment now says that. The same reader re-read both corrections once and both hold.
 - 2026-09-18: T1 through T4 land in one checkpoint commit rather than four. Three of them edit `R/ffm_jobs.R` and two edit `tests/testthat/test-ffm-jobs.R`, Per-task commits therefore need partial staging of the same files. One clean `devtools::test()` run covers all four, so each checkbox is ticked against a green suite that includes its own code.
 
 ## Decisions

@@ -54,11 +54,12 @@
 #'   \code{recursive = TRUE} the search follows a symbolic link to a directory,
 #'   so a row can name a file outside \code{directory}.
 #'
-#'   The scanned extensions cover every container this package itself writes,
-#'   which is why \code{.mka} counts as audio and \code{.ts} as video. The name
-#'   \code{.ts} also belongs to TypeScript source files, and this function reads
-#'   names rather than file contents. A folder of TypeScript sources therefore
-#'   comes back as video rows.
+#'   The scanned extensions include \code{.mka} as audio and \code{.ts} as
+#'   video, so this function lists a folder of the package's own multi-track
+#'   audio output. The name \code{.ts} also belongs to TypeScript source files, and
+#'   this function reads names rather than file contents. A folder of TypeScript
+#'   sources therefore comes back as video rows when you ask for
+#'   \code{type = "video"}.
 #' @family pipeline functions
 #' @seealso [ffm_batch()], which consumes the returned table.
 #' @examples

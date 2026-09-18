@@ -303,10 +303,11 @@
   both work, matched case-insensitively), and
   `recursive = TRUE` descends into subdirectories, including through a
   symbolic link to a directory, so a row can then name a file outside the
-  one given. The extensions cover every container the package itself writes, so
-  `.mka` counts as audio and `.ts` as video. The name `.ts` also belongs to
-  TypeScript source files. The function reads names rather than file contents,
-  so a folder of TypeScript sources comes back as video rows. A
+  one given. The extensions include `.mka` as audio and `.ts` as video, so the
+  function lists a folder of the package's own multi-track audio output. The name
+  `.ts` also belongs to TypeScript source files. The function reads names
+  rather than file contents, so a folder of TypeScript sources comes back as
+  video rows when you ask for `type = "video"`. A
   directory that does not
   exist, a type outside the three, and a call that matches no file are each an
   error naming `ffm_jobs()`. The returned table carries `input` and nothing

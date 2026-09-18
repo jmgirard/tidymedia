@@ -11,13 +11,13 @@ Source:
 [`inst/CITATION`](https://github.com/jmgirard/tidymedia/blob/master/inst/CITATION)
 
 Girard J (2026). *tidymedia: Media File Preprocessing and Metadata for
-the 'tidyverse'*. R package version 0.1.0.9000,
+the 'tidyverse'*. R package version 0.2.0,
 <https://jmgirard.github.io/tidymedia/>.
 
     @Manual{,
       title = {{tidymedia}: Media File Preprocessing and Metadata for the 'tidyverse'},
       author = {Jeffrey Girard},
       year = {2026},
-      note = {R package version 0.1.0.9000},
+      note = {R package version 0.2.0},
       url = {https://jmgirard.github.io/tidymedia/},
     }

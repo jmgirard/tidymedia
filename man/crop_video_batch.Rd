@@ -14,6 +14,7 @@ crop_video_batch(
   audio_codec = "copy",
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
@@ -35,7 +36,9 @@ overrides that argument for each row, and \code{NA} keeps every audio
 track. That is the column form of that argument's \code{NULL}. Two rows
 with the same destination path are refused before any row runs. That
 happens with a repeated \code{output}, or with a repeated \code{input} when
-there is no \code{output} column. Any other columns are ignored.}
+there is no \code{output} column. A numeric \code{quality} column
+overrides the \code{quality} argument per row (see \code{quality}). Any
+other columns are ignored.}
 
 \item{width, height}{The output crop size in pixels, for every row unless
 \code{jobs} has a column of the same name. Each is required: pass it as an
@@ -60,6 +63,8 @@ Resolving a hardware backend asks this FFmpeg build which encoders it has. So th
 A call can also have a per-row \code{width} or \code{height} that is
 neither a positive number nor an FFmpeg expression. Such a call is refused
 for the value first, whether or not this machine has the encoder.}
+
+\item{quality}{A number, or \code{NULL} (default), applied to each row unless \code{jobs} carries a numeric \code{quality} column. In that column, \code{NA} leaves that row's encoder default in place, whatever the argument says. The value is the encoder's own rate-control value, passed through unchanged. Each cell is checked against the encoder its own row resolves to. A wrong cell is refused before any row runs, and the error names this function and the row. See \code{\link[=crop_video]{crop_video()}} for the encoders, their flags and ranges, and the values it refuses.}
 
 \item{audio_stream}{The audio track to carry into each output, as a number that counts from \code{0} among the \emph{audio tracks} of each row's input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) carries \strong{every} audio track. Without an \code{audio_stream} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row. It does not fall back to the argument. The every-track family reads \code{NULL} as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The function does not carry subtitle or data streams in either case. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 

@@ -36,9 +36,9 @@ A batch caller sets the encoder's own quality number for the whole batch or per 
 ## Tasks
 
 - [x] T1: Tests first, then `check_batch_quality()` beside `batch_codec_cell()` (`R/ffmpeg.R`): numeric or all-`NA` logical, each non-`NA` cell checked with M135's `check_quality()` against that row's resolved encoder, wrapped in `check_batch_cell()` so the error names the row and never purrr's index. It also takes the whole-batch argument, repeated per row with no locator.
-- [ ] T2: `quality` on `standardize_video_batch()`, `format_for_web_batch()`, `anonymize_video_batch()` and `crop_video_batch()`, picked per row like `video_codec` (`R/ffmpeg.R:2366`), with the AC2 and AC3 tests. Give each row its own output path in the column-form cells (LESSONS M109).
-- [ ] T3: `quality` on `segment_video_batch()`, `separate_audio_video_batch()`, `compare_videos_batch()` and `picture_in_picture_batch()` (`R/ffmpeg.R:4059`, `:4714`, `:5258` and the fan-in tables per D015), with their tests.
-- [ ] T4: A batch sentence in `quality_param()` or a `batch_quality_param()` beside `batch_hardware_param()` (`R/task-doc.R:100`); the `NEWS.md` line; `devtools::document()`; the prose sweep.
+- [x] T2: `quality` on `standardize_video_batch()`, `format_for_web_batch()`, `anonymize_video_batch()` and `crop_video_batch()`, picked per row like `video_codec` (`R/ffmpeg.R:2366`), with the AC2 and AC3 tests. Give each row its own output path in the column-form cells (LESSONS M109).
+- [x] T3: `quality` on `segment_video_batch()`, `separate_audio_video_batch()`, `compare_videos_batch()` and `picture_in_picture_batch()` (`R/ffmpeg.R:4059`, `:4714`, `:5258` and the fan-in tables per D015), with their tests.
+- [x] T4: `batch_quality_param()` beside `batch_hardware_param()` (`R/task-doc.R`); the `NEWS.md` entry; `devtools::document()`; the prose sweep.
 - [ ] T5: `devtools::check()`, `devtools::test()` alone (LESSONS M124), and `pkgdown::check_pkgdown()`.
 
 ## Work log
@@ -51,7 +51,11 @@ A batch caller sets the encoder's own quality number for the whole batch or per 
 - 2026-09-17: amendment (mini gate, accepted): AC2 named "the first compiled command" and "the second", but `separate_audio_video_batch()` returns an audio and a video command per job, so its second command is the first job's video command and never carries the flag. Reworded to count jobs: every command of the first job carries no flag; the second job's video command carries it. Grid and values unchanged.
 - 2026-09-17: re-audit: AC2 (full) — nothing (note: the fixture shape is instrument detail, load-bearing for the column form and the shape M135's AC2 carries).
 - 2026-09-17: T1 done. `check_batch_quality(jobs, quality, codec_rows, hardware)` takes the argument and the column in one call, so the eight verbs need one line each; a "copy" cell bypasses `intended_encoder()` so the refusal names the copy and not a family. Direct tests in `test-quality-batch-col.R`. `devtools::test()` 0 failures.
+- 2026-09-17: T2 and T3 done in one commit (all eight sites are in `R/ffmpeg.R`, so the code does not split by task). The grid in `test-quality-batch.R` over AC1's filter: 52 pairs, both range ends, the argument form, and NA over the argument (D022). Two planted defects went red where expected: a no-op `emit_quality()` failed AC2 alone (208 failures) and a no-op `check_batch_quality()` failed AC3 alone (288). `segment_video_batch()` also refuses a cell on a `reencode = FALSE` row per row (M135 condition 2b). The two census tests (`test-nvenc-probe-blame.R`, `test-unguarded-argument-front-doors.R`) grew by the 40 cells the eight formals add, all kept, pins updated.
+- 2026-09-17: T4 done. `batch_quality_param(scalar, output)` writes the 8 `\item{quality}` entries; each `jobs` entry names the column. NEWS: the M135 entry's "do not take it yet" sentence removed and a new entry added. `document()` ran under roxygen2 8.0.0 against the 8.1.0 pin (LESSONS M128); the man diff carries only the quality text. Prose sweep over the 8 pages: no finding, exit 0. `pkgdown::check_pkgdown()`: no problems.
 
 ## Decisions
+
+- M136-1 (2026-09-17): one checker for both forms. `check_batch_quality(jobs, quality, codec_rows, hardware)` takes the argument and the column in one call and resolves per row, so each of the eight verbs adds one call above its availability probe (D036) and the row-locator rule (a column names the row, an argument names none) is written once. A `"copy"` cell bypasses `intended_encoder()` so the refusal names the copy and never a family lookup. On `separate_audio_video_batch()` the reshaped `quality` column is built after the check, so a wrong value never reaches `as.numeric()` and `rbind()`. Over: a per-verb sweep beside each codec sweep (eight copies of the locator rule).
 
 ## Review

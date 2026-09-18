@@ -14,6 +14,7 @@ standardize_video_batch(
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
@@ -38,8 +39,9 @@ that row's codec unset. That is the column form of
 \code{width}, \code{height} and \code{fps} do accept \code{NULL} as
 arguments, but their columns have no \code{NA} form for it. An
 \code{audio_stream} column overrides the \code{audio_stream} argument for
-each row, and \code{NA} keeps that row on every audio track. Any other
-columns are ignored.}
+each row, and \code{NA} keeps that row on every audio track. A numeric
+\code{quality} column overrides the \code{quality} argument per row (see
+\code{quality}). Any other columns are ignored.}
 
 \item{width, height}{Optional target dimensions for every row, unless
 \code{jobs} has a column of the same name (see \code{jobs}). When only one
@@ -74,6 +76,8 @@ applies to the whole batch and is not read as a column. See
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.}
 
 \item{fallback}{A logical. When a \code{hardware} other than \code{"none"} is requested but its encoder is unavailable, \code{TRUE} re-encodes with the software \code{video_codec} and a message. \code{FALSE} (default) aborts instead. A \code{video_codec} in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever \code{fallback} says.}
+
+\item{quality}{A number, or \code{NULL} (default), applied to each row unless \code{jobs} carries a numeric \code{quality} column. In that column, \code{NA} leaves that row's encoder default in place, whatever the argument says. The value is the encoder's own rate-control value, passed through unchanged. Each cell is checked against the encoder its own row resolves to. A wrong cell is refused before any row runs, and the error names this function and the row. See \code{\link[=standardize_video]{standardize_video()}} for the encoders, their flags and ranges, and the values it refuses.}
 
 \item{audio_stream}{The audio track to carry into each output, as a number that counts from \code{0} among the \emph{audio tracks} of each row's input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) carries \strong{every} audio track. Without an \code{audio_stream} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row. It does not fall back to the argument. The every-track family reads \code{NULL} as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The function does not carry subtitle or data streams in either case. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 

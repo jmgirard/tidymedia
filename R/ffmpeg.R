@@ -2151,7 +2151,9 @@ derive_anonymized_names <- function(input) {
 #'   \code{color} or \code{pixel_format} column \code{NA} is an error, because
 #'   those have no unset state. An \code{audio_stream} column overrides the
 #'   \code{audio_stream} argument per row, where \code{NA} keeps that row on
-#'   every audio track. Any other columns are ignored.
+#'   every audio track. A numeric \code{quality} column overrides the
+#'   \code{quality} argument per row (see \code{quality}). Any other columns
+#'   are ignored.
 #' @param color A string naming the default fill color (FFmpeg color syntax)
 #'   applied to every row. A \code{color} column in \code{jobs}, or a box that
 #'   supplies its own \code{color}, overrides it. (default = \code{"black"})
@@ -2181,6 +2183,7 @@ derive_anonymized_names <- function(input) {
 #'   refuses that call for the value first, whether or not this machine has the
 #'   encoder.
 #' @param fallback `r fallback_param("video_codec", batch = TRUE)`
+#' @param quality `r batch_quality_param("anonymize_video")`
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each input's command through FFmpeg (\code{TRUE},
 #'   default) or only compile them for inspection (\code{FALSE}).
@@ -2216,7 +2219,7 @@ derive_anonymized_names <- function(input) {
 anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264",
                              audio_codec = "copy", pixel_format = "yuv420p",
                              hardware = c("none", "nvenc", "videotoolbox"),
-                             fallback = FALSE,
+                             fallback = FALSE, quality = NULL,
                              audio_stream = NULL,
                              run = TRUE, parallel = FALSE, ...) {
 
@@ -2368,6 +2371,13 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
   # which is where M41 puts a guard added for blame, so every check above still
   # reports first. The sweep covers each distinct family a `video_codec` column
   # spells, never only the argument's.
+  # `quality`, argument and column, against each row's resolved encoder
+  # (M136); above the probe (D036), naming this verb and the row (D076).
+  check_batch_quality(
+    jobs, quality,
+    batch_arg_rows(jobs, "video_codec", video_codec, batch_codec_cell),
+    hardware
+  )
   check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
@@ -2388,6 +2398,8 @@ anonymize_video_batch <- function(jobs, color = "black", video_codec = "libx264"
         # columns -- parity with standardize_video_batch (D-M31).
         hardware = hardware,
         fallback = fallback,
+        # An NA cell is the column form of NULL (D022).
+        quality = batch_stream_cell(pick("quality", quality)),
         # Arrives through `dots` rather than a named closure argument: only
         # `regions` is named here, because pmap must unwrap that list-column.
         audio_stream = batch_stream_cell(pick("audio_stream", audio_stream))
@@ -4096,7 +4108,9 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   codec unset" (the column's way of writing the argument's \code{NULL}). An
 #'   \code{audio_stream} column likewise overrides that argument per row, with
 #'   \code{NA} meaning "keep every audio track" (the column's way of writing
-#'   that argument's \code{NULL}). Any other columns are ignored.
+#'   that argument's \code{NULL}). A numeric \code{quality} column overrides
+#'   the \code{quality} argument per row (see \code{quality}). Any other
+#'   columns are ignored.
 #' @param reencode A logical passed to \code{\link{ffm_seek}}: cut each segment
 #'   frame-accurately by re-encoding (\code{TRUE}, default) or with a fast,
 #'   lossless copy that snaps to keyframes (\code{FALSE}). See \code{ffm_seek}
@@ -4124,6 +4138,9 @@ segment_pipeline <- function(input, output, start, end, reencode,
 #'   `r contradiction_sentences("cut")`
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
+#' @param quality `r batch_quality_param("segment_video")`
+#'   A cell on a row that stream-copies (\code{reencode = FALSE}) is refused
+#'   too, because no encoder runs on that row.
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each segment's command through FFmpeg
 #'   (\code{TRUE}, default) or only compile them for inspection (\code{FALSE}).
@@ -4151,7 +4168,7 @@ segment_pipeline <- function(input, output, start, end, reencode,
 segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
                            audio_codec = "copy",
                            hardware = c("none", "nvenc", "videotoolbox"),
-                           fallback = FALSE,
+                           fallback = FALSE, quality = NULL,
                            audio_stream = NULL,
                            run = TRUE, parallel = FALSE, ...) {
 
@@ -4236,6 +4253,12 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
                                 batch_codec_cell)
   vcodec_cols <- any(c("reencode", "video_codec") %in% names(jobs))
   acodec_cols <- any(c("reencode", "audio_codec") %in% names(jobs))
+  # Condition 2b (M135/M136): `quality` on a stream-copying row. Resolved per
+  # row like the codecs -- an NA cell is the column form of NULL (D022) -- and
+  # checked after the two above, so a row wrong about both is told about the
+  # codec first, as the scalar verb answers.
+  quality_rows <- batch_arg_rows(jobs, "quality", quality, batch_stream_cell)
+  quality_cols <- any(c("reencode", "quality") %in% names(jobs))
   for (i in seq_len(nrow(jobs))) {
     check_batch_cell(
       if (vcodec_cols) i else NA_integer_,
@@ -4244,6 +4267,10 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
     check_batch_cell(
       if (acodec_cols) i else NA_integer_,
       check_audio_codec_needs_reencode(reencode_rows[[i]], acodec_rows[[i]])
+    )
+    check_batch_cell(
+      if (quality_cols) i else NA_integer_,
+      check_quality_needs_reencode(reencode_rows[[i]], quality_rows[[i]])
     )
   }
   # Two rows resolving to one output path (M125), after the row sweep above and
@@ -4262,6 +4289,10 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
   # this guard only ever acts on `hardware = "nvenc"`, which contradicts EVERY
   # copying row, so any table reaching this line re-encodes on every row. The
   # scoping is dead code, not a live protection (M58 T2).
+  # `quality`, argument and column, against each row's resolved encoder
+  # (M136); above the probe (D036), naming this verb and the row (D076), as
+  # the scalar verb checks it above its own probe.
+  check_batch_quality(jobs, quality, vcodec_rows, hardware)
   check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
@@ -4279,6 +4310,8 @@ segment_video_batch <- function(jobs, reencode = TRUE, video_codec = NULL,
         audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
         fallback = fallback,
+        # An NA cell is the column form of NULL (D022).
+        quality = batch_stream_cell(pick("quality", quality)),
         audio_stream = batch_stream_cell(pick("audio_stream", audio_stream))
       )
     },
@@ -4694,8 +4727,9 @@ derive_standardized_names <- function(input) {
 #'   \code{width}, \code{height} and \code{fps} do accept \code{NULL} as
 #'   arguments, but their columns have no \code{NA} form for it. An
 #'   \code{audio_stream} column overrides the \code{audio_stream} argument for
-#'   each row, and \code{NA} keeps that row on every audio track. Any other
-#'   columns are ignored.
+#'   each row, and \code{NA} keeps that row on every audio track. A numeric
+#'   \code{quality} column overrides the \code{quality} argument per row (see
+#'   \code{quality}). Any other columns are ignored.
 #' @param width,height Optional target dimensions for every row, unless
 #'   \code{jobs} has a column of the same name (see \code{jobs}). When only one
 #'   is given, the other is derived to keep the aspect ratio. When neither is
@@ -4723,6 +4757,7 @@ derive_standardized_names <- function(input) {
 #'   \code{\link{standardize_video}} and \code{\link{has_hardware_encoder}}.
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
 #' @param fallback `r fallback_param("video_codec")`
+#' @param quality `r batch_quality_param("standardize_video")`
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @inheritParams anonymize_video_batch
 #' @param parallel A logical passed to \code{\link{ffm_batch}}: standardize in
@@ -4752,7 +4787,7 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
                                video_codec = "libx264", audio_codec = "copy",
                                pixel_format = "yuv420p",
                                hardware = c("none", "nvenc", "videotoolbox"),
-                               fallback = FALSE,
+                               fallback = FALSE, quality = NULL,
                                audio_stream = NULL,
                                run = TRUE, parallel = FALSE, ...) {
 
@@ -4915,6 +4950,15 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
   # which is where M41 puts a guard added for blame, so every check above still
   # reports first. The sweep covers each distinct family a `video_codec` column
   # spells, never only the argument's.
+  # `quality`, argument and column, checked against each row's resolved
+  # encoder (M136). Pure, so it sits with the machine-free checks and above
+  # the availability probe below (D036); here rather than inside the fan-out
+  # so the abort names this verb and the row (D076, M56).
+  check_batch_quality(
+    jobs, quality,
+    batch_arg_rows(jobs, "video_codec", video_codec, batch_codec_cell),
+    hardware
+  )
   check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
@@ -4935,6 +4979,9 @@ standardize_video_batch <- function(jobs, width = NULL, height = NULL, fps = NUL
         pixel_format = pick("pixel_format", pixel_format),
         hardware = hardware,
         fallback = fallback,
+        # An NA cell is the column form of NULL (D022): that row keeps its
+        # encoder's default, whatever the argument says.
+        quality = batch_stream_cell(pick("quality", quality)),
         audio_stream = batch_stream_cell(pick("audio_stream", audio_stream))
       )
     },
@@ -6249,7 +6296,9 @@ derive_web_names <- function(input) {
 #'   track. That is the column form of that argument's \code{NULL}. Two rows
 #'   with the same destination path are refused before any row runs. That
 #'   happens with a repeated \code{output}, or with a repeated \code{input} when
-#'   there is no \code{output} column. Any other columns are ignored.
+#'   there is no \code{output} column. A numeric \code{quality} column
+#'   overrides the \code{quality} argument per row (see \code{quality}). Any
+#'   other columns are ignored.
 #' @param width,height The output crop size in pixels, for every row unless
 #'   \code{jobs} has a column of the same name. Each is required: pass it as an
 #'   argument or as a column. There is no default crop size.
@@ -6269,6 +6318,7 @@ derive_web_names <- function(input) {
 #'   A call can also have a per-row \code{width} or \code{height} that is
 #'   neither a positive number nor an FFmpeg expression. Such a call is refused
 #'   for the value first, whether or not this machine has the encoder.
+#' @param quality `r batch_quality_param("crop_video")`
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @inheritParams extract_audio_batch
 #' @return `r jobs_return()`
@@ -6287,7 +6337,7 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
                              x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
                              video_codec = NULL, audio_codec = "copy",
                              hardware = c("none", "nvenc", "videotoolbox"),
-                             fallback = FALSE,
+                             fallback = FALSE, quality = NULL,
                              audio_stream = NULL,
                              run = TRUE, parallel = FALSE, ...) {
 
@@ -6368,6 +6418,13 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
   # which is where M41 puts a guard added for blame, so every check above still
   # reports first. The sweep covers each distinct family a `video_codec` column
   # spells, never only the argument's.
+  # `quality`, argument and column, against each row's resolved encoder
+  # (M136); above the probe (D036), naming this verb and the row (D076).
+  check_batch_quality(
+    jobs, quality,
+    batch_arg_rows(jobs, "video_codec", video_codec, batch_codec_cell),
+    hardware
+  )
   check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
@@ -6388,6 +6445,8 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
         audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
         fallback = fallback,
+        # An NA cell is the column form of NULL (D022).
+        quality = batch_stream_cell(pick("quality", quality)),
         audio_stream = batch_stream_cell(pick("audio_stream", audio_stream))
       )
     },
@@ -6421,7 +6480,9 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   two derived names that match. For example, \code{clip.mov} and
 #'   \code{clip.mkv} both give \code{clip_web.mp4}. An optional numeric
 #'   \code{audio_stream} column overrides the \code{audio_stream} argument for
-#'   each row. \code{NA} keeps every audio track in that row. Any other columns
+#'   each row. \code{NA} keeps every audio track in that row. A numeric
+#'   \code{quality} column overrides the \code{quality} argument per row (see
+#'   \code{quality}). Any other columns
 #'   are ignored, \code{video_codec} and \code{audio_codec} included. The
 #'   sibling batch functions read those two columns as per-row overrides, but
 #'   this one does not. The web recipe fixes which codecs the output uses:
@@ -6433,6 +6494,7 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   whole batch and is not read as a column. See
 #'   \code{\link{has_hardware_encoder}}.
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
+#' @param quality `r batch_quality_param("format_for_web")`
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @inheritParams extract_audio_batch
 #' @inheritParams format_for_web
@@ -6448,7 +6510,8 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' @export
 format_for_web_batch <- function(jobs,
                                  hardware = c("none", "nvenc", "videotoolbox"),
-                                 fallback = FALSE, audio_stream = NULL,
+                                 fallback = FALSE, quality = NULL,
+                                 audio_stream = NULL,
                                  run = TRUE, parallel = FALSE,
                                  ...) {
 
@@ -6483,6 +6546,10 @@ format_for_web_batch <- function(jobs,
   # every check above still reports first (M41). The web recipe fixes the codec
   # by identity, so the family is always h264 -- the same "libx264"
   # format_for_web_pipeline() hands resolve_hw_encoder().
+  # `quality`, argument and column, against the fixed H.264 codec every row
+  # encodes with (M136); above the probe (D036), naming this verb (D076).
+  check_batch_quality(jobs, quality, rep(list("libx264"), nrow(jobs)),
+                      hardware)
   check_hardware_available("libx264", hardware, fallback)
 
   # D074: the verb the caller typed names a bad limit, not the builder below.
@@ -6494,6 +6561,8 @@ format_for_web_batch <- function(jobs,
       pick <- function(nm, default) if (nm %in% names(dots)) dots[[nm]] else default
       format_for_web_pipeline(
         input, output, hardware, fallback,
+        # An NA cell is the column form of NULL (D022).
+        quality = batch_stream_cell(pick("quality", quality)),
         audio_stream = batch_stream_cell(pick("audio_stream", audio_stream))
       )
     },
@@ -6534,7 +6603,10 @@ format_for_web_batch <- function(jobs,
 #'   Rows that omit a column fall back to that argument. An optional numeric
 #'   \code{audio_stream} column likewise overrides the \code{audio_stream}
 #'   argument per row. There, \code{NA} keeps every audio track in that row's
-#'   \code{audiofile}. Any other columns are ignored, with one exception. A
+#'   \code{audiofile}. A numeric \code{quality} column overrides the
+#'   \code{quality} argument per row and applies to that row's
+#'   \code{videofile} (see \code{quality}). Any other columns are ignored,
+#'   with one exception. A
 #'   \code{reencode} column, retired with the argument of the same name, is an
 #'   error and not a silent no-op.
 #' @param audio_codec A string that names the encoder for every
@@ -6559,6 +6631,9 @@ format_for_web_batch <- function(jobs,
 #'   `r contradiction_sentences("copy")`
 #'   The stream-copy conflict above is caught first, so such a call aborts
 #'   without asking FFmpeg.
+#' @param quality `r batch_quality_param("separate_audio_video", output = "every \\code{videofile}")`
+#'   The \code{audiofile} never takes it. A cell on a row whose video codec
+#'   is \code{"copy"}, the default, is refused, because no encoder runs.
 #' @param audio_stream `r audio_stream_param("write to each \\code{audiofile}", "keeps", "every", batch = TRUE, extra = audio_stream_extras$separation_container)`
 #' @inheritParams extract_audio_batch
 #' @return A [tibble][tibble::tibble-package] with \strong{two rows per input},
@@ -6647,7 +6722,8 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
                                        video_codec = "copy",
                                        hardware = c("none", "nvenc",
                                                     "videotoolbox"),
-                                       fallback = FALSE, audio_stream = NULL,
+                                       fallback = FALSE, quality = NULL,
+                                       audio_stream = NULL,
                                        run = TRUE,
                                        parallel = FALSE, ...) {
 
@@ -6832,8 +6908,31 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
   # own error had to report instead; the sweep above now refuses every such cell
   # whenever `hardware = "nvenc"`, which is the only setting under which this
   # guard acts at all, so no copy cell can reach it.
+  # `quality`, argument and column, against each row's resolved VIDEO codec
+  # (M136): a copy row is refused for the copy, after the hardware
+  # contradiction above and before the probe below (D036), naming this verb
+  # and the caller's row (D076). It reads `jobs`, not `long`, for the reason
+  # the two guards above do.
+  check_batch_quality(jobs, quality, vcodec_rows, hardware)
   check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
+
+  # `quality` on the reshaped table (M136), the mirror image of `audio_stream`
+  # above: one choice per INPUT that applies to the video row only, so the
+  # column carries each input's value on its video row and NA on its audio
+  # row, where no encoder it names runs. Built AFTER the check above, which
+  # is what keeps a non-numeric column or a two-element argument from
+  # reaching as.numeric() and rbind(). as.numeric() carries an all-NA column,
+  # which R types logical (M34). Added only when the caller supplied either
+  # form, so a quality-less table keeps its shape.
+  if ("quality" %in% names(jobs) || !is.null(quality)) {
+    per_input <- if ("quality" %in% names(jobs)) {
+      as.numeric(jobs$quality)
+    } else {
+      rep(as.numeric(quality), n)
+    }
+    long$quality <- as.vector(rbind(rep(NA_real_, n), per_input))
+  }
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one single-output pipeline per
   # reshaped row, sharing separate_stream_pipeline() with separate_audio_video().
@@ -6861,8 +6960,13 @@ separate_audio_video_batch <- function(jobs, audio_codec = "copy",
           if ("audio_stream" %in% names(dots)) dots$audio_stream else audio_stream
         )
       }
+      # And `quality` on video rows only, the mirror image: the audio command
+      # never receives it. An NA cell is the column form of NULL (D022).
+      q <- if (identical(stream, "video")) {
+        batch_stream_cell(if ("quality" %in% names(dots)) dots$quality else quality)
+      }
       separate_stream_pipeline(input, output, stream, codec, hardware, fallback,
-                               sel)
+                               sel, quality = q)
     },
     run = run,
     parallel = parallel,
@@ -7277,7 +7381,8 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   \code{direction}, \code{resize}, \code{audio_input}, \code{video_codec}, and
 #'   \code{audio_codec} columns override the
 #'   like-named arguments per row (a row omitting one falls back to the
-#'   argument). `r fan_in_na_sentences()` Two rows
+#'   argument). `r fan_in_na_sentences()` A numeric \code{quality} column
+#'   overrides the \code{quality} argument per row (see \code{quality}). Two rows
 #'   given the same \code{output} path are refused before any row runs; other
 #'   columns are ignored.
 #' @param direction,resize Defaults applied to every row lacking the
@@ -7297,6 +7402,7 @@ concatenate_videos_batch <- function(jobs, run = TRUE, parallel = FALSE, ...) {
 #'   are an \code{audio_input} index past that row's input count, and a
 #'   \code{direction} outside the two accepted values.
 #'   `r value_error_order_sentences()`
+#' @param quality `r batch_quality_param("compare_videos")`
 #' @inheritParams extract_audio_batch
 #' @inheritParams crop_video_batch
 #' @return `r jobs_return()`
@@ -7315,7 +7421,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
                                  resize = TRUE, audio_input = NULL,
                                  video_codec = NULL, audio_codec = "copy",
                                  hardware = c("none", "nvenc", "videotoolbox"),
-                                 fallback = FALSE,
+                                 fallback = FALSE, quality = NULL,
                                  run = TRUE, parallel = FALSE, ...) {
 
   # `direction` and `audio_input` are checked BELOW the contradiction sweep (M61); see
@@ -7428,6 +7534,13 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
   # which is where M41 puts a guard added for blame, so every check above still
   # reports first. The sweep covers each distinct family a `video_codec` column
   # spells, never only the argument's.
+  # `quality`, argument and column, against each row's resolved encoder
+  # (M136); above the probe (D036), naming this verb and the row (D076).
+  check_batch_quality(
+    jobs, quality,
+    batch_arg_rows(jobs, "video_codec", video_codec, batch_codec_cell),
+    hardware
+  )
   check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
@@ -7450,7 +7563,9 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
         video_codec = batch_codec_cell(pick("video_codec", video_codec)),
         audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
-        fallback = fallback
+        fallback = fallback,
+        # An NA cell is the column form of NULL (D022).
+        quality = batch_stream_cell(pick("quality", quality))
       )
     },
     run = run,
@@ -7481,7 +7596,9 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   columns override the
 #'   like-named arguments
 #'   per row (a row omitting one falls back to the argument).
-#'   `r fan_in_na_sentences()` Two rows given the same \code{output}
+#'   `r fan_in_na_sentences()` A numeric \code{quality} column overrides the
+#'   \code{quality} argument per row (see \code{quality}). Two rows given the
+#'   same \code{output}
 #'   path are refused before any row runs; other columns are ignored.
 #' @param position,scale,margin Defaults applied to every row lacking the
 #'   corresponding column. \code{position} is one of \code{"topright"} (the
@@ -7496,6 +7613,7 @@ compare_videos_batch <- function(jobs, direction = c("horizontal", "vertical"),
 #'   are a negative \code{margin}, an \code{audio_input} index outside the two
 #'   inputs, and a \code{position} outside the five accepted values.
 #'   `r value_error_order_sentences()`
+#' @param quality `r batch_quality_param("picture_in_picture")`
 #' @inheritParams compare_videos_batch
 #' @return `r jobs_return()`
 #' @seealso [picture_in_picture()], the one-output function it wraps;
@@ -7518,7 +7636,7 @@ picture_in_picture_batch <- function(jobs,
                                      video_codec = NULL, audio_codec = "copy",
                                      hardware = c("none", "nvenc",
                                                   "videotoolbox"),
-                                     fallback = FALSE,
+                                     fallback = FALSE, quality = NULL,
                                      run = TRUE, parallel = FALSE, ...) {
 
   # `position`, `margin` and `audio_input` are checked BELOW the contradiction sweep
@@ -7664,6 +7782,13 @@ picture_in_picture_batch <- function(jobs,
   # which is where M41 puts a guard added for blame, so every check above still
   # reports first. The sweep covers each distinct family a `video_codec` column
   # spells, never only the argument's.
+  # `quality`, argument and column, against each row's resolved encoder
+  # (M136); above the probe (D036), naming this verb and the row (D076).
+  check_batch_quality(
+    jobs, quality,
+    batch_arg_rows(jobs, "video_codec", video_codec, batch_codec_cell),
+    hardware
+  )
   check_hardware_available(batch_video_codecs(jobs, video_codec), hardware,
                         fallback)
 
@@ -7692,7 +7817,9 @@ picture_in_picture_batch <- function(jobs,
         video_codec = batch_codec_cell(pick("video_codec", video_codec)),
         audio_codec = batch_codec_cell(pick("audio_codec", audio_codec)),
         hardware = hardware,
-        fallback = fallback
+        fallback = fallback,
+        # An NA cell is the column form of NULL (D022).
+        quality = batch_stream_cell(pick("quality", quality))
       )
     },
     run = run,

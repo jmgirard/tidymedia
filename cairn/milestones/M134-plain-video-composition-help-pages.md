@@ -70,9 +70,10 @@ The M134 help-page domain uses plain English for an R user who does not know FFm
 - Consistency gate: `cairn_validate.py` passed every check. No DESIGN.md principle changed, so `cairn_impact.py` was skipped. Toolchain slot: `document()` no diff, `check()` clean, `check_pkgdown()` clean, `README.md` unchanged and in step with `README.Rmd`, no new top-level file. `NEWS.md` has no entry, as the scope states under D091.
 - Independent review, three lenses (user-facing tier). [S] prior-review lens: no regression against the M130 to M133 review records, and the PR-comment probe found no human review thread. [S] blame-history lens: no lost caveat, no resurrected false claim, no contradicted decision, no orphaned test. Findings, ranked, with disposition:
   - O1: `AC6` was unticked while the work log claimed its checks passed. No change needed: the box is ticked above on fresh evidence.
-  - O2: `?segment_video` keeps the base wording "an underscore (_) and an integer", while `derive_segment_names()` pads with zeros and the `outfiles` argument says "zero-padded integer". Triage at the gate.
+  - O2: `?segment_video` keeps the base wording "an underscore (_) and an integer", while `derive_segment_names()` pads with zeros and the `outfiles` argument says "zero-padded integer". Rejected at the gate: a zero-padded integer is an integer, and the `outfiles` argument states the padding.
   - O3: `?anonymize_video_batch` calls `color` an encoding argument, inherited from the base "encode knobs". Noted, no change.
   - O4: `@seealso` blocks mix `;` and `.` separators across the pages. Rejected: style, renders the same.
   - O5: the ledger heading "Sweep output at the base commit" sat over a table whose Result column reports head outcomes. Fixed now: the heading names both.
   - S1: the `(D015)` citation is gone from three batch pages. Rejected: the plan calls for it, and the shape the decision fixes is still stated in full.
+- 2026-09-17: step-7 approval: m134-plain-video-composition-help-pages approved for merge. O2 rejected at the gate.
 

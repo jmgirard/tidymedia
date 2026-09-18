@@ -57,10 +57,12 @@ The compiled FFmpeg command (invisibly when \code{run = TRUE}).
 }
 \description{
 Composite a smaller \code{overlay} video onto a \code{main} video in one
-corner (or the center) — the classic picture-in-picture layout for pairing a
-speaker with a screen recording, or a stimulus with a webcam. Built on the
-blessed \code{\link{ffm_overlay}} verb, which resizes the overlay to a
-fraction of the main video's width and positions it.
+corner (or the center). This is the classic picture-in-picture layout for
+pairing a speaker with a screen recording, or a stimulus with a webcam. Built
+on the \code{\link{ffm_overlay}} pipeline function, which resizes the overlay
+to a fraction of the main video's width and positions it. The glossary in
+\code{vignette("tidymedia")} explains media terms such as codec, encoder and
+stream copy.
 }
 \details{
 Audio is dropped unless \code{audio_input} names an input to carry (\code{0} = the
@@ -72,8 +74,9 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 picture_in_picture(video, video, "pip.mp4", run = FALSE)
 }
 \seealso{
-\code{\link[=ffm_overlay]{ffm_overlay()}}, the builder it wraps; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the
-\code{hardware} toggle; \code{\link[=compare_videos]{compare_videos()}} for
+\code{\link[=ffm_overlay]{ffm_overlay()}}, the pipeline function it wraps;
+\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the
+\code{hardware} argument; \code{\link[=compare_videos]{compare_videos()}} for
 side-by-side stacking.
 
 Other task functions:

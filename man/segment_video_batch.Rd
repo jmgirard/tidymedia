@@ -19,13 +19,14 @@ segment_video_batch(
 }
 \arguments{
 \item{jobs}{A data frame with one row per segment and (at least) the columns
-\code{input} (source path), \code{start} and \code{end} (cut points; a
-numeric column of seconds or a character column with time-duration syntax).
+\code{input} (source path), \code{start} and \code{end} (cut points). Each
+cut-point column is a numeric column of seconds or a character column with
+time-duration syntax.
 Two optional columns are recognized: \code{output} (destination path) and
 \code{reencode} (a logical; see the \code{reencode} argument). If
-\code{output} is absent, one is derived per row by appending
-\code{_<n>.<ext>} to each input's basename, with the segment number
-restarting at 1 for each input file (the same rule as
+\code{output} is absent, the function derives one per row by appending
+\code{_<n>.<ext>} to each input's basename. The segment number
+restarts at 1 for each input file (the same rule as
 \code{\link{segment_video}}). Two rows given the same \code{output} path
 are refused before any row runs. A \code{video_codec} or \code{audio_codec}
 column overrides that argument per row, with \code{NA} meaning "leave the
@@ -41,24 +42,25 @@ for the trade-off. Applies to every row, unless \code{jobs} carries a
 \code{reencode} column, which overrides this argument on a per-row basis.}
 
 \item{video_codec}{A string naming the output video codec, applied to every
-row lacking a \code{video_codec} column, or \code{NULL} (default) to leave
-it unset so each segment keeps its container's default encoder. A row that
-resolves to a codec while cutting by stream copy (\code{reencode = FALSE},
-as an argument or a column) is an error: no encoder runs on that path.}
+row lacking a \code{video_codec} column. \code{NULL} (default) leaves
+it unset, so each segment keeps its container's default encoder. A row can
+resolve to a codec while cutting by stream copy (\code{reencode = FALSE},
+as an argument or a column). That row is an error, because no encoder runs
+on that path.}
 
 \item{audio_codec}{A string naming the output audio codec, applied to every
 row lacking an \code{audio_codec} column. \code{"copy"} (default)
-stream-copies the audio; name an encoder to transcode it, or \code{NULL} to
-leave the codec unset. A row that resolves to anything but \code{"copy"}
+stream-copies the audio; name an encoder to re-encode it, or \code{NULL} to
+leave the codec unset. A row can resolve to anything but \code{"copy"}
 while cutting by stream copy (\code{reencode = FALSE}, as an argument or a
-column) is an error, so a jobs table mixing stream-copy rows with a
-transcoding \code{audio_codec} must be split into separate calls.}
+column). That row is an error. So split a jobs table that mixes
+stream-copy rows with a re-encoding \code{audio_codec} into separate calls.}
 
 \item{hardware, fallback}{The encoder backend and its fallback behavior, applied to the whole batch. They are a property of the machine, not of a row, so neither is read as a \code{jobs} column. See \code{\link[=segment_video]{segment_video()}}.
 Because \code{hardware} is batch-wide, a non-\code{"none"} value
-conflicts with a stream-copy row on its own — even one naming no codec —
-so a jobs table mixing \code{reencode = FALSE} rows with GPU encoding
-must be split into separate calls.
+conflicts with a stream-copy row on its own, even one naming no codec.
+So split a jobs table that mixes \code{reencode = FALSE} rows with GPU
+encoding into separate calls.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
 A call can also contradict itself by asking for GPU encoding on a cut that stream-copies. Such a call is refused for the contradiction first, whether or not this machine has the encoder.
 The stream-copy conflict named under \code{reencode} is caught first, so
@@ -83,11 +85,13 @@ time and warns. Set a plan first, e.g.
 The \link[tibble:tibble-package]{tibble} returned by \code{\link{ffm_batch}}: \code{jobs} with an added \code{command} column. When \code{output} was derived, it also has the resolved \code{output} column. When \code{run = TRUE}, it has a \code{success} column, plus any columns the forwarded arguments add, such as \code{verified}.
 }
 \description{
-Cut segments across many input files from a single jobs tibble — the
-\strong{batch} (table-driven) sibling of \code{\link[=segment_video]{segment_video()}} for when your segments
+Cut segments across many input files from a single jobs tibble. This is the
+\strong{batch} (table-driven) form of \code{\link[=segment_video]{segment_video()}}, for when your segments
 span more than one input. Each row is one segment; the four required columns
 name its source, destination, and cut points. This is a thin wrapper over
-\code{\link{ffm_batch}}: one reproducible compiled command per segment.
+\code{\link{ffm_batch}}: one reproducible compiled command per segment. The
+glossary in \code{vignette("tidymedia")} explains media terms such as codec,
+keyframe and stream copy.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -104,9 +108,9 @@ segment_video_batch(jobs, run = FALSE)
 https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 }
 \seealso{
-\code{\link[=segment_video]{segment_video()}} for the single-input, parallel-vector form;
+\code{\link[=segment_video]{segment_video()}} for the single-input, parallel-vector form.
 \code{\link[=ffm_batch]{ffm_batch()}} for the batch runner and the arguments forwarded through
-\code{...}; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
+\code{...}. \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} argument.
 \code{\link[=ffm_seek]{ffm_seek()}} for the cut trade-off.
 
 Other task functions:

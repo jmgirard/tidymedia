@@ -524,3 +524,39 @@ The code does not settle this claim. It keeps its meaning at head, and it is the
 | Page | Claim | Evidence |
 |---|---|---|
 | `normalize_audio_batch` | The defaults that follow EBU R 128 (2014) include `loudness_range = 7` LU. | The M133 reader says R 128 sets the -23 LUFS and -1 dBTP pair, and 7 is the default of `loudnorm`. `?normalize_audio` keeps the 7 outside the attribution, at the base commit and at head. |
+
+### M134
+
+The base commit is `7b2f9b0d`. At that commit, the domain is the 10 `man/*.Rd` files whose header names `R/ffmpeg.R` and whose base name matches the M134 filter: `anonymize_video`, `anonymize_video_batch`, `compare_videos`, `compare_videos_batch`, `concatenate_videos`, `concatenate_videos_batch`, `picture_in_picture`, `picture_in_picture_batch`, `segment_video` and `segment_video_batch`.
+
+#### Sweep output at the base commit, and the result at head (AC1, AC2, AC3, AC4)
+
+The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` over the 10 files that `git show 7b2f9b0d:man/<page>.Rd` wrote to a temporary folder. It read 553 sentences and exited 1 with 56 findings: 35 `[<n> words]`, 19 `[term …]` and 2 `[dash in Rd source]`. The same command gives the full output again. Stems are the glossary stems in each page's `--prose` output. The AC4 patterns match nothing in the 10 pages at the base commit, so there is no AC4 identifier. No page named the glossary.
+
+| Page | Words | Term | Dash | Stems (AC3) | Result |
+|---|---|---|---|---|---|
+| anonymize_video | 3 | 0 | 1 | `codec`, `container`, `encod`, `pixel format`, `stream` | No finding. Names the glossary. "builder filter" became "pipeline function", and "toggle" became "argument". |
+| anonymize_video_batch | 10 | 4 | 0 | `codec`, `container`, `encod`, `pixel format`, `stream` | No finding. Names the glossary. "sibling" became "form", "scalar verb" became "`anonymize_video()`", and "knobs" became "arguments". |
+| compare_videos | 2 | 1 | 0 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. "blessed stacking verbs" became "stacking pipeline functions". |
+| compare_videos_batch | 3 | 4 | 0 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. "(D015)" is gone, "transcode" became "re-encode", and "fan-in batch siblings" became "batch functions that take several inputs per row". |
+| concatenate_videos | 0 | 0 | 0 | `codec`, `encod` | No finding. Names the glossary. "builder" became "pipeline function". |
+| concatenate_videos_batch | 3 | 3 | 0 | — | No finding. No stem. "(D015)" is gone, and "scalar verb" became "`concatenate_videos()`" in the text and "the one-output function it wraps" in See Also. |
+| picture_in_picture | 1 | 1 | 0 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. "blessed `ffm_overlay` verb" became "`ffm_overlay` pipeline function". |
+| picture_in_picture_batch | 2 | 3 | 0 | `codec`, `container`, `encod`, `stream` | No finding. Names the glossary. "(D015)" is gone, and "scalar verb" became "`picture_in_picture()`". |
+| segment_video | 3 | 1 | 1 | `codec`, `container`, `encod`, `key ?frame`, `stream` | No finding. Names the glossary. "per-segment fan-out" became "per-segment step". |
+| segment_video_batch | 8 | 2 | 0 | `codec`, `container`, `encod`, `key ?frame`, `stream` | No finding. Names the glossary. "sibling" became "form", and "transcode" became "re-encode". |
+
+#### Results at head (T5)
+
+- AC1, AC2: the sweep over the 10 pages at head reads 621 sentences, prints no finding and exits 0.
+- AC3: the 9 pages with a stem at head each name the glossary. `concatenate_videos_batch` has no stem.
+- AC4: the patterns match nothing at the base commit, so there is no identifier to find.
+- AC5: `git diff --name-only 7b2f9b0d HEAD -- man/` lists only the 10 domain pages.
+- AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` gave 0 errors, 0 warnings and 0 notes. `devtools::test()` gave 0 failures. `pkgdown::check_pkgdown()` found no problems.
+- Tests: no test file changed, and the full suite passes on the new wording.
+- Shared text: the text from `R/task-doc.R` helpers and the `run`, `parallel` and `...` arguments stay as they were.
+- Claim audit: a fresh reader read 63 claims. It found no added, changed or false claim, so nothing was corrected. It noted that "encode knobs" became "encoding arguments", which keeps the base meaning.
+
+#### Base claims found false
+
+None. The M134 reader found no base claim that the code contradicts.

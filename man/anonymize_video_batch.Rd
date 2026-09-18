@@ -21,37 +21,39 @@ anonymize_video_batch(
 \arguments{
 \item{jobs}{A data frame with one row per input and (at least) an
 \code{input} column (source path) and a \code{regions} list-column. Each
-\code{regions} cell is itself a data frame of boxes for that input — the
-same \code{x}/\code{y}/\code{width}/\code{height} (and optional per-box
-\code{color}) shape \code{\link{anonymize_video}} takes. An optional
-\code{output} column names the destination; when absent, one is derived per
-row by appending \code{_anonymized} to each input's basename, keeping the
-input's extension (e.g. \code{clip.mkv} becomes \code{clip_anonymized.mkv}).
-Two rows naming the same output path are refused before any row runs. That is a path repeated in the \code{output} column, or a repeated \code{input} when there is no \code{output} column. Each of the
-four encode knobs — \code{color}, \code{video_codec}, \code{audio_codec},
-\code{pixel_format} — may
-also appear as a column to override the corresponding argument on a per-row
-basis; rows (or knobs) that omit the column fall back to the argument's
-value. In either codec column, \code{NA} leaves that row's codec unset (the
-column form of \code{video_codec = NULL} / \code{audio_codec = NULL}); in a
-\code{color} or \code{pixel_format} column it is an error, because those
-have no unset state. An \code{audio_stream} column overrides the
+\code{regions} cell is itself a data frame of boxes for that input. It has
+the same shape that \code{\link{anonymize_video}} takes: \code{x},
+\code{y}, \code{width}, \code{height} and an optional per-box
+\code{color}. An optional
+\code{output} column names the destination. When it is absent, the function
+derives one per row. It appends \code{_anonymized} to each input's basename
+and keeps the input's extension (e.g. \code{clip.mkv} becomes
+\code{clip_anonymized.mkv}).
+Two rows naming the same output path are refused before any row runs. That is a path repeated in the \code{output} column, or a repeated \code{input} when there is no \code{output} column. Four encoding arguments may also appear as
+a column: \code{color}, \code{video_codec}, \code{audio_codec} and
+\code{pixel_format}. Such a column overrides the corresponding argument on
+a per-row basis. Rows (or arguments) that omit the column fall back to the
+argument's value. In either codec column, \code{NA} leaves that row's codec
+unset. This is the column form of \code{video_codec = NULL} /
+\code{audio_codec = NULL}. In a
+\code{color} or \code{pixel_format} column \code{NA} is an error, because
+those have no unset state. An \code{audio_stream} column overrides the
 \code{audio_stream} argument per row, where \code{NA} keeps that row on
 every audio track. Any other columns are ignored.}
 
 \item{color}{A string naming the default fill color (FFmpeg color syntax)
-applied to every row, unless \code{jobs} carries a \code{color} column or a
-box supplies its own \code{color}. (default = \code{"black"})}
+applied to every row. A \code{color} column in \code{jobs}, or a box that
+supplies its own \code{color}, overrides it. (default = \code{"black"})}
 
 \item{video_codec}{A string naming the output video codec applied to every
-row, unless \code{jobs} carries a \code{video_codec} column, in which case
-\code{NA} in a cell leaves that row's codec unset.
+row, unless \code{jobs} carries a \code{video_codec} column. In that
+column, \code{NA} in a cell leaves that row's codec unset.
 The default is \code{"libx264"}. \code{NULL} emits no \code{-codec:v} and lets the output container's default encoder decide. For a \code{.webm} output, pass \code{audio_codec = NULL} too, because the default \code{"copy"} would otherwise carry a codec WebM cannot hold.}
 
 \item{audio_codec}{A string naming the output audio codec applied to every
-row, unless \code{jobs} carries an \code{audio_codec} column, in which case
-\code{NA} in a cell leaves that row's codec unset. \code{"copy"} (default)
-stream-copies the audio through untouched; name an encoder (e.g.
+row, unless \code{jobs} carries an \code{audio_codec} column. In that
+column, \code{NA} in a cell leaves that row's codec unset. \code{"copy"}
+(default) stream-copies the audio through untouched. Name an encoder (e.g.
 \code{"aac"}) when the source audio cannot be copied into the output
 container.}
 
@@ -59,17 +61,18 @@ container.}
 row, unless \code{jobs} carries a \code{pixel_format} column.
 (default = \code{"yuv420p"})}
 
-\item{hardware}{The encoder backend applied to every row: \code{"none"}
-(default, the software \code{video_codec}), \code{"nvenc"} for NVIDIA
-GPU encoding (H.264, HEVC and AV1), or \code{"videotoolbox"} for Apple
+\item{hardware}{The encoder backend applied to every row. \code{"none"}
+(default) uses the software \code{video_codec}. \code{"nvenc"} gives NVIDIA
+GPU encoding (H.264, HEVC and AV1). \code{"videotoolbox"} gives Apple
 GPU encoding (H.264 and HEVC). Batch-wide (a machine property), not a
 per-row column; a \code{hardware} column in \code{jobs} is ignored. See
 \code{\link{has_hardware_encoder}}.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it.
 This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
-A call that is also wrong about a per-row value — a \code{regions}
-table missing a required column, say — is refused for the value first,
-whether or not this machine has the encoder.}
+A call can also be wrong about a per-row value, for example a
+\code{regions} table that is missing a required column. The function
+refuses that call for the value first, whether or not this machine has the
+encoder.}
 
 \item{fallback}{A logical applied to every row. When a \code{hardware} other than \code{"none"} is requested but its encoder is unavailable, \code{TRUE} re-encodes with the software \code{video_codec} and a message. \code{FALSE} (default) aborts instead. It is batch-wide, not a per-row column. A \code{video_codec} in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever \code{fallback} says.}
 
@@ -93,13 +96,15 @@ The \link[tibble:tibble-package]{tibble} returned by \code{\link{ffm_batch}}: \c
 }
 \description{
 Cover fixed rectangular regions of many input videos with opaque filled boxes
-from a single jobs tibble — the \strong{batch} (table-driven) sibling of
-\code{\link[=anonymize_video]{anonymize_video()}} for when you have more than one video to
-redact. Each row is one input with its own regions; the required columns name
+from a single jobs tibble. This is the \strong{batch} (table-driven) form of
+\code{\link[=anonymize_video]{anonymize_video()}}, for when you have more than one video to
+redact. Each row is one input with its own regions. The required columns name
 the source (\code{input}) and the boxes to cover (\code{regions}). This is a
-thin wrapper over \code{\link{ffm_batch}}: one reproducible compiled command
-per input, sharing the same box-fill pipeline (and per-region validation) as
-the scalar verb.
+thin wrapper over \code{\link{ffm_batch}}. It compiles one reproducible
+command per input. It shares the same box-fill pipeline (and per-region
+validation) as \code{\link[=anonymize_video]{anonymize_video()}}. The glossary in
+\code{vignette("tidymedia")} explains media terms such as codec, pixel format
+and stream copy.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -115,11 +120,11 @@ jobs <- tibble::tibble(
 anonymize_video_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=anonymize_video]{anonymize_video()}} for the single-input form; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the
-\code{hardware} toggle; \code{\link[=ffm_batch]{ffm_batch()}} for the
-batch runner and the arguments forwarded through \code{...};
+\code{\link[=anonymize_video]{anonymize_video()}} for the single-input form.
+\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} argument. \code{\link[=ffm_batch]{ffm_batch()}}
+for the batch runner and the arguments forwarded through \code{...}.
 \code{\link[=standardize_video_batch]{standardize_video_batch()}} and \code{\link[=segment_video_batch]{segment_video_batch()}} for the other
-table-driven siblings.
+table-driven functions.
 
 Other task functions:
 \code{\link[=anonymize_video]{anonymize_video()}},

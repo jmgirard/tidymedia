@@ -26,7 +26,7 @@ The M134 help-page domain uses plain English for an R user who does not know FFm
 - [x] AC3: Each page in the M134 domain whose `--prose` output at head matches a glossary stem names the glossary.
 - [x] AC4: Every match of `\btidymedia[._][a-z_.]*[a-z_]` or `\btm_[a-z_]+` in the M134 domain pages at the base commit is found by `git grep -wF` in some `man/*.Rd` file at head.
 - [x] AC5: For every `man/*.Rd` file outside the M134 domain that exists at the base commit and at head and that `git diff --name-only <base> HEAD -- man/` lists, the prose sweep at head prints each finding no more times than at the base commit, and no more `[dash in Rd source]` lines. If its `--prose` output at head matches a glossary stem that its `--prose` output at the base commit did not match, the page names the glossary.
-- [ ] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
+- [x] AC6: `devtools::document()` leaves `man/` unchanged. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
 
@@ -66,4 +66,13 @@ The M134 help-page domain uses plain English for an R user who does not know FFm
 - AC3: pass. The `--prose` output of 9 pages matches a glossary stem, and each of the 9 has a sentence that names the glossary. `concatenate_videos_batch` matches no stem.
 - AC4: pass. The two patterns match nothing in the 10 pages at `7b2f9b0d`, so there is no identifier to find at head.
 - AC5: pass. `git diff --name-only 7b2f9b0d HEAD -- man/` lists only the 10 domain pages, so no page outside the domain is compared.
+- AC6: pass. `devtools::document()` left `man/` and `NAMESPACE` unchanged. `devtools::check()` gave 0 errors, 0 warnings and 0 notes. `devtools::test()` gave 0 failures (13866 pass, 5 skips). `pkgdown::check_pkgdown()` found no problems.
+- Consistency gate: `cairn_validate.py` passed every check. No DESIGN.md principle changed, so `cairn_impact.py` was skipped. Toolchain slot: `document()` no diff, `check()` clean, `check_pkgdown()` clean, `README.md` unchanged and in step with `README.Rmd`, no new top-level file. `NEWS.md` has no entry, as the scope states under D091.
+- Independent review, three lenses (user-facing tier). [S] prior-review lens: no regression against the M130 to M133 review records, and the PR-comment probe found no human review thread. [S] blame-history lens: no lost caveat, no resurrected false claim, no contradicted decision, no orphaned test. Findings, ranked, with disposition:
+  - O1: `AC6` was unticked while the work log claimed its checks passed. No change needed: the box is ticked above on fresh evidence.
+  - O2: `?segment_video` keeps the base wording "an underscore (_) and an integer", while `derive_segment_names()` pads with zeros and the `outfiles` argument says "zero-padded integer". Triage at the gate.
+  - O3: `?anonymize_video_batch` calls `color` an encoding argument, inherited from the base "encode knobs". Noted, no change.
+  - O4: `@seealso` blocks mix `;` and `.` separators across the pages. Rejected: style, renders the same.
+  - O5: the ledger heading "Sweep output at the base commit" sat over a table whose Result column reports head outcomes. Fixed now: the heading names both.
+  - S1: the `(D015)` citation is gone from three batch pages. Rejected: the plan calls for it, and the shape the decision fixes is still stated in full.
 

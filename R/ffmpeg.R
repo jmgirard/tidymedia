@@ -3132,6 +3132,95 @@ codec_family <- function(video_codec, call = rlang::caller_env()) {
   )
 }
 
+# quality_flags(): the one table behind the `quality` argument (M135). Keyed on
+# the EXACT resolved encoder name, never on a family or an alias: `-crf`, `-cq`
+# and `-q:v` are three different scales, and each means what its own encoder
+# says it means. The number is passed through unchanged, so no cross-encoder
+# scale exists and none is implied. An encoder outside this table -- an alias
+# such as "h264", a software encoder such as libvpx-vp9 -- is refused with
+# `quality` set rather than handed a flag it may read differently or not at all.
+# Layer 2 knowledge, like the backend table above it: the engine carries raw
+# output options and never learns what a flag means (IP1).
+quality_flags <- function() {
+  tibble::tibble(
+    encoder = c("libx264", "libx265",
+                "h264_nvenc", "hevc_nvenc", "av1_nvenc",
+                "h264_videotoolbox", "hevc_videotoolbox"),
+    flag = c("-crf", "-crf", "-cq", "-cq", "-cq", "-q:v", "-q:v"),
+    min = c(0, 0, 0, 0, 0, 1, 1),
+    max = c(51, 51, 51, 51, 51, 100, 100)
+  )
+}
+
+# check_quality(): refuse a `quality` the table cannot pass through. Three
+# refusals, in this order: not one finite number; an encoder the table lacks
+# (NULL -- no codec named under hardware = "none" -- and "copy" each get their
+# own wording, since neither is an encoder); a value outside the row's range.
+# NULL is never refused: it emits nothing, so the encoder's default applies.
+#
+# Pure: `encoder` is the name the verb WOULD encode with when its backend is
+# available, computed without asking the machine, so this refusal reports
+# before the availability probe (D036). `call` is threaded with no default
+# (D087): every site has the verb the caller typed to pass.
+check_quality <- function(quality, encoder, call) {
+  if (is.null(quality)) {
+    return(invisible(NULL))
+  }
+  rlang::check_number_decimal(quality, allow_infinite = FALSE,
+                              arg = "quality", call = call)
+  if (is.null(encoder)) {
+    cli::cli_abort(
+      c(
+        "{.arg quality} needs a {.arg video_codec}.",
+        "x" = "With {.code video_codec = NULL} the output container's default
+               encoder is used, and {.arg quality} has no encoder to apply to.",
+        "i" = "Name an encoder (e.g. {.code video_codec = \"libx264\"}), or
+               drop {.arg quality}."
+      ),
+      call = call
+    )
+  }
+  if (identical(encoder, "copy")) {
+    cli::cli_abort(
+      c(
+        "{.arg quality} needs a re-encoding {.arg video_codec}.",
+        "x" = "{.code video_codec = \"copy\"} stream-copies the video, so no
+               encoder runs and no quality value applies.",
+        "i" = "Name an encoder (e.g. {.code video_codec = \"libx264\"}), or
+               drop {.arg quality}."
+      ),
+      call = call
+    )
+  }
+  tbl <- quality_flags()
+  row <- tbl[tbl$encoder == encoder, ]
+  if (nrow(row) == 0L) {
+    cli::cli_abort(
+      c(
+        "{.arg quality} has no meaning for encoder {.val {encoder}}.",
+        "x" = "The value is passed through as the encoder's own rate-control
+               flag, and no flag is known for {.val {encoder}}.",
+        "i" = "The encoders with a known flag are {.val {tbl$encoder}}.",
+        "i" = "Use one of those, or drop {.arg quality} and set the flag
+               through the {.fn ffm_output_options} pipeline function."
+      ),
+      call = call
+    )
+  }
+  if (quality < row$min || quality > row$max) {
+    cli::cli_abort(
+      c(
+        "{.arg quality} must be between {row$min} and {row$max} for
+         encoder {.val {encoder}}.",
+        "x" = "{.val {encoder}} reads {.arg quality} as its {.code {row$flag}}
+               value, and {quality} is outside that range."
+      ),
+      call = call
+    )
+  }
+  invisible(NULL)
+}
+
 # resolve_hw_encoder(): pick the encoder name for a verb's hardware= choice.
 # hardware = "none" returns the software video_codec unchanged; a backend
 # returns that backend's encoder for video_codec's family when available,

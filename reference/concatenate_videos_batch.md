@@ -1,15 +1,16 @@
 # Concatenate Many Videos From a Jobs Table
 
-Join clips end to end for many outputs from a single jobs tibble — the
-**batch** (table-driven) sibling of
-[`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md)
+Join clips end to end for many outputs from a single jobs tibble. This
+is the **batch** (table-driven) form of
+[`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
 for when you have more than one concatenation to produce. Unlike the
-single-input batch verbs, each row's inputs are **many**, so `jobs`
+single-input batch functions, each row's inputs are **many**. So `jobs`
 carries an `inputs` list-column (each cell a character vector of source
-paths) plus an `output` column (D015). This is a thin wrapper over
+paths) plus an `output` column. This is a thin wrapper over
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
 one reproducible concat-demuxer command per row, sharing the copy +
-map-0 pipeline with the scalar verb.
+map-0 pipeline with
+[`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md).
 
 ## Usage
 
@@ -22,9 +23,9 @@ concatenate_videos_batch(jobs, run = TRUE, parallel = FALSE, ...)
 - jobs:
 
   A data frame with one row per output and (at least) an `inputs`
-  list-column — each cell a character vector of the source paths to
-  join, in order — and an `output` column (destination path). An
-  `output` column is required; this verb derives no destination. Two
+  list-column and an `output` column (destination path). Each `inputs`
+  cell is a character vector of the source paths to join, in order. An
+  `output` column is required; this function derives no destination. Two
   rows given the same `output` path are refused before any row runs. Any
   other columns are ignored.
 
@@ -56,13 +57,13 @@ each when requested through `...`. See
 ## See also
 
 [`concatenate_videos()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos.md),
-the scalar verb it wraps;
+the one-output function it wraps;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
 [`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md)
 and
 [`picture_in_picture_batch()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.md),
-the other fan-in batch siblings.
+the other batch functions that take several inputs per row.
 
 Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
@@ -104,5 +105,5 @@ concatenate_videos_batch(jobs, run = FALSE)
 #> # A tibble: 1 × 3
 #>   inputs    output     command                                                  
 #>   <list>    <chr>      <chr>                                                    
-#> 1 <chr [2]> joined.mp4 "-y -f concat -safe 0 -i \"/tmp/RtmpAlUv5G/ffm-concat1ef…
+#> 1 <chr [2]> joined.mp4 "-y -f concat -safe 0 -i \"/tmp/RtmpZggD7t/ffm-concat1ee…
 ```

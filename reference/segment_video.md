@@ -1,11 +1,13 @@
 # Segment Video
 
 Use FFmpeg to quickly break a single video file into multiple smaller
-video files (with the same encoding) based on pairs of start and stop
-timestamps. Segment video files will be named by taking the name of
-`infile` and appending a suffix of an underscore (\_) and an integer
-indicating which segment (based on the order provided in `start` and
-`end`).
+video files (with the same encoding). Pairs of start and stop timestamps
+set the segments. The function names each segment file after `infile`.
+It appends a suffix of an underscore (\_) and an integer indicating
+which segment, based on the order provided in `start` and `end`. The
+glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, keyframe and stream copy.
 
 ## Usage
 
@@ -51,11 +53,11 @@ segment_video(
   Either NULL or a character vector indicating the filename (with
   extension) for each segment to create. If NULL, will append a
   zero-padded integer to `infile`. If not NULL, must have the same
-  length as `start`, and each element must be a single string – so a
-  list of strings is accepted as well as a character vector, and a
-  missing value or a number in any position is refused by this function
-  rather than by the per-segment fan-out below it. Two segments given
-  the same path are refused before any segment is cut.
+  length as `start`, and each element must be a single string. So the
+  function accepts a list of strings as well as a character vector. This
+  function itself refuses a missing value or a number in any position,
+  before the per-segment step below it can. Two segments given the same
+  path are refused before any segment is cut.
 
 - reencode:
 
@@ -81,8 +83,7 @@ segment_video(
   container's default encoder is used. A stream copy
   (`reencode = FALSE`) always copies the audio, so any other value is an
   error there. Stream-copying fails if the output container cannot hold
-  the source audio codec (e.g. FLAC in `.mp4`) — name an encoder
-  instead.
+  the source audio codec (e.g. FLAC in `.mp4`). Name an encoder instead.
 
 - hardware:
 
@@ -180,11 +181,11 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 ## See also
 
 [`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md),
-the builder it uses to cut;
+the pipeline function it uses to cut;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the runner;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware` toggle;
+for the `hardware` argument;
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
 for the many-file form.
 

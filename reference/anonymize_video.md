@@ -1,10 +1,12 @@
 # Cover fixed regions of a video with opaque boxes
 
 Anonymize a video by covering one or more fixed rectangular regions with
-opaque filled boxes – for example, to redact a face, a name badge, or a
-screen that stays in one place for the whole clip. The regions are fixed
-(there is no face or object tracking), so this suits footage where the
-areas to cover do not move.
+opaque filled boxes. For example, you can redact a face, a name badge,
+or a screen that stays in one place for the whole clip. The regions are
+fixed (there is no face or object tracking), so this suits footage where
+the areas to cover do not move. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, pixel format and stream copy.
 
 ## Usage
 
@@ -135,18 +137,21 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 ## Details
 
 `regions` is a data frame with one row per box and the columns `x`, `y`,
-`width`, and `height` (each a pixel number or an FFmpeg expression such
-as `"in_w/2"`); `x`/`y` give the top-left corner and `width`/`height`
-the size. An optional `color` column overrides the `color` argument for
-that row. Every box is a solid fill (FFmpeg's `drawbox` with `t=fill`);
-hollow outlines are intentionally not offered.
+`width`, and `height`. Each value is a pixel number or an FFmpeg
+expression such as `"in_w/2"`. `x` and `y` give the top-left corner, and
+`width` and `height` give the size. An optional `color` column overrides
+the `color` argument for that row. Every box is a solid fill (FFmpeg's
+`drawbox` with `t=fill`). The function intentionally does not offer
+hollow outlines.
 
-Because a filter is applied, the video is re-encoded (`video_codec` /
-`pixel_format`, defaulting to H.264 / `yuv420p`); odd source dimensions
-are floored to even so the output always encodes (a `yuv420p`/`libx264`
-requirement, and a no-op for already-even input). Audio is stream-copied
-unchanged (`-c:a copy`) unless `audio_codec` names an encoder. The same
-input and regions therefore always compile to a byte-identical command.
+Because the function applies a filter, it re-encodes the video. The
+`video_codec` and `pixel_format` arguments set the encoding, and default
+to H.264 and `yuv420p`. The function floors odd source dimensions to
+even, so the output always encodes. `yuv420p` and `libx264` require even
+dimensions, and the step changes nothing for input that is already even.
+The function stream-copies the audio unchanged (`-c:a copy`) unless
+`audio_codec` names an encoder. The same input and regions therefore
+always compile to a byte-identical command.
 
 ## References
 
@@ -155,9 +160,9 @@ https://ffmpeg.org/ffmpeg-filters.html#drawbox
 ## See also
 
 [`ffm_drawbox()`](https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.md),
-the builder filter it wraps;
+the pipeline function it wraps;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware` toggle;
+for the `hardware` argument;
 [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md)
 for the many-file (batch) form.
 

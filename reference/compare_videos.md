@@ -1,12 +1,16 @@
 # Build a side-by-side comparison video
 
-Stack two or more videos into a single comparison video — side-by-side
-(`direction = "horizontal"`) or one above the other
-(`direction = "vertical"`) — a common need when reviewing annotations or
-before/after processing. Built on the blessed stacking verbs
+Stack two or more videos into a single comparison video. The videos go
+side-by-side (`direction = "horizontal"`) or one above the other
+(`direction = "vertical"`). This is a common need when reviewing
+annotations or before/after processing. Built on the stacking pipeline
+functions
 ([`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)
 /
 [`ffm_vstack`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md)).
+The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, encoder and stream copy.
 
 ## Usage
 
@@ -118,7 +122,7 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 ## Details
 
 By default the two inputs are resized to share an edge (equal heights
-for a horizontal stack, equal widths for a vertical one); resizing
+for a horizontal stack, equal widths for a vertical one). Resizing
 currently supports exactly two inputs, so pass `resize = FALSE` to
 compare more. Audio is dropped unless `audio_input` names an input to
 carry; a carried track is stream-copied unless `audio_codec` names an
@@ -129,9 +133,9 @@ encoder.
 [`ffm_hstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md)
 and
 [`ffm_vstack()`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md),
-the builders it wraps;
+the pipeline functions it wraps;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware` toggle;
+for the `hardware` argument;
 [`picture_in_picture()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture.md)
 for insetting instead of stacking.
 

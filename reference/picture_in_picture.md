@@ -1,12 +1,14 @@
 # Inset one video over another (picture-in-picture)
 
 Composite a smaller `overlay` video onto a `main` video in one corner
-(or the center) — the classic picture-in-picture layout for pairing a
-speaker with a screen recording, or a stimulus with a webcam. Built on
-the blessed
+(or the center). This is the classic picture-in-picture layout for
+pairing a speaker with a screen recording, or a stimulus with a webcam.
+Built on the
 [`ffm_overlay`](https://jmgirard.github.io/tidymedia/reference/ffm_overlay.md)
-verb, which resizes the overlay to a fraction of the main video's width
-and positions it.
+pipeline function, which resizes the overlay to a fraction of the main
+video's width and positions it. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, encoder and stream copy.
 
 ## Usage
 
@@ -131,9 +133,9 @@ main video, `1` = the overlay). A carried track is stream-copied unless
 ## See also
 
 [`ffm_overlay()`](https://jmgirard.github.io/tidymedia/reference/ffm_overlay.md),
-the builder it wraps;
+the pipeline function it wraps;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware` toggle;
+for the `hardware` argument;
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
 for side-by-side stacking.
 

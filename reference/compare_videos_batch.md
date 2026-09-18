@@ -1,14 +1,17 @@
 # Build Many Comparison Videos From a Jobs Table
 
-Stack videos side by side for many outputs from a single jobs tibble —
-the **batch** (table-driven) sibling of
-[`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
+Stack videos side by side for many outputs from a single jobs tibble.
+This is the **batch** (table-driven) form of
+[`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
 for when you have more than one comparison to produce. Each row carries
 an `inputs` list-column (each cell two or more video paths) plus an
-`output` column (D015). This is a thin wrapper over
+`output` column. This is a thin wrapper over
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible stacking command per row, sharing the pipeline with the
-scalar verb.
+one reproducible stacking command per row, sharing the pipeline with
+[`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md).
+The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, encoder and stream copy.
 
 ## Usage
 
@@ -33,8 +36,8 @@ compare_videos_batch(
 - jobs:
 
   A data frame with one row per output and (at least) an `inputs`
-  list-column — each cell a character vector of **two or more** video
-  paths — and an `output` column (destination path). Optional
+  list-column and an `output` column (destination path). Each `inputs`
+  cell is a character vector of **two or more** video paths. Optional
   `direction`, `resize`, `audio_input`, `video_codec`, and `audio_codec`
   columns override the like-named arguments per row (a row omitting one
   falls back to the argument). In an `audio_input` column, `NA` means
@@ -77,7 +80,7 @@ compare_videos_batch(
 
   A string naming the codec for the carried audio track, applied to
   every row lacking an `audio_codec` column. `"copy"` (default)
-  stream-copies it. Name an encoder to transcode it, or `NULL` to leave
+  stream-copies it. Name an encoder to re-encode it, or `NULL` to leave
   the codec unset. A row carrying no audio emits no `-codec:a`, and
   naming an encoder on such a row is an error.
 
@@ -97,12 +100,12 @@ compare_videos_batch(
   function, not the internal step that runs the rows. A call can also
   contradict itself by naming an `audio_codec` with no audio carried
   into the output. Such a call is refused for the contradiction first,
-  whether or not this machine has the encoder. A per-row value error —
-  an `audio_input` index past that row's input count, a `direction`
-  outside the two accepted values — likewise reports ahead of the
-  encoder check. A value error and a contradiction resolve the same way
-  whether the value arrived as an argument or in a `jobs` column. The
-  contradiction reports first.
+  whether or not this machine has the encoder. A per-row value error
+  likewise reports ahead of the encoder check. Examples are an
+  `audio_input` index past that row's input count, and a `direction`
+  outside the two accepted values. A value error and a contradiction
+  resolve the same way whether the value arrived as an argument or in a
+  `jobs` column. The contradiction reports first.
 
 - run:
 
@@ -132,15 +135,15 @@ each when requested through `...`. See
 ## See also
 
 [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md),
-the scalar verb it wraps;
+the one-output function it wraps;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware` toggle;
+for the `hardware` argument.
 [`concatenate_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/concatenate_videos_batch.md)
 and
 [`picture_in_picture_batch()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.md),
-the other fan-in batch siblings.
+the other batch functions that take several inputs per row.
 
 Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

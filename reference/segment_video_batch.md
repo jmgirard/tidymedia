@@ -1,13 +1,15 @@
 # Segment Many Videos From a Jobs Table
 
-Cut segments across many input files from a single jobs tibble — the
-**batch** (table-driven) sibling of
-[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+Cut segments across many input files from a single jobs tibble. This is
+the **batch** (table-driven) form of
+[`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
 for when your segments span more than one input. Each row is one
 segment; the four required columns name its source, destination, and cut
 points. This is a thin wrapper over
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per segment.
+one reproducible compiled command per segment. The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, keyframe and stream copy.
 
 ## Usage
 
@@ -31,13 +33,13 @@ segment_video_batch(
 - jobs:
 
   A data frame with one row per segment and (at least) the columns
-  `input` (source path), `start` and `end` (cut points; a numeric column
-  of seconds or a character column with time-duration syntax). Two
-  optional columns are recognized: `output` (destination path) and
-  `reencode` (a logical; see the `reencode` argument). If `output` is
-  absent, one is derived per row by appending `_<n>.<ext>` to each
-  input's basename, with the segment number restarting at 1 for each
-  input file (the same rule as
+  `input` (source path), `start` and `end` (cut points). Each cut-point
+  column is a numeric column of seconds or a character column with
+  time-duration syntax. Two optional columns are recognized: `output`
+  (destination path) and `reencode` (a logical; see the `reencode`
+  argument). If `output` is absent, the function derives one per row by
+  appending `_<n>.<ext>` to each input's basename. The segment number
+  restarts at 1 for each input file (the same rule as
   [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)).
   Two rows given the same `output` path are refused before any row runs.
   A `video_codec` or `audio_codec` column overrides that argument per
@@ -60,20 +62,21 @@ segment_video_batch(
 - video_codec:
 
   A string naming the output video codec, applied to every row lacking a
-  `video_codec` column, or `NULL` (default) to leave it unset so each
-  segment keeps its container's default encoder. A row that resolves to
-  a codec while cutting by stream copy (`reencode = FALSE`, as an
-  argument or a column) is an error: no encoder runs on that path.
+  `video_codec` column. `NULL` (default) leaves it unset, so each
+  segment keeps its container's default encoder. A row can resolve to a
+  codec while cutting by stream copy (`reencode = FALSE`, as an argument
+  or a column). That row is an error, because no encoder runs on that
+  path.
 
 - audio_codec:
 
   A string naming the output audio codec, applied to every row lacking
   an `audio_codec` column. `"copy"` (default) stream-copies the audio;
-  name an encoder to transcode it, or `NULL` to leave the codec unset. A
-  row that resolves to anything but `"copy"` while cutting by stream
-  copy (`reencode = FALSE`, as an argument or a column) is an error, so
-  a jobs table mixing stream-copy rows with a transcoding `audio_codec`
-  must be split into separate calls.
+  name an encoder to re-encode it, or `NULL` to leave the codec unset. A
+  row can resolve to anything but `"copy"` while cutting by stream copy
+  (`reencode = FALSE`, as an argument or a column). That row is an
+  error. So split a jobs table that mixes stream-copy rows with a
+  re-encoding `audio_codec` into separate calls.
 
 - hardware, fallback:
 
@@ -82,11 +85,11 @@ segment_video_batch(
   read as a `jobs` column. See
   [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md).
   Because `hardware` is batch-wide, a non-`"none"` value conflicts with
-  a stream-copy row on its own — even one naming no codec — so a jobs
-  table mixing `reencode = FALSE` rows with GPU encoding must be split
-  into separate calls. Resolving a hardware backend asks this FFmpeg
-  build which encoders it has. So the first such call that re-encodes
-  the video runs FFmpeg while the command is built, even under
+  a stream-copy row on its own, even one naming no codec. So split a
+  jobs table that mixes `reencode = FALSE` rows with GPU encoding into
+  separate calls. Resolving a hardware backend asks this FFmpeg build
+  which encoders it has. So the first such call that re-encodes the
+  video runs FFmpeg while the command is built, even under
   `run = FALSE`. The answer is remembered for the rest of the R session.
   See
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
@@ -171,11 +174,11 @@ https://ffmpeg.org/ffmpeg-utils.html#time-duration-syntax
 ## See also
 
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
-for the single-input, parallel-vector form;
+for the single-input, parallel-vector form.
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-for the batch runner and the arguments forwarded through `...`;
+for the batch runner and the arguments forwarded through `...`.
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware` toggle;
+for the `hardware` argument.
 [`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md)
 for the cut trade-off.
 

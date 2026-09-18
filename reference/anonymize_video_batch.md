@@ -1,15 +1,19 @@
 # Anonymize Many Videos From a Jobs Table
 
 Cover fixed rectangular regions of many input videos with opaque filled
-boxes from a single jobs tibble — the **batch** (table-driven) sibling
-of
-[`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+boxes from a single jobs tibble. This is the **batch** (table-driven)
+form of
+[`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),
 for when you have more than one video to redact. Each row is one input
-with its own regions; the required columns name the source (`input`) and
+with its own regions. The required columns name the source (`input`) and
 the boxes to cover (`regions`). This is a thin wrapper over
-[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md):
-one reproducible compiled command per input, sharing the same box-fill
-pipeline (and per-region validation) as the scalar verb.
+[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
+It compiles one reproducible command per input. It shares the same
+box-fill pipeline (and per-region validation) as
+[`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md).
+The glossary in
+[`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
+explains media terms such as codec, pixel format and stream copy.
 
 ## Usage
 
@@ -35,36 +39,37 @@ anonymize_video_batch(
 
   A data frame with one row per input and (at least) an `input` column
   (source path) and a `regions` list-column. Each `regions` cell is
-  itself a data frame of boxes for that input — the same
-  `x`/`y`/`width`/`height` (and optional per-box `color`) shape
+  itself a data frame of boxes for that input. It has the same shape
+  that
   [`anonymize_video`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
-  takes. An optional `output` column names the destination; when absent,
-  one is derived per row by appending `_anonymized` to each input's
-  basename, keeping the input's extension (e.g. `clip.mkv` becomes
+  takes: `x`, `y`, `width`, `height` and an optional per-box `color`. An
+  optional `output` column names the destination. When it is absent, the
+  function derives one per row. It appends `_anonymized` to each input's
+  basename and keeps the input's extension (e.g. `clip.mkv` becomes
   `clip_anonymized.mkv`). Two rows naming the same output path are
   refused before any row runs. That is a path repeated in the `output`
-  column, or a repeated `input` when there is no `output` column. Each
-  of the four encode knobs — `color`, `video_codec`, `audio_codec`,
-  `pixel_format` — may also appear as a column to override the
-  corresponding argument on a per-row basis; rows (or knobs) that omit
-  the column fall back to the argument's value. In either codec column,
-  `NA` leaves that row's codec unset (the column form of
-  `video_codec = NULL` / `audio_codec = NULL`); in a `color` or
-  `pixel_format` column it is an error, because those have no unset
-  state. An `audio_stream` column overrides the `audio_stream` argument
-  per row, where `NA` keeps that row on every audio track. Any other
-  columns are ignored.
+  column, or a repeated `input` when there is no `output` column. Four
+  encoding arguments may also appear as a column: `color`,
+  `video_codec`, `audio_codec` and `pixel_format`. Such a column
+  overrides the corresponding argument on a per-row basis. Rows (or
+  arguments) that omit the column fall back to the argument's value. In
+  either codec column, `NA` leaves that row's codec unset. This is the
+  column form of `video_codec = NULL` / `audio_codec = NULL`. In a
+  `color` or `pixel_format` column `NA` is an error, because those have
+  no unset state. An `audio_stream` column overrides the `audio_stream`
+  argument per row, where `NA` keeps that row on every audio track. Any
+  other columns are ignored.
 
 - color:
 
   A string naming the default fill color (FFmpeg color syntax) applied
-  to every row, unless `jobs` carries a `color` column or a box supplies
-  its own `color`. (default = `"black"`)
+  to every row. A `color` column in `jobs`, or a box that supplies its
+  own `color`, overrides it. (default = `"black"`)
 
 - video_codec:
 
   A string naming the output video codec applied to every row, unless
-  `jobs` carries a `video_codec` column, in which case `NA` in a cell
+  `jobs` carries a `video_codec` column. In that column, `NA` in a cell
   leaves that row's codec unset. The default is `"libx264"`. `NULL`
   emits no `-codec:v` and lets the output container's default encoder
   decide. For a `.webm` output, pass `audio_codec = NULL` too, because
@@ -73,9 +78,9 @@ anonymize_video_batch(
 - audio_codec:
 
   A string naming the output audio codec applied to every row, unless
-  `jobs` carries an `audio_codec` column, in which case `NA` in a cell
+  `jobs` carries an `audio_codec` column. In that column, `NA` in a cell
   leaves that row's codec unset. `"copy"` (default) stream-copies the
-  audio through untouched; name an encoder (e.g. `"aac"`) when the
+  audio through untouched. Name an encoder (e.g. `"aac"`) when the
   source audio cannot be copied into the output container.
 
 - pixel_format:
@@ -85,9 +90,9 @@ anonymize_video_batch(
 
 - hardware:
 
-  The encoder backend applied to every row: `"none"` (default, the
-  software `video_codec`), `"nvenc"` for NVIDIA GPU encoding (H.264,
-  HEVC and AV1), or `"videotoolbox"` for Apple GPU encoding (H.264 and
+  The encoder backend applied to every row. `"none"` (default) uses the
+  software `video_codec`. `"nvenc"` gives NVIDIA GPU encoding (H.264,
+  HEVC and AV1). `"videotoolbox"` gives Apple GPU encoding (H.264 and
   HEVC). Batch-wide (a machine property), not a per-row column; a
   `hardware` column in `jobs` is ignored. See
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md).
@@ -98,10 +103,10 @@ anonymize_video_batch(
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
   to discard it. This function checks that the encoder is available
   before any row runs. So an unavailable encoder aborts naming this
-  function, not the internal step that runs the rows. A call that is
-  also wrong about a per-row value — a `regions` table missing a
-  required column, say — is refused for the value first, whether or not
-  this machine has the encoder.
+  function, not the internal step that runs the rows. A call can also be
+  wrong about a per-row value, for example a `regions` table that is
+  missing a required column. The function refuses that call for the
+  value first, whether or not this machine has the encoder.
 
 - fallback:
 
@@ -179,15 +184,15 @@ also has the resolved `output` column. When `run = TRUE`, it has a
 ## See also
 
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
-for the single-input form;
+for the single-input form.
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-for the `hardware` toggle;
+for the `hardware` argument.
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
-for the batch runner and the arguments forwarded through `...`;
+for the batch runner and the arguments forwarded through `...`.
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
 and
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
-for the other table-driven siblings.
+for the other table-driven functions.
 
 Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

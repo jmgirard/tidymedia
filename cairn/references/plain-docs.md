@@ -529,7 +529,7 @@ The code does not settle this claim. It keeps its meaning at head, and it is the
 
 The base commit is `7b2f9b0d`. At that commit, the domain is the 10 `man/*.Rd` files whose header names `R/ffmpeg.R` and whose base name matches the M134 filter: `anonymize_video`, `anonymize_video_batch`, `compare_videos`, `compare_videos_batch`, `concatenate_videos`, `concatenate_videos_batch`, `picture_in_picture`, `picture_in_picture_batch`, `segment_video` and `segment_video_batch`.
 
-#### Sweep output at the base commit (AC1, AC2, AC3, AC4)
+#### Sweep output at the base commit, and the result at head (AC1, AC2, AC3, AC4)
 
 The T1 sweep ran as `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R *.Rd` over the 10 files that `git show 7b2f9b0d:man/<page>.Rd` wrote to a temporary folder. It read 553 sentences and exited 1 with 56 findings: 35 `[<n> words]`, 19 `[term …]` and 2 `[dash in Rd source]`. The same command gives the full output again. Stems are the glossary stems in each page's `--prose` output. The AC4 patterns match nothing in the 10 pages at the base commit, so there is no AC4 identifier. No page named the glossary.
 

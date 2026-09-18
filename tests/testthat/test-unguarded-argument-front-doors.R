@@ -145,8 +145,11 @@ test_that("an invalid limit displaces no argument error, at every formal", {
   # crossed with the five wrong forms is 40 rows, every one refused by the
   # member itself (check_quality() runs under the verb's own frame, before any
   # probe). So 1515 + 40 rows, 1084 + 40 kept, 431 dropped unchanged.
-  expect_identical(nrow(res), 1555L)
-  expect_identical(sum(res$kept), 1124L)
+  # M136 adds the same formal to the eight batch verbs: 40 more rows, every
+  # one kept (check_batch_quality() runs at the verb's front door, above the
+  # probe). So 1555 + 40 rows, 1124 + 40 kept, 431 dropped unchanged.
+  expect_identical(nrow(res), 1595L)
+  expect_identical(sum(res$kept), 1164L)
   expect_identical(sum(!res$kept), 431L)
 
   # `segment_video/outfiles -> <none>` survives in both, and correctly: it is

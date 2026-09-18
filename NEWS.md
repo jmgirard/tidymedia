@@ -275,7 +275,20 @@
   `quality` set too: `video_codec = "copy"`, `reencode = FALSE` on
   `segment_video()`, or `video_codec = NULL` under `hardware = "none"`. Under
   `fallback = TRUE`, a fallback to software drops the value and the message
-  says so. The `_batch` forms do not take it yet.
+  says so.
+
+* **The batch re-encoding functions take `quality` too, as an argument and as
+  a jobs column.** `standardize_video_batch()`, `format_for_web_batch()`,
+  `anonymize_video_batch()`, `crop_video_batch()`, `segment_video_batch()`,
+  `separate_audio_video_batch()`, `compare_videos_batch()` and
+  `picture_in_picture_batch()` take `quality = NULL` after `fallback`. The
+  argument applies to every row unless `jobs` carries a numeric `quality`
+  column. In that column, `NA` leaves that row's encoder default in place,
+  whatever the argument says. Each cell is checked against the encoder its own
+  row resolves to. A wrong cell is refused before any row runs: one that is
+  not a number, one outside that encoder's range, or one on a row that
+  stream-copies its video. The error names the function and the row. On
+  `separate_audio_video_batch()` the value applies to each row's `videofile`.
 
 * **`ffm_jobs()` turns a directory into a batch jobs table.** It lists the
   files in a directory whose names do not start with a dot and that carry one

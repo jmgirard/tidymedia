@@ -13,6 +13,7 @@ compare_videos_batch(
   audio_codec = "copy",
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -26,7 +27,8 @@ paths. Optional
 \code{direction}, \code{resize}, \code{audio_input}, \code{video_codec}, and
 \code{audio_codec} columns override the
 like-named arguments per row (a row omitting one falls back to the
-argument). In an \code{audio_input} column, \code{NA} means "drop audio", the column's way of writing the scalar's \code{NULL}. In a \code{video_codec} or \code{audio_codec} column, it means "leave the codec unset". Two rows
+argument). In an \code{audio_input} column, \code{NA} means "drop audio", the column's way of writing the scalar's \code{NULL}. In a \code{video_codec} or \code{audio_codec} column, it means "leave the codec unset". A numeric \code{quality} column
+overrides the \code{quality} argument per row (see \code{quality}). Two rows
 given the same \code{output} path are refused before any row runs; other
 columns are ignored.}
 
@@ -54,6 +56,8 @@ A per-row value error likewise reports ahead of the encoder check. Examples
 are an \code{audio_input} index past that row's input count, and a
 \code{direction} outside the two accepted values.
 A value error and a contradiction resolve the same way whether the value arrived as an argument or in a \code{jobs} column. The contradiction reports first.}
+
+\item{quality}{A number, or \code{NULL} (default), applied to each row unless \code{jobs} carries a numeric \code{quality} column. In that column, \code{NA} leaves that row's encoder default in place, whatever the argument says. The value is the encoder's own rate-control value, passed through unchanged. Each cell is checked against the encoder its own row resolves to. A wrong cell is refused before any row runs, and the error names this function and the row. See \code{\link[=compare_videos]{compare_videos()}} for the encoders, their flags and ranges, and the values it refuses.}
 
 \item{run}{A logical: run each command through FFmpeg (\code{TRUE}, default)
 or only compile them for inspection (\code{FALSE}).}

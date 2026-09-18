@@ -11,7 +11,7 @@ _Last hygiene check: 2026-09-17 (M135 done and archived. PR #139 squash-merged w
 | M133 | The separate-audio-video and normalize-audio help pages read as plain English | done | M129 | high | milestones/archive/M133-plain-separate-normalize-help-pages.md |
 | M134 | The anonymize, segment, concatenate, compare and picture-in-picture help pages read as plain English | done | M129 | high | milestones/archive/M134-plain-video-composition-help-pages.md |
 | M135 | The re-encoding task functions take a `quality` argument that passes the encoder's own rate-control value through | done | — | normal | milestones/archive/M135-quality-argument-scalar-verbs.md |
-| M136 | The batch re-encoding functions take `quality` as an argument and as a jobs column | planned | M135 | normal | milestones/M136-quality-column-batch-verbs.md |
+| M136 | The batch re-encoding functions take `quality` as an argument and as a jobs column | review | M135 | normal | milestones/M136-quality-column-batch-verbs.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

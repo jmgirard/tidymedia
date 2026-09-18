@@ -10,6 +10,7 @@ separate_audio_video_batch(
   video_codec = "copy",
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
@@ -31,7 +32,10 @@ They are character, with \code{NA} to set no codec option for that stream.
 Rows that omit a column fall back to that argument. An optional numeric
 \code{audio_stream} column likewise overrides the \code{audio_stream}
 argument per row. There, \code{NA} keeps every audio track in that row's
-\code{audiofile}. Any other columns are ignored, with one exception. A
+\code{audiofile}. A numeric \code{quality} column overrides the
+\code{quality} argument per row and applies to that row's
+\code{videofile} (see \code{quality}). Any other columns are ignored,
+with one exception. A
 \code{reencode} column, retired with the argument of the same name, is an
 error and not a silent no-op.}
 
@@ -59,6 +63,10 @@ Resolving a hardware backend asks this FFmpeg build which encoders it has. So th
 A call can also contradict itself by asking for GPU encoding alongside a stream copy. Such a call is refused for the contradiction first, whether or not this machine has the encoder.
 The stream-copy conflict above is caught first, so such a call aborts
 without asking FFmpeg.}
+
+\item{quality}{A number, or \code{NULL} (default), applied to every \code{videofile} unless \code{jobs} carries a numeric \code{quality} column. In that column, \code{NA} leaves that row's encoder default in place, whatever the argument says. The value is the encoder's own rate-control value, passed through unchanged. Each cell is checked against the encoder its own row resolves to. A wrong cell is refused before any row runs, and the error names this function and the row. See \code{\link[=separate_audio_video]{separate_audio_video()}} for the encoders, their flags and ranges, and the values it refuses.
+The \code{audiofile} never takes it. A cell on a row whose video codec
+is \code{"copy"}, the default, is refused, because no encoder runs.}
 
 \item{audio_stream}{The audio track to write to each \code{audiofile}, as a number that counts from \code{0} among the \emph{audio tracks} of each row's input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) keeps \strong{every} audio track. Without an \code{audio_stream} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row. It does not fall back to the argument. The every-track family reads \code{NULL} as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. A container that holds several audio streams (\code{.mka}, \code{.m4a}) gets them all. A container for one stream only (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail, so name a track to write one of those. Count only the input's \emph{audio} streams. Do not use the \code{index} column of \code{\link{probe_audio}}, which counts every stream. An input with no audio at all is an FFmpeg error here, because this function writes an audio file. Functions that write only a video file, such as \code{\link{standardize_video}}, do not fail in that case. \code{videofile} is never affected. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 

@@ -129,6 +129,24 @@ encoder_check_sentences <- function() {
   )
 }
 
+# The `quality` argument and jobs column on a batch function (M136). `scalar`
+# names the one-file form whose page carries the encoder table. `output`
+# names what a row writes, for the separation function whose row writes two.
+batch_quality_param <- function(scalar, output = "each row") {
+  rd_sentences(
+    paste0("A number, or \\code{NULL} (default), applied to ", output,
+           " unless \\code{jobs} carries a numeric \\code{quality} column."),
+    paste0("In that column, \\code{NA} leaves that row's encoder default in ",
+           "place, whatever the argument says."),
+    "The value is the encoder's own rate-control value, passed through unchanged.",
+    "Each cell is checked against the encoder its own row resolves to.",
+    paste0("A wrong cell is refused before any row runs, and the error names ",
+           "this function and the row."),
+    sprintf(paste0("See \\code{\\link[=%s]{%s()}} for the encoders, their flags ",
+                   "and ranges, and the values it refuses."), scalar, scalar)
+  )
+}
+
 # `hardware,fallback` on a batch function that passes both to its scalar form.
 batch_hardware_param <- function(scalar) {
   rd_sentences(

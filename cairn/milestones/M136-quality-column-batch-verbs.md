@@ -56,6 +56,9 @@ A batch caller sets the encoder's own quality number for the whole batch or per 
 - 2026-09-17: claim audit: 21 claims read, 0 corrected — R/ffmpeg.R, R/task-doc.R, NEWS.md, man/*_batch.Rd, tests/testthat/test-quality-batch.R, test-quality-batch-col.R, test-nvenc-probe-blame.R, test-unguarded-argument-front-doors.R. One note: on `segment_video_batch()` a non-numeric `quality` column on a `reencode = FALSE` row reports the cut contradiction first; no added line claims otherwise.
 - 2026-09-17: T5 done. `devtools::check()` 0 errors, 0 warnings, 0 notes (7m 19s). `devtools::test()` alone: 0 failures (the two census files re-run clean after their pins moved). `pkgdown::check_pkgdown()`: no problems. Status set to review.
 
+- 2026-09-18: review ran. All four criteria verified. Six diff-bug findings: five fixed on the branch, one rejected. No return.
+- 2026-09-18: step-7 approval: m136-quality-column-batch-verbs approved for merge
+
 ## Decisions
 
 - M136-1 (2026-09-17): one checker for both forms. `check_batch_quality(jobs, quality, codec_rows, hardware)` takes the argument and the column in one call and resolves per row, so each of the eight verbs adds one call above its availability probe (D036) and the row-locator rule (a column names the row, an argument names none) is written once. A `"copy"` cell bypasses `intended_encoder()` so the refusal names the copy and never a family lookup. On `separate_audio_video_batch()` the reshaped `quality` column is built after the check, so a wrong value never reaches `as.numeric()` and `rbind()`. Over: a per-verb sweep beside each codec sweep (eight copies of the locator rule).

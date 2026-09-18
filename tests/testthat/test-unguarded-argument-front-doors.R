@@ -141,8 +141,12 @@ test_that("an invalid limit displaces no argument error, at every formal", {
   # the same five forms out of the domain entirely: 20 rows, of which 19 were
   # kept and 1 dropped. So 1535 - 20 rows, 1093 + 10 - 19 kept, and
   # 442 - 10 - 1 dropped.
-  expect_identical(nrow(res), 1515L)
-  expect_identical(sum(res$kept), 1084L)
+  # M135 adds a `quality` formal to the eight scalar verbs: eight members
+  # crossed with the five wrong forms is 40 rows, every one refused by the
+  # member itself (check_quality() runs under the verb's own frame, before any
+  # probe). So 1515 + 40 rows, 1084 + 40 kept, 431 dropped unchanged.
+  expect_identical(nrow(res), 1555L)
+  expect_identical(sum(res$kept), 1124L)
   expect_identical(sum(!res$kept), 431L)
 
   # `segment_video/outfiles -> <none>` survives in both, and correctly: it is

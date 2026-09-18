@@ -1522,6 +1522,17 @@ tm_hardware_encoder_pools <- function() {
 # Two levels, not the three above: adding a videotoolbox level here would add a
 # third arm to a sweep whose recorded master tables are keyed on the nvenc
 # probe, which is a different measurement from the one AC1 makes.
+# tm_nvenc_encoder_keyed_args(): arguments whose refusal is KEYED ON THE
+# ENCODER, and so legitimately reads differently under `hardware = "none"` and
+# `hardware = "nvenc"` (M135). `quality` is the encoder's own rate-control
+# value: its range and its refusal name the encoder the pair resolves to, and
+# `hardware` is what picks that encoder. The difference is the caller's own
+# argument, not the machine -- the refusal fires before the probe, so the
+# present and absent pools read identically -- which is the invariant the
+# match comparison guards. These cells stay in the sweep (counted, kept, and
+# blamed on the member); only the message-equality comparison skips them.
+tm_nvenc_encoder_keyed_args <- function() "quality"
+
 tm_nvenc_encoder_pools <- function() {
   # `[[` and not `$`: a renamed or restructured nvenc row must ERROR here.
   # Under `$` it would return NULL, both pool levels would answer "no encoders",

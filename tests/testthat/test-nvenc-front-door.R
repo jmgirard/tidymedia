@@ -552,7 +552,9 @@ test_that("resolve_hw_encoder() reaches the abort by calling the shared guard", 
   # Read the function object, never the source tree: a test that opens R/ under
   # the package root SKIPS under R CMD check, which runs against an installed
   # package with no R/ dir, and so looks healthy while never running (M51).
-  src <- deparse(body(tidymedia:::resolve_hw_encoder))
+  # The body lives in resolve_hw_encoder_info() since M135; the exported-shape
+  # wrapper only unwraps its answer.
+  src <- deparse(body(tidymedia:::resolve_hw_encoder_info))
   expect_true(any(grepl("check_hardware_available", src, fixed = TRUE)))
   # cli_inform() stays -- that is the fallback message, not the abort.
   expect_false(any(grepl("cli_abort", src, fixed = TRUE)))

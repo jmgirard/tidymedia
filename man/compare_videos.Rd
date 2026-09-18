@@ -14,6 +14,7 @@ compare_videos(
   audio_codec = "copy",
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   run = TRUE
 )
 }
@@ -41,6 +42,8 @@ encoder in that case is an error.}
 \item{hardware}{The encoder backend. \code{"none"} (default) uses the software \code{video_codec}. \code{"nvenc"} uses NVIDIA GPU encoding (H.264, HEVC and AV1), and \code{"videotoolbox"} uses Apple GPU encoding (H.264 and HEVC). A backend uses its own encoder for the family of \code{video_codec}. For example, \code{"libx264"} becomes \code{"h264_nvenc"} or \code{"h264_videotoolbox"}. With the default \code{video_codec = NULL}, the H.264 family is assumed. So a non-H.264 container, such as \code{.webm}, needs an explicit HEVC- or AV1-family \code{video_codec} (AV1 only under \code{"nvenc"}). See \code{\link{has_hardware_encoder}} for availability and its caveats. Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it.}
 
 \item{fallback}{A logical. When a \code{hardware} other than \code{"none"} is requested but its encoder is unavailable, \code{TRUE} encodes in software with a message. \code{FALSE} (default) aborts instead. With \code{video_codec = NULL}, the fallback leaves the codec unset rather than picking one, so the codec never changes silently. A \code{video_codec} in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever \code{fallback} says.}
+
+\item{quality}{A number, or \code{NULL} (default) to leave the encoder's own default in place. It is the encoder's own rate-control value, passed through unchanged. \code{libx264} and \code{libx265} read it as \code{-crf} (0 to 51). The nvenc encoders read it as \code{-cq} (0 to 51), and the videotoolbox encoders as \code{-q:v} (1 to 100). Each scale is its own: the same number means something different on each encoder. A value outside the encoder's range is refused. An encoder outside those seven, such as \code{libvpx-vp9}, is refused with \code{quality} set. So is a \code{video_codec} of \code{"copy"}, or of \code{NULL} under \code{hardware = "none"}. When \code{fallback = TRUE} falls back to software, the value is dropped and the message says so, because it belonged to the hardware encoder's scale.}
 
 \item{run}{A logical: run the command through FFmpeg (\code{TRUE}, default)
 or return the compiled command without running it (\code{FALSE}).}

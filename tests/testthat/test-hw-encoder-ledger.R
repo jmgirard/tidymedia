@@ -36,19 +36,25 @@ test_that("the disposition check can tell a safe site from an unsafe one", {
   # The discrimination check. Every expectation above is a green from a
   # function that says TRUE; these three are the same function saying no, one
   # per way a site can fail its stated reason.
+  # The seam hands the resolver the symbol `video_codec`, not a constant.
   expect_type(
-    tm_hw_encoder_disposition_holds("format_for_web_pipeline", "checked-above"),
+    tm_hw_encoder_disposition_holds("emit_video_codec", "literal"),
+    "character"
+  )
+  # The one-string wrapper hands its body the symbol with no check above it,
+  # under either symbol-checking reading; it is safe only because it is the
+  # resolver's other door, which is why tm_hw_encoder_sites() leaves it out.
+  expect_type(
+    tm_hw_encoder_disposition_holds("resolve_hw_encoder", "checked-above"),
     "character"
   )
   expect_type(
-    tm_hw_encoder_disposition_holds("anonymize_pipeline", "literal"),
+    tm_hw_encoder_disposition_holds("resolve_hw_encoder", "emit-half"),
     "character"
   )
-  # anonymize_pipeline() checks with check_token(), not check_video_codec(), so
-  # it fails the stricter emit-half reading -- which is what makes emit-half a
-  # narrower claim than checked-above rather than a synonym for it.
+  # And a body with no resolver call at all says so rather than passing.
   expect_type(
-    tm_hw_encoder_disposition_holds("anonymize_pipeline", "emit-half"),
+    tm_hw_encoder_disposition_holds("anonymize_pipeline", "checked-above"),
     "character"
   )
 })

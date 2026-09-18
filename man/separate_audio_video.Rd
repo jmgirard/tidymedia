@@ -12,6 +12,7 @@ separate_audio_video(
   video_codec = "copy",
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   audio_stream = NULL,
   run = TRUE
 )
@@ -52,6 +53,9 @@ The stream-copy conflict above is caught first, so such a call aborts
 without asking FFmpeg.}
 
 \item{fallback}{A logical. When a \code{hardware} other than \code{"none"} is requested but its encoder is unavailable, \code{TRUE} encodes in software with a message. \code{FALSE} (default) aborts instead. With \code{video_codec = NULL}, the fallback leaves the codec unset rather than injecting one. A \code{video_codec} in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever \code{fallback} says.}
+
+\item{quality}{A number, or \code{NULL} (default) to leave the encoder's own default in place. It is the encoder's own rate-control value, passed through unchanged. \code{libx264} and \code{libx265} read it as \code{-crf} (0 to 51). The nvenc encoders read it as \code{-cq} (0 to 51), and the videotoolbox encoders as \code{-q:v} (1 to 100). Each scale is its own: the same number means something different on each encoder. A value outside the encoder's range is refused. An encoder outside those seven, such as \code{libvpx-vp9}, is refused with \code{quality} set. So is a \code{video_codec} of \code{"copy"}, or of \code{NULL} under \code{hardware = "none"}. When \code{fallback = TRUE} falls back to software, the value is dropped and the message says so, because it belonged to the hardware encoder's scale.
+It applies to \code{videofile} only.}
 
 \item{audio_stream}{The audio track to write to \code{audiofile}, as a number that counts from \code{0} among the \emph{audio tracks} of the input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) keeps \strong{every} audio track. The every-track family reads \code{NULL} this way: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. A container that holds several audio streams (\code{.mka}, \code{.m4a}) gets them all. A container for one stream only (\code{.aac}, \code{.mp3}, \code{.wav}) makes FFmpeg fail, so name a track to write one of those. Count only the input's \emph{audio} streams. Do not use the \code{index} column of \code{\link{probe_audio}}, which counts every stream. An input with no audio at all is an FFmpeg error here, because this function writes an audio file. Functions that write only a video file, such as \code{\link{standardize_video}}, do not fail in that case. \code{videofile} is never affected. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 

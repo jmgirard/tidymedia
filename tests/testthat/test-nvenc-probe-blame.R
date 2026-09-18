@@ -77,8 +77,11 @@ test_that("a dropped cell is dropped by measurement, naming its refusing frame",
   # where such a move could hide).
   # 496/234 at M095's merge-base `tm_nvenc_probe_master_ref`; 499/231 since M96 guarded
   # `segment_video()`'s `outfiles` at its front door, which moved that
-  # argument's three pmap-blamed forms from dropped to kept.
-  expect_equal(sum(sweep$kept), 499L)
+  # argument's three pmap-blamed forms from dropped to kept. 539/231 since
+  # M135 gave the eight scalar verbs a `quality` formal: eight members crossed
+  # with the five wrong forms, every cell refused by the member itself
+  # (segment_video() checks it at its front door, above the probe).
+  expect_equal(sum(sweep$kept), 539L)
   expect_equal(sum(!sweep$kept), 231L)
 
   dropped <- tm_sort_c(unique(paste0(
@@ -137,7 +140,10 @@ test_that("asking for nvenc changes nothing a caller is told about an argument",
     if (identical(pool, "absent")) {
       expect_true(all(sweep$kept[match(mism, sweep$cell)]))
     }
-    bad <- sweep[sweep$kept & !sweep$match, ]
+    # Encoder-keyed arguments are compared on their blamed frame only (kept,
+    # above), never on message equality -- see tm_nvenc_encoder_keyed_args().
+    bad <- sweep[sweep$kept & !sweep$match &
+                   !sweep$arg %in% tm_nvenc_encoder_keyed_args(), ]
     expect_equal(nrow(bad), 0L, info = paste(pool, paste(bad$cell,
                                                          collapse = ", ")))
   }
@@ -167,7 +173,8 @@ test_that("an invalid session limit does not displace the argument error either"
   for (nm in names(forms)) {
     sweep <- tm_nvenc_sweep(cells, pool, limit = forms[[nm]])
     expect_gt(sum(sweep$kept), 0)
-    bad <- sweep[sweep$kept & !sweep$match, ]
+    bad <- sweep[sweep$kept & !sweep$match &
+                   !sweep$arg %in% tm_nvenc_encoder_keyed_args(), ]
     expect_equal(nrow(bad), 0L,
                  info = paste(nm, paste(bad$cell, collapse = ", ")))
   }

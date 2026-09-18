@@ -194,19 +194,19 @@
   updated**. Naming your arguments avoids the problem entirely.
 
   The inserted arguments are drawn from `video_codec`, `audio_codec`,
-  `hardware`, `fallback` and `audio_stream`, each placed beside the argument it
-  belongs with. `run` has moved on all five verbs that carried it before, and by
-  more than one position on four of them:
+  `hardware`, `fallback`, `quality` and `audio_stream`, each placed beside the
+  argument it belongs with. `run` has moved on all five verbs that carried it
+  before, and by more than one position on four of them:
 
   | verb | `run` was at position | `run` is now at position |
   |---|---|---|
   | `extract_audio()` | 4 | 5 |
-  | `format_for_web()` | 3 | 6 |
-  | `separate_audio_video()` | 4 | 9 |
-  | `segment_video()` | 6 | 11 |
-  | `crop_video()` | 7 | 12 |
+  | `format_for_web()` | 3 | 7 |
+  | `separate_audio_video()` | 4 | 10 |
+  | `segment_video()` | 6 | 12 |
+  | `crop_video()` | 7 | 13 |
 
-  `segment_video()`'s `parallel` moves with it, from position 7 to position 12.
+  `segment_video()`'s `parallel` moves with it, from position 7 to position 13.
   `extract_audio(video, "audio.aac", "copy", FALSE)` now reads `FALSE` as the
   audio-stream index rather than as `run` — an error rather than a silent
   misread, since the index must be a whole number. On `crop_video()` and
@@ -258,6 +258,24 @@
   those strings need updating.
 
 ## New features
+
+* **The re-encoding task functions take a `quality` argument.**
+  `standardize_video()`, `format_for_web()`, `anonymize_video()`,
+  `crop_video()`, `segment_video()`, `separate_audio_video()`,
+  `compare_videos()` and `picture_in_picture()` take `quality = NULL`. It is
+  the encoder's own rate-control value, passed through unchanged: `libx264` and
+  `libx265` read it as `-crf` (0 to 51), `h264_nvenc`, `hevc_nvenc` and
+  `av1_nvenc` as `-cq` (0 to 51), and `h264_videotoolbox` and
+  `hevc_videotoolbox` as `-q:v` (1 to 100). No cross-encoder scale exists, so
+  the same number means something different on each encoder. `NULL` emits no
+  flag, so the encoder's own default applies. A call is refused before FFmpeg
+  runs when `quality` is not one finite number, is outside the encoder's range,
+  or names an encoder outside those seven (an alias such as `"h264"`, or a
+  software encoder such as `libvpx-vp9`). A stream copy is refused with
+  `quality` set too: `video_codec = "copy"`, `reencode = FALSE` on
+  `segment_video()`, or `video_codec = NULL` under `hardware = "none"`. Under
+  `fallback = TRUE`, a fallback to software drops the value and the message
+  says so. The `_batch` forms do not take it yet.
 
 * **`ffm_jobs()` turns a directory into a batch jobs table.** It lists the
   files in a directory whose names do not start with a dot and that carry one

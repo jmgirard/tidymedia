@@ -597,7 +597,7 @@ extract_audio <- function(infile, outfile, audio_codec = "copy",
 # ABOVE the roxygen block below so document() does not re-target it (M28 lesson).
 separate_stream_pipeline <- function(input, output, stream, codec = "copy",
                                      hardware = "none", fallback = FALSE,
-                                     audio_stream = NULL,
+                                     audio_stream = NULL, quality = NULL,
                                      call = rlang::caller_env()) {
   # `null_map = "0:a"` keeps EVERY audio track when the caller named none, which
   # is this verb's map since it shipped -- audio_stream_map()'s own default is
@@ -620,7 +620,9 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
     # _batch verb ALSO calls it at its front door (M58), where the abort can
     # name the verb; here it still covers separate_audio_video().
     check_hardware_needs_encode(codec, hardware, call = call)
-    apply_video_codec(p, codec, hardware, fallback, call = call)
+    # `quality` rides the seam (M135); a "copy" codec with it set is refused
+    # there, by check_quality(), after the hardware contradiction above.
+    apply_video_codec(p, codec, hardware, fallback, quality, call = call)
   }
 }
 
@@ -1014,6 +1016,8 @@ ffmpeg_exit_status <- function(cnd) {
 #'   The stream-copy conflict above is caught first, so such a call aborts
 #'   without asking FFmpeg.
 #' @param fallback `r fallback_param("software", unset = "injecting")`
+#' @param quality `r quality_param()`
+#'   It applies to \code{videofile} only.
 #' @param audio_stream `r audio_stream_param("write to \\code{audiofile}", "keeps", "every", extra = audio_stream_extras$separation_container)`
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
@@ -1138,8 +1142,8 @@ ffmpeg_exit_status <- function(cnd) {
 separate_audio_video <- function(infile, audiofile, videofile,
                                  audio_codec = "copy", video_codec = "copy",
                                  hardware = c("none", "nvenc", "videotoolbox"),
-                                 fallback = FALSE, audio_stream = NULL,
-                                 run = TRUE) {
+                                 fallback = FALSE, quality = NULL,
+                                 audio_stream = NULL, run = TRUE) {
 
   check_file_readable(infile)
   rlang::check_string(audiofile)
@@ -1166,7 +1170,7 @@ separate_audio_video <- function(infile, audiofile, videofile,
   audio <- separate_stream_pipeline(infile, audiofile, "audio", audio_codec,
                                     hardware, fallback, audio_stream)
   video <- separate_stream_pipeline(infile, videofile, "video", video_codec,
-                                    hardware, fallback)
+                                    hardware, fallback, quality = quality)
   commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))
 
   # D074: the verb the caller typed names a bad limit, not the builder below.
@@ -1366,6 +1370,7 @@ crop_video_pipeline <- function(input, output, width, height,
                                 video_codec = NULL, audio_codec = "copy",
                                 hardware = "none",
                                 fallback = FALSE, audio_stream = NULL,
+                                quality = NULL,
                                 call = rlang::caller_env()) {
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = width, height = height, x = x, y = y)
@@ -1383,8 +1388,8 @@ crop_video_pipeline <- function(input, output, width, height,
   # The default video_codec = NULL emits no -codec:v, so the output keeps its
   # container's default *video* encoder. This no longer makes the whole command
   # byte-identical to the pre-M34 one -- M35's audio default added -codec:a copy
-  # (M34/D016, M35/D017).
-  apply_video_codec(p, video_codec, hardware, fallback, call = call)
+  # (M34/D016, M35/D017). `quality` rides the same seam (M135).
+  apply_video_codec(p, video_codec, hardware, fallback, quality, call = call)
 }
 
 #' Crop a video to a rectangular region
@@ -1408,6 +1413,7 @@ crop_video_pipeline <- function(input, output, width, height,
 #'   in \code{.mp4}. In that case, name an encoder.
 #' @param hardware `r hardware_param(null_default = TRUE)`
 #' @param fallback `r fallback_param("software", unset = "picking")`
+#' @param quality `r quality_param()`
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
@@ -1425,7 +1431,8 @@ crop_video <- function(infile, outfile, width, height,
                        x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
                        video_codec = NULL, audio_codec = "copy",
                        hardware = c("none", "nvenc", "videotoolbox"),
-                       fallback = FALSE, audio_stream = NULL, run = TRUE) {
+                       fallback = FALSE, quality = NULL, audio_stream = NULL,
+                       run = TRUE) {
 
   check_file_readable(infile)
   rlang::check_string(outfile)
@@ -1457,7 +1464,7 @@ crop_video <- function(infile, outfile, width, height,
 
   p <- crop_video_pipeline(infile, outfile, width, height, x, y,
                       video_codec, audio_codec, hardware, fallback,
-                      audio_stream)
+                      audio_stream, quality = quality)
   # D074: the verb the caller typed names a bad limit, not the builder below.
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
@@ -1474,6 +1481,7 @@ crop_video <- function(infile, outfile, width, height,
 # gets the same recipe. Command assembly stays in Layer 1 (IP1/D002).
 format_for_web_pipeline <- function(input, output, hardware = "none",
                                     fallback = FALSE, audio_stream = NULL,
+                                    quality = NULL,
                                     call = rlang::caller_env()) {
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
@@ -1495,8 +1503,12 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
   # above, so one line below it is as late as the resolution can go. The
   # compiled command is unchanged: ffm_groups() emits by group, not by call
   # order (measured over every cell by data-raw/nvenc-probe-order-baseline.R).
-  video_codec <- resolve_hw_encoder("libx264", hardware, fallback, call = call)
-  p <- ffm_codec(p, video = video_codec, audio = "aac")
+  #
+  # Through the shared emit half since M135, so `quality` takes the one seam
+  # every verb uses: the literal "libx264" is checked (idempotently) and
+  # resolved there, and the flag is emitted after the codec.
+  p <- ffm_codec(p, audio = "aac")
+  p <- emit_video_codec(p, "libx264", hardware, fallback, quality, call = call)
   p <- ffm_pixel_format(p, "yuv420p")
   ffm_output_options(p, "-movflags +faststart")
 }
@@ -1518,6 +1530,7 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #'   \code{\link{has_hardware_encoder}}.
 #'   `r hardware_probe_sentences()`
 #' @param fallback `r fallback_param("libx264")`
+#' @param quality `r quality_param(fixed_h264 = TRUE)`
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @return `r command_return()`
 #' @seealso [ffm_codec()] and [ffm_pixel_format()], among the pipeline functions
@@ -1533,7 +1546,8 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #' @export
 format_for_web <- function(infile, outfile,
                            hardware = c("none", "nvenc", "videotoolbox"),
-                           fallback = FALSE, audio_stream = NULL, run = TRUE) {
+                           fallback = FALSE, quality = NULL,
+                           audio_stream = NULL, run = TRUE) {
 
   check_file_readable(infile)
   rlang::check_string(outfile)
@@ -1544,7 +1558,8 @@ format_for_web <- function(infile, outfile,
   # unchanged and this verb gains no guard that reorders its complaints. The
   # BATCH sibling keeps its own, where it is load-bearing.
 
-  p <- format_for_web_pipeline(infile, outfile, hardware, fallback, audio_stream)
+  p <- format_for_web_pipeline(infile, outfile, hardware, fallback, audio_stream,
+                               quality = quality)
   # D074: the verb the caller typed names a bad limit, not the builder below.
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
@@ -1709,7 +1724,7 @@ standardize_video <- function(infile, outfile,
                               video_codec = "libx264", audio_codec = "copy",
                               pixel_format = "yuv420p",
                               hardware = c("none", "nvenc", "videotoolbox"),
-                              fallback = FALSE,
+                              fallback = FALSE, quality = NULL,
                               audio_stream = NULL, run = TRUE) {
 
   check_file_readable(infile)
@@ -1749,7 +1764,7 @@ standardize_video <- function(infile, outfile,
 
   p <- standardize_pipeline(infile, outfile, width, height, fps, video_codec,
                        audio_codec, pixel_format, hardware, fallback,
-                       audio_stream)
+                       audio_stream, quality = quality)
   # D074: the verb the caller typed names a bad limit, not the builder below.
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
@@ -1771,7 +1786,7 @@ standardize_video <- function(infile, outfile,
 standardize_pipeline <- function(input, output, width, height, fps, video_codec,
                                  audio_codec = "copy", pixel_format,
                                  hardware = "none", fallback = FALSE,
-                                 audio_stream = NULL,
+                                 audio_stream = NULL, quality = NULL,
                                  call = rlang::caller_env()) {
   p <- ffm_files(input, output)
   # Resolution: exact when both given; aspect-preserving with an even output
@@ -1847,7 +1862,7 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
   # against `pixel_format` -- both are still refused, and the refusal is
   # identical with and without hardware = "nvenc", which is what this milestone
   # promises (M095 gate).
-  p <- emit_video_codec(p, video_codec, hardware, fallback, call = call)
+  p <- emit_video_codec(p, video_codec, hardware, fallback, quality, call = call)
   ffm_output_options(p, "-movflags +faststart")
 }
 
@@ -1914,7 +1929,7 @@ anonymize_video <- function(infile, outfile, regions,
                             video_codec = "libx264", audio_codec = "copy",
                             pixel_format = "yuv420p",
                             hardware = c("none", "nvenc", "videotoolbox"),
-                            fallback = FALSE,
+                            fallback = FALSE, quality = NULL,
                             audio_stream = NULL, run = TRUE) {
 
   check_file_readable(infile)
@@ -1927,7 +1942,7 @@ anonymize_video <- function(infile, outfile, regions,
 
   p <- anonymize_pipeline(infile, outfile, regions, color, video_codec,
                      audio_codec, pixel_format, hardware, fallback,
-                     audio_stream)
+                     audio_stream, quality = quality)
   # D074: the verb the caller typed names a bad limit, not the builder below.
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
@@ -1947,7 +1962,7 @@ anonymize_video <- function(infile, outfile, regions,
 anonymize_pipeline <- function(input, output, regions, color, video_codec,
                                audio_codec = "copy", pixel_format,
                                hardware = "none", fallback = FALSE,
-                               audio_stream = NULL,
+                               audio_stream = NULL, quality = NULL,
                                call = rlang::caller_env()) {
   check_regions(regions, call = call)
   # The region VALUES, beside the structure check (M65): the same per-field
@@ -2023,8 +2038,11 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
   # of this function and keep their positions; the compiled command is unchanged
   # either way, since ffm_groups() emits by group and not by call order
   # (measured over every cell by data-raw/nvenc-probe-order-baseline.R).
-  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
-  p <- ffm_codec(p, video = video_codec)
+  #
+  # Through the shared emit half since M135, so `quality` takes the one seam
+  # every verb uses. Its own token check is idempotent over the check_token()
+  # at the top of this function, so the refusal order above is unchanged.
+  p <- emit_video_codec(p, video_codec, hardware, fallback, quality, call = call)
   ffm_pixel_format(p, pixel_format)
 }
 
@@ -3132,6 +3150,95 @@ codec_family <- function(video_codec, call = rlang::caller_env()) {
   )
 }
 
+# quality_flags(): the one table behind the `quality` argument (M135). Keyed on
+# the EXACT resolved encoder name, never on a family or an alias: `-crf`, `-cq`
+# and `-q:v` are three different scales, and each means what its own encoder
+# says it means. The number is passed through unchanged, so no cross-encoder
+# scale exists and none is implied. An encoder outside this table -- an alias
+# such as "h264", a software encoder such as libvpx-vp9 -- is refused with
+# `quality` set rather than handed a flag it may read differently or not at all.
+# Layer 2 knowledge, like the backend table above it: the engine carries raw
+# output options and never learns what a flag means (IP1).
+quality_flags <- function() {
+  tibble::tibble(
+    encoder = c("libx264", "libx265",
+                "h264_nvenc", "hevc_nvenc", "av1_nvenc",
+                "h264_videotoolbox", "hevc_videotoolbox"),
+    flag = c("-crf", "-crf", "-cq", "-cq", "-cq", "-q:v", "-q:v"),
+    min = c(0, 0, 0, 0, 0, 1, 1),
+    max = c(51, 51, 51, 51, 51, 100, 100)
+  )
+}
+
+# check_quality(): refuse a `quality` the table cannot pass through. Three
+# refusals, in this order: not one finite number; an encoder the table lacks
+# (NULL -- no codec named under hardware = "none" -- and "copy" each get their
+# own wording, since neither is an encoder); a value outside the row's range.
+# NULL is never refused: it emits nothing, so the encoder's default applies.
+#
+# Pure: `encoder` is the name the verb WOULD encode with when its backend is
+# available, computed without asking the machine, so this refusal reports
+# before the availability probe (D036). `call` is threaded with no default
+# (D087): every site has the verb the caller typed to pass.
+check_quality <- function(quality, encoder, call) {
+  if (is.null(quality)) {
+    return(invisible(NULL))
+  }
+  rlang::check_number_decimal(quality, allow_infinite = FALSE,
+                              arg = "quality", call = call)
+  if (is.null(encoder)) {
+    cli::cli_abort(
+      c(
+        "{.arg quality} needs a {.arg video_codec}.",
+        "x" = "With {.code video_codec = NULL} the output container's default
+               encoder is used, and {.arg quality} has no encoder to apply to.",
+        "i" = "Name an encoder (e.g. {.code video_codec = \"libx264\"}), or
+               drop {.arg quality}."
+      ),
+      call = call
+    )
+  }
+  if (identical(encoder, "copy")) {
+    cli::cli_abort(
+      c(
+        "{.arg quality} needs a re-encoding {.arg video_codec}.",
+        "x" = "{.code video_codec = \"copy\"} stream-copies the video, so no
+               encoder runs and no quality value applies.",
+        "i" = "Name an encoder (e.g. {.code video_codec = \"libx264\"}), or
+               drop {.arg quality}."
+      ),
+      call = call
+    )
+  }
+  tbl <- quality_flags()
+  row <- tbl[tbl$encoder == encoder, ]
+  if (nrow(row) == 0L) {
+    cli::cli_abort(
+      c(
+        "{.arg quality} has no meaning for encoder {.val {encoder}}.",
+        "x" = "The value is passed through as the encoder's own rate-control
+               flag, and no flag is known for {.val {encoder}}.",
+        "i" = "The encoders with a known flag are {.val {tbl$encoder}}.",
+        "i" = "Use one of those, or drop {.arg quality} and set the flag
+               through the {.fn ffm_output_options} pipeline function."
+      ),
+      call = call
+    )
+  }
+  if (quality < row$min || quality > row$max) {
+    cli::cli_abort(
+      c(
+        "{.arg quality} must be between {row$min} and {row$max} for
+         encoder {.val {encoder}}.",
+        "x" = "{.val {encoder}} reads {.arg quality} as its {.code {row$flag}}
+               value, and {quality} is outside that range."
+      ),
+      call = call
+    )
+  }
+  invisible(NULL)
+}
+
 # resolve_hw_encoder(): pick the encoder name for a verb's hardware= choice.
 # hardware = "none" returns the software video_codec unchanged; a backend
 # returns that backend's encoder for video_codec's family when available,
@@ -3144,13 +3251,29 @@ codec_family <- function(video_codec, call = rlang::caller_env()) {
 # codec-less re-encode verbs (M34/D016): no -codec:v is emitted, so the output
 # keeps its container's default encoder. It is resolved here, in the one
 # resolver seam, rather than in a second per-verb fork.
+#
+# resolve_hw_encoder_info() is the body: it answers the encoder name AND whether
+# it fell back, because the `quality` seam below needs the second answer (M135)
+# and the name alone cannot carry it -- a fallback from h264_nvenc to a
+# video_codec spelled "h264_nvenc" returns the intended name while encoding in
+# software. `quality` is threaded in only so the fallback message can say the
+# value was dropped; the flag itself is emitted by emit_quality(), never here.
+# resolve_hw_encoder() keeps its one-string contract for every other caller.
 resolve_hw_encoder <- function(video_codec,
                                hardware = c("none", "nvenc", "videotoolbox"),
                                fallback = FALSE, call = rlang::caller_env()) {
   hardware <- rlang::arg_match(hardware)
+  resolve_hw_encoder_info(video_codec, hardware, fallback, call = call)$encoder
+}
+
+resolve_hw_encoder_info <- function(video_codec,
+                                    hardware = c("none", "nvenc", "videotoolbox"),
+                                    fallback = FALSE, quality = NULL,
+                                    call = rlang::caller_env()) {
+  hardware <- rlang::arg_match(hardware)
   rlang::check_bool(fallback, call = call)
   if (hardware == "none") {
-    return(video_codec)
+    return(list(encoder = video_codec, fell_back = FALSE))
   }
   # The sentinel branch sits BEFORE codec_family(), which cannot infer a family
   # from nothing (it errors on NULL): under either backend the sentinel assumes
@@ -3175,9 +3298,17 @@ resolve_hw_encoder <- function(video_codec,
       } else {
         "{hardware} encoder {.val {tm_hardware_encoder(family, hardware, call = call)}} is not
          available; falling back to {.arg video_codec} = {.val {video_codec}}."
+      },
+      # The value was the hardware encoder's own scale, and no cross-encoder
+      # scale exists to carry it (M135 plan gate); saying so here is what keeps
+      # the lower-quality file from going unexplained.
+      "i" = if (!is.null(quality)) {
+        "{.arg quality} = {quality} is dropped: it was
+         {.val {tm_hardware_encoder(family, hardware, call = call)}}'s own
+         rate-control value, and the software encoder keeps its default."
       }
     ))
-    return(video_codec)
+    return(list(encoder = video_codec, fell_back = TRUE))
   }
   # The abort lives in check_hardware_available(), never in a copy here: the nine
   # fan-out verbs call that same function at their front doors (M57/D035), and
@@ -3197,6 +3328,21 @@ resolve_hw_encoder <- function(video_codec,
   # comment here used to claim `fallback = TRUE` always returned above; it
   # returns only when the predicate answers.
   check_hardware_available(video_codec, hardware, fallback, call = call)
+  list(encoder = tm_hardware_encoder(family, hardware, call = call),
+       fell_back = FALSE)
+}
+
+# intended_encoder(): the encoder a (video_codec, hardware) pair encodes with
+# when its backend is available -- resolve_hw_encoder_info()'s answer with the
+# machine left out of it. Pure, so check_quality() can read the table row
+# before the availability probe (D036). The family inference and the backend
+# lookup are the same two refusals the resolver makes, from the same frame.
+intended_encoder <- function(video_codec, hardware = "none",
+                             call = rlang::caller_env()) {
+  if (identical(hardware, "none")) {
+    return(video_codec)
+  }
+  family <- if (is.null(video_codec)) "h264" else codec_family(video_codec, call = call)
   tm_hardware_encoder(family, hardware, call = call)
 }
 
@@ -3293,9 +3439,10 @@ check_hardware_available <- function(video_codec, hardware = "none",
 # the up-front token check are handled once. Not an ffm_* name: this is Layer 2
 # computing an argument, not engine surface (D014, IP1).
 apply_video_codec <- function(object, video_codec, hardware = "none",
-                              fallback = FALSE, call = rlang::caller_env()) {
+                              fallback = FALSE, quality = NULL,
+                              call = rlang::caller_env()) {
   check_video_codec(video_codec, call = call)
-  emit_video_codec(object, video_codec, hardware, fallback, call = call)
+  emit_video_codec(object, video_codec, hardware, fallback, quality, call = call)
 }
 
 # The two halves, separately callable (M095). They are one call at the three
@@ -3337,14 +3484,45 @@ check_video_codec <- function(video_codec, call = rlang::caller_env()) {
 # "that encoder is not available" about a token that was never a codec name.
 # A caller that checked already pays a second check that cannot change its
 # answer; a caller that did not is no longer able to skip one.
+#
+# `quality` (M135) rides the same seam. Its check reads the table row for the
+# encoder this pair WOULD use, computed without the machine, so a wrong value
+# reports before the probe like every other argument complaint (D036); the
+# flag is emitted after the resolver answers, and only when it did not fall
+# back. With `quality = NULL` nothing here changes: intended_encoder() is not
+# even called, so the refusal order of a quality-less call is untouched.
 emit_video_codec <- function(object, video_codec, hardware = "none",
-                             fallback = FALSE, call = rlang::caller_env()) {
+                             fallback = FALSE, quality = NULL,
+                             call = rlang::caller_env()) {
   check_video_codec(video_codec, call = call)
-  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
-  if (is.null(video_codec)) {
+  if (!is.null(quality)) {
+    check_quality(quality, intended_encoder(video_codec, hardware, call = call),
+                  call = call)
+  }
+  info <- resolve_hw_encoder_info(video_codec, hardware, fallback, quality,
+                                  call = call)
+  if (is.null(info$encoder)) {
     return(object)
   }
-  ffm_codec(object, video = video_codec)
+  object <- ffm_codec(object, video = info$encoder)
+  emit_quality(object, info$encoder, quality, fell_back = info$fell_back)
+}
+
+# emit_quality(): add the encoder's rate-control flag to the pipeline through
+# ffm_output_options(), the engine's raw output-option slot -- Layer 2 computes
+# the flag and the value, Layer 1 assembles the command (IP1, M31 precedent).
+# The value is passed through unchanged. Nothing is emitted for NULL (the
+# encoder default applies) or after a fallback (the value belonged to the
+# hardware encoder's scale; resolve_hw_encoder_info() has already said so).
+# `encoder` is the RESOLVED name, checked against the table above, so the
+# lookup here cannot miss on the non-fallback arm.
+emit_quality <- function(object, encoder, quality, fell_back = FALSE) {
+  if (is.null(quality) || fell_back) {
+    return(object)
+  }
+  tbl <- quality_flags()
+  flag <- tbl$flag[tbl$encoder == encoder]
+  ffm_output_options(object, paste(flag, as.character(quality)))
 }
 
 # apply_audio_codec(): thread a verb's audio_codec choice into a pipeline. The
@@ -3435,6 +3613,29 @@ check_codec_needs_reencode <- function(reencode, video_codec = NULL,
                encoder runs.",
         "i" = "Pass {.code reencode = TRUE} to cut by re-encoding, or drop
                {.arg video_codec} / {.arg hardware}."
+      ),
+      call = call
+    )
+  }
+  invisible(NULL)
+}
+
+# Condition 2b (segment_pipeline; M135): `quality` on a stream-copying cut.
+# The same reasoning as condition 2, for the one value that names no encoder
+# and yet only means something when one runs. Separate from condition 2 so its
+# message names the argument the caller set, and checked AFTER it so a call
+# wrong about both is told about the codec first (the check that was there).
+check_quality_needs_reencode <- function(reencode, quality,
+                                         call = rlang::caller_env()) {
+  rlang::check_bool(reencode, call = call)
+  if (!reencode && !is.null(quality)) {
+    cli::cli_abort(
+      c(
+        "{.arg quality} needs a re-encoding cut.",
+        "x" = "{.code reencode = FALSE} stream-copies each segment, so no
+               encoder runs and no quality value applies.",
+        "i" = "Pass {.code reencode = TRUE} to cut by re-encoding, or drop
+               {.arg quality}."
       ),
       call = call
     )
@@ -3623,6 +3824,9 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #'   `r encoder_check_sentences()` `r contradiction_sentences("cut")`
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
+#' @param quality `r quality_param()`
+#'   A stream-copying cut (\code{reencode = FALSE}) runs no encoder, so it
+#'   refuses \code{quality} too.
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each segment's command (\code{TRUE}, default) or
 #'   only compile them (\code{FALSE}).
@@ -3655,6 +3859,7 @@ segment_video <- function(infile,
                           audio_codec = "copy",
                           hardware = c("none", "nvenc", "videotoolbox"),
                           fallback = FALSE,
+                          quality = NULL,
                           audio_stream = NULL,
                           run = TRUE,
                           parallel = FALSE) {
@@ -3721,6 +3926,7 @@ segment_video <- function(infile,
   # columns to sweep -- so one call each covers every segment.
   check_codec_needs_reencode(reencode, video_codec, hardware)
   check_audio_codec_needs_reencode(reencode, audio_codec)
+  check_quality_needs_reencode(reencode, quality)
 
   # If no names are provided, derive per-segment names from the input file.
   # Above the nvenc probe below rather than beside the fan-out, so the
@@ -3750,6 +3956,17 @@ segment_video <- function(infile,
   # impossible: this guard only ever acts on `hardware = "nvenc"`, and a
   # `reencode = FALSE` call naming nvenc has already been refused above. The
   # gate is dead code, not a live protection (M58 T2).
+  #
+  # `quality` (M135), checked here for the reason the guards above are: the
+  # seam's own check runs inside purrr::pmap() for this verb and would blame
+  # the closure. Pure -- intended_encoder() never asks the machine -- and
+  # placed ABOVE the availability probe, so a wrong value reports before an
+  # absent encoder (D036). Skipped entirely for NULL, so a quality-less call
+  # keeps its refusal order.
+  if (!is.null(quality)) {
+    check_quality(quality, intended_encoder(video_codec, hardware),
+                  call = rlang::current_env())
+  }
   check_hardware_available(video_codec, hardware, fallback)
 
   # Fan-out (one input -> many outputs) is a Layer 2 concern: build one
@@ -3769,7 +3986,7 @@ segment_video <- function(infile,
       segment_pipeline(input, output, start, end, reencode,
                        video_codec = video_codec, audio_codec = audio_codec,
                        hardware = hardware, fallback = fallback,
-                       audio_stream = audio_stream)
+                       audio_stream = audio_stream, quality = quality)
     },
     run = run,
     parallel = parallel
@@ -3824,6 +4041,7 @@ segment_pipeline <- function(input, output, start, end, reencode,
                              video_codec = NULL, audio_codec = "copy",
                              hardware = "none",
                              fallback = FALSE, audio_stream = NULL,
+                             quality = NULL,
                              call = rlang::caller_env()) {
   # The two cut contradictions (conditions 2 and 3), worded once in their
   # checkers. They live here so both callers inherit them per row (M34/D016,
@@ -3832,6 +4050,7 @@ segment_pipeline <- function(input, output, start, end, reencode,
   # purrr::pmap().
   check_codec_needs_reencode(reencode, video_codec, hardware, call = call)
   check_audio_codec_needs_reencode(reencode, audio_codec, call = call)
+  check_quality_needs_reencode(reencode, quality, call = call)
   p <- ffm_seek(ffm_files(input, output), start = start, end = end,
                 reencode = reencode)
   if (!reencode) p <- ffm_copy(p)
@@ -3846,7 +4065,7 @@ segment_pipeline <- function(input, output, start, end, reencode,
   # no prior map, so `replace` is a no-op and one line serves both.
   p <- ffm_map(p, pass_through_maps(audio_stream, call = call), replace = TRUE)
   p <- apply_audio_codec(p, audio_codec, call = call)
-  apply_video_codec(p, video_codec, hardware, fallback, call = call)
+  apply_video_codec(p, video_codec, hardware, fallback, quality, call = call)
 }
 
 
@@ -6679,7 +6898,7 @@ compare_videos_pipeline <- function(infiles, outfile,
                                     resize = TRUE, audio_input = NULL,
                                     video_codec = NULL, audio_codec = "copy",
                                     hardware = "none",
-                                    fallback = FALSE,
+                                    fallback = FALSE, quality = NULL,
                                     call = rlang::caller_env()) {
   # Conditions 4 and 5, worded once in their checkers; compare_videos_batch()
   # ALSO calls both at its front door (M58). The `call = call` on the resize
@@ -6716,7 +6935,7 @@ compare_videos_pipeline <- function(infiles, outfile,
   # The stacked video is a filtered stream, so a -codec:v rides alongside the
   # -filter_complex … [vout] mapping the blessed stack verbs emit; the default
   # video_codec = NULL emits none (M34/D016).
-  apply_video_codec(p, video_codec, hardware, fallback, call = call)
+  apply_video_codec(p, video_codec, hardware, fallback, quality, call = call)
 }
 
 #' Build a side-by-side comparison video
@@ -6763,7 +6982,7 @@ compare_videos <- function(infiles, outfile,
                            resize = TRUE, audio_input = NULL, video_codec = NULL,
                            audio_codec = "copy",
                            hardware = c("none", "nvenc", "videotoolbox"),
-                           fallback = FALSE,
+                           fallback = FALSE, quality = NULL,
                            run = TRUE) {
 
   if (!rlang::is_character(infiles) || length(infiles) < 2) {
@@ -6786,7 +7005,8 @@ compare_videos <- function(infiles, outfile,
   p <- compare_videos_pipeline(infiles, outfile, direction, resize, audio_input,
                                video_codec = video_codec,
                                audio_codec = audio_codec,
-                               hardware = hardware, fallback = fallback)
+                               hardware = hardware, fallback = fallback,
+                               quality = quality)
   # D074: the verb the caller typed names a bad limit, not the builder below.
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
@@ -6809,7 +7029,7 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
                                         video_codec = NULL,
                                         audio_codec = "copy",
                                         hardware = "none",
-                                        fallback = FALSE,
+                                        fallback = FALSE, quality = NULL,
                                         call = rlang::caller_env()) {
   # Condition 6 -- the same contradiction as compare_videos(), which is why it
   # shares that verb's checker and differs only in the way out (M58).
@@ -6856,7 +7076,7 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
   # The composited video is a filtered stream, so a -codec:v rides alongside the
   # -filter_complex … [vout] mapping ffm_overlay() emits; the default
   # video_codec = NULL emits none (M34/D016).
-  apply_video_codec(p, video_codec, hardware, fallback, call = call)
+  apply_video_codec(p, video_codec, hardware, fallback, quality, call = call)
 }
 
 #' Inset one video over another (picture-in-picture)
@@ -6903,7 +7123,7 @@ picture_in_picture <- function(main, overlay, outfile,
                                scale = 0.25, margin = 16, audio_input = NULL,
                                video_codec = NULL, audio_codec = "copy",
                                hardware = c("none", "nvenc", "videotoolbox"),
-                               fallback = FALSE,
+                               fallback = FALSE, quality = NULL,
                                run = TRUE) {
 
   check_file_readable(main)
@@ -6919,7 +7139,7 @@ picture_in_picture <- function(main, overlay, outfile,
   p <- picture_in_picture_pipeline(
     main, overlay, outfile, position, scale, margin, audio_input,
     video_codec = video_codec, audio_codec = audio_codec,
-    hardware = hardware, fallback = fallback
+    hardware = hardware, fallback = fallback, quality = quality
   )
   # D074: the verb the caller typed names a bad limit, not the builder below.
   # Below the pipeline, so the builder's own argument checks keep reporting

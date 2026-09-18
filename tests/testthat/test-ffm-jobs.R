@@ -149,6 +149,32 @@ test_that("the no-match message names the extensions it looked for", {
   )
 })
 
+# M137: the lists stay closed, so the no-match refusal says where a caller goes
+# for a container they do not carry. Only the caller who did not narrow the
+# search gets that line. A caller who passed `extension` picked the scanned set
+# themselves.
+test_that("the no-match message names list.files() only when extension was not given", {
+  empty <- withr::local_tempdir()
+
+  wide <- catch(ffm_jobs(empty, type = "video"))
+  expect_s3_class(wide, "error")
+  expect_identical(blamed_verb(wide), "ffm_jobs")
+  wide_msg <- conditionMessage(wide)
+  expect_match(wide_msg, "Looked for these extensions")
+  expect_match(wide_msg, "mp4")
+  expect_match(wide_msg, "list.files()", fixed = TRUE)
+
+  # A type other than "video", so the branch is not read off one type's vector.
+  narrowed <- catch(ffm_jobs(empty, type = "audio", extension = c("mka", "wav")))
+  expect_s3_class(narrowed, "error")
+  expect_identical(blamed_verb(narrowed), "ffm_jobs")
+  narrowed_msg <- conditionMessage(narrowed)
+  expect_match(narrowed_msg, "Looked for these extensions")
+  expect_match(narrowed_msg, "mka")
+  expect_match(narrowed_msg, "wav")
+  expect_false(grepl("list.files", narrowed_msg, fixed = TRUE))
+})
+
 test_that("an extension outside the type is refused, naming the offender and the set", {
   dir <- local_media_dir()
   cnd <- catch(ffm_jobs(dir, type = "video", extension = c("mp4", "wav")))
@@ -454,5 +480,103 @@ test_that("media_types() and media_extensions() agree and stay lower-case", {
     # separate them.
     others <- unlist(lapply(setdiff(types, type), media_extensions))
     expect_length(intersect(ext, others), 0)
+  }
+})
+
+# The three lists spelled out, so a change to any of them shows up here as a
+# diff rather than passing because the test derives its expectation from the
+# function it is testing. Order is part of the pin: media_extensions() feeds the
+# refusal that lists what a type accepts, and that list is read in this order.
+test_that("media_extensions() returns the pinned vectors", {
+  expect_identical(
+    media_extensions("audio"),
+    c("wav", "mp3", "m4a", "aac", "flac", "ogg", "oga", "opus", "wma",
+      "aiff", "aif", "mka")
+  )
+  expect_identical(
+    media_extensions("video"),
+    c("mp4", "mov", "mkv", "avi", "m4v", "webm", "mpg", "mpeg", "wmv",
+      "flv", "mts", "m2ts", "ts")
+  )
+  expect_identical(
+    media_extensions("image"),
+    c("png", "jpg", "jpeg", "tif", "tiff", "bmp", "gif", "webp")
+  )
+})
+
+# The standing guard behind M137's round-trip rule. `multi_audio_extensions`
+# (`R/ffmpeg.R`) is the package's own list of containers that hold several audio
+# streams: the multi-track separation refusal offers `.mka` and `.m4a` out of
+# it, and separate_audio_video()'s help page renders all nine. A container the
+# package puts forward that way has to sit somewhere in the scanned vocabulary,
+# or a folder of the package's own output is unlistable. Reads the vector at
+# test time rather than a copy, so the guard keeps holding as it grows.
+test_that("every multi-audio container is in exactly one media_extensions() vector", {
+  exts <- tidymedia:::multi_audio_extensions
+  homes <- vapply(
+    exts,
+    function(ext) sum(vapply(media_types(),
+                             function(ty) ext %in% media_extensions(ty),
+                             logical(1))),
+    integer(1)
+  )
+  expect_identical(
+    unname(homes), rep(1L, length(exts)),
+    info = paste0(
+      "multi-audio containers in no media_extensions() vector: ",
+      paste(names(homes)[homes == 0L], collapse = ", "),
+      "; in more than one: ",
+      paste(names(homes)[homes > 1L], collapse = ", ")
+    )
+  )
+})
+
+# The round trip itself: for each of those containers, a folder holding one such
+# file becomes a one-row jobs table, both when the caller narrows the search to
+# that extension and when it does not. The type comes from the vectors, not from
+# a table written here, so a container no vector holds fails by name rather
+# than silently picking a type here: the guard above names it, and every
+# expectation below carries it as a label. Two axes ride along, on
+# fixed positions so they survive the vector growing: the second element is
+# spelled in mixed case, and the last is read from a subdirectory under
+# `recursive = TRUE`.
+test_that("each multi-audio container round-trips through ffm_jobs()", {
+  exts <- tidymedia:::multi_audio_extensions
+  upper_at <- 2L
+  deep_at <- length(exts)
+  for (i in seq_along(exts)) {
+    ext <- exts[[i]]
+    type <- Filter(function(ty) ext %in% media_extensions(ty), media_types())
+    # Every expectation in the loop carries the container it is on. Without the
+    # label a failure at the fifth iteration reads as a bare path mismatch, and
+    # the reader has to count the vector to learn which container broke.
+    expect_identical(length(type), 1L, info = ext)
+    type <- type[[1]]
+
+    dir <- withr::local_tempdir()
+    spelled <- if (i == upper_at) {
+      sub("^(.)", "\\U\\1", ext, perl = TRUE)
+    } else {
+      ext
+    }
+    stem <- if (i == deep_at) {
+      dir.create(file.path(dir, "nested"))
+      file.path("nested", "clip")
+    } else {
+      "clip"
+    }
+    name <- paste0(stem, ".", spelled)
+    file.create(file.path(dir, name))
+    expected <- file.path(
+      normalizePath(dir, winslash = "/", mustWork = TRUE),
+      name
+    )
+
+    for (narrowed in list(ext, NULL)) {
+      jobs <- ffm_jobs(dir, type = type, extension = narrowed,
+                       recursive = i == deep_at)
+      expect_identical(nrow(jobs), 1L, info = ext)
+      expect_identical(jobs$input, expected, info = ext)
+    }
   }
 })

@@ -35,6 +35,17 @@ Windows reports such a link as existing, so there it can still be a row.
 The call gives an error, instead of zero rows, when nothing matches. With
 \code{recursive = TRUE} the search follows a symbolic link to a directory,
 so a row can name a file outside \code{directory}.
+
+The scanned extensions include \code{.mka} as audio and \code{.ts} as
+video. \code{\link[=separate_audio_video]{separate_audio_video()}} recommends \code{.mka} or \code{.m4a} for
+multi-track audio, and this function reads both as audio, so it lists a
+folder of that output. Not every container that can hold several audio
+streams is audio here. \code{.ts}, like \code{.mp4} and \code{.mkv}, is
+video, so multi-track audio written to one of those is a row under
+\code{type = "video"}. The name \code{.ts} also belongs to TypeScript
+source files, and this function reads names rather than file contents. A
+folder of TypeScript sources therefore comes back as video rows when you
+ask for \code{type = "video"}.
 }
 \description{
 List the media files in a directory and return them as a jobs table for

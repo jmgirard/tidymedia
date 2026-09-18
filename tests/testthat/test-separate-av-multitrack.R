@@ -1392,3 +1392,31 @@ test_that("every measured refusing container keeps the enriched abort as worded"
     expect_match(body[[4]], "a container that holds several", info = ext)
   }
 })
+
+# The round trip M137 is about ------------------------------------------------
+
+test_that("a .mka file this verb wrote is the single row ffm_jobs() returns", {
+  # The refusal above tells a multi-track caller to write a container that holds
+  # several audio streams, and `.mka` is the first one it names. Until M137 the
+  # audio vocabulary left `.mka` out, so the folder holding that output was
+  # refused by the package's own scanner. This is the whole trip in one test:
+  # the verb writes the file, and the scanner finds it.
+  #
+  # The output goes into its own directory, so the row asserted below is the
+  # file this test wrote and not a leftover from another one.
+  skip_if_no_ffmpeg()
+  infile <- make_multitrack_video()
+  out_dir <- withr::local_tempdir()
+  audio <- file.path(out_dir, "tracks.mka")
+  video <- sep_fresh_video()
+
+  separate_audio_video(infile, audio, video)
+  expect_true(file.exists(audio))
+
+  jobs <- ffm_jobs(out_dir, type = "audio")
+  expect_identical(nrow(jobs), 1L)
+  expect_identical(
+    jobs$input,
+    normalizePath(audio, winslash = "/", mustWork = TRUE)
+  )
+})

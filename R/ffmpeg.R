@@ -5693,6 +5693,56 @@ batch_codec_cell <- function(value) {
   if (length(value) == 1L && is.na(value)) NULL else value
 }
 
+# check_batch_quality(): the `quality` argument and column at a _batch verb's
+# front door (M136). Column side: numeric, or the all-NA column R types logical
+# (the codec-column shape above, for the same reason); an NA cell is the column
+# form of `quality = NULL` (D022), so that row keeps its encoder's own default
+# whatever the argument says. Argument side: the scalar repeated per row, as
+# batch_arg_rows() repeats every other argument. Each non-NULL value then takes
+# M135's check_quality() against the encoder THAT row would encode with --
+# intended_encoder() over the row's resolved codec and the batch-wide
+# `hardware`, pure, so this refuses before the availability probe (D036) and
+# the abort names the verb rather than purrr::pmap() (D076, M56). A "copy" cell
+# is handed to check_quality() as itself: intended_encoder() would ask
+# codec_family() for a family "copy" does not have, and the caller's error is
+# the copy, not the family. check_batch_cell() names the row only when the
+# value arrived in a column; an argument applies to every row.
+#
+# `codec_rows` is the per-row resolved `video_codec` (batch_arg_rows() with
+# batch_codec_cell()), passed in rather than read here because
+# format_for_web_batch() fixes its codec by identity and honours no column.
+check_batch_quality <- function(jobs, quality, codec_rows, hardware,
+                                call = rlang::caller_env()) {
+  has_col <- "quality" %in% names(jobs)
+  if (has_col) {
+    ok <- function(x) is.numeric(x) || (is.logical(x) && all(is.na(x)))
+    if (!ok(jobs$quality)) {
+      check_batch_cell(which(!is.na(jobs$quality))[1], cli::cli_abort(
+        "The {.field quality} column of {.arg jobs} must be numeric
+         ({.val {NA}} to leave that row's encoder default in place).",
+        call = call
+      ))
+    }
+  }
+  rows <- if (has_col) {
+    lapply(jobs$quality, batch_stream_cell)
+  } else {
+    rep(list(quality), nrow(jobs))
+  }
+  for (i in seq_along(rows)) {
+    if (is.null(rows[[i]])) next
+    vc <- codec_rows[[i]]
+    encoder <- if (identical(vc, "copy")) {
+      vc
+    } else {
+      intended_encoder(vc, hardware, call = call)
+    }
+    check_batch_cell(if (has_col) i else NA_integer_,
+                     check_quality(rows[[i]], encoder, call = call))
+  }
+  invisible(jobs)
+}
+
 # batch_arg_rows(): the per-row values a jobs table will hand the pipeline for
 # ONE argument -- the override column's cells where the table carries one,
 # resolved through `resolve`, and the scalar argument repeated otherwise. This

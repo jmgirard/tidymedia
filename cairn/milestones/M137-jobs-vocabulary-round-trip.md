@@ -26,7 +26,7 @@ A folder of files the package told the user to write becomes a jobs table.
 - [x] AC3: Every element of `multi_audio_extensions`, read from that vector at test time rather than from a copy, appears in exactly one `media_extensions()` vector, and the failure message names any element that appears in none. Covered by a test in `tests/testthat/test-ffm-jobs.R`.
 - [x] AC4: A file the package wrote is listable by the package. Under `skip_if_no_ffmpeg()`, `separate_audio_video()` writing the three-track input from `make_multitrack_video()` to a `.mka` output inside its own `withr::local_tempdir()` produces a file that `ffm_jobs(<that directory>, type = "audio")` returns as the single row, its `input` cell naming that file. Covered by a test in `tests/testthat/test-separate-av-multitrack.R`.
 - [x] AC5: When no file matches and `extension` was not supplied, `ffm_jobs()` aborts with a message naming the extensions it looked for and naming `list.files()` as the way to reach a container the scanned set omits. When `extension` was supplied, it aborts naming the extensions it looked for and adds no such bullet. Both aborts name `ffm_jobs` as the call. The supplied-`extension` branch is asserted for a type other than `"video"`. Covered by tests in `tests/testthat/test-ffm-jobs.R`.
-- [ ] AC6: `devtools::document()` produces a `man/` diff confined to `man/ffm_jobs.Rd`, whose `\value` section states that a `.ts` file that is TypeScript source is returned as a video row. `NEWS.md` names both added containers and that same consequence. `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R man/ffm_jobs.Rd` prints only its sentence-count line and exits 0. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
+- [x] AC6: `devtools::document()` produces a `man/` diff confined to `man/ffm_jobs.Rd`, whose `\value` section states that a `.ts` file that is TypeScript source is returned as a video row. `NEWS.md` names both added containers and that same consequence. `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R man/ffm_jobs.Rd` prints only its sentence-count line and exits 0. `devtools::check()` reports 0 errors, 0 warnings and 0 notes. `devtools::test()` reports 0 failures. `pkgdown::check_pkgdown()` reports no problems.
 
 ## Coverage
 
@@ -123,3 +123,72 @@ merge was needed.
   naming those two extensions and carried no `list.files` text. Both
   `conditionCall()` values name `ffm_jobs`. The narrowed branch was asserted on
   `type = "audio"`.
+- AC6 met. `devtools::document()` rewrote nothing: `git status` was clean after
+  it ran, and the branch's whole `man/` diff is `man/ffm_jobs.Rd`. That file's
+  `\value` section carries the TypeScript sentence, and `NEWS.md` names `.mka`
+  as audio, `.ts` as video, and the same consequence.
+  `LC_ALL=en_US.UTF-8 Rscript tools/doc_prose_report.R man/ffm_jobs.Rd` printed
+  one line, "man/ffm_jobs.Rd: 47 sentences", and exited 0.
+  `devtools::check()` reported Status OK: 0 errors, 0 warnings, 0 notes, in 8m
+  19s. `devtools::test()` reported 0 failures, 17767 passing, with 12 warnings
+  and 5 skips, none of them in the two files this milestone touched.
+  `pkgdown::check_pkgdown()` reported no problems.
+
+A measurement AC1's wording invites, taken after the tick. With a tenth,
+homeless container spliced into the vector the tests read, the standing guard
+fails naming `zzz`. The round-trip sweep fails in the same run with "Expected
+`type` to have length 1", which does not name it. Both tests sit in
+`tests/testthat/test-ffm-jobs.R`, the file AC1 names, so a homeless container
+does fail by name there. The sweep on its own does not. Finding O9 below is
+that gap, and it is the maintainer's to dispose of.
+
+### Findings
+
+Three fresh-context reviewers ran against distinct evidence bases. An Opus
+diff-bug lens read `git diff master..HEAD`. A Sonnet blame-history lens read
+`git log` and `git blame` on the modified lines. A Sonnet prior-review lens read
+the archived `## Review` sections.
+
+The prior-review lens reported zero findings. It found M121's review logging
+the missing `.mka` as candidate O1, and M121-1 recording the closed vocabulary.
+It judged this diff to resolve O1 under a newly recorded narrowing rather than
+to reopen M121-1 silently. Its `gh` probe for inline review comments returned an
+empty list, so it did not walk the pull-request threads.
+
+The blame lens reported one finding, which the Opus lens reported as O2. Its
+other paragraph is the same point restated about the milestone's own falsifier.
+
+- O1: the `list.files()` bullet fires on every wide no-match. An empty
+  directory, or one holding only images, gets it too. It can therefore name a
+  cause the code never checked. AC5 as written asks for exactly this,
+  unconditionally on the wide branch.
+- O2: the `@return`, `NEWS.md` and `.Rd` sentence says the scanned extensions
+  include `.ts` as video "so this function lists a folder of the package's own
+  multi-track audio output". Multi-track audio written to `.ts` is found under
+  `type = "video"` and not under `type = "audio"`. Verified against the code.
+  The runtime refusal recommends `.mka` and `.m4a` only, and both are
+  audio-typed. `.ts` joins `mp4`, `mov`, `mkv` and `webm`, four containers in
+  `multi_audio_extensions` that were already video-typed before this branch.
+- O3: no comment records why `ts` went to video rather than audio, given that
+  the admitting evidence is a vector whose name says audio.
+- O4: ROADMAP candidate row (c) still reads that the video list lacks `ts` and
+  the audio list lacks `mka`. Both are now false.
+- O5: the milestone title still says `ffm_jobs()` lists every container the
+  package itself writes, the claim this milestone's own claim audit retracted.
+- O6: the caller who asks for an extension outside its type hits the older
+  refusal, which names no escape hatch. AC5 scopes the bullet to the no-match
+  branch only.
+- O7: the `NEWS.md` insertion leaves three short ragged lines mid-paragraph.
+- O8: the two new tests reach `multi_audio_extensions` through `:::` while
+  calling `media_extensions()` and `media_types()` bare.
+- O9: a failure inside the round-trip sweep does not name the container it was
+  on, because the loop passes no label. Measured above.
+
+The Opus lens also recorded five clean probes. `ts` collides with nothing:
+`media_extensions()` is read only in `R/ffm_jobs.R`, and the scan pattern is
+anchored, so `extension = "ts"` cannot match `.mts` or `.m2ts`. Case handling is
+consistent across the scan, the argument and the helper. The new tests are not
+vacuous, and the AC5 test genuinely fails an implementation that emits the
+bullet unconditionally. The end-to-end test's video output is written outside
+the scanned directory. No vignette, README or other help page carries a stale
+count.

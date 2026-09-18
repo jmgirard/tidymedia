@@ -1,6 +1,6 @@
 # M136: The batch re-encoding functions take `quality` as an argument and as a jobs column
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M135
 - **Driving RR:** —
@@ -39,7 +39,7 @@ A batch caller sets the encoder's own quality number for the whole batch or per 
 - [x] T2: `quality` on `standardize_video_batch()`, `format_for_web_batch()`, `anonymize_video_batch()` and `crop_video_batch()`, picked per row like `video_codec` (`R/ffmpeg.R:2366`), with the AC2 and AC3 tests. Give each row its own output path in the column-form cells (LESSONS M109).
 - [x] T3: `quality` on `segment_video_batch()`, `separate_audio_video_batch()`, `compare_videos_batch()` and `picture_in_picture_batch()` (`R/ffmpeg.R:4059`, `:4714`, `:5258` and the fan-in tables per D015), with their tests.
 - [x] T4: `batch_quality_param()` beside `batch_hardware_param()` (`R/task-doc.R`); the `NEWS.md` entry; `devtools::document()`; the prose sweep.
-- [ ] T5: `devtools::check()`, `devtools::test()` alone (LESSONS M124), and `pkgdown::check_pkgdown()`.
+- [x] T5: `devtools::check()`, `devtools::test()` alone (LESSONS M124), and `pkgdown::check_pkgdown()`.
 
 ## Work log
 
@@ -54,6 +54,7 @@ A batch caller sets the encoder's own quality number for the whole batch or per 
 - 2026-09-17: T2 and T3 done in one commit (all eight sites are in `R/ffmpeg.R`, so the code does not split by task). The grid in `test-quality-batch.R` over AC1's filter: 52 pairs, both range ends, the argument form, and NA over the argument (D022). Two planted defects went red where expected: a no-op `emit_quality()` failed AC2 alone (208 failures) and a no-op `check_batch_quality()` failed AC3 alone (288). `segment_video_batch()` also refuses a cell on a `reencode = FALSE` row per row (M135 condition 2b). The two census tests (`test-nvenc-probe-blame.R`, `test-unguarded-argument-front-doors.R`) grew by the 40 cells the eight formals add, all kept, pins updated.
 - 2026-09-17: T4 done. `batch_quality_param(scalar, output)` writes the 8 `\item{quality}` entries; each `jobs` entry names the column. NEWS: the M135 entry's "do not take it yet" sentence removed and a new entry added. `document()` ran under roxygen2 8.0.0 against the 8.1.0 pin (LESSONS M128); the man diff carries only the quality text. Prose sweep over the 8 pages: no finding, exit 0. `pkgdown::check_pkgdown()`: no problems.
 - 2026-09-17: claim audit: 21 claims read, 0 corrected — R/ffmpeg.R, R/task-doc.R, NEWS.md, man/*_batch.Rd, tests/testthat/test-quality-batch.R, test-quality-batch-col.R, test-nvenc-probe-blame.R, test-unguarded-argument-front-doors.R. One note: on `segment_video_batch()` a non-numeric `quality` column on a `reencode = FALSE` row reports the cut contradiction first; no added line claims otherwise.
+- 2026-09-17: T5 done. `devtools::check()` 0 errors, 0 warnings, 0 notes (7m 19s). `devtools::test()` alone: 0 failures (the two census files re-run clean after their pins moved). `pkgdown::check_pkgdown()`: no problems. Status set to review.
 
 ## Decisions
 

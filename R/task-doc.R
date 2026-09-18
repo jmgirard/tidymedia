@@ -75,6 +75,32 @@ hardware_param <- function(null_default = TRUE, video_only = FALSE) {
   )
 }
 
+# The `quality` argument on a scalar function that re-encodes video (M135).
+# `fixed_h264` is TRUE where the function has no `video_codec` formal and the
+# recipe fixes the H.264 family, so only the three H.264 encoders can apply.
+quality_param <- function(fixed_h264 = FALSE) {
+  rd_sentences(
+    "A number, or \\code{NULL} (default) to leave the encoder's own default in place.",
+    "It is the encoder's own rate-control value, passed through unchanged.",
+    paste0("\\code{libx264} and \\code{libx265} read it as \\code{-crf} (0 to 51), ",
+           "the nvenc encoders as \\code{-cq} (0 to 51), ",
+           "and the videotoolbox encoders as \\code{-q:v} (1 to 100)."),
+    "Each scale is its own: the same number means something different on each encoder.",
+    "A value outside the encoder's range is refused.",
+    if (fixed_h264) {
+      paste0("The encoder is \\code{libx264}, \\code{h264_nvenc} or ",
+             "\\code{h264_videotoolbox}, as \\code{hardware} chooses.")
+    } else {
+      paste0("An encoder outside those seven, such as \\code{libvpx-vp9}, ",
+             "or a \\code{video_codec} of \\code{\"copy\"} or \\code{NULL} ",
+             "under \\code{hardware = \"none\"}, is refused with \\code{quality} set.")
+    },
+    paste0("When \\code{fallback = TRUE} falls back to software, the value is ",
+           "dropped and the message says so, because it belonged to the ",
+           "hardware encoder's scale.")
+  )
+}
+
 # What resolving a hardware backend costs. Every `hardware` argument of a task
 # function carries it, and test-nvenc-docs.R checks that it does.
 hardware_probe_sentences <- function() {

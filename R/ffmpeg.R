@@ -1366,6 +1366,7 @@ crop_video_pipeline <- function(input, output, width, height,
                                 video_codec = NULL, audio_codec = "copy",
                                 hardware = "none",
                                 fallback = FALSE, audio_stream = NULL,
+                                quality = NULL,
                                 call = rlang::caller_env()) {
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = width, height = height, x = x, y = y)
@@ -1383,8 +1384,8 @@ crop_video_pipeline <- function(input, output, width, height,
   # The default video_codec = NULL emits no -codec:v, so the output keeps its
   # container's default *video* encoder. This no longer makes the whole command
   # byte-identical to the pre-M34 one -- M35's audio default added -codec:a copy
-  # (M34/D016, M35/D017).
-  apply_video_codec(p, video_codec, hardware, fallback, call = call)
+  # (M34/D016, M35/D017). `quality` rides the same seam (M135).
+  apply_video_codec(p, video_codec, hardware, fallback, quality, call = call)
 }
 
 #' Crop a video to a rectangular region
@@ -1408,6 +1409,7 @@ crop_video_pipeline <- function(input, output, width, height,
 #'   in \code{.mp4}. In that case, name an encoder.
 #' @param hardware `r hardware_param(null_default = TRUE)`
 #' @param fallback `r fallback_param("software", unset = "picking")`
+#' @param quality `r quality_param()`
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
@@ -1425,7 +1427,8 @@ crop_video <- function(infile, outfile, width, height,
                        x = "(in_w-out_w)/2", y = "(in_h-out_h)/2",
                        video_codec = NULL, audio_codec = "copy",
                        hardware = c("none", "nvenc", "videotoolbox"),
-                       fallback = FALSE, audio_stream = NULL, run = TRUE) {
+                       fallback = FALSE, quality = NULL, audio_stream = NULL,
+                       run = TRUE) {
 
   check_file_readable(infile)
   rlang::check_string(outfile)
@@ -1457,7 +1460,7 @@ crop_video <- function(infile, outfile, width, height,
 
   p <- crop_video_pipeline(infile, outfile, width, height, x, y,
                       video_codec, audio_codec, hardware, fallback,
-                      audio_stream)
+                      audio_stream, quality = quality)
   # D074: the verb the caller typed names a bad limit, not the builder below.
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
@@ -1474,6 +1477,7 @@ crop_video <- function(infile, outfile, width, height,
 # gets the same recipe. Command assembly stays in Layer 1 (IP1/D002).
 format_for_web_pipeline <- function(input, output, hardware = "none",
                                     fallback = FALSE, audio_stream = NULL,
+                                    quality = NULL,
                                     call = rlang::caller_env()) {
   p <- ffm_files(input, output)
   p <- ffm_crop(p, width = "floor(in_w/2)*2", height = "floor(in_h/2)*2")
@@ -1495,8 +1499,12 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
   # above, so one line below it is as late as the resolution can go. The
   # compiled command is unchanged: ffm_groups() emits by group, not by call
   # order (measured over every cell by data-raw/nvenc-probe-order-baseline.R).
-  video_codec <- resolve_hw_encoder("libx264", hardware, fallback, call = call)
-  p <- ffm_codec(p, video = video_codec, audio = "aac")
+  #
+  # Through the shared emit half since M135, so `quality` takes the one seam
+  # every verb uses: the literal "libx264" is checked (idempotently) and
+  # resolved there, and the flag is emitted after the codec.
+  p <- ffm_codec(p, audio = "aac")
+  p <- emit_video_codec(p, "libx264", hardware, fallback, quality, call = call)
   p <- ffm_pixel_format(p, "yuv420p")
   ffm_output_options(p, "-movflags +faststart")
 }
@@ -1518,6 +1526,7 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #'   \code{\link{has_hardware_encoder}}.
 #'   `r hardware_probe_sentences()`
 #' @param fallback `r fallback_param("libx264")`
+#' @param quality `r quality_param(fixed_h264 = TRUE)`
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @return `r command_return()`
 #' @seealso [ffm_codec()] and [ffm_pixel_format()], among the pipeline functions
@@ -1533,7 +1542,8 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #' @export
 format_for_web <- function(infile, outfile,
                            hardware = c("none", "nvenc", "videotoolbox"),
-                           fallback = FALSE, audio_stream = NULL, run = TRUE) {
+                           fallback = FALSE, quality = NULL,
+                           audio_stream = NULL, run = TRUE) {
 
   check_file_readable(infile)
   rlang::check_string(outfile)
@@ -1544,7 +1554,8 @@ format_for_web <- function(infile, outfile,
   # unchanged and this verb gains no guard that reorders its complaints. The
   # BATCH sibling keeps its own, where it is load-bearing.
 
-  p <- format_for_web_pipeline(infile, outfile, hardware, fallback, audio_stream)
+  p <- format_for_web_pipeline(infile, outfile, hardware, fallback, audio_stream,
+                               quality = quality)
   # D074: the verb the caller typed names a bad limit, not the builder below.
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
@@ -1709,7 +1720,7 @@ standardize_video <- function(infile, outfile,
                               video_codec = "libx264", audio_codec = "copy",
                               pixel_format = "yuv420p",
                               hardware = c("none", "nvenc", "videotoolbox"),
-                              fallback = FALSE,
+                              fallback = FALSE, quality = NULL,
                               audio_stream = NULL, run = TRUE) {
 
   check_file_readable(infile)
@@ -1749,7 +1760,7 @@ standardize_video <- function(infile, outfile,
 
   p <- standardize_pipeline(infile, outfile, width, height, fps, video_codec,
                        audio_codec, pixel_format, hardware, fallback,
-                       audio_stream)
+                       audio_stream, quality = quality)
   # D074: the verb the caller typed names a bad limit, not the builder below.
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
@@ -1771,7 +1782,7 @@ standardize_video <- function(infile, outfile,
 standardize_pipeline <- function(input, output, width, height, fps, video_codec,
                                  audio_codec = "copy", pixel_format,
                                  hardware = "none", fallback = FALSE,
-                                 audio_stream = NULL,
+                                 audio_stream = NULL, quality = NULL,
                                  call = rlang::caller_env()) {
   p <- ffm_files(input, output)
   # Resolution: exact when both given; aspect-preserving with an even output
@@ -1847,7 +1858,7 @@ standardize_pipeline <- function(input, output, width, height, fps, video_codec,
   # against `pixel_format` -- both are still refused, and the refusal is
   # identical with and without hardware = "nvenc", which is what this milestone
   # promises (M095 gate).
-  p <- emit_video_codec(p, video_codec, hardware, fallback, call = call)
+  p <- emit_video_codec(p, video_codec, hardware, fallback, quality, call = call)
   ffm_output_options(p, "-movflags +faststart")
 }
 
@@ -1914,7 +1925,7 @@ anonymize_video <- function(infile, outfile, regions,
                             video_codec = "libx264", audio_codec = "copy",
                             pixel_format = "yuv420p",
                             hardware = c("none", "nvenc", "videotoolbox"),
-                            fallback = FALSE,
+                            fallback = FALSE, quality = NULL,
                             audio_stream = NULL, run = TRUE) {
 
   check_file_readable(infile)
@@ -1927,7 +1938,7 @@ anonymize_video <- function(infile, outfile, regions,
 
   p <- anonymize_pipeline(infile, outfile, regions, color, video_codec,
                      audio_codec, pixel_format, hardware, fallback,
-                     audio_stream)
+                     audio_stream, quality = quality)
   # D074: the verb the caller typed names a bad limit, not the builder below.
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
@@ -1947,7 +1958,7 @@ anonymize_video <- function(infile, outfile, regions,
 anonymize_pipeline <- function(input, output, regions, color, video_codec,
                                audio_codec = "copy", pixel_format,
                                hardware = "none", fallback = FALSE,
-                               audio_stream = NULL,
+                               audio_stream = NULL, quality = NULL,
                                call = rlang::caller_env()) {
   check_regions(regions, call = call)
   # The region VALUES, beside the structure check (M65): the same per-field
@@ -2023,8 +2034,11 @@ anonymize_pipeline <- function(input, output, regions, color, video_codec,
   # of this function and keep their positions; the compiled command is unchanged
   # either way, since ffm_groups() emits by group and not by call order
   # (measured over every cell by data-raw/nvenc-probe-order-baseline.R).
-  video_codec <- resolve_hw_encoder(video_codec, hardware, fallback, call = call)
-  p <- ffm_codec(p, video = video_codec)
+  #
+  # Through the shared emit half since M135, so `quality` takes the one seam
+  # every verb uses. Its own token check is idempotent over the check_token()
+  # at the top of this function, so the refusal order above is unchanged.
+  p <- emit_video_codec(p, video_codec, hardware, fallback, quality, call = call)
   ffm_pixel_format(p, pixel_format)
 }
 

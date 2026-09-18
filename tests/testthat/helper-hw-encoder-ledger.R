@@ -25,21 +25,18 @@
 #
 # The sites, and why each is safe:
 #
-#   format_for_web_pipeline  literal        the recipe fixes H.264, so the
-#                                           resolver is handed "libx264"
-#                                           written out (R/ffmpeg.R); the
-#                                           verb has no video_codec argument
-#   anonymize_pipeline       checked-above  check_token(video_codec,
-#                                           allow_null = TRUE) runs at the top
-#                                           of the body, well above the
-#                                           resolver call at the bottom
 #   emit_video_codec         emit-half      check_video_codec() is the first
 #                                           line of the body, above the
 #                                           resolver call (M106)
+#
+# One site since M135. format_for_web_pipeline() (literal: the recipe's own
+# "libx264") and anonymize_pipeline() (checked-above: check_token() at the top
+# of the body) each called the resolver directly until the `quality` seam gave
+# them a reason to go through the emit half instead; both dispositions still
+# hold there and are what test-hw-encoder-ledger.R's discrimination cases
+# exercise, on bodies that fail them.
 tm_hw_encoder_ledger <- function() {
-  c(format_for_web_pipeline = "literal",
-    anonymize_pipeline      = "checked-above",
-    emit_video_codec        = "emit-half")
+  c(emit_video_codec = "emit-half")
 }
 
 # The checkers that count as checking a codec token. check_video_codec() is the

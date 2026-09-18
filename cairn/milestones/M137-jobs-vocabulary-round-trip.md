@@ -64,6 +64,8 @@ A folder of files the package told the user to write becomes a jobs table.
 - 2026-09-18: claim audit: 27 claims read, 2 corrected — R/ffm_jobs.R, man/ffm_jobs.Rd, NEWS.md, tests/testthat/test-ffm-jobs.R. The `@return` and `NEWS.md` line claiming the lists cover every container the package writes was false. The package writes whatever container the caller names in `output`. It now says the lists include `.mka` as audio and `.ts` as video. It also says the function lists a folder of the package's own multi-track audio output, which is what T3 asserts. A test comment said the multi-track refusal names all nine members of `multi_audio_extensions`. The refusal offers two of them, and the help page renders all nine, so the comment now says that. The same reader re-read both corrections once and both hold.
 - 2026-09-18: T1 through T4 land in one checkpoint commit rather than four. Three of them edit `R/ffm_jobs.R` and two edit `tests/testthat/test-ffm-jobs.R`, Per-task commits therefore need partial staging of the same files. One clean `devtools::test()` run covers all four, so each checkbox is ticked against a green suite that includes its own code.
 
+- 2026-09-18: step-7 approval: m137-jobs-vocabulary-round-trip approved for merge.
+
 ## Decisions
 
 ### M137-1 — The scanned lists hold every container the package writes or names (2026-09-18)

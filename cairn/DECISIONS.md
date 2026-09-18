@@ -4408,3 +4408,38 @@ and fixing pre-existing findings at review.
 **Falsified by** a rewrite milestone under this rule whose review still finds
 false claims that the branch introduced, round after round. That would show
 the rule does not hold claims fixed, and the problem is somewhere else.
+
+## D094 — The combinatorial guard sweeps skip on CRAN for their cost, not for a spawn (2026-09-18, from the 0.2.0 release walk; extends D090 with a second reason for the same gate rather than widening its spawn argument, and leaves all of D090, D004, D024 and D034 standing)
+
+Three test files call `skip_sweep_on_cran()` at their top level, above the first
+`test_that()`, so CRAN's check of the submitted tarball never enumerates their
+domains: `test-nvenc-probe-blame.R`, `test-unguarded-argument-front-doors.R` and
+`test-timeout-refusal-blame.R`.
+
+**Why they are not D090's case.** D090 gates every test that would spawn FFmpeg,
+FFprobe or MediaInfo. These three spawn nothing — they compile commands and read
+which function a wrong argument is blamed on. D090's argument therefore does not
+reach them, and this entry does not stretch it to: the gate is the same
+`skip_on_cran()`, the reason behind it is different, and the helper is separate
+so the two reasons stay legible at the call site.
+
+**Why cost is sufficient here.** Measured at 0.2.0 on 2026-09-18, in a CRAN-mode
+check with no media binaries on the PATH and the config directory redirected:
+the three files cost 244s of the suite's 327s, and the whole check 6m14s. CRAN
+flags a check over ten minutes and runs it on machines slower than the one that
+measured this, so the margin was not one to submit on. Each sweep's cost grows
+with the export surface it computes over, while what it establishes — which
+function a bad argument is blamed on — is a fact about this package rather than
+about the machine checking it, so the machine that checks it is free to be
+another one.
+
+**What is given up, and what is not.** CRAN no longer verifies the blame surface
+on its own images. Every GitHub Actions job sets `NOT_CRAN=true`, so all three
+run in full on every push: 2,359 assertions in 237.7s, measured the same day.
+That is the same dependency on an action the repo does not control that D090
+already records as a known exposure, not a new one.
+
+**Falsified by** a CRAN-mode check that still approaches ten minutes with these
+three skipped, which would show the cost was never concentrated where this entry
+says it was; or by a blame defect reaching a release because the only runner
+that would have caught it was one CRAN does not use.

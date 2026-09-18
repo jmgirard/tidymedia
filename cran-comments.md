@@ -1,10 +1,12 @@
 ## R CMD check results
 
-Local `R CMD check --as-cran`: 0 errors | 0 warnings | 0 notes
-(tidymedia 0.2.0, 2026-09-18, R 4.6.1, macOS arm64, 8m 18s)
+`R CMD check --as-cran`: 0 errors | 0 warnings | 1 note
 
-* This is a new release. CRAN's incoming checks are expected to raise the usual
-  "New submission" NOTE.
+The note is "New submission". Measured on 2026-09-18 at tidymedia 0.2.0, R
+4.6.1, macOS arm64, in 2m 20s. That run had neither FFmpeg nor MediaInfo on the
+PATH, and no remembered program location, so it is the same condition a CRAN
+machine checks in. With both tools present the same check gives 0 notes and
+takes longer, because the execution tests then run.
 
 ## Test environments
 

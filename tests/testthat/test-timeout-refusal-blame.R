@@ -11,6 +11,9 @@
 # The domain is COMPUTED (`tm_timeout_domain()`), not recalled, for M70's
 # reason: an export that starts reaching a spawn joins the sweep on its own.
 
+# Costs 33s of a CRAN-mode run and spawns nothing (see skip_sweep_on_cran()).
+skip_sweep_on_cran()
+
 test_that("the sweep runs over a non-empty domain with a cell for each member", {
   dir <- withr::local_tempdir()
   dom <- tm_timeout_domain()

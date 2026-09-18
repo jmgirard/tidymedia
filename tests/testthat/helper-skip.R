@@ -14,6 +14,25 @@
 # helper, ahead of the binary question, so the reason reported on CRAN is "On
 # CRAN" whether or not the machine happens to have the binary.
 
+# The combinatorial guard sweeps skip on CRAN too, for a different reason than
+# the binary helpers below: they spawn nothing, so D090's spawn argument does
+# not reach them. What rules them out is time. Measured on 2026-09-18 at 0.2.0,
+# in a CRAN-mode check with no media binaries on the PATH, the three files this
+# helper guards cost 244s of the suite's 327s, and the whole check 6m14s. CRAN
+# flags a check over ten minutes, and its machines are slower than the one that
+# measured this.
+#
+# Each sweep computes its own domain and crosses it with wrong-argument forms,
+# so its cost grows with the export surface while what it proves -- which
+# function a bad argument is blamed on -- is a fact about this package, not
+# about the machine checking it. Every GitHub Actions job sets NOT_CRAN=true, so
+# all three still run in full on every push; only CRAN opts out. Call this at
+# the TOP LEVEL of the file, above the first test_that(), so the domain is never
+# enumerated on CRAN's machine.
+skip_sweep_on_cran <- function() {
+  testthat::skip_on_cran()
+}
+
 skip_if_no_ffmpeg <- function() {
   testthat::skip_on_cran()
   testthat::skip_if_not(

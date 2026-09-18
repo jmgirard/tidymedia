@@ -12,6 +12,9 @@
 # rounds each found one more instance of this class by hand, which is what a
 # hand-list buys.
 
+# Costs 135s of a CRAN-mode run and spawns nothing (see skip_sweep_on_cran()).
+skip_sweep_on_cran()
+
 test_that("the sweep quantifies over a domain it computes, not a list", {
   dir <- withr::local_tempdir()
   cells <- tm_nvenc_wrong_arg_cells(dir)

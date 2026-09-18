@@ -32,7 +32,12 @@ cran_helpers <- list(
   skip_if_no_ffprobe = skip_if_no_ffprobe,
   skip_if_no_mediainfo = skip_if_no_mediainfo,
   skip_if_no_nvenc = skip_if_no_nvenc,
-  skip_if_no_videotoolbox = skip_if_no_videotoolbox
+  skip_if_no_videotoolbox = skip_if_no_videotoolbox,
+  # Not a binary helper: it guards the combinatorial sweeps, which spawn
+  # nothing and are skipped on CRAN for their cost. Held to the same CRAN bar
+  # as the rest, and to its own control below, since the binary map cannot
+  # carry it.
+  skip_sweep_on_cran = skip_sweep_on_cran
 )
 
 test_that("each skip helper skips FOR CRAN when NOT_CRAN says CRAN", {
@@ -79,6 +84,16 @@ test_that("NOT_CRAN=true lifts the CRAN skip from the three name helpers", {
       info = paste0(name, " still skipped with NOT_CRAN=true and the binary on PATH")
     )
   }
+})
+
+test_that("NOT_CRAN=true lifts the CRAN skip from the sweep helper", {
+  # The sweep helper's own control. It asks no binary question, so it is not in
+  # the map above and needs no PATH gate: off CRAN it must not skip at all,
+  # which is what keeps the three sweeps running on every other runner.
+  expect_identical(
+    tm_skip_reason(skip_sweep_on_cran, "true"), NA_character_,
+    info = "skip_sweep_on_cran() skipped with NOT_CRAN=true"
+  )
 })
 
 test_that("the CRAN skip comes before the binary question", {

@@ -40,11 +40,13 @@ test_that("AC2: every reachable row emits its flag after the codec; NULL emits n
       if ("video_codec" %in% names(formals(f))) {
         args$video_codec <- pair[["video_codec"]]
       }
-      value <- row$min + 1
-      args$quality <- value
-      cmds <- quality_grid_commands(do.call(v, args, envir = asNamespace("tidymedia")))
-      expect_quality_flag_after_codec(cmds, enc, row$flag, value,
-                                      info = paste(v, enc))
+      # Both ends of the range are accepted: min + 1 inside it, max on it.
+      for (value in c(row$min + 1, row$max)) {
+        args$quality <- value
+        cmds <- quality_grid_commands(do.call(v, args, envir = asNamespace("tidymedia")))
+        expect_quality_flag_after_codec(cmds, enc, row$flag, value,
+                                        info = paste(v, enc, value))
+      }
       args["quality"] <- list(NULL)
       cmds <- quality_grid_commands(do.call(v, args, envir = asNamespace("tidymedia")))
       expect_true(any(grepl(paste0("-codec:v ", enc), cmds, fixed = TRUE)),

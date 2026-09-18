@@ -65,6 +65,8 @@ A caller sets the encoder's own quality number on a re-encoding task function wi
 - 2026-09-17: T6: `devtools::check()` 0 errors / 0 warnings / 0 notes (8m 6s, runs the suite); `devtools::test()` at T4 0 failures, 15441 passes; `pkgdown::check_pkgdown()` no problems; `devtools::document()` no diff.
 - 2026-09-17: claim audit: 50 claims read, 1 corrected — tests/testthat/helper-hw-encoder-ledger.R (a comment said the two former resolver sites' dispositions still hold and are exercised by the discrimination cases; they name no resolver now, so neither applies; rewritten, re-read once by the same reader). The reader also noted `test-quality-grid.R`'s header wording ("any FFmpeg process") is broader than the counter (the encoder probe), sound under `run = FALSE`; left as is.
 - 2026-09-17: status → review.
+- 2026-09-17: review gate: findings O2 and O7 fixed now. The NEWS `run` position table reads 7, 10, 12 (`parallel` 13) and 13, and its inserted-argument list names `quality`. The AC2 cell asserts `max` as well as `min + 1` (quality files: 0 failures, 1680 passes, 104 more than before).
+- 2026-09-17: step-7 approval: m135-quality-argument-scalar-verbs approved for merge, with the two fix-now items applied.
 
 ## Decisions
 

@@ -194,19 +194,19 @@
   updated**. Naming your arguments avoids the problem entirely.
 
   The inserted arguments are drawn from `video_codec`, `audio_codec`,
-  `hardware`, `fallback` and `audio_stream`, each placed beside the argument it
-  belongs with. `run` has moved on all five verbs that carried it before, and by
-  more than one position on four of them:
+  `hardware`, `fallback`, `quality` and `audio_stream`, each placed beside the
+  argument it belongs with. `run` has moved on all five verbs that carried it
+  before, and by more than one position on four of them:
 
   | verb | `run` was at position | `run` is now at position |
   |---|---|---|
   | `extract_audio()` | 4 | 5 |
-  | `format_for_web()` | 3 | 6 |
-  | `separate_audio_video()` | 4 | 9 |
-  | `segment_video()` | 6 | 11 |
-  | `crop_video()` | 7 | 12 |
+  | `format_for_web()` | 3 | 7 |
+  | `separate_audio_video()` | 4 | 10 |
+  | `segment_video()` | 6 | 12 |
+  | `crop_video()` | 7 | 13 |
 
-  `segment_video()`'s `parallel` moves with it, from position 7 to position 12.
+  `segment_video()`'s `parallel` moves with it, from position 7 to position 13.
   `extract_audio(video, "audio.aac", "copy", FALSE)` now reads `FALSE` as the
   audio-stream index rather than as `run` — an error rather than a silent
   misread, since the index must be a whole number. On `crop_video()` and

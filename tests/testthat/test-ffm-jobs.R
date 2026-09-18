@@ -534,8 +534,9 @@ test_that("every multi-audio container is in exactly one media_extensions() vect
 # The round trip itself: for each of those containers, a folder holding one such
 # file becomes a one-row jobs table, both when the caller narrows the search to
 # that extension and when it does not. The type comes from the vectors, not from
-# a table written here, so a container no vector holds fails by name in the
-# guard above rather than silently picking a type here. Two axes ride along, on
+# a table written here, so a container no vector holds fails by name rather
+# than silently picking a type here: the guard above names it, and every
+# expectation below carries it as a label. Two axes ride along, on
 # fixed positions so they survive the vector growing: the second element is
 # spelled in mixed case, and the last is read from a subdirectory under
 # `recursive = TRUE`.
@@ -546,7 +547,10 @@ test_that("each multi-audio container round-trips through ffm_jobs()", {
   for (i in seq_along(exts)) {
     ext <- exts[[i]]
     type <- Filter(function(ty) ext %in% media_extensions(ty), media_types())
-    expect_length(type, 1)
+    # Every expectation in the loop carries the container it is on. Without the
+    # label a failure at the fifth iteration reads as a bare path mismatch, and
+    # the reader has to count the vector to learn which container broke.
+    expect_identical(length(type), 1L, info = ext)
     type <- type[[1]]
 
     dir <- withr::local_tempdir()
@@ -571,8 +575,8 @@ test_that("each multi-audio container round-trips through ffm_jobs()", {
     for (narrowed in list(ext, NULL)) {
       jobs <- ffm_jobs(dir, type = type, extension = narrowed,
                        recursive = i == deep_at)
-      expect_identical(nrow(jobs), 1L)
-      expect_identical(jobs$input, expected)
+      expect_identical(nrow(jobs), 1L, info = ext)
+      expect_identical(jobs$input, expected, info = ext)
     }
   }
 })

@@ -192,3 +192,35 @@ vacuous, and the AC5 test genuinely fails an implementation that emits the
 bullet unconditionally. The end-to-end test's video output is written outside
 the scanned directory. No vignette, README or other help page carries a stale
 count.
+
+One of the Opus lens's own figures was wrong and is not carried here. It reads
+six of the nine members of `multi_audio_extensions` as video containers. Five
+are: `mp4`, `mov`, `mkv`, `webm` and `ts`. The other four are audio.
+
+### Triage
+
+The maintainer chose at the merge gate to fix O2, O3 and O9 before merging.
+
+- O2 fixed. The `@return` paragraph and the `NEWS.md` entry now name `.mka` and
+  `.m4a` as what `separate_audio_video()` recommends, and say both read as
+  audio here. They then say plainly that a container able to hold several audio
+  streams is not always audio, with `.ts` as the case in point.
+- O3 fixed. A comment above `media_types()` records that each vector is the
+  type a caller asks for, not the streams the container can hold. It gives the
+  reason `mka` landed in audio and `ts` in video beside `mts` and `m2ts`.
+- O9 fixed. Every expectation in the round-trip loop now carries the container
+  as an `info =` label. The `expect_length()` call became an
+  `expect_identical()` on the length, which is the form that takes one.
+  Measured: the spliced homeless container now makes the sweep's own failure
+  print `zzz`.
+- O1 rejected. AC5 asks for the bullet on the wide branch unconditionally.
+  Narrowing it changes the promise rather than repairs the work. The
+  refinement it proposes is worth a candidate row, filed at hygiene.
+- O4 actioned at hygiene, outside the branch: the candidate row is trimmed to
+  its `ogv` half in the post-merge pass.
+- O5 rejected. The title is an internal label. User-facing materials never
+  carry milestone numbers or titles, and the prose that ships was corrected by
+  the claim audit.
+- O6 rejected. The refusal it names is an unmodified line, and AC5 scopes the
+  bullet to the no-match branch.
+- O7 and O8 rejected as style.

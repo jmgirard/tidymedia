@@ -28,6 +28,7 @@ crop_video_batch(
   audio_codec = "copy",
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
@@ -52,8 +53,9 @@ crop_video_batch(
   keeps every audio track. That is the column form of that argument's
   `NULL`. Two rows with the same destination path are refused before any
   row runs. That happens with a repeated `output`, or with a repeated
-  `input` when there is no `output` column. Any other columns are
-  ignored.
+  `input` when there is no `output` column. A numeric `quality` column
+  overrides the `quality` argument per row (see `quality`). Any other
+  columns are ignored.
 
 - width, height:
 
@@ -97,6 +99,18 @@ crop_video_batch(
   have a per-row `width` or `height` that is neither a positive number
   nor an FFmpeg expression. Such a call is refused for the value first,
   whether or not this machine has the encoder.
+
+- quality:
+
+  A number, or `NULL` (default), applied to each row unless `jobs`
+  carries a numeric `quality` column. In that column, `NA` leaves that
+  row's encoder default in place, whatever the argument says. The value
+  is the encoder's own rate-control value, passed through unchanged.
+  Each cell is checked against the encoder its own row resolves to. A
+  wrong cell is refused before any row runs, and the error names this
+  function and the row. See
+  [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md)
+  for the encoders, their flags and ranges, and the values it refuses.
 
 - audio_stream:
 

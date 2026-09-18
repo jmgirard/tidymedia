@@ -386,7 +386,28 @@
   [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),
   or `video_codec = NULL` under `hardware = "none"`. Under
   `fallback = TRUE`, a fallback to software drops the value and the
-  message says so. The `_batch` forms do not take it yet.
+  message says so.
+
+- **The batch re-encoding functions take `quality` too, as an argument
+  and as a jobs column.**
+  [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
+  [`format_for_web_batch()`](https://jmgirard.github.io/tidymedia/reference/format_for_web_batch.md),
+  [`anonymize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video_batch.md),
+  [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md),
+  [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md),
+  [`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md),
+  [`compare_videos_batch()`](https://jmgirard.github.io/tidymedia/reference/compare_videos_batch.md)
+  and
+  [`picture_in_picture_batch()`](https://jmgirard.github.io/tidymedia/reference/picture_in_picture_batch.md)
+  take `quality = NULL` after `fallback`. The argument applies to every
+  row unless `jobs` carries a numeric `quality` column. In that column,
+  `NA` leaves that row’s encoder default in place, whatever the argument
+  says. Each cell is checked against the encoder its own row resolves
+  to. A wrong cell is refused before any row runs: one that is not a
+  number, one outside that encoder’s range, or one on a row that
+  stream-copies its video. The error names the function and the row. On
+  [`separate_audio_video_batch()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md)
+  the value applies to each row’s `videofile`.
 
 - **[`ffm_jobs()`](https://jmgirard.github.io/tidymedia/reference/ffm_jobs.md)
   turns a directory into a batch jobs table.** It lists the files in a

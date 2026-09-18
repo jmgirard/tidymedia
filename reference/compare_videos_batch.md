@@ -25,6 +25,7 @@ compare_videos_batch(
   audio_codec = "copy",
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   run = TRUE,
   parallel = FALSE,
   ...
@@ -43,8 +44,9 @@ compare_videos_batch(
   falls back to the argument). In an `audio_input` column, `NA` means
   "drop audio", the column's way of writing the scalar's `NULL`. In a
   `video_codec` or `audio_codec` column, it means "leave the codec
-  unset". Two rows given the same `output` path are refused before any
-  row runs; other columns are ignored.
+  unset". A numeric `quality` column overrides the `quality` argument
+  per row (see `quality`). Two rows given the same `output` path are
+  refused before any row runs; other columns are ignored.
 
 - direction, resize:
 
@@ -106,6 +108,18 @@ compare_videos_batch(
   outside the two accepted values. A value error and a contradiction
   resolve the same way whether the value arrived as an argument or in a
   `jobs` column. The contradiction reports first.
+
+- quality:
+
+  A number, or `NULL` (default), applied to each row unless `jobs`
+  carries a numeric `quality` column. In that column, `NA` leaves that
+  row's encoder default in place, whatever the argument says. The value
+  is the encoder's own rate-control value, passed through unchanged.
+  Each cell is checked against the encoder its own row resolves to. A
+  wrong cell is refused before any row runs, and the error names this
+  function and the row. See
+  [`compare_videos()`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
+  for the encoders, their flags and ranges, and the values it refuses.
 
 - run:
 

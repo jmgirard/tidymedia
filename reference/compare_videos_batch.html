@@ -77,6 +77,7 @@ and stream copy.</p>
 <span>  audio_codec <span class="op">=</span> <span class="st">"copy"</span>,</span>
 <span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span>, <span class="st">"videotoolbox"</span><span class="op">)</span>,</span>
 <span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  quality <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -95,7 +96,8 @@ paths. Optional
 <code>direction</code>, <code>resize</code>, <code>audio_input</code>, <code>video_codec</code>, and
 <code>audio_codec</code> columns override the
 like-named arguments per row (a row omitting one falls back to the
-argument). In an <code>audio_input</code> column, <code>NA</code> means "drop audio", the column's way of writing the scalar's <code>NULL</code>. In a <code>video_codec</code> or <code>audio_codec</code> column, it means "leave the codec unset". Two rows
+argument). In an <code>audio_input</code> column, <code>NA</code> means "drop audio", the column's way of writing the scalar's <code>NULL</code>. In a <code>video_codec</code> or <code>audio_codec</code> column, it means "leave the codec unset". A numeric <code>quality</code> column
+overrides the <code>quality</code> argument per row (see <code>quality</code>). Two rows
 given the same <code>output</code> path are refused before any row runs; other
 columns are ignored.</p></dd>
 
@@ -133,6 +135,10 @@ A per-row value error likewise reports ahead of the encoder check. Examples
 are an <code>audio_input</code> index past that row's input count, and a
 <code>direction</code> outside the two accepted values.
 A value error and a contradiction resolve the same way whether the value arrived as an argument or in a <code>jobs</code> column. The contradiction reports first.</p></dd>
+
+
+<dt id="arg-quality">quality<a class="anchor" aria-label="anchor" href="#arg-quality"></a></dt>
+<dd><p>A number, or <code>NULL</code> (default), applied to each row unless <code>jobs</code> carries a numeric <code>quality</code> column. In that column, <code>NA</code> leaves that row's encoder default in place, whatever the argument says. The value is the encoder's own rate-control value, passed through unchanged. Each cell is checked against the encoder its own row resolves to. A wrong cell is refused before any row runs, and the error names this function and the row. See <code><a href="compare_videos.html">compare_videos()</a></code> for the encoders, their flags and ranges, and the values it refuses.</p></dd>
 
 
 <dt id="arg-run">run<a class="anchor" aria-label="anchor" href="#arg-run"></a></dt>

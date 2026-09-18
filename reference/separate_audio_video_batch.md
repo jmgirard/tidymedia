@@ -25,6 +25,7 @@ separate_audio_video_batch(
   video_codec = "copy",
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
@@ -50,9 +51,11 @@ separate_audio_video_batch(
   set no codec option for that stream. Rows that omit a column fall back
   to that argument. An optional numeric `audio_stream` column likewise
   overrides the `audio_stream` argument per row. There, `NA` keeps every
-  audio track in that row's `audiofile`. Any other columns are ignored,
-  with one exception. A `reencode` column, retired with the argument of
-  the same name, is an error and not a silent no-op.
+  audio track in that row's `audiofile`. A numeric `quality` column
+  overrides the `quality` argument per row and applies to that row's
+  `videofile` (see `quality`). Any other columns are ignored, with one
+  exception. A `reencode` column, retired with the argument of the same
+  name, is an error and not a silent no-op.
 
 - audio_codec:
 
@@ -90,6 +93,20 @@ separate_audio_video_batch(
   Such a call is refused for the contradiction first, whether or not
   this machine has the encoder. The stream-copy conflict above is caught
   first, so such a call aborts without asking FFmpeg.
+
+- quality:
+
+  A number, or `NULL` (default), applied to every `videofile` unless
+  `jobs` carries a numeric `quality` column. In that column, `NA` leaves
+  that row's encoder default in place, whatever the argument says. The
+  value is the encoder's own rate-control value, passed through
+  unchanged. Each cell is checked against the encoder its own row
+  resolves to. A wrong cell is refused before any row runs, and the
+  error names this function and the row. See
+  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  for the encoders, their flags and ranges, and the values it refuses.
+  The `audiofile` never takes it. A cell on a row whose video codec is
+  `"copy"`, the default, is refused, because no encoder runs.
 
 - audio_stream:
 

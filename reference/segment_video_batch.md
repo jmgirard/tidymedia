@@ -21,6 +21,7 @@ segment_video_batch(
   audio_codec = "copy",
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
@@ -46,8 +47,9 @@ segment_video_batch(
   row, with `NA` meaning "leave the codec unset" (the column's way of
   writing the argument's `NULL`). An `audio_stream` column likewise
   overrides that argument per row, with `NA` meaning "keep every audio
-  track" (the column's way of writing that argument's `NULL`). Any other
-  columns are ignored.
+  track" (the column's way of writing that argument's `NULL`). A numeric
+  `quality` column overrides the `quality` argument per row (see
+  `quality`). Any other columns are ignored.
 
 - reencode:
 
@@ -101,6 +103,20 @@ segment_video_batch(
   whether or not this machine has the encoder. The stream-copy conflict
   named under `reencode` is caught first, so such a call aborts without
   probing.
+
+- quality:
+
+  A number, or `NULL` (default), applied to each row unless `jobs`
+  carries a numeric `quality` column. In that column, `NA` leaves that
+  row's encoder default in place, whatever the argument says. The value
+  is the encoder's own rate-control value, passed through unchanged.
+  Each cell is checked against the encoder its own row resolves to. A
+  wrong cell is refused before any row runs, and the error names this
+  function and the row. See
+  [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
+  for the encoders, their flags and ranges, and the values it refuses. A
+  cell on a row that stream-copies (`reencode = FALSE`) is refused too,
+  because no encoder runs on that row.
 
 - audio_stream:
 

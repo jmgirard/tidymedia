@@ -26,6 +26,7 @@ anonymize_video_batch(
   pixel_format = "yuv420p",
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
@@ -57,8 +58,9 @@ anonymize_video_batch(
   column form of `video_codec = NULL` / `audio_codec = NULL`. In a
   `color` or `pixel_format` column `NA` is an error, because those have
   no unset state. An `audio_stream` column overrides the `audio_stream`
-  argument per row, where `NA` keeps that row on every audio track. Any
-  other columns are ignored.
+  argument per row, where `NA` keeps that row on every audio track. A
+  numeric `quality` column overrides the `quality` argument per row (see
+  `quality`). Any other columns are ignored.
 
 - color:
 
@@ -116,6 +118,18 @@ anonymize_video_batch(
   instead. It is batch-wide, not a per-row column. A `video_codec` in a
   family that the backend has no encoder for is a wrong argument, not an
   absent encoder. So it aborts whatever `fallback` says.
+
+- quality:
+
+  A number, or `NULL` (default), applied to each row unless `jobs`
+  carries a numeric `quality` column. In that column, `NA` leaves that
+  row's encoder default in place, whatever the argument says. The value
+  is the encoder's own rate-control value, passed through unchanged.
+  Each cell is checked against the encoder its own row resolves to. A
+  wrong cell is refused before any row runs, and the error names this
+  function and the row. See
+  [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md)
+  for the encoders, their flags and ranges, and the values it refuses.
 
 - audio_stream:
 

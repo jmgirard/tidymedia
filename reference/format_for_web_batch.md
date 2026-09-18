@@ -20,6 +20,7 @@ format_for_web_batch(
   jobs,
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   audio_stream = NULL,
   run = TRUE,
   parallel = FALSE,
@@ -41,11 +42,12 @@ format_for_web_batch(
   that match. For example, `clip.mov` and `clip.mkv` both give
   `clip_web.mp4`. An optional numeric `audio_stream` column overrides
   the `audio_stream` argument for each row. `NA` keeps every audio track
-  in that row. Any other columns are ignored, `video_codec` and
-  `audio_codec` included. The sibling batch functions read those two
-  columns as per-row overrides, but this one does not. The web recipe
-  fixes which codecs the output uses: H.264 video and AAC audio. For
-  per-row codecs, use a function that has them, such as
+  in that row. A numeric `quality` column overrides the `quality`
+  argument per row (see `quality`). Any other columns are ignored,
+  `video_codec` and `audio_codec` included. The sibling batch functions
+  read those two columns as per-row overrides, but this one does not.
+  The web recipe fixes which codecs the output uses: H.264 video and AAC
+  audio. For per-row codecs, use a function that has them, such as
   [`standardize_video_batch`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
   or
   [`crop_video_batch`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md).
@@ -73,6 +75,18 @@ format_for_web_batch(
   message. `FALSE` (default) aborts instead. A `video_codec` in a family
   that the backend has no encoder for is a wrong argument, not an absent
   encoder. So it aborts whatever `fallback` says.
+
+- quality:
+
+  A number, or `NULL` (default), applied to each row unless `jobs`
+  carries a numeric `quality` column. In that column, `NA` leaves that
+  row's encoder default in place, whatever the argument says. The value
+  is the encoder's own rate-control value, passed through unchanged.
+  Each cell is checked against the encoder its own row resolves to. A
+  wrong cell is refused before any row runs, and the error names this
+  function and the row. See
+  [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
+  for the encoders, their flags and ranges, and the values it refuses.
 
 - audio_stream:
 

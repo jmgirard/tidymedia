@@ -82,6 +82,7 @@ and stream copy.</p>
 <span>  pixel_format <span class="op">=</span> <span class="st">"yuv420p"</span>,</span>
 <span>  hardware <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"nvenc"</span>, <span class="st">"videotoolbox"</span><span class="op">)</span>,</span>
 <span>  fallback <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  quality <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  audio_stream <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -114,7 +115,9 @@ unset. This is the column form of <code>video_codec = NULL</code> /
 <code>color</code> or <code>pixel_format</code> column <code>NA</code> is an error, because
 those have no unset state. An <code>audio_stream</code> column overrides the
 <code>audio_stream</code> argument per row, where <code>NA</code> keeps that row on
-every audio track. Any other columns are ignored.</p></dd>
+every audio track. A numeric <code>quality</code> column overrides the
+<code>quality</code> argument per row (see <code>quality</code>). Any other columns
+are ignored.</p></dd>
 
 
 <dt id="arg-color">color<a class="anchor" aria-label="anchor" href="#arg-color"></a></dt>
@@ -162,6 +165,10 @@ encoder.</p></dd>
 
 <dt id="arg-fallback">fallback<a class="anchor" aria-label="anchor" href="#arg-fallback"></a></dt>
 <dd><p>A logical applied to every row. When a <code>hardware</code> other than <code>"none"</code> is requested but its encoder is unavailable, <code>TRUE</code> re-encodes with the software <code>video_codec</code> and a message. <code>FALSE</code> (default) aborts instead. It is batch-wide, not a per-row column. A <code>video_codec</code> in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever <code>fallback</code> says.</p></dd>
+
+
+<dt id="arg-quality">quality<a class="anchor" aria-label="anchor" href="#arg-quality"></a></dt>
+<dd><p>A number, or <code>NULL</code> (default), applied to each row unless <code>jobs</code> carries a numeric <code>quality</code> column. In that column, <code>NA</code> leaves that row's encoder default in place, whatever the argument says. The value is the encoder's own rate-control value, passed through unchanged. Each cell is checked against the encoder its own row resolves to. A wrong cell is refused before any row runs, and the error names this function and the row. See <code><a href="anonymize_video.html">anonymize_video()</a></code> for the encoders, their flags and ranges, and the values it refuses.</p></dd>
 
 
 <dt id="arg-audio-stream">audio_stream<a class="anchor" aria-label="anchor" href="#arg-audio-stream"></a></dt>

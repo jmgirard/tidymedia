@@ -2,16 +2,15 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-09-17 (M133 done and archived. PR #137 squash-merged with 10/10 checks green. No returns. No lesson added. M130 row pruned for terminal-row retention. `ROADMAP.md` is over its 24,000-byte budget, and `/cairn-triage` is the remedy.)_
+_Last hygiene check: 2026-09-17 (M134 done and archived. PR #138 squash-merged with 10/10 checks green. No returns. No lesson added. M131 row pruned for terminal-row retention. `ROADMAP.md` is over its 24,000-byte budget, and `/cairn-triage` is the remedy.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M131 | The filter and multi-input pipeline help pages read as plain English | done | M129 | high | milestones/archive/M131-plain-pipeline-filter-help-pages.md |
 | M132 | The FFmpeg-capability, frame and audio conversion help pages read as plain English | done | M129 | high | milestones/archive/M132-plain-capability-frame-audio-help-pages.md |
 | M133 | The separate-audio-video and normalize-audio help pages read as plain English | done | M129 | high | milestones/archive/M133-plain-separate-normalize-help-pages.md |
-| M134 | The anonymize, segment, concatenate, compare and picture-in-picture help pages read as plain English | review | M129 | high | milestones/M134-plain-video-composition-help-pages.md |
+| M134 | The anonymize, segment, concatenate, compare and picture-in-picture help pages read as plain English | done | M129 | high | milestones/archive/M134-plain-video-composition-help-pages.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

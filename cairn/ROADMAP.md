@@ -2,16 +2,15 @@
 
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
-_Last hygiene check: 2026-09-17 (M134 done and archived. PR #138 squash-merged with 10/10 checks green. No returns. No lesson added. M131 row pruned for terminal-row retention. `ROADMAP.md` is over its 24,000-byte budget, and `/cairn-triage` is the remedy.)_
+_Last hygiene check: 2026-09-17 (M135 done and archived. PR #139 squash-merged with 8/8 workflow checks green and the two codecov statuses advisory red. No returns. One lesson added. M132 row pruned for terminal-row retention. `ROADMAP.md` is over its 24,000-byte budget, and `/cairn-triage` is the remedy.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M132 | The FFmpeg-capability, frame and audio conversion help pages read as plain English | done | M129 | high | milestones/archive/M132-plain-capability-frame-audio-help-pages.md |
 | M133 | The separate-audio-video and normalize-audio help pages read as plain English | done | M129 | high | milestones/archive/M133-plain-separate-normalize-help-pages.md |
 | M134 | The anonymize, segment, concatenate, compare and picture-in-picture help pages read as plain English | done | M129 | high | milestones/archive/M134-plain-video-composition-help-pages.md |
-| M135 | The re-encoding task functions take a `quality` argument that passes the encoder's own rate-control value through | review | — | normal | milestones/M135-quality-argument-scalar-verbs.md |
+| M135 | The re-encoding task functions take a `quality` argument that passes the encoder's own rate-control value through | done | — | normal | milestones/archive/M135-quality-argument-scalar-verbs.md |
 | M136 | The batch re-encoding functions take `quality` as an argument and as a jobs column | planned | M135 | normal | milestones/M136-quality-column-batch-verbs.md |
 
 ## Candidates

@@ -6,15 +6,10 @@
 # is dropped with a message. Refusals are counted against a probe counter so
 # "before any FFmpeg process starts" is measured, not assumed.
 
-# T3 lands four verbs; T4 widens this to quality_grid_verbs(), AC1's filter.
-quality_grid_verbs_landed <- function() {
-  c("anonymize_video", "crop_video", "format_for_web", "standardize_video")
-}
-
 test_that("AC1: every scalar verb taking `hardware` and `run` has quality = NULL", {
   verbs <- quality_grid_verbs()
   expect_gte(length(verbs), 8L)
-  for (v in intersect(verbs, quality_grid_verbs_landed())) {
+  for (v in verbs) {
     fmls <- formals(get(v, envir = asNamespace("tidymedia")))
     expect_true("quality" %in% names(fmls), info = v)
     expect_null(fmls$quality, info = v)
@@ -35,7 +30,7 @@ test_that("AC2: every reachable row emits its flag after the codec; NULL emits n
   )
   tbl <- quality_flags()
   cells <- 0L
-  for (v in quality_grid_verbs_landed()) {
+  for (v in quality_grid_verbs()) {
     f <- get(v, envir = asNamespace("tidymedia"))
     for (enc in quality_grid_rows(v)) {
       row <- tbl[tbl$encoder == enc, ]
@@ -59,7 +54,7 @@ test_that("AC2: every reachable row emits its flag after the codec; NULL emits n
     }
   }
   # The census: 7 rows per verb with a video_codec formal, 3 for format_for_web.
-  expect_identical(cells, sum(vapply(quality_grid_verbs_landed(), function(v) {
+  expect_identical(cells, sum(vapply(quality_grid_verbs(), function(v) {
     length(quality_grid_rows(v))
   }, integer(1))))
 })
@@ -80,7 +75,7 @@ test_that("AC3: a wrong `quality` is refused before any FFmpeg process starts", 
   input <- quality_grid_input(dir)
   withr::local_options(tidymedia.check_tracks = FALSE)
   count <- local_encoder_probe_counter(names = quality_grid_hw_encoders())
-  for (v in quality_grid_verbs_landed()) {
+  for (v in quality_grid_verbs()) {
     f <- get(v, envir = asNamespace("tidymedia"))
     has_codec <- "video_codec" %in% names(formals(f))
     base <- quality_grid_args(v, input)
@@ -130,8 +125,23 @@ test_that("AC3: a wrong `quality` is refused before any FFmpeg process starts", 
       # the table, so "an encoder the table lacks" names no reachable call.
       expect_true(all(quality_grid_rows(v) %in% quality_flags()$encoder))
     }
+    if ("reencode" %in% names(formals(f))) {
+      # A stream-copying cut runs no encoder.
+      args <- base
+      args["video_codec"] <- list(NULL)
+      args$reencode <- FALSE
+      args$quality <- 23
+      expect_quality_refusal(f, v, args, "reencode = FALSE", count)
+    }
   }
   expect_identical(count(), 0L)
+})
+
+test_that("AC1's census: 8 verbs, 52 reachable (verb, row) pairs", {
+  verbs <- quality_grid_verbs()
+  expect_length(verbs, 8L)
+  expect_identical(sum(vapply(verbs, function(v) length(quality_grid_rows(v)),
+                              integer(1))), 52L)
 })
 
 test_that("AC4: a fallback drops `quality`, says so, and emits no flag", {
@@ -141,7 +151,7 @@ test_that("AC4: a fallback drops `quality`, says so, and emits no flag", {
     tidymedia.hardware_encoders = character(),
     tidymedia.check_tracks = FALSE
   )
-  for (v in quality_grid_verbs_landed()) {
+  for (v in quality_grid_verbs()) {
     f <- get(v, envir = asNamespace("tidymedia"))
     for (hw in c("nvenc", "videotoolbox")) {
       args <- quality_grid_args(v, input)

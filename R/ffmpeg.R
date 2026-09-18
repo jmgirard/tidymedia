@@ -597,7 +597,7 @@ extract_audio <- function(infile, outfile, audio_codec = "copy",
 # ABOVE the roxygen block below so document() does not re-target it (M28 lesson).
 separate_stream_pipeline <- function(input, output, stream, codec = "copy",
                                      hardware = "none", fallback = FALSE,
-                                     audio_stream = NULL,
+                                     audio_stream = NULL, quality = NULL,
                                      call = rlang::caller_env()) {
   # `null_map = "0:a"` keeps EVERY audio track when the caller named none, which
   # is this verb's map since it shipped -- audio_stream_map()'s own default is
@@ -620,7 +620,9 @@ separate_stream_pipeline <- function(input, output, stream, codec = "copy",
     # _batch verb ALSO calls it at its front door (M58), where the abort can
     # name the verb; here it still covers separate_audio_video().
     check_hardware_needs_encode(codec, hardware, call = call)
-    apply_video_codec(p, codec, hardware, fallback, call = call)
+    # `quality` rides the seam (M135); a "copy" codec with it set is refused
+    # there, by check_quality(), after the hardware contradiction above.
+    apply_video_codec(p, codec, hardware, fallback, quality, call = call)
   }
 }
 
@@ -1014,6 +1016,8 @@ ffmpeg_exit_status <- function(cnd) {
 #'   The stream-copy conflict above is caught first, so such a call aborts
 #'   without asking FFmpeg.
 #' @param fallback `r fallback_param("software", unset = "injecting")`
+#' @param quality `r quality_param()`
+#'   It applies to \code{videofile} only.
 #' @param audio_stream `r audio_stream_param("write to \\code{audiofile}", "keeps", "every", extra = audio_stream_extras$separation_container)`
 #' @param run A logical: run the commands through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled commands without running them (\code{FALSE}).
@@ -1138,8 +1142,8 @@ ffmpeg_exit_status <- function(cnd) {
 separate_audio_video <- function(infile, audiofile, videofile,
                                  audio_codec = "copy", video_codec = "copy",
                                  hardware = c("none", "nvenc", "videotoolbox"),
-                                 fallback = FALSE, audio_stream = NULL,
-                                 run = TRUE) {
+                                 fallback = FALSE, quality = NULL,
+                                 audio_stream = NULL, run = TRUE) {
 
   check_file_readable(infile)
   rlang::check_string(audiofile)
@@ -1166,7 +1170,7 @@ separate_audio_video <- function(infile, audiofile, videofile,
   audio <- separate_stream_pipeline(infile, audiofile, "audio", audio_codec,
                                     hardware, fallback, audio_stream)
   video <- separate_stream_pipeline(infile, videofile, "video", video_codec,
-                                    hardware, fallback)
+                                    hardware, fallback, quality = quality)
   commands <- c(audio = ffm_compile(audio), video = ffm_compile(video))
 
   # D074: the verb the caller typed names a bad limit, not the builder below.
@@ -3616,6 +3620,29 @@ check_codec_needs_reencode <- function(reencode, video_codec = NULL,
   invisible(NULL)
 }
 
+# Condition 2b (segment_pipeline; M135): `quality` on a stream-copying cut.
+# The same reasoning as condition 2, for the one value that names no encoder
+# and yet only means something when one runs. Separate from condition 2 so its
+# message names the argument the caller set, and checked AFTER it so a call
+# wrong about both is told about the codec first (the check that was there).
+check_quality_needs_reencode <- function(reencode, quality,
+                                         call = rlang::caller_env()) {
+  rlang::check_bool(reencode, call = call)
+  if (!reencode && !is.null(quality)) {
+    cli::cli_abort(
+      c(
+        "{.arg quality} needs a re-encoding cut.",
+        "x" = "{.code reencode = FALSE} stream-copies each segment, so no
+               encoder runs and no quality value applies.",
+        "i" = "Pass {.code reencode = TRUE} to cut by re-encoding, or drop
+               {.arg quality}."
+      ),
+      call = call
+    )
+  }
+  invisible(NULL)
+}
+
 # Condition 3 (segment_pipeline), with one wrinkle over condition 2: the copy
 # path's ffm_copy() sets -codec:a copy itself, so "copy" is the one value that
 # agrees with it. Anything else -- a named encoder, or NULL asking for no
@@ -3797,6 +3824,9 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #'   `r encoder_check_sentences()` `r contradiction_sentences("cut")`
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
 #'   such a call aborts without probing.
+#' @param quality `r quality_param()`
+#'   A stream-copying cut (\code{reencode = FALSE}) runs no encoder, so it
+#'   refuses \code{quality} too.
 #' @param audio_stream `r audio_stream_param("carry into the output", "carries", "every", extra = audio_stream_extras$passthrough_subtitles)`
 #' @param run A logical: run each segment's command (\code{TRUE}, default) or
 #'   only compile them (\code{FALSE}).
@@ -3829,6 +3859,7 @@ segment_video <- function(infile,
                           audio_codec = "copy",
                           hardware = c("none", "nvenc", "videotoolbox"),
                           fallback = FALSE,
+                          quality = NULL,
                           audio_stream = NULL,
                           run = TRUE,
                           parallel = FALSE) {
@@ -3895,6 +3926,7 @@ segment_video <- function(infile,
   # columns to sweep -- so one call each covers every segment.
   check_codec_needs_reencode(reencode, video_codec, hardware)
   check_audio_codec_needs_reencode(reencode, audio_codec)
+  check_quality_needs_reencode(reencode, quality)
 
   # If no names are provided, derive per-segment names from the input file.
   # Above the nvenc probe below rather than beside the fan-out, so the
@@ -3924,6 +3956,17 @@ segment_video <- function(infile,
   # impossible: this guard only ever acts on `hardware = "nvenc"`, and a
   # `reencode = FALSE` call naming nvenc has already been refused above. The
   # gate is dead code, not a live protection (M58 T2).
+  #
+  # `quality` (M135), checked here for the reason the guards above are: the
+  # seam's own check runs inside purrr::pmap() for this verb and would blame
+  # the closure. Pure -- intended_encoder() never asks the machine -- and
+  # placed ABOVE the availability probe, so a wrong value reports before an
+  # absent encoder (D036). Skipped entirely for NULL, so a quality-less call
+  # keeps its refusal order.
+  if (!is.null(quality)) {
+    check_quality(quality, intended_encoder(video_codec, hardware),
+                  call = rlang::current_env())
+  }
   check_hardware_available(video_codec, hardware, fallback)
 
   # Fan-out (one input -> many outputs) is a Layer 2 concern: build one
@@ -3943,7 +3986,7 @@ segment_video <- function(infile,
       segment_pipeline(input, output, start, end, reencode,
                        video_codec = video_codec, audio_codec = audio_codec,
                        hardware = hardware, fallback = fallback,
-                       audio_stream = audio_stream)
+                       audio_stream = audio_stream, quality = quality)
     },
     run = run,
     parallel = parallel
@@ -3998,6 +4041,7 @@ segment_pipeline <- function(input, output, start, end, reencode,
                              video_codec = NULL, audio_codec = "copy",
                              hardware = "none",
                              fallback = FALSE, audio_stream = NULL,
+                             quality = NULL,
                              call = rlang::caller_env()) {
   # The two cut contradictions (conditions 2 and 3), worded once in their
   # checkers. They live here so both callers inherit them per row (M34/D016,
@@ -4006,6 +4050,7 @@ segment_pipeline <- function(input, output, start, end, reencode,
   # purrr::pmap().
   check_codec_needs_reencode(reencode, video_codec, hardware, call = call)
   check_audio_codec_needs_reencode(reencode, audio_codec, call = call)
+  check_quality_needs_reencode(reencode, quality, call = call)
   p <- ffm_seek(ffm_files(input, output), start = start, end = end,
                 reencode = reencode)
   if (!reencode) p <- ffm_copy(p)
@@ -4020,7 +4065,7 @@ segment_pipeline <- function(input, output, start, end, reencode,
   # no prior map, so `replace` is a no-op and one line serves both.
   p <- ffm_map(p, pass_through_maps(audio_stream, call = call), replace = TRUE)
   p <- apply_audio_codec(p, audio_codec, call = call)
-  apply_video_codec(p, video_codec, hardware, fallback, call = call)
+  apply_video_codec(p, video_codec, hardware, fallback, quality, call = call)
 }
 
 
@@ -6853,7 +6898,7 @@ compare_videos_pipeline <- function(infiles, outfile,
                                     resize = TRUE, audio_input = NULL,
                                     video_codec = NULL, audio_codec = "copy",
                                     hardware = "none",
-                                    fallback = FALSE,
+                                    fallback = FALSE, quality = NULL,
                                     call = rlang::caller_env()) {
   # Conditions 4 and 5, worded once in their checkers; compare_videos_batch()
   # ALSO calls both at its front door (M58). The `call = call` on the resize
@@ -6890,7 +6935,7 @@ compare_videos_pipeline <- function(infiles, outfile,
   # The stacked video is a filtered stream, so a -codec:v rides alongside the
   # -filter_complex … [vout] mapping the blessed stack verbs emit; the default
   # video_codec = NULL emits none (M34/D016).
-  apply_video_codec(p, video_codec, hardware, fallback, call = call)
+  apply_video_codec(p, video_codec, hardware, fallback, quality, call = call)
 }
 
 #' Build a side-by-side comparison video
@@ -6937,7 +6982,7 @@ compare_videos <- function(infiles, outfile,
                            resize = TRUE, audio_input = NULL, video_codec = NULL,
                            audio_codec = "copy",
                            hardware = c("none", "nvenc", "videotoolbox"),
-                           fallback = FALSE,
+                           fallback = FALSE, quality = NULL,
                            run = TRUE) {
 
   if (!rlang::is_character(infiles) || length(infiles) < 2) {
@@ -6960,7 +7005,8 @@ compare_videos <- function(infiles, outfile,
   p <- compare_videos_pipeline(infiles, outfile, direction, resize, audio_input,
                                video_codec = video_codec,
                                audio_codec = audio_codec,
-                               hardware = hardware, fallback = fallback)
+                               hardware = hardware, fallback = fallback,
+                               quality = quality)
   # D074: the verb the caller typed names a bad limit, not the builder below.
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
@@ -6983,7 +7029,7 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
                                         video_codec = NULL,
                                         audio_codec = "copy",
                                         hardware = "none",
-                                        fallback = FALSE,
+                                        fallback = FALSE, quality = NULL,
                                         call = rlang::caller_env()) {
   # Condition 6 -- the same contradiction as compare_videos(), which is why it
   # shares that verb's checker and differs only in the way out (M58).
@@ -7030,7 +7076,7 @@ picture_in_picture_pipeline <- function(main, overlay, outfile,
   # The composited video is a filtered stream, so a -codec:v rides alongside the
   # -filter_complex … [vout] mapping ffm_overlay() emits; the default
   # video_codec = NULL emits none (M34/D016).
-  apply_video_codec(p, video_codec, hardware, fallback, call = call)
+  apply_video_codec(p, video_codec, hardware, fallback, quality, call = call)
 }
 
 #' Inset one video over another (picture-in-picture)
@@ -7077,7 +7123,7 @@ picture_in_picture <- function(main, overlay, outfile,
                                scale = 0.25, margin = 16, audio_input = NULL,
                                video_codec = NULL, audio_codec = "copy",
                                hardware = c("none", "nvenc", "videotoolbox"),
-                               fallback = FALSE,
+                               fallback = FALSE, quality = NULL,
                                run = TRUE) {
 
   check_file_readable(main)
@@ -7093,7 +7139,7 @@ picture_in_picture <- function(main, overlay, outfile,
   p <- picture_in_picture_pipeline(
     main, overlay, outfile, position, scale, margin, audio_input,
     video_codec = video_codec, audio_codec = audio_codec,
-    hardware = hardware, fallback = fallback
+    hardware = hardware, fallback = fallback, quality = quality
   )
   # D074: the verb the caller typed names a bad limit, not the builder below.
   # Below the pipeline, so the builder's own argument checks keep reporting

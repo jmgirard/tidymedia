@@ -77,10 +77,11 @@ test_that("a dropped cell is dropped by measurement, naming its refusing frame",
   # where such a move could hide).
   # 496/234 at M095's merge-base `tm_nvenc_probe_master_ref`; 499/231 since M96 guarded
   # `segment_video()`'s `outfiles` at its front door, which moved that
-  # argument's three pmap-blamed forms from dropped to kept. 519/231 since
-  # M135 gave four scalar verbs a `quality` formal: four members crossed with
-  # the five wrong forms, every cell refused by the member itself.
-  expect_equal(sum(sweep$kept), 519L)
+  # argument's three pmap-blamed forms from dropped to kept. 539/231 since
+  # M135 gave the eight scalar verbs a `quality` formal: eight members crossed
+  # with the five wrong forms, every cell refused by the member itself
+  # (segment_video() checks it at its front door, above the probe).
+  expect_equal(sum(sweep$kept), 539L)
   expect_equal(sum(!sweep$kept), 231L)
 
   dropped <- tm_sort_c(unique(paste0(

@@ -14,6 +14,7 @@ segment_video(
   audio_codec = "copy",
   hardware = c("none", "nvenc", "videotoolbox"),
   fallback = FALSE,
+  quality = NULL,
   audio_stream = NULL,
   run = TRUE,
   parallel = FALSE
@@ -62,6 +63,10 @@ The stream-copy conflict named under \code{reencode} is caught first, so
 such a call aborts without probing.}
 
 \item{fallback}{A logical. When a \code{hardware} other than \code{"none"} is requested but its encoder is unavailable, \code{TRUE} encodes in software with a message. \code{FALSE} (default) aborts instead. With \code{video_codec = NULL}, the fallback leaves the codec unset rather than picking one, so the codec never changes silently. A \code{video_codec} in a family that the backend has no encoder for is a wrong argument, not an absent encoder. So it aborts whatever \code{fallback} says.}
+
+\item{quality}{A number, or \code{NULL} (default) to leave the encoder's own default in place. It is the encoder's own rate-control value, passed through unchanged. \code{libx264} and \code{libx265} read it as \code{-crf} (0 to 51), the nvenc encoders as \code{-cq} (0 to 51), and the videotoolbox encoders as \code{-q:v} (1 to 100). Each scale is its own: the same number means something different on each encoder. A value outside the encoder's range is refused. An encoder outside those seven, such as \code{libvpx-vp9}, or a \code{video_codec} of \code{"copy"} or \code{NULL} under \code{hardware = "none"}, is refused with \code{quality} set. When \code{fallback = TRUE} falls back to software, the value is dropped and the message says so, because it belonged to the hardware encoder's scale.
+A stream-copying cut (\code{reencode = FALSE}) runs no encoder, so it
+refuses \code{quality} too.}
 
 \item{audio_stream}{The audio track to carry into the output, as a number that counts from \code{0} among the \emph{audio tracks} of the input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) carries \strong{every} audio track. The every-track family reads \code{NULL} this way: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The first-track family reads it as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The function does not carry subtitle or data streams in either case. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 

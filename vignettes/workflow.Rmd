@@ -132,6 +132,11 @@ The two choices support different codecs. NVIDIA nvenc supports H.264, HEVC
 and AV1. Apple videotoolbox supports H.264 and HEVC. A codec that the hardware
 does not support is an error that names both.
 
+A hardware encoder trades some quality for speed. At the same bit rate, a
+hardware encoder gives a picture that is a little worse than the software
+encoder `libx264` or `libx265`. So it suits previews and bulk conversion, and
+the software encoder suits a copy that you will keep or analyze frame by frame.
+
 tidymedia does not do hardware decoding or run filters on a graphics card. For
 those, use the direct command `ffmpeg()`.
 

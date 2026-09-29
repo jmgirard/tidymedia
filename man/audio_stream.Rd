@@ -5,6 +5,11 @@
 \alias{audio-tracks}
 \alias{audio_indices}
 \title{Audio track and audio input indices}
+\value{
+This page documents no function and returns no value. It explains
+two arguments the functions listed under See Also take. Each of those
+pages says what its own function returns.
+}
 \description{
 Two audio arguments in this package count different things: \code{audio_stream}
 and \code{audio_input}. Both count from \code{0}, so \code{0} means the first one. This page

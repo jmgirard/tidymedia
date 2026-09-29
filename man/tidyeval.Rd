@@ -4,6 +4,13 @@
 \alias{tidyeval}
 \alias{.data}
 \title{Tidy eval helpers}
+\value{
+This page documents no function and returns no value. \code{.data} is
+not called either: it is an object, of class \code{rlang_fake_data_pronoun},
+that has meaning only inside a data-masking verb, where it stands for the
+current slice of data. Subsetting it there, as \code{.data[["var"]]}, gives
+that column.
+}
 \description{
 The \code{.data} pronoun is reexported from rlang. It represents the current
 slice of data inside data-masking verbs. If you have a column name stored in

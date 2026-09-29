@@ -78,12 +78,11 @@ bounded()
 # ...and gone once it has returned.
 getOption("tidymedia.timeout", default = "unset")
 
-\dontrun{
-# Bound every program a whole function starts, at five minutes.
+# Bound every program a whole function starts, at five minutes. Defining the
+# function starts nothing; the limit applies when you call it.
 convert_all <- function(files) {
   local_timeout(300)
   for (f in files) extract_audio(f, sub("[.][^.]*$", ".wav", f))
-}
 }
 
 }

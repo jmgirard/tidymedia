@@ -263,6 +263,10 @@ audio_stream_extras <- list(
 #'   the input index. [probe_audio()] shows which audio tracks a file has.
 #' @family audio selection functions
 #'
+#' @returns This page documents no function and returns no value. It explains
+#'   two arguments the functions listed under See Also take. Each of those
+#'   pages says what its own function returns.
+#'
 #' @aliases audio-tracks audio_indices
 #' @name audio_stream
 NULL

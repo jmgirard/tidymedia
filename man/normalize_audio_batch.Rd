@@ -164,15 +164,17 @@ To switch the check off and skip the whole sweep, use \code{options(tidymedia.ch
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 jobs <- tibble::tibble(
   input           = c(video, video),
-  output          = c("a.mp4", "b.mp4"),
+  output          = c(tempfile(fileext = ".m4a"), tempfile(fileext = ".m4a")),
   target_loudness = c(-23, -16)
 )
 # run = FALSE compiles one command per input without calling FFmpeg
 normalize_audio_batch(jobs, run = FALSE)
-# Accurate two-pass (measured/linear) normalization across the whole table
-# (runs FFmpeg to measure each input, so needs the binary):
-\dontrun{
-normalize_audio_batch(jobs, two_pass = TRUE)
+\donttest{
+# Accurate two-pass (measured/linear) normalization across the whole table.
+# This one runs FFmpeg to measure each input, so it needs the binary.
+if (nzchar(Sys.which("ffmpeg"))) {
+  normalize_audio_batch(jobs, two_pass = TRUE)
+}
 }
 }
 \references{

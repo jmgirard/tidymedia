@@ -240,9 +240,13 @@ resolve_check_tracks <- function(call = rlang::caller_env()) {
 #' # Outside it, the session's own setting is untouched.
 #' getOption("tidymedia.timeout", default = "unset")
 #'
-#' \dontrun{
+#' \donttest{
 #' # Bound one conversion at five minutes, whatever the session is set to.
-#' with_timeout(extract_audio("in.mp4", "out.wav"), 300)
+#' # Needs FFmpeg, and writes to a temporary file.
+#' if (nzchar(Sys.which("ffmpeg"))) {
+#'   video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+#'   with_timeout(extract_audio(video, tempfile(fileext = ".wav")), 300)
+#' }
 #' }
 #'
 #' @export
@@ -352,12 +356,11 @@ with_timeout <- function(expr, seconds) {
 #' # ...and gone once it has returned.
 #' getOption("tidymedia.timeout", default = "unset")
 #'
-#' \dontrun{
-#' # Bound every program a whole function starts, at five minutes.
+#' # Bound every program a whole function starts, at five minutes. Defining the
+#' # function starts nothing; the limit applies when you call it.
 #' convert_all <- function(files) {
 #'   local_timeout(300)
 #'   for (f in files) extract_audio(f, sub("[.][^.]*$", ".wav", f))
-#' }
 #' }
 #'
 #' @export

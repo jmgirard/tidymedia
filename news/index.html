@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidymedia</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,13 @@
       <small>Source: <a href="https://github.com/jmgirard/tidymedia/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.1" id="tidymedia-021">tidymedia 0.2.1<a class="anchor" aria-label="anchor" href="#tidymedia-021"></a></h2>
+<p>Documentation fixes for the first CRAN submission. No code changed, and no behavior differs from 0.2.0.</p>
+<ul><li>
+<code><a href="../reference/tidyeval.html">?tidyeval</a></code> says what the reexported <code>.data</code> pronoun is: an object you do not call, which stands for the current slice of data inside a data-masking verb.</li>
+<li>Three examples no longer carry a “not run” marker they did not need. The one on <code><a href="../reference/local_timeout.html">?local_timeout</a></code> defines a function and calls nothing, so it now runs. The ones on <code><a href="../reference/with_timeout.html">?with_timeout</a></code> and <code><a href="../reference/normalize_audio_batch.html">?normalize_audio_batch</a></code> need FFmpeg, so they run where it is installed and write to a temporary file rather than naming an output beside your working directory.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="tidymedia-020">tidymedia 0.2.0<a class="anchor" aria-label="anchor" href="#tidymedia-020"></a></h2>
 <div class="section level3">

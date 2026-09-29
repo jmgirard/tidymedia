@@ -311,7 +311,7 @@ Other audio selection functions:
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 jobs <- tibble::tibble(
   input           = c(video, video),
-  output          = c("a.mp4", "b.mp4"),
+  output          = c(tempfile(fileext = ".m4a"), tempfile(fileext = ".m4a")),
   target_loudness = c(-23, -16)
 )
 # run = FALSE compiles one command per input without calling FFmpeg
@@ -319,11 +319,20 @@ normalize_audio_batch(jobs, run = FALSE)
 #> # A tibble: 2 × 4
 #>   input                                           output target_loudness command
 #>   <chr>                                           <chr>            <dbl> <chr>  
-#> 1 /home/runner/work/_temp/Library/tidymedia/extd… a.mp4              -23 "-y -i…
-#> 2 /home/runner/work/_temp/Library/tidymedia/extd… b.mp4              -16 "-y -i…
-# Accurate two-pass (measured/linear) normalization across the whole table
-# (runs FFmpeg to measure each input, so needs the binary):
-if (FALSE) { # \dontrun{
-normalize_audio_batch(jobs, two_pass = TRUE)
-} # }
+#> 1 /home/runner/work/_temp/Library/tidymedia/extd… /tmp/…             -23 "-y -i…
+#> 2 /home/runner/work/_temp/Library/tidymedia/extd… /tmp/…             -16 "-y -i…
+# \donttest{
+# Accurate two-pass (measured/linear) normalization across the whole table.
+# This one runs FFmpeg to measure each input, so it needs the binary.
+if (nzchar(Sys.which("ffmpeg"))) {
+  normalize_audio_batch(jobs, two_pass = TRUE)
+}
+#> # A tibble: 2 × 11
+#>   input               output target_loudness measured_I measured_TP measured_LRA
+#>   <chr>               <chr>            <dbl>      <dbl>       <dbl>        <dbl>
+#> 1 /home/runner/work/… /tmp/…             -23      -21.8       -17.7            0
+#> 2 /home/runner/work/… /tmp/…             -16      -21.8       -17.7            0
+#> # ℹ 5 more variables: measured_thresh <dbl>, offset <dbl>, silent <lgl>,
+#> #   command <chr>, success <lgl>
+# }
 ```

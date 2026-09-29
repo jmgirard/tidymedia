@@ -1,5 +1,25 @@
 # Changelog
 
+## tidymedia 0.2.1
+
+Documentation fixes for the first CRAN submission. No code changed, and
+no behavior differs from 0.2.0.
+
+- [`?tidyeval`](https://jmgirard.github.io/tidymedia/reference/tidyeval.md)
+  says what the reexported `.data` pronoun is: an object you do not
+  call, which stands for the current slice of data inside a data-masking
+  verb.
+- Three examples no longer carry a “not run” marker they did not need.
+  The one on
+  [`?local_timeout`](https://jmgirard.github.io/tidymedia/reference/local_timeout.md)
+  defines a function and calls nothing, so it now runs. The ones on
+  [`?with_timeout`](https://jmgirard.github.io/tidymedia/reference/with_timeout.md)
+  and
+  [`?normalize_audio_batch`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md)
+  need FFmpeg, so they run where it is installed and write to a
+  temporary file rather than naming an output beside your working
+  directory.
+
 ## tidymedia 0.2.0
 
 ### Breaking changes

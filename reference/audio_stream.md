@@ -8,6 +8,12 @@ The glossary in
 [`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
 explains media terms such as stream, container and codec.
 
+## Value
+
+This page documents no function and returns no value. It explains two
+arguments the functions listed under See Also take. Each of those pages
+says what its own function returns.
+
 ## The two indices
 
 `audio_stream` counts **the audio tracks of one input file**. On

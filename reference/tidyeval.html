@@ -11,7 +11,7 @@ a string, use .data[["var"]] to refer to that column. See the rlang reference fo
 
     <a class="navbar-brand me-2" href="../index.html">tidymedia</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,6 +52,14 @@ a string, use <code>.data[["var"]]</code> to refer to that column. See the <a hr
     </div>
 
 
+    <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>This page documents no function and returns no value. <code>.data</code> is
+not called either: it is an object, of class <code>rlang_fake_data_pronoun</code>,
+that has meaning only inside a data-masking verb, where it stands for the
+current slice of data. Subsetting it there, as <code>.data[["var"]]</code>, gives
+that column.</p>
+    </div>
 
   </main></div>
 

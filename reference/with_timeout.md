@@ -171,8 +171,12 @@ with_timeout(getOption("tidymedia.timeout"), 30)
 getOption("tidymedia.timeout", default = "unset")
 #> [1] "unset"
 
-if (FALSE) { # \dontrun{
+# \donttest{
 # Bound one conversion at five minutes, whatever the session is set to.
-with_timeout(extract_audio("in.mp4", "out.wav"), 300)
-} # }
+# Needs FFmpeg, and writes to a temporary file.
+if (nzchar(Sys.which("ffmpeg"))) {
+  video <- system.file("extdata", "sample.mp4", package = "tidymedia")
+  with_timeout(extract_audio(video, tempfile(fileext = ".wav")), 300)
+}
+# }
 ```

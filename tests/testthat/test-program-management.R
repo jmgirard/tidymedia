@@ -194,20 +194,6 @@ tm_redirect_data <- function(env = parent.frame()) {
   root
 }
 
-# Run install_on_win() as if this were a Windows machine.
-#
-# M108 refuses a non-Windows host above every cost, so every test about what
-# the installer does BELOW that gate needs the seam held at `windows` -- on a
-# macOS or Linux developer machine, and on two of the three CI legs, it would
-# otherwise reach none of the behaviour it is about. Held at the seam and
-# nowhere else, so what the mock defeats is one function returning one word:
-# the seam is asserted against the real host in `tm_os()`'s own tests, and the
-# gate's real verdict per runner in `test-install-platform.R`, neither of which
-# mocks anything.
-tm_local_windows <- function(env = parent.frame()) {
-  testthat::local_mocked_bindings(tm_os = function(...) "windows", .env = env)
-}
-
 test_that("install_on_win()'s own default install dir is R_user_dir()'s ffmpeg subdir", {
   tm_local_windows()
   # AC2. The function is called with no `install_dir`, so it is the function's

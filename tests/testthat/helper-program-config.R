@@ -77,3 +77,20 @@ tm_collect_warnings <- function(expr) {
   )
   list(value = value, warnings = warns)
 }
+
+# Moved here from test-program-management.R at M138: a test file's definitions
+# are not visible to another test file, and test-location-portability.R needs
+# this seam too, for AC5's install-side arm.
+# Run install_on_win() as if this were a Windows machine.
+#
+# M108 refuses a non-Windows host above every cost, so every test about what
+# the installer does BELOW that gate needs the seam held at `windows` -- on a
+# macOS or Linux developer machine, and on two of the three CI legs, it would
+# otherwise reach none of the behaviour it is about. Held at the seam and
+# nowhere else, so what the mock defeats is one function returning one word:
+# the seam is asserted against the real host in `tm_os()`'s own tests, and the
+# gate's real verdict per runner in `test-install-platform.R`, neither of which
+# mocks anything.
+tm_local_windows <- function(env = parent.frame()) {
+  testthat::local_mocked_bindings(tm_os = function(...) "windows", .env = env)
+}

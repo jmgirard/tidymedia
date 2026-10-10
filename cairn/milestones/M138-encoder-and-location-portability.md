@@ -1,6 +1,6 @@
 # M138: The shipped docs and the remembered-location checks stop assuming what the host's FFmpeg build and `which` provide
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
@@ -178,8 +178,172 @@ unclassed `argument of length 0` where no binary resolves.
 - 2026-10-10: AC2(c) is green on Fedora. `R CMD check --as-cran` in `fedora:42` with `ffmpeg-free` reports `Status: 2 WARNINGs` and 0 ERRORs. `checking examples ... OK`, `checking examples with --run-donttest ... OK`, `checking tests ... [80s/84s] OK` with `[ FAIL 0 | WARN 0 | SKIP 302 | PASS 13908 ]`, and `checking re-building of vignette outputs ... OK`. The grep over the log finds nothing naming `libx264`, a remembered-location class, or the configuration directory. Both WARNINGs are the container's own environment, which the criterion exempts by name: CRAN incoming feasibility reporting 0.2.1 against the released 0.2.1 with a URL check that could not reach the network, and `qpdf` absent for the PDF size check. Logs kept at `scratchpad/fedora-check-green.log` and `scratchpad/fedora-gates-green.log`.
 - 2026-10-10: eight container runs were needed, and the first seven failed on the image's own toolchain rather than on the package. `fs` does not compile on Fedora aarch64, which took `testthat` and `rmarkdown` with it. Fedora's `R-rlang` is 1.1.6 against a declared floor of 1.2.0. `git clone` refuses a tree owned by another user inside the container. A mixed RPM and CRAN dependency set left `lifecycle` and then `R6` missing. And colima does not share this scratchpad path, so the logs come out by `docker cp` rather than a bind mount. The run that worked takes `R-fs` from `dnf` and everything else from CRAN with `dependencies = TRUE`, plus `glibc-langpack-en` for the locale.
 - 2026-10-10: every task is done and the profile's verify slot is clean, so this goes to review. The four suite configurations all report 0 failures: real binaries, `libx264` hidden, and all three hidden, the last with 143 skips naming the encoder they miss. `R CMD check --as-cran` reports 0 errors in all four readings taken, which are the two wrapper configurations, the real-binary one, and Fedora. `devtools::document()` produces no diff, `pkgdown::check_pkgdown()` finds no problems, and `README.Rmd` is untouched so `README.md` needs no rebuild.
+- 2026-10-10: review return 1: AC1 fails at `?ffm_run`, whose example re-encodes audio to the MP4 default with no `-c:a`, so one encoder at that site is still decided elsewhere. AC2(c) fails because the committed Fedora workflow echoes its two gates rather than gating on them, discards the check's exit status, and installs a dependency list that omits three Suggests. AC5 fails because the install-side arm is asserted without the `tm_os()` harness the criterion names. And T7 is ticked but undone: the new condition class is documented nowhere, while `?find_ffmpeg` and `?program_status` still promise a two-case partition that this milestone made false. Ten further findings are fix-now and five are candidate rows, all settled and recorded in the Review section.
 - 2026-10-10: M139's second criteria audit returned while this milestone was in progress. Its findings are recorded in M139's own work log, and that file now says its criteria need a re-cut through /milestone-plan before M139 is implemented. Nothing of M139's scope is dropped, and M138 is unaffected.
 
 ## Decisions
 
 ## Review
+
+### Pass 1 (2026-10-10) — returned
+
+spawned: diff-bug, blame-history, prior-review.
+
+**Outcome: a floor return.** Three criteria fail as written and two real defects
+slipped past the implement phase. No acceptance-criterion box is ticked in this
+pass: the fixes touch the domains of several, so every tick waits for the pass
+that follows them.
+
+Evidence gathered before the return:
+- AC4: `grep -n "Sys.which" R/*.R | grep -v ":[0-9]*: *#"` returns exactly two
+  call sites, `R/program_management.R:86` (the predicate's bare-name branch) and
+  `:103` (`find_program()`'s own lookup). The three consumers ask the predicate
+  at `:146`, `:1035` and `:1821`. Verified, not ticked, pending the pass after
+  the fixes.
+- AC1's enumeration re-run: the procedure returns three example sites and the
+  vignette chunks. Its recorded referent has drifted — `R/ffmpeg.R:5266` is now
+  `:5347`, and the three `vignettes/verification.Rmd` line numbers moved when
+  the setup chunk grew. Review does not edit criterion text, so this is
+  recorded rather than amended.
+- `tools/vignette_chunk_guards.R` reported one unguarded spawning chunk on the
+  branch and none at the merge base: putting `has_encoder()` in the setup chunk
+  made it start FFmpeg. Fixed at `5ecfa20b` by moving the question into its own
+  chunk guarded on `has_both`; the tool reports none again.
+- The suite and check sweep was stopped mid-run when the return became certain,
+  so this pass carries no AC2 or AC7 figures of its own.
+
+**Floor findings — what sends it back.**
+
+diff-bug #2: `?ffm_run`'s example names `libx264` for video and re-encodes audio
+to the MP4 container's default with no `-c:a`. Measured: the compiled command is
+`-y -i … -vf "scale=w=160:h=120" -codec:v libx264 out.mp4`. AC1 requires every
+running site to name the encoder it uses rather than inherit the container's
+default, so AC1 fails at the one site the milestone exists for, and D095's claim
+that the rule "leaves no site whose encoder is decided elsewhere" is false. The
+wrapper cannot see it: with `aac` hidden, `has_encoder("aac")` answers FALSE
+while the pipeline still encodes with `aac`, because no argument names it — so
+AC2's all-three-hidden run passed vacuously here. — floor return
+
+diff-bug #1 and #11: AC2(c) says two of the four recorded lines are gates and
+that the criterion is met only where the encoder line shows `libx264` absent.
+The committed `.github/workflows/fedora-cran-model.yaml` only echoes both,
+nothing exits non-zero, `R CMD check … || true` discards the status, and the
+error test greps for `^Status:.*ERROR`, so a check that dies before writing a
+`Status:` line reports `OK: no error`. Its dependency list also omits `furrr`,
+`future` and `roxygen2`, all in Suggests, so a run of this file would carry a
+NOTE the recorded reading does not have, and its grep is narrower than the
+criterion's. AC2(c) fails as written. — floor return
+
+diff-bug #13: AC5 says the install-side arm is asserted "under the install mock
+that holds `tm_os()` at `"windows"`". The committed test calls
+`tm_usable_binary()` directly with no such mock. The assertion is sound but the
+criterion's stated instrument is absent, so AC5 cannot be read off the test.
+— floor return
+
+diff-bug #6: T7 is ticked and was not done. `tidymedia_location_not_executable`
+appears in no roxygen block and no `man/` page, while `?find_ffmpeg` still reads
+"The warning has one of two classes that you can catch" and `?program_status`
+still reads "There are two cases" — both false after this diff, both enumerating
+a partition missing the state this milestone adds. Shipped help is now wrong.
+— floor return
+
+**Fix now, below the floor.**
+
+diff-bug #7: `vignettes/verification.Rmd`'s chunk at `:217` reads `jobs`, defined
+only in a `has_mp3` chunk, while being guarded on `has_both`. On a build without
+`libmp3lame` it renders `object 'jobs' not found` into the shipped vignette;
+`error = TRUE` is why the hidden-encoder run did not catch it. — fix now
+
+diff-bug #3: the reached-limit exclusion I added removed a comparison that was
+passing for `program_status`, and masked a real mismatch rather than recording
+it: measured, `tm_timeout_reached_master()[["has_encoder"]]` is `"warn"` while
+`tm_force_timeout("has_encoder", …)` aborts. The repair is a dated post-baseline
+measurement beside the `ae5ff1c` list, so every member is compared and each
+value carries its own provenance. — fix now
+
+diff-bug #4: the wrapper substitutes its sentinel into any argument holding the
+hidden name as a word, path components included, so a temp path containing
+`libx264` is rewritten and the reverse `sed` puts the name back — the diagnostic
+then names a directory that does exist. — fix now
+
+diff-bug #5: the wrapper's prefix rule is listing-only. `libx264rgb` is dropped
+from `-encoders` but still encodes, so the header's claim is false as stated and
+a site naming `libx264rgb` would pass here and fail on Fedora. — fix now
+
+diff-bug #8: `tm_usable_binary(NA_character_)` and `tm_usable_binary("sh")` now
+answer `NA` where the old body answered FALSE, and `tm_program_state()` has an
+undocumented fourth state against its own header. Latent from the one caller,
+but an `NA` in `unpacked[!…]` would garble the refusal message. — fix now
+
+diff-bug #9: NEWS says the lookup moved to the filesystem and does not say that a
+Windows location saved without an executable extension stops resolving. D096's
+falsifier names the shape; the release note does not. — fix now
+
+diff-bug #10: `path.expand()` in `tm_program_state()` is a no-op — measured,
+`file.info()` and `file.access()` both expand `~` themselves — and its comment's
+second clause does not follow from its first. The M107 shape. — fix now
+
+diff-bug #14c: `cairn/DESIGN.md`'s Known issues and D096 both assert that Windows
+reads `file.access(path, 1L)` as existence, written as measured and measured
+nowhere. It is load-bearing: were it to answer -1, `tm_usable_binary()` would
+refuse every binary `install_on_win()` unpacks. — fix now
+
+prior-review #4, already fixed at this pass: the absorber comment asserted which
+arm reaches a line, read off the branch structure. It now cites the reached-limit
+sweep as the derivation. — fixed
+
+prior-review #1, already fixed at this pass: the skip helper claimed one
+`ffmpeg -encoders` for the whole session. `setup-nvenc-memo.R`'s state inspector
+discards the memo before and after every `test_that()` block, so it is one per
+guarded block. Measured 2026-10-10: 46ms cold, 6ms warm. — fixed
+
+**Rejected, with the ground.**
+
+prior-review #1's own claim, that a warm memo makes the sweep's `has_encoder`
+cell silent and the suite red: false against the code. `setup-nvenc-memo.R:10-13`
+installs a state inspector that calls `forget_ffmpeg_capabilities()` before and
+after every block, so the memo is always cold when the cell runs, which is why
+three sweep runs were green. — rejected, false
+
+blame-history #3a, that the empty-file premise now asserts less: the test asserts
+`tm_runnable_program(f$empty)` TRUE beside `tm_usable_binary(f$empty)` FALSE,
+which is exactly "refused for its size and not for failing to resolve".
+— rejected, false
+
+blame-history #8's first half, that not every Fedora failure is covered because
+`make_test_video()` kept the plain guard: the wrapper run is the oracle for which
+tests execute an encoder, and the `libx264`-hidden suite reports 0 failures.
+— rejected, false
+
+blame-history #2, that a directory mapping to "absent" is coarser than D084's
+wording: it matches the behaviour before this diff, where `Sys.which()` refused a
+directory and `find_program()` reported it as gone. — rejected, planned change
+
+diff-bug #12, the blanket muffling in `tm_encoder_available()`: the same policy
+`program_status()` has carried since D088, consistent rather than new. The
+reviewer says so itself. — rejected, not new
+
+prior-review #3, waldo and the base-namespace `Sys.which` mock: the test this
+replaced mocked the same binding, so the precedent is the repo's own, and nothing
+shows waldo calls `Sys.which`. — rejected, style
+
+**Follow-up (candidate rows).**
+
+- blame-history #1 and prior-review #2, the Windows path shapes: an extensionless
+  absolute path, and a `~` location the predicate accepts and `CreateProcess`
+  may not expand. R's own `?Sys.which` defines a Windows executable as a file
+  with extension `.exe`, `.com`, `.cmd` or `.bat`, so the extensionless form was
+  not an executable to the old code either, and this project cannot measure
+  either shape. D096's falsifier names them.
+- blame-history #4, the `file.access` pin: the sweep now allows two callers and
+  cannot tell a read check from an execute check, so a second readability reader
+  inside the predicate would pass unseen.
+- diff-bug #14a, `set_program()`'s refusal still says "Can't find an executable"
+  for a file that exists and cannot be run, now that the predicate can tell them
+  apart. Pre-existing, and outside AC6's domain, which is `find_program()`.
+- diff-bug #14d, the Fedora job reinstalls its whole dependency tree on every
+  pull request with no caching.
+- blame-history #8's second half, `skip_if_no_encoder()` asks the package's
+  resolved FFmpeg while `skip_if_no_ffmpeg()` and `run_ffmpeg_fixture()` read
+  `PATH`, so the two can disagree where a remembered location overrides `PATH`.
+

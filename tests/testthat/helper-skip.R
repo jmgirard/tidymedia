@@ -49,8 +49,10 @@ skip_if_no_ffmpeg <- function() {
 #
 # skip_if_no_ffmpeg() first, so skip_on_cran() still runs ahead of every machine
 # question (D090) and the reason CRAN reports stays "On CRAN". Asking the pool
-# costs one `ffmpeg -encoders` for the whole session, which the capability memo
-# holds (D044).
+# costs one `ffmpeg -encoders` per `test_that()` block, not one per session:
+# the capability memo holds the answer (D044), but `setup-nvenc-memo.R`'s state
+# inspector discards it before and after every block, so each guarded block
+# warms it again. Measured 2026-10-10: 46ms cold, 6ms warm.
 #
 # Names are the encoder names `ffmpeg_encoders()` spells, not codec names: this
 # asks what the build can RUN, and `ffmpeg -encoders` is the list that answers.

@@ -3,10 +3,11 @@
 #
 # WHAT THIS MODELS
 # CRAN's two Fedora check flavors run an FFmpeg built with `--disable-encoders`
-# and an explicit `--enable-encoder=` list. That list holds `libopenh264`,
-# `libmp3lame` and `aac`, and it does NOT hold `libx264`, because x264 is not
-# free software and Fedora does not ship it. At tidymedia 0.2.1 the `?ffm_run`
-# example named `libx264`, so the examples step failed:
+# and an explicit `--enable-encoder=` list. That list is printed in full in the
+# check log cited below, and it was read there on 2026-10-10: 215 encoders, of
+# which `libopenh264`, `libmp3lame`, `aac` and `srt` are present and neither
+# `libx264` nor `libx264rgb` is, x264 not being free software. At tidymedia
+# 0.2.1 the `?ffm_run` example named `libx264`, so the examples step failed:
 #
 #   [vost#0:0 @ 0x55591c7a6140] Unknown encoder 'libx264'
 #   Error opening output files: Encoder not found
@@ -24,7 +25,7 @@
 #
 # Names are separated by commas or spaces. A hidden name also hides every
 # encoder whose name starts with it, so hiding `libx264` also hides
-# `libx264rgb`, which is how the Fedora build behaves.
+# `libx264rgb`. That matches the Fedora list read above, which holds neither.
 #
 # WHAT IT DOES
 # Every call goes through to the real FFmpeg. Two calls are changed.

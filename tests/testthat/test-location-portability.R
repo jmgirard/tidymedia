@@ -28,8 +28,11 @@ tm_local_pathless_which <- function(env = parent.frame()) {
 }
 
 test_that("a remembered location is still found where `which` answers nothing for a path", {
-  # AC5. On the pre-M138 code every assertion in this test failed: find_program()
-  # reported the stub as gone and returned NULL.
+  # AC5. On the pre-M138 code both assertions about `find_ffmpeg()` failed:
+  # `Sys.which(location) == ""` sent it down the gone branch, so it warned
+  # `tidymedia_location_gone` and returned NULL for a stub that was there. The
+  # two lines above them are premises about the model and the filesystem, and
+  # they passed at the merge base too, which is what makes them premises.
   dirs <- tm_redirect_config()
   stub <- tm_stub_executable()
   tm_write_location(dirs$new, "ffmpeg", stub)

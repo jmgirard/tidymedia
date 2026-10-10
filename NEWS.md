@@ -11,10 +11,12 @@ CRAN uses.
   `ffmpeg_encoders()` returns, asked once per session and then remembered.
   `refresh_ffmpeg_capabilities()` makes the next call ask again.
 
-* **Examples and vignette chunks that re-encode now name their encoder and run
-  only where your build has it.** On a build without `libx264`, the example on
-  `?ffm_run` used to fail with FFmpeg's own "Unknown encoder" error. Nothing
-  about a call you write yourself has changed.
+* **Examples and vignette chunks that re-encode now run only where your build
+  has the encoder they name.** On a build without `libx264`, the example on
+  `?ffm_run` used to fail with FFmpeg's own "Unknown encoder" error. Two
+  examples that had left the encoder to the output container now name it, on
+  `?ffm_manifest` and `?normalize_audio_batch`. Nothing about a call you write
+  yourself has changed.
 
 * **A remembered program location is now read from the filesystem.** Finding out
   whether a saved path still names a program you can run went through
@@ -29,8 +31,8 @@ CRAN uses.
   It carries the class `tidymedia_location_not_executable` rather than
   reporting that the file no longer exists.
   `program_status()` surfaces it beside the
-  other two repairable states. On Windows, where there is no execute bit, the
-  earlier reading stands.
+  other two repairable states. On Windows there is no execute bit, so this
+  warning does not arise there.
 
 # tidymedia 0.2.1
 

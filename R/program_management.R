@@ -801,12 +801,13 @@ install_on_win <- function(download_url = NULL,
 #' @export
 program_status <- function() {
   programs <- tm_programs()
-  # Of the three states find_program() warns in, exactly one is already carried
+  # Of the four states find_program() warns in, exactly one is already carried
   # by the table: a program that is simply not there, whose NA in both columns
   # IS "not found", and four such warnings would bury the answer the call
-  # exists to return. The other two name a file on this machine the caller can
-  # repair -- a remembered location whose binary is gone, and a config file
-  # that does not hold one location -- and there NA is indistinguishable from
+  # exists to return. The other three name a file on this machine the caller
+  # can repair -- a remembered location whose binary is gone, one whose binary
+  # cannot be run (M138), and a config file that does not hold one location --
+  # and there NA is indistinguishable from
   # never-configured, so a silent report sends the caller off to install a
   # program they have already got (D088). Selected by class rather than by
   # message, and by the classes to be RAISED rather than the one to be
@@ -1782,17 +1783,19 @@ tm_install_binary <- function(install_dir, program) {
 }
 
 # Whether a path the extraction produced can be handed to set_program(): it
-# resolves the way set_program() itself will ask (`Sys.which()`, at the abort
-# this check exists to make unreachable from here), it is a file rather than a
-# directory, and it holds bytes.
+# answers the way set_program() itself will ask (`tm_program_state()`, at the
+# abort this check exists to make unreachable from here), and it holds bytes.
+# Being a file rather than a directory is part of that one question now, which
+# is why this body no longer asks it twice (M138/D096).
 #
-# The two tests beyond parity are what parity cannot promise on the one
-# platform this install runs on. Windows has no executable bit, so a truncated
-# `ffmpeg.exe` of zero length resolves there and would be remembered as a
-# working program. Whether `Sys.which()` answers for a DIRECTORY named
-# `ffmpeg.exe` is a platform behaviour measured here only on macOS (2026-09-03,
-# where it does not), so the directory is refused by a test of its own rather
-# than by inference from that measurement.
+# The non-empty test beyond parity is what parity cannot promise on the one
+# platform this install runs on. Windows has no executable bit, R reads
+# `file.access(mode = 1)` as existence there, so a truncated `ffmpeg.exe` of
+# zero length answers "runnable" and would be remembered as a working program.
+# The directory is refused inside the predicate rather than by a clause of its
+# own here, and on evidence rather than by inference: `file.access(dir, 1L)`
+# answers 0 for any directory you can search, so the predicate's not-a-directory
+# test is the only thing refusing it, which its own test asserts without a mock.
 #
 # What it deliberately does not do is RUN the program: that would be the first
 # probe in this seam to execute a downloaded binary, and it would turn a slow

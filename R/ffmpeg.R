@@ -3193,7 +3193,7 @@ tm_encoder_available <- function(name, call) {
   resolve_timeout(call = call)
   # No FFmpeg, no encoder. find_program()'s plain not-found warning is muffled:
   # a caller asking whether this build has an encoder has not asked to be told
-  # FFmpeg is missing, and the verb they call next is what says so. The two
+  # FFmpeg is missing, and the verb they call next is what says so. The three
   # warnings that name a file on this machine the caller can repair stay
   # audible, on the partition D088 drew and the vector program_status() reads,
   # so a remembered location that has gone is never reported as a build without

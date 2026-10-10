@@ -55,11 +55,20 @@ test_that("the absorber partition is the reaching functions that can swallow", {
   # swallowed one -- the audio condition is re-raised unchanged -- and the guard
   # for that is this file's abort half, which requires this verb's forced
   # timeout to reach the caller carrying `tidymedia_timeout`.
+  #
+  # tm_encoder_available() joined at M138, and its handler cannot reach a
+  # timeout. It wraps `find_ffmpeg()` and nothing else, and that call spawns no
+  # program: `find_program()` reads `Sys.which()` and a config file, so no
+  # `tidymedia_timeout` condition can arise inside the handler. The spawn that
+  # CAN time out, `cached_encoder_names()`, sits below the handler and outside
+  # it. The guard is the reached-limit sweep in
+  # test-timeout-refusal-blame.R, which holds `has_encoder()` to D049's
+  # never-silent rule like every other domain member.
   expect_identical(
     tm_timeout_absorbers(),
     c("capture_version", "count_audio_streams", "ffm_batch", "ffm_run",
       "program_status", "run_separation_audio", "separate_audio_video",
-      "verify_media")
+      "tm_encoder_available", "verify_media")
   )
 })
 

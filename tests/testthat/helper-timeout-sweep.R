@@ -131,7 +131,10 @@ tm_timeout_recorded_domain <- function() {
     "extract_frame_batch", "ffm_batch", "ffm_run", "ffmpeg", "ffmpeg_codecs",
     "ffmpeg_encoders", "ffprobe", "format_for_web", "format_for_web_batch",
     "get_duration", "get_frame_rate", "get_height", "get_sample_rate",
-    "get_width", "has_hardware_encoder", "mediainfo", "mediainfo_parameter",
+    # has_encoder() joined at M138: it reads the limit above its own location
+    # question, and reaches a spawn through cached_encoder_names().
+    "get_width", "has_encoder", "has_hardware_encoder", "mediainfo",
+    "mediainfo_parameter",
     "mediainfo_query", "mediainfo_template",
     "normalize_audio", "normalize_audio_batch", "picture_in_picture",
     "picture_in_picture_batch", "probe_all", "probe_audio", "probe_container",

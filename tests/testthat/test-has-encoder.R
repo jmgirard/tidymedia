@@ -106,7 +106,8 @@ test_that("has_encoder() asks FFmpeg once per session, and asks again after a re
 test_that("has_encoder() does not read the hardware-encoder option", {
   # AC3's option clause. `tidymedia.hardware_encoders` names the hardware pool
   # of the machine, so reading it here would answer FALSE for every software
-  # encoder in any session that set it -- and about 80 test sites set it.
+  # encoder in any session that set it, and 144 test_that() blocks set it
+  # (counted 2026-10-10 over `tests/testthat/*.R`).
   forget_ffmpeg_capabilities()
   withr::defer(forget_ffmpeg_capabilities())
   withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")

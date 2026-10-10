@@ -196,6 +196,7 @@ test_that("convert_audio_batch() rejects a non-string audio_codec argument", {
 # Execution + ffm_batch forwarding (binary-gated) ---------------------------
 
 test_that("convert_audio_batch() writes converted audio outputs (binary-gated)", {
+  skip_if_no_encoder("aac")
   v1 <- make_test_video()
   v2 <- make_test_video()
   out1 <- withr::local_tempfile(fileext = ".m4a")
@@ -208,6 +209,7 @@ test_that("convert_audio_batch() writes converted audio outputs (binary-gated)",
 })
 
 test_that("convert_audio_batch() forwards verify (binary-gated)", {
+  skip_if_no_encoder("aac")
   v <- make_test_video()
   out <- withr::local_tempfile(fileext = ".m4a")
   jobs <- tibble::tibble(input = v, output = out, audio_codec = "aac")

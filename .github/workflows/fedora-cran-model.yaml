@@ -1,0 +1,105 @@
+# Check the package on the operating system CRAN's two Fedora flavors run.
+#
+# WHY THIS EXISTS
+# At 0.2.1 CRAN reported two ERRORs on `r-devel-linux-x86_64-fedora-clang` and
+# `-gcc`, and neither is reproducible on macOS. Fedora builds FFmpeg without
+# `libx264`, because x264 is not free software, so an example that named that
+# encoder failed. And `Sys.which()` there answered nothing for the absolute
+# paths the test suite creates, which failed 82 tests. This job runs the same
+# check on Fedora, so both answers come from the operating system rather than
+# from a model of it.
+#
+# `ffmpeg-free` is named deliberately. It is Fedora's own FFmpeg package, the
+# one with the reduced encoder set. It does not `Provide: ffmpeg`, and the
+# `ffmpeg` of RPM Fusion carries `libx264`, so installing that one instead would
+# make this run say nothing about the encoder question.
+#
+# `NOT_CRAN` is left unset on purpose. That is the reading CRAN itself makes:
+# every `skip_if_no_*()` helper skips, and so do the three argument sweeps. The
+# tests that still run are the pure-R ones, which is why CRAN reached the
+# remembered-location failures at 0.2.1.
+#
+# The four lines printed before the check say what the machine is, so a green
+# check is read against a machine whose conditions are known rather than
+# assumed.
+
+name: Fedora (CRAN model)
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  fedora-check:
+    runs-on: ubuntu-latest
+    container: fedora:42
+    name: fedora:42, R release, ffmpeg-free
+
+    steps:
+      - name: Install R, FFmpeg and the check toolchain
+        run: |
+          dnf -y install --setopt=install_weak_deps=False \
+            R-core R-core-devel R-devel \
+            ffmpeg-free mediainfo \
+            pandoc texlive-collection-latexrecommended \
+            git tar gzip qpdf which
+          R --version
+          echo "::group::what this machine is"
+          cat /etc/fedora-release
+          rpm -q which || echo "which: not installed"
+          rpm -q ffmpeg-free
+          echo "::endgroup::"
+
+      - uses: actions/checkout@v4
+
+      - name: Record the two gates
+        run: |
+          echo "=== GATE 1: does this build have libx264? ==="
+          ffmpeg -hide_banner -encoders | grep -c 'libx264' \
+            && echo "libx264 PRESENT (this run says nothing about the encoder defect)" \
+            || echo "libx264 ABSENT (the encoder condition is reproduced)"
+          echo "=== GATE 2: what does Sys.which() answer for a path? ==="
+          mkdir -p /tmp/whichprobe
+          printf '#!/bin/sh\n' > /tmp/whichprobe/stub
+          chmod 0755 /tmp/whichprobe/stub
+          Rscript -e 'cat("path  :[", unname(Sys.which("/tmp/whichprobe/stub")), "]\n", sep = "")' \
+                  -e 'cat("bare  :[", unname(Sys.which("ffmpeg")), "]\n", sep = "")' \
+                  -e 'cat("NOT_CRAN:[", Sys.getenv("NOT_CRAN"), "]\n", sep = "")'
+          echo "The location condition is reproduced only where path is empty and bare is not."
+
+      - name: Install the package dependencies
+        run: |
+          Rscript -e 'install.packages(c("archive","cli","digest","dplyr","glue","purrr","rappdirs","rlang","tibble","withr","knitr","rmarkdown","testthat","spelling"), repos = "https://cloud.r-project.org")'
+
+      - name: Build and check
+        run: |
+          R CMD build .
+          R CMD check --as-cran --no-manual tidymedia_*.tar.gz || true
+          echo "=== Status ==="
+          tail -3 tidymedia.Rcheck/00check.log
+
+      - name: The check must report no errors, and no encoder or location warning
+        run: |
+          log=tidymedia.Rcheck/00check.log
+          echo "::group::check log"
+          cat "$log"
+          echo "::endgroup::"
+          if grep -qE '^Status:.*ERROR' "$log"; then
+            echo "FAIL: the check reported an ERROR"
+            exit 1
+          fi
+          if grep -nE 'libx264|tidymedia_location_(gone|not_executable|unreadable)|tidymedia_no_remembered_location|R_user_dir' "$log"; then
+            echo "FAIL: a warning or note names an encoder or a remembered location"
+            exit 1
+          fi
+          echo "OK: no error, and nothing named an encoder or a remembered location"
+
+      - name: Keep the logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fedora-check-logs
+          path: |
+            tidymedia.Rcheck/00check.log
+            tidymedia.Rcheck/00install.out
+            tidymedia.Rcheck/tests/

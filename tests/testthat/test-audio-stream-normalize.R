@@ -454,6 +454,9 @@ test_that("every plausible output container works, audio-only or not", {
   # are what falsified the previous approach. `.wma` is excluded and recorded
   # here as failing on master too (exit 234), so it is not this milestone's.
   skip_if_no_ffmpeg()
+  # Seventeen containers, each re-encoded to its own default encoder, so the
+  # loop needs every one of them in this build (M138).
+  skip_if_no_encoder("libmp3lame", "aac", "libopus", "flac", "libvorbis")
   skip_if_no_ffprobe()
   infile <- system.file("extdata", "sample.mp4", package = "tidymedia")
   skip_if_not(nzchar(infile), "packaged sample video unavailable")

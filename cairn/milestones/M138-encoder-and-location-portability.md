@@ -1,6 +1,6 @@
 # M138: The shipped docs and the remembered-location checks stop assuming what the host's FFmpeg build and `which` provide
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
@@ -119,7 +119,7 @@ unclassed `argument of length 0` where no binary resolves.
 - [x] T6: Write the shared path predicate and route `find_program()`, `tm_set_program()` and
       `tm_usable_binary()` through it, keeping the non-empty test at the install check. Measure whether a tilde
       location still spawns, and keep writing the location as typed if it does.
-- [ ] T7: Add the `tidymedia_location_not_executable` diagnosis, and document it in the find-a-program page's
+- [x] T7: Add the `tidymedia_location_not_executable` diagnosis, and document it in the find-a-program page's
       Problems section. Correct the two sentences that still promise a two-case partition: `?find_ffmpeg`'s
       "one of two classes" and `?program_status`'s "There are two cases".
 - [x] T8: Rewrite the tests pinning the old rule: the tilde pair, the `Sys.which` premises, and the directory
@@ -133,14 +133,14 @@ unclassed `argument of length 0` where no binary resolves.
       issues; one D-entry superseding D090's "What this does not cover" paragraph; one annotating D083 and D084's
       "What the check asks"; the `Sys.which` lesson extended within its byte budget; and the two candidate rows
       this milestone closes.
-- [ ] T11: AC1's own rule at `?ffm_run`, whose example re-encodes audio to the MP4 default with no `-c:a`: name
+- [x] T11: AC1's own rule at `?ffm_run`, whose example re-encodes audio to the MP4 default with no `-c:a`: name
       that encoder and extend the guard, then re-read every running site for a second encoder the container
       decides rather than the code.
-- [ ] T12: AC2(c)'s gates. Make the two recorded lines gate rather than echo, stop discarding the check's exit
+- [x] T12: AC2(c)'s gates. Make the two recorded lines gate rather than echo, stop discarding the check's exit
       status, widen the log grep to what the criterion states, and install the three Suggests the list omits.
-- [ ] T13: AC5's stated instrument. Assert the install-side arm under the install mock that holds `tm_os()` at
+- [x] T13: AC5's stated instrument. Assert the install-side arm under the install mock that holds `tm_os()` at
       `"windows"`, as the criterion names.
-- [ ] T14: the ten fix-now findings the review pass settled, listed in the Review section: the vignette's `jobs`
+- [x] T14: the ten fix-now findings the review pass settled, listed in the Review section: the vignette's `jobs`
       chunk, the reached-limit table's provenance, the wrapper's path substitution and its prefix claim,
       `tm_usable_binary()`'s NA parity, the NEWS sentence for the Windows location shape, the `path.expand()`
       comment, and the unmeasured Windows `file.access()` claim.
@@ -182,6 +182,7 @@ unclassed `argument of length 0` where no binary resolves.
 - 2026-10-10: T7 done properly this time. `tidymedia_location_not_executable` is documented on both pages, and the two sentences that promised a two-case partition now name three cases, including that the new one does not arise on Windows.
 - 2026-10-10: T14, the ten fix-now findings. The vignette's `jobs`-reading chunk is guarded on `has_mp3`, and a sweep over the file confirms no chunk reads a `has_mp3` name under a weaker guard. The reached-limit table gained a second, dated vector so every member is compared again, including `program_status`, which the first attempt had stopped comparing. The wrapper matches only an argument that IS an encoder name, so a path component called `libx264` is left alone, and it now fails a `libx264rgb` call to match its own prefix rule. `tm_usable_binary()` answers FALSE rather than NA for `NA` and for a bare name. NEWS tells Windows users to name the executable extension. The `path.expand()` comment says what was measured. And the unmeasured claim that Windows reads `file.access(mode = 1)` as existence is gone: `?file.access` documents nothing there, so the predicate does not ask it on Windows at all, which also removes the risk that it would have refused every binary the installer unpacks.
 - 2026-10-10: the criteria were reflowed to fit the 150-line cap and not reworded. Proven: each of the seven is byte-identical to the committed version after the whitespace normalisation the binding-criteria check uses. An earlier attempt did reword AC2 while compressing it, and was reverted — on a return the work moves, not the promise.
+- 2026-10-10: the verify slot found one more thing the return had introduced: `tm_local_windows()` lived inside `test-program-management.R`, where another test file cannot see it, so AC5's new arm could not have run where I put it. It moves to `helper-program-config.R`, which exists for the fixtures two files share. The suite is then clean: 0 failures, 0 errors.
 - 2026-10-10: review return 1: AC1 fails at `?ffm_run`, whose example re-encodes audio to the MP4 default with no `-c:a`, so one encoder at that site is still decided elsewhere. AC2(c) fails because the committed Fedora workflow echoes its two gates rather than gating on them, discards the check's exit status, and installs a dependency list that omits three Suggests. AC5 fails because the install-side arm is asserted without the `tm_os()` harness the criterion names. And T7 is ticked but undone: the new condition class is documented nowhere, while `?find_ffmpeg` and `?program_status` still promise a two-case partition that this milestone made false. Ten further findings are fix-now and five are candidate rows, all settled and recorded in the Review section.
 - 2026-10-10: M139's second criteria audit returned while this milestone was in progress. Its findings are recorded in M139's own work log, and that file now says its criteria need a re-cut through /milestone-plan before M139 is implemented. Nothing of M139's scope is dropped, and M138 is unaffected.
 

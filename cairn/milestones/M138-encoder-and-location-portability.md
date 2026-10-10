@@ -198,6 +198,9 @@ unclassed `argument of length 0` where no binary resolves.
 - 2026-10-10: the colima disk filled during the first run of `tools/fedora_workflow_local.R`. This session's own containers and image were removed (2.1 GB of dangling layers pruned), and no image of another project was touched. The runner's second run passed every step of the committed job at `19c948fe`.
 - 2026-10-10: claim audit: 80 claims read, 5 corrected — R/program_management.R, NEWS.md, tools/fedora_workflow_local.R, .github/workflows/fedora-cran-model.yaml, tests/testthat/test-location-portability.R. The five: (1) the Windows rule called "what `Sys.which()` applied before M138" was not, since R's `expandcmd()` appends the four extensions to a name without one and takes any extension as it is, so the code now follows `expandcmd()` (D099) and NEWS loses its Windows warning. (2) "The spawners quote it" overstated, since `ffmpeg()` passes the path unquoted. (3) The runner used `bash --noprofile --norc -eo pipefail`, where GitHub uses `bash -e` for a step with no `shell:`. (4) The runner read the workflow from the working tree and the source from HEAD. (5) The feasibility block holds more than the version number. Two defects outside the claims were fixed with them: a top-level `on.exit()` that never ran in Rscript, and an unstated R 4.4 floor for `%||%`.
 - 2026-10-10: every task is done and the verify slot is clean (`devtools::test()`: 0 failed, 0 errors, 6 skips, 17806 passed; `devtools::document()` wrote only the page this return edited). To review.
+- 2026-10-10: review return 3: (1) AC6's Windows clause "the absent diagnosis stands" is false under D099, where a Windows file with any extension reads as runnable. (2) AC4's "decided by `file.exists()`, a not-a-directory test and `file.access(path, 1L)`" is false on Windows, which asks no `file.access()`.
+- 2026-10-10: amendment routed: AC2 — "this run's URL" cannot come from the local run of the committed job, and this repo opens the pull request only after the merge approval.
+- 2026-10-10: thrash rule (a) fires at return 3. Stopped for the maintainer's choice.
 
 ## Decisions
 
@@ -506,4 +509,115 @@ Known issues entry repeats it. — amendment routed for AC6; DESIGN fix now
 
 - diff-bug #23, prior-review #3: `?ffm_run` and `?ffm_manifest` start FFprobe
   but guard on FFmpeg alone. Pre-existing on lines this diff touched.
+
+### Pass 4 (2026-10-10) — returned
+
+spawned: diff-bug, blame-history, prior-review.
+
+**Outcome: return 3, and thrash rule (a) fires.** AC6's Windows clause fails as
+written, and so does AC4's mechanism clause on Windows. No criterion box is
+ticked.
+
+Evidence gathered at `f7edfb6a` (fresh, this pass):
+- AC1: the procedure's grep and `tools/vignette_chunk_guards.R` read as in
+  pass 3. `tools/vignette_chunk_program_identity.R` now reports no chunk
+  starting a program its guard does not name.
+- AC2(a): `R CMD check --as-cran`, remote incoming check off, reports
+  `Status: OK` with nothing hidden, with `libx264` hidden, and with `libx264`,
+  `libmp3lame` and `aac` hidden. `devtools::test()` with `NOT_CRAN=true` reports
+  0 failed and 0 errors in all three, with 6, 135 and 147 skips. The hidden runs'
+  skips name the hidden encoder (`FFmpeg build has no libx264 encoder`).
+- AC2(b): pass 3's merge-base reading stands (the merge base has not moved).
+- AC2(c): `tools/fedora_workflow_local.R` ran every step of the committed job,
+  read from `HEAD`, in `fedora:42`: gate 1 `libx264 absent`, gate 2 `path:[
+  /tmp/whichprobe/stub]` (not reproduced), `Status: 1 WARNING` (incoming
+  feasibility), 0 NOTEs, examples and both vignette and test steps `OK`, tests
+  `[ FAIL 0 | WARN 0 | SKIP 303 | PASS 13921 ]`, and the log gate `OK`.
+- AC4: the `Sys.which` grep returns `R/program_management.R:109` and `:129`.
+- AC5: at the merge base, under the committed model, `find_ffmpeg()` warns
+  `tidymedia_location_gone` and returns NULL, `set_program()` aborts
+  `tidymedia_program_not_found`, and `tm_usable_binary()` answers FALSE for a
+  stub that exists. At head all three accept it.
+- Gate: `devtools::document()` writes nothing, `pkgdown::check_pkgdown()` finds
+  no problems, `README.Rmd` is untouched, `.Rbuildignore` covers `tools/` and
+  `.github/`, and `cairn_validate.py` passes.
+- The claim auditor's re-read of its five corrections: four correct. The fifth,
+  that a directory reads as absent "as `Sys.which()` reported it", is
+  unverified, because `SearchPath()`'s handling of a directory is undocumented.
+
+**Floor findings — what sends it back.**
+
+diff-bug #1, blame-history #1, prior-review #3: under D099 a Windows file with
+any extension reads as runnable (`notes.txt`, `ffmpeg.dll`, an empty
+`ffmpeg.exe`, run). AC6 says the absent diagnosis stands on Windows, and the
+DESIGN entry and `?find_ffmpeg` repeat it. Return 2's D099 undid what the work
+log said it had made true. — floor return
+
+diff-bug #3: AC4 says a location holding a separator is decided by
+`file.exists()`, a not-a-directory test and `file.access(path, 1L)`. The
+Windows branch asks no `file.access()`, and since D099 it also accepts the
+path with an extension appended. False on Windows since return 1's T14.
+— floor return
+
+diff-bug #4: AC2(c) asks for "this run's URL". The quoted run is local and has
+none. A pull-request run would have one, but this repo opens the pull request
+only after the merge approval. — amendment routed for AC2
+
+**Fix now, below the floor.**
+
+- diff-bug #2: the job pins `fedora:42`, which reached end of life, while
+  CRAN's two Fedora flavors run Fedora 44. Gate 2's "not reproduced" was read on
+  the wrong release. — fix now
+- diff-bug #5: the WARNING/NOTE awk misses a verdict printed after a timing
+  (` [80s/31s] NOTE`, run). — fix now
+- diff-bug #7: `?find_ffmpeg` still says "To fix either problem". — fix now
+- diff-bug #8: `?has_encoder` says a repairable machine is "never reported as a
+  build without the encoder"; it returns FALSE with the warning. — fix now
+- diff-bug #10, blame-history #2: no test runs the Windows branch on Windows.
+  — fix now, as a Windows-only test the Windows CI leg runs
+- diff-bug #11: `?with_timeout` lists `has_encoder()` as an unconditional
+  aborter; with a warm memo it starts nothing. — fix now
+- diff-bug #12: a hand-edited `~` line is reported under its expanded form,
+  where `?find_ffmpeg` says the condition holds the location read. — fix now
+- diff-bug #13: the local runner ignores a failed unpack, ignores step keys it
+  cannot model, and omits `CI` and `HOME`. — fix now
+- diff-bug #14 (first half): the Windows branch asks `file.info()` for four
+  extended names on paths that already have an extension. — fix now
+- diff-bug #15: `R/cache.R`'s "~80 test call sites" (144 counted). — fix now
+- blame-history #3, prior-review #5: the `tm_set_details` comment and a test
+  title still say the location is written as typed, and no test pins the
+  prompt for a `~` input. — fix now
+- blame-history #4: `tm_usable_binary()`'s comment says the predicate decides
+  the rest, which is not so for an extensionless Windows path. Latent: the one
+  caller passes `.exe` paths. — fix now
+- blame-history #5: stale comments at `tm_install_binary()` and the usable
+  fixtures, and the LESSONS line naming `file.access()` without its POSIX
+  limit. — fix now
+- blame-history #6: the wrapper's header does not say which flags it reads.
+  — fix now
+
+**Rejected, with the ground.**
+
+- diff-bug #6, prior-review #2: `-w` matching of every listed encoder name can
+  fail on an ordinary word. AC2(c) names "any encoder the run's own `-encoders`
+  listed", the one prose block is excluded, and a NOTE elsewhere is itself
+  worth reading. — rejected, planned change
+- diff-bug #9, prior-review #1: AC5's Windows mock does not reach the
+  predicate. AC5 is met as written, and D098 records why the predicate reads
+  the host (three install tests, measured). — rejected, planned change
+- diff-bug #14 (second half): `tm_usable_binary()` calls `file.info()` twice
+  over a few paths. — rejected, style
+- diff-bug #17: "No LaTeX" may be false. The run log installs no TeX package.
+  — rejected, false
+- blame-history #7: D096 and D097 carry no annotation. DECISIONS is append-only,
+  and D098 and D099 name what they supersede. — rejected, false
+- blame-history #8: the job runs `--no-manual` and drops `R-devel`. AC2(c) asks
+  for `R CMD check --as-cran`, which runs. — rejected, false
+- prior-review #4: `!is.na(info$size)`. Settled at pass 3. — rejected, duplicate
+
+**Follow-up (candidate rows).**
+
+- diff-bug #16: `ffmpeg()` passes the location to `system()` unquoted, so a
+  location with a space breaks it. Pre-existing, and newly reachable through an
+  expanded `~` under a home folder with a space.
 

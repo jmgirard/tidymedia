@@ -1,13 +1,13 @@
 # M138: The shipped docs and the remembered-location checks stop assuming what the host's FFmpeg build and `which` provide
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** GP1
 - **Resolves:** —
 - **Surface tier:** user-facing. It adds an export and a condition class, and it changes the examples and vignettes CRAN runs.
-- **Branch/PR:** —
+- **Branch/PR:** m138-encoder-and-location-portability
 
 ## Goal
 
@@ -110,30 +110,30 @@ unclassed `argument of length 0` where no binary resolves.
 
 ## Tasks
 
-- [ ] T1: Commit `tools/ffmpeg_build_model/ffmpeg` with its header, then run `R CMD check --as-cran` and
+- [x] T1: Commit `tools/ffmpeg_build_model/ffmpeg` with its header, then run `R CMD check --as-cran` and
       the `NOT_CRAN=true` suite under it at the merge base, and record what reddens (AC2b).
-- [ ] T2: Add exported `has_encoder()` on `cached_encoder_names()`, with no option override,
+- [x] T2: Add exported `has_encoder()` on `cached_encoder_names()`, with no option override,
       `resolve_timeout()` first, and FALSE where no location is found. Add its tests, its `_pkgdown.yml`
       row and `devtools::document()`.
-- [ ] T3: Add `skip_if_no_encoder()` to `tests/testthat/helper-skip.R`, calling `testthat::skip_on_cran()`
+- [x] T3: Add `skip_if_no_encoder()` to `tests/testthat/helper-skip.R`, calling `testthat::skip_on_cran()`
       before it asks the pool (D090). Guard the `tests/testthat/helper-media.R` fixture builders that name
       an encoder.
-- [ ] T4: Guard the execution tests that name an encoder in the executed call. The set is what the
+- [x] T4: Guard the execution tests that name an encoder in the executed call. The set is what the
       wrapper runs redden. Re-run until clean, in both configurations.
-- [ ] T5: Make each AC1 site name its encoder and guard on it. Regenerate `man/`, `README.md` and the
+- [x] T5: Make each AC1 site name its encoder and guard on it. Regenerate `man/`, `README.md` and the
       vignettes.
-- [ ] T6: Write the shared path predicate. Route `find_program()` (`R/program_management.R:85`),
+- [x] T6: Write the shared path predicate. Route `find_program()` (`R/program_management.R:85`),
       `tm_set_program()` (`:934`) and `tm_usable_binary()` (`:1712`) through it, keeping the non-empty test
       at the install check. Measure whether a tilde location still spawns: `run_program()` hands
       `system2()` the location unquoted (`:1157`), so `sh` expands it, and on that measurement the
       location stays written as typed.
-- [ ] T7: Add the `tidymedia_location_not_executable` diagnosis. Document it in the find-a-program page's
+- [x] T7: Add the `tidymedia_location_not_executable` diagnosis. Document it in the find-a-program page's
       Problems section.
-- [ ] T8: Rewrite the tests pinning the old rule: the tilde pair at
+- [x] T8: Rewrite the tests pinning the old rule: the tilde pair at
       `tests/testthat/test-program-management.R:2636` and `:2677`, the `Sys.which` premises at
       `:2619-2622`, and the directory mock at `:2667`. Add the AC5 model-mock test, with its merge-base
       red recorded.
-- [ ] T9: Add `.github/workflows/fedora-cran-model.yaml`, on `workflow_dispatch` and `pull_request`, in a
+- [x] T9: Add `.github/workflows/fedora-cran-model.yaml`, on `workflow_dispatch` and `pull_request`, in a
       Fedora container. It installs `ffmpeg-free` BY NAME, because that package does not
       `Provide: ffmpeg` and RPM Fusion's `ffmpeg` carries `libx264`, which would make the run vacuous. It
       installs pandoc, so AC1's four vignette sites are inside the run rather than silently outside it.
@@ -141,7 +141,7 @@ unclassed `argument of length 0` where no binary resolves.
       `ffmpeg -encoders` lists `libx264`, and what `Sys.which()` answers for a just-created absolute stub
       path beside its answer for `ffmpeg`. Remove the r-hub workflow this task first added. Push the
       branch, dispatch the run, record its URL and figures.
-- [ ] T10: Write the records. `NEWS.md` entries. Correct `cairn/DESIGN.md`'s Conventions sentence about
+- [x] T10: Write the records. `NEWS.md` entries. Correct `cairn/DESIGN.md`'s Conventions sentence about
       examples and vignettes, and add AC6's Windows gap to Known issues. One D-entry superseding D090's
       "What this does not cover" paragraph. One D-entry annotating D083 and D084's "What the check asks".
       Extend the `Sys.which` lesson in `cairn/LESSONS.md`, paying for the bytes by compressing the line it
@@ -177,6 +177,7 @@ unclassed `argument of length 0` where no binary resolves.
 - 2026-10-10: GATE 1 reproduced, GATE 2 not. On `fedora:42`, `ffmpeg-free-7.1.4-1.fc42` lists zero `libx264` rows and ships `libopenh264`, which is the same picture as CRAN's configure line. But R 4.5.3 there answers `Sys.which("/tmp/wp/stub")` with the path itself, and `Sys.which("ffmpeg")` with `/usr/sbin/ffmpeg`, so the lookup condition is NOT present on this image and that half rests on AC5's stipulated mock, which is the clause the re-audit added for exactly this outcome. It also narrows what anyone can claim about the cause: it is not "Fedora's `which`", because this Fedora resolves a path. Something about CRAN's R-devel Fedora images differs, and D096 states the seam rather than a cause, so it stands.
 - 2026-10-10: AC2(c) is green on Fedora. `R CMD check --as-cran` in `fedora:42` with `ffmpeg-free` reports `Status: 2 WARNINGs` and 0 ERRORs. `checking examples ... OK`, `checking examples with --run-donttest ... OK`, `checking tests ... [80s/84s] OK` with `[ FAIL 0 | WARN 0 | SKIP 302 | PASS 13908 ]`, and `checking re-building of vignette outputs ... OK`. The grep over the log finds nothing naming `libx264`, a remembered-location class, or the configuration directory. Both WARNINGs are the container's own environment, which the criterion exempts by name: CRAN incoming feasibility reporting 0.2.1 against the released 0.2.1 with a URL check that could not reach the network, and `qpdf` absent for the PDF size check. Logs kept at `scratchpad/fedora-check-green.log` and `scratchpad/fedora-gates-green.log`.
 - 2026-10-10: eight container runs were needed, and the first seven failed on the image's own toolchain rather than on the package. `fs` does not compile on Fedora aarch64, which took `testthat` and `rmarkdown` with it. Fedora's `R-rlang` is 1.1.6 against a declared floor of 1.2.0. `git clone` refuses a tree owned by another user inside the container. A mixed RPM and CRAN dependency set left `lifecycle` and then `R6` missing. And colima does not share this scratchpad path, so the logs come out by `docker cp` rather than a bind mount. The run that worked takes `R-fs` from `dnf` and everything else from CRAN with `dependencies = TRUE`, plus `glibc-langpack-en` for the locale.
+- 2026-10-10: every task is done and the profile's verify slot is clean, so this goes to review. The four suite configurations all report 0 failures: real binaries, `libx264` hidden, and all three hidden, the last with 143 skips naming the encoder they miss. `R CMD check --as-cran` reports 0 errors in all four readings taken, which are the two wrapper configurations, the real-binary one, and Fedora. `devtools::document()` produces no diff, `pkgdown::check_pkgdown()` finds no problems, and `README.Rmd` is untouched so `README.md` needs no rebuild.
 - 2026-10-10: M139's second criteria audit returned while this milestone was in progress. Its findings are recorded in M139's own work log, and that file now says its criteria need a re-cut through /milestone-plan before M139 is implemented. Nothing of M139's scope is dropped, and M138 is unaffected.
 
 ## Decisions

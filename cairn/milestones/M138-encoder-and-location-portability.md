@@ -1,6 +1,6 @@
 # M138: The shipped docs and the remembered-location checks stop assuming what the host's FFmpeg build and `which` provide
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
@@ -189,6 +189,7 @@ unclassed `argument of length 0` where no binary resolves.
 - 2026-10-10: review return 2: (1) a `~` location is accepted and saved, but `run_program()` and `ffprobe()` cannot run it (measured), so T6's measurement was never made. (2) AC2(c) fails because the committed Fedora job omits the system libraries the green run installed, and `archive` does not install from its list (measured). (3) AC4's "a test asserts that `set_program()` ... writes it as typed" has no test.
 - 2026-10-10: amendment routed: AC6 — the clause "where the bit does not exist and the absent diagnosis stands" is false under D097, where a present file on Windows reads as runnable with no warning.
 - 2026-10-10: thrash rule (b) fires on AC2(c): pass 1 failed it because the committed job echoed its gates and omitted Suggests, and pass 3 fails it because the committed job omits what the run installed. Both are the committed file diverging from what was executed. The plan's recorded alternative, r-hub, was spent by the 2026-10-10 substantive amendment. Stopped for the maintainer's choice.
+- 2026-10-10: the maintainer chose the rework in which the quoted Fedora run executes the committed workflow's own `run:` steps, read from the file, so the file and the run cannot diverge. Status back to in-progress for return 2 and the AC6 amendment.
 
 ## Decisions
 

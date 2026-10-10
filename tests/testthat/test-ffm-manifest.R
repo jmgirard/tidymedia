@@ -109,7 +109,7 @@ test_that("tool_versions() captures a real ffmpeg version string", {
 })
 
 test_that("ffm_batch(manifest = TRUE) attaches a manifest ffm_manifest() reads", {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   a <- make_test_video()
   b <- make_test_video()
   out_a <- withr::local_tempfile(fileext = ".mp4")

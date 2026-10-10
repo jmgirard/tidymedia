@@ -84,6 +84,9 @@ test_that("format_for_web_batch() rejects a duplicated explicit output (M26)", {
 # Execution + ffm_batch forwarding (binary-gated) ---------------------------
 
 test_that("format_for_web_batch() writes H.264 outputs (binary-gated)", {
+  # format_for_web() hardcodes libx264, so this needs the encoder and not only
+  # the binary (M138).
+  skip_if_no_encoder("libx264")
   v1 <- make_test_video()
   v2 <- make_test_video()
   out1 <- withr::local_tempfile(fileext = ".mp4")

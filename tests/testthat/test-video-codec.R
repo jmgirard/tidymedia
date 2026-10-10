@@ -466,6 +466,7 @@ test_that("crop_video(video_codec = ) writes a playable file", {
 
 test_that("picture_in_picture(video_codec = ) writes a playable file", {
   skip_if_no_ffprobe()
+  skip_if_no_encoder("libx264")
   # get_width() shells out to mediainfo, not ffprobe, so it needs its own guard.
   skip_if_no_mediainfo()
   infile <- make_test_video()

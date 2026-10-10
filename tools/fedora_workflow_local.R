@@ -69,13 +69,13 @@ if (system2("git", c("archive", "--format=tar", "-o", shQuote(src), "HEAD")) != 
 
 name <- paste0("tm-fedora-workflow-", Sys.getpid())
 env <- unlist(lapply(names(job$env), function(k) c("-e", paste0(k, "=", job$env[[k]]))))
-docker <- function(...) system2("docker", c(...))
-if (docker("create", "--name", name, env, image, "bash", "/steps/driver.sh") != 0L) {
+docker <- function(args, ...) system2("docker", args, ...)
+if (docker(c("create", "--name", name, env, image, "bash", "/steps/driver.sh")) != 0L) {
   stop("docker create failed")
 }
-on.exit(docker("rm", "-f", name, stdout = FALSE), add = TRUE)
-docker("cp", shQuote(stage), paste0(name, ":/steps"))
-docker("cp", shQuote(src), paste0(name, ":/src.tar"))
+on.exit(docker(c("rm", "-f", name), stdout = FALSE), add = TRUE)
+docker(c("cp", shQuote(stage), paste0(name, ":/steps")))
+docker(c("cp", shQuote(src), paste0(name, ":/src.tar")))
 
 status <- system2(
   "docker", c("start", "-a", name),
@@ -83,8 +83,9 @@ status <- system2(
 )
 for (f in c("00check.log", "00install.out", "tests")) {
   docker(
-    "cp", paste0(name, ":/work/tidymedia/tidymedia.Rcheck/", f),
-    shQuote(file.path(out, f)), stdout = FALSE, stderr = FALSE
+    c("cp", paste0(name, ":/work/tidymedia/tidymedia.Rcheck/", f),
+      shQuote(file.path(out, f))),
+    stdout = FALSE, stderr = FALSE
   )
 }
 cat("container exit status:", status, "\nlog:", file.path(out, "run.log"), "\n")

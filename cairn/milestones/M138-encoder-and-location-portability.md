@@ -214,6 +214,7 @@ unclassed `argument of length 0` where no binary resolves.
 - 2026-10-10: substantive amendment: AC6 — "On POSIX, a remembered location naming a file that exists, is not a directory, and that `file.access(path, 1L)` refuses is diagnosed as that, and not as absent. … On POSIX, an absent location keeps `tidymedia_location_gone` and its present wording. … The not-executable test skips on Windows, where the execute bit does not exist. What a Windows location reads as is not promised here, and `cairn/DESIGN.md`'s Known issues records that this diagnosis never fires on Windows." The descope of return 3, at the maintainer's choice.
 - 2026-10-10: substantive amendment: Scope — "With it comes the diagnosis, on POSIX, that tells a file that cannot be run from one that is not there."
 - 2026-10-10: T16's "the Windows rule that keeps AC6's Windows clause true" describes a promise the descope dropped. The rule it names was replaced by D099 at return 2.
+- 2026-10-10: step-7 approval: m138-encoder-and-location-portability approved for merge
 - 2026-10-10: T17 and T18 done, and the verify slot is clean (`devtools::test()`: 0 failed, 0 errors, 7 skips, 17812 passed; `devtools::document()` writes nothing). To review.
 
 ## Decisions

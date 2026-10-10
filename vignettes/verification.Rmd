@@ -21,8 +21,11 @@ has_both <- has_ffmpeg && has_ffprobe
 # Having FFmpeg is not the same as having an encoder: builds differ in what they
 # were compiled with, and some Linux distributions ship one without libx264 or
 # libmp3lame. The chunks that re-encode name their encoder and are evaluated
-# only where this build has it.
-has_mp3 <- has_both && tidymedia::has_encoder("libmp3lame")
+# only where this build has it. Asking that question starts FFmpeg, so it is
+# asked in its own guarded chunk below rather than here: this chunk carries no
+# `eval` guard, because it is where the guards are defined, and an unguarded
+# chunk must start no program (`tools/vignette_chunk_guards.R`).
+has_mp3 <- FALSE
 # Recorded on stderr rather than into the page: this line is what a build log
 # shows for the three programs, so a build that was meant to run without them
 # can be checked rather than assumed. `message()` would be captured by knitr and
@@ -36,6 +39,12 @@ writeLines(
 # Work in a temporary directory: nothing is written beside the vignette sources,
 # and the paths in the reports below stay short enough to read.
 knitr::opts_knit$set(root.dir = tempdir())
+```
+
+```{r, include = FALSE, eval = has_both}
+# Guarded on the two programs, so the encoder question starts FFmpeg only where
+# FFmpeg is there to start.
+has_mp3 <- tidymedia::has_encoder("libmp3lame")
 ```
 
 ```{r setup}

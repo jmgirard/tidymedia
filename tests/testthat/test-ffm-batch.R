@@ -165,7 +165,7 @@ test_that("ffm_batch() runs each job and reports success (binary-gated)", {
 # M08: verification wired into the batch (binary-gated) --------------------------
 
 test_that("ffm_batch(verify =) adds a verified column without aborting", {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   a <- make_test_video()
   b <- make_test_video()
   out_a <- withr::local_tempfile(fileext = ".mp4")
@@ -182,7 +182,7 @@ test_that("ffm_batch(verify =) adds a verified column without aborting", {
 })
 
 test_that("ffm_batch(verify =) records FALSE for a mismatch, no abort", {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   a <- make_test_video()
   out_a <- withr::local_tempfile(fileext = ".mp4")
   jobs <- tibble::tibble(input = a, output = out_a)
@@ -196,7 +196,7 @@ test_that("ffm_batch(verify =) records FALSE for a mismatch, no abort", {
 })
 
 test_that("ffm_batch(verify =) accepts a function of the job columns", {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   a <- make_test_video()
   out_a <- withr::local_tempfile(fileext = ".mp4")
   jobs <- tibble::tibble(input = a, output = out_a, w = 32)
@@ -209,7 +209,7 @@ test_that("ffm_batch(verify =) accepts a function of the job columns", {
 })
 
 test_that("ffm_batch(progress = TRUE) completes without erroring", {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   a <- make_test_video()
   b <- make_test_video()
   out_a <- withr::local_tempfile(fileext = ".mp4")
@@ -226,7 +226,7 @@ test_that("ffm_batch(progress = TRUE) completes without erroring", {
 # M06: safe execution with hostile paths (binary-gated) --------------------------
 
 test_that("ffm_batch() runs jobs whose paths contain hostile characters", {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libmp3lame")
   src <- make_test_video()
   dir <- withr::local_tempdir()
   hostile_in <- file.path(dir, "job one's $x `a`.mp4")

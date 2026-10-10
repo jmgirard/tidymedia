@@ -4443,3 +4443,102 @@ already records as a known exposure, not a new one.
 three skipped, which would show the cost was never concentrated where this entry
 says it was; or by a blame defect reaching a release because the only runner
 that would have caught it was one CRAN does not use.
+
+## D095 — A shipped-doc site that re-encodes is gated on the encoder it names, not on the binary alone (2026-10-10, from M138; supersedes D090's "What this does not cover" paragraph, and leaves every other part of D090, D004, D024, D034 and D094 standing)
+
+D090 gated the execution TESTS on CRAN and left examples and vignette chunks
+"gated on binary presence alone", recording the extension to them as "a
+separate decision with a real cost -- an example that never runs on CRAN's
+machines is an example whose output CRAN never checks -- and deliberately not
+taken here".
+
+CRAN then took it for us. At 0.2.1 the two Fedora check flavors reported the
+examples step as an ERROR, because Fedora builds FFmpeg with
+`--disable-encoders` and an explicit `--enable-encoder=` list that holds
+`libopenh264` and not `libx264`, x264 not being free software. The `?ffm_run`
+example named `libx264`, so FFmpeg answered `Unknown encoder 'libx264'` and
+`ffm_run()` aborted. The reviewer's instruction was that use of an external
+command be conditional on a test for its presence, and that the package pass
+its checks without it.
+
+**The rule.** A site in the shipped docs that runs an FFmpeg encode names the
+encoder it uses, rather than inheriting the output container's default, and is
+gated on `has_encoder()` for that encoder beside the binary test it already
+carried. The gate is the encoder question and not a CRAN question: the site
+still runs on CRAN's machines wherever that build has the encoder, so what
+D090's held-back paragraph was protecting -- CRAN checking the output of these
+examples -- is kept, and only a machine that cannot run the encode at all opts
+out.
+
+**Why name the encoder rather than gate on the default.** Two of the three
+examples and all three vignette chunks relied on the output container's default
+encoder, which is a name the site never writes down and the package cannot ask
+about. Naming it makes the site's dependency readable, makes the gate
+expressible, and leaves no site whose encoder is decided elsewhere. It also
+empties the half of this defect class that no instrument can model: a wrapper
+can hide an encoder from `-encoders` and refuse a call that names one, and it
+cannot know which encoder a container default would have chosen.
+
+**Why not add libx264 to SystemRequirements.** The reviewer ruled it out in the
+same message, on the ground that it is not free and is not a system
+requirement of this package. The package requires FFmpeg, which it declares;
+which encoders a given FFmpeg was built with is a property of that build, and
+the answer is `has_encoder()`.
+
+**Falsified by** a CRAN report that an example's output is no longer checked
+anywhere because every CRAN machine skips it, which would mean the gate had
+grown wider than the encoders this package's own examples name; or by a
+shipped-doc site that cannot name its encoder, which would put the
+container-default half of the class back in play.
+
+## D096 — Whether a location names a runnable program is a filesystem question, and `Sys.which()` answers only the bare-name half (2026-10-10, from M138; annotates D083's "What the check asks" paragraph and D084's partition, and leaves every rule D082, D083, D084 and D046 otherwise state standing)
+
+D083 fixed what the install's registration check asks: that the path resolve
+"as `set_program()` will ask it to (`Sys.which()`)", that it be a file rather
+than a directory, and that the file not be empty. `find_program()` and
+`set_program()` asked the same first question of a remembered or typed
+location.
+
+`Sys.which()` is not an instrument for that question. On Unix it shells out to
+`/usr/bin/which`, so its answer for an ABSOLUTE PATH is whatever that machine's
+`which` does with a path. At 0.2.1 the two CRAN Fedora flavors answered `""`
+for stub executables the suite had just created, and 82 tests failed through
+this one seam -- none of them about anything the package had got wrong. The
+suite's own control case passed on those machines, so the difference is in the
+host's `which` and not in the files.
+
+**The rule now.** One internal predicate, `tm_program_state()`, decides whether
+a location names a runnable program, and `find_program()`, `tm_set_program()`
+and `tm_usable_binary()` all ask it. A location holding a directory separator
+is a PATH, and the filesystem decides it: the thing is there, it is not a
+directory, and `file.access(path, 1L)` says it can be executed. A location
+holding no separator is a NAME, and finding it means searching `PATH`, which is
+the one question `Sys.which()` is the instrument for, and the form
+`set_program("ffmpeg", "ffmpeg")` means.
+
+**What D083's reasoning keeps.** The non-empty test stays at
+`tm_usable_binary()` rather than moving into the predicate, for the reason D083
+gives it: Windows has no execute bit, R reads `file.access(mode = 1)` as
+existence there, and a truncated `ffmpeg.exe` of zero length would otherwise be
+registered as a working program on the one platform the install runs on. The
+directory test stays too. So the three forms D084 partitions -- empty, a
+directory, no executable bit -- all still reach `tidymedia_program_unusable`.
+
+**What it changes beside the host question.** The two readers of a path now
+agree about `~`, because the predicate expands once and every reader it uses
+expands. A tilde path naming a good program is therefore usable, where M104's
+review F1 had it refused by one clause and accepted by the other; that
+disagreement is closed rather than disclosed, and `tm_install_binary()` still
+expands where the path is BUILT, because `set_program()` writes the string it
+is given and must not record a tilde. And the predicate can tell a file that
+cannot be run from one that is not there, which `Sys.which()` could not: a
+remembered location with no execute bit now warns
+`tidymedia_location_not_executable` instead of reporting that the file no
+longer exists, which closes the ROADMAP candidate that recorded the wrong
+diagnosis.
+
+**Falsified by** a location this predicate refuses and the machine can run --
+on Windows, a path typed without its executable extension is the shape to
+watch, since `Sys.which()` there may have resolved one and the filesystem test
+asks about the string as given; or by a caller whose bare name must not be
+searched for on `PATH`.

@@ -19,11 +19,13 @@
 #'   \code{path} is written.
 #' @family verification functions
 #' @seealso [ffm_batch()], which records the manifest.
-#' @examplesIf nzchar(Sys.which("ffmpeg"))
+#' @examplesIf nzchar(Sys.which("ffmpeg")) && has_encoder("libmp3lame")
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' jobs <- tibble::tibble(input = video, output = tempfile(fileext = ".mp3"))
 #' res <- ffm_batch(jobs, manifest = TRUE, .f = function(input, output, ...) {
-#'   ffm_files(input, output) |> ffm_drop("video")
+#'   ffm_files(input, output) |>
+#'     ffm_drop("video") |>
+#'     ffm_codec(audio = "libmp3lame")
 #' })
 #' ffm_manifest(res)
 #' @export

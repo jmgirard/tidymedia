@@ -164,7 +164,7 @@ tm_timeout_recorded_domain <- function() {
 #
 # `program_status()` entered the domain at M113: it probes each program's
 # version, which spawns.
-tm_timeout_post_baseline <- function() "program_status"
+tm_timeout_post_baseline <- function() c("has_encoder", "program_status")
 
 # tm_timeout_baseline_domain(): the domain the recorded censuses can be compared
 # against, with the exclusion guarded rather than trusted.
@@ -236,6 +236,9 @@ tm_timeout_call_specs <- function(dir) {
     get_height = list(file = vid),
     get_sample_rate = list(file = vid),
     get_width = list(file = vid),
+    # has_encoder() takes one encoder name and reads the limit above the
+    # location question, so it joins the domain on every machine (M138).
+    has_encoder = list(name = "libx264"),
     has_hardware_encoder = list(hardware = "nvenc"),
     mediainfo = list(command = "--Version"),
     mediainfo_parameter =

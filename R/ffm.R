@@ -1604,7 +1604,7 @@ n_files <- function(x) {
 #' @seealso [ffm_compile()] to get the command without running it, [ffm_batch()]
 #'   to run many files, and [verify_media()] for the \code{verify} list.
 #' @family pipeline functions
-#' @examplesIf nzchar(Sys.which("ffmpeg"))
+#' @examplesIf nzchar(Sys.which("ffmpeg")) && has_encoder("libx264")
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' out <- tempfile(fileext = ".mp4")
 #' ffm_files(video, out) |>

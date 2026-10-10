@@ -28,11 +28,13 @@ checksums of the input and output files. With the manifest, a batch run
 leaves a record that others can check.
 }
 \examples{
-\dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
+\dontshow{if (nzchar(Sys.which("ffmpeg")) && has_encoder("libmp3lame")) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 jobs <- tibble::tibble(input = video, output = tempfile(fileext = ".mp3"))
 res <- ffm_batch(jobs, manifest = TRUE, .f = function(input, output, ...) {
-  ffm_files(input, output) |> ffm_drop("video")
+  ffm_files(input, output) |>
+    ffm_drop("video") |>
+    ffm_codec(audio = "libmp3lame")
 })
 ffm_manifest(res)
 \dontshow{\}) # examplesIf}

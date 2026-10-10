@@ -38,6 +38,62 @@ tm_install_dir <- function() {
 # The internal lookup behind find_ffmpeg() and its three siblings. It is not
 # exported, so its behavior is documented on their help page (?find_ffmpeg),
 # whose roxygen block sits on find_ffmpeg() below.
+# Whether a location names a program this machine can run, and where it cannot,
+# why not. One state per element: "runnable", "not_executable" or "absent".
+#
+# `Sys.which()` is not the instrument for this question, which is what CRAN's
+# two Fedora check flavors measured at 0.2.1. It shells out to `/usr/bin/which`,
+# so its answer for an ABSOLUTE PATH is whatever that machine's `which` does
+# with a path, and on those two images it answered `""` for stub executables the
+# tests had just created. 82 tests failed through this seam, none of them about
+# anything the package had got wrong. Whether a runnable program sits at a path
+# is a question the filesystem answers the same way on every machine, so that is
+# what is asked here (M138).
+#
+# A location holding no directory separator is a different question. It is a
+# bare NAME, and finding it means searching `PATH`, which is the one question
+# `Sys.which()` is the instrument for. `set_program()` accepts that form, so the
+# call stays for it (the `onpath` case in test-program-management.R).
+#
+# `file.access(path, 1L)` is the execute test on POSIX. Windows has no execute
+# bit and R reads mode 1 as existence there, which is the same reach
+# `Sys.which()` had on that platform, and which is why `tm_usable_binary()`
+# keeps its own non-empty test on top of this one (D083).
+#
+# Vectorized, so the whole produced set of an install is asked in one call
+# (M105). A directory is folded into "absent" rather than given a state of its
+# own: find_program()'s two warnings are the only reader that branches on the
+# answer, and a directory at a remembered location was already reported as gone.
+tm_program_state <- function(location) {
+  state <- rep("absent", length(location))
+  if (!length(location)) return(state)
+  named_path <- grepl("[/\\\\]", location)
+  if (any(named_path)) {
+    # Expanded here and nowhere else: `file.info()` and `file.access()` both
+    # expand `~`, and asking them about the unexpanded string would ask about a
+    # file that is not there (M104 review F1, the other half of D083's note).
+    path <- path.expand(location[named_path])
+    info <- file.info(path, extra_cols = FALSE)
+    is_file <- !is.na(info$isdir) & !info$isdir
+    state[named_path] <- ifelse(
+      is_file & file.access(path, 1L) == 0L,
+      "runnable",
+      ifelse(is_file, "not_executable", "absent")
+    )
+  }
+  if (any(!named_path)) {
+    state[!named_path] <- ifelse(
+      unname(Sys.which(location[!named_path])) != "", "runnable", "absent"
+    )
+  }
+  state
+}
+
+# The yes-or-no form, for the two callers that do not branch on the reason.
+tm_runnable_program <- function(location) {
+  tm_program_state(location) == "runnable"
+}
+
 find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")) {
   
   # Validate arguments
@@ -81,8 +137,30 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
         )
         return(NULL)
       }
-      # Verify that the location in the user config file is valid
-      if (Sys.which(location) == "") {
+      # Is the location still a program this machine can run? Two ways it is
+      # not, and they take different advice: a file that is no longer there is
+      # repaired by pointing somewhere else, and one that is there but cannot
+      # be run is repaired by the permission bit. Before M138 both answered
+      # `Sys.which() == ""` and both were reported as gone, which sent a caller
+      # looking for a file that was in front of them.
+      state <- tm_program_state(location)
+      if (identical(state, "not_executable")) {
+        cli::cli_warn(
+          c(
+            "{program} is configured at {.file {location}}, but that file \\
+             cannot be run.",
+            "i" = "Give it permission to execute, or use \\
+                   {.fn set_{program}} to point tidymedia at another copy.",
+            "i" = "Or use {.code unset_program(\"{program}\")} to forget the \\
+                   remembered location.",
+            tm_install_bullet(program)
+          ),
+          class = "tidymedia_location_not_executable",
+          tm_program = program,
+          tm_location = location
+        )
+        location <- NULL
+      } else if (!identical(state, "runnable")) {
         cli::cli_warn(
           c(
             "{program} was configured at {.file {location}} but that file no \\
@@ -733,12 +811,13 @@ program_status <- function() {
   # program they have already got (D088). Selected by class rather than by
   # message, and by the classes to be RAISED rather than the one to be
   # muffled, so a warning added later is silent until it is decided about.
-  audible <- c("tidymedia_location_gone", "tidymedia_location_unreadable")
   locations <- lapply(programs, function(program) {
     withCallingHandlers(
       find_program(program),
       warning = function(w) {
-        if (!inherits(w, audible)) invokeRestart("muffleWarning")
+        if (!inherits(w, tm_audible_location_classes())) {
+          invokeRestart("muffleWarning")
+        }
       }
     )
   })
@@ -752,6 +831,23 @@ program_status <- function() {
     # unname(): tool_versions() answers a list named by program, and a named
     # column prints its names back at the reader in every row label.
     version = unname(vapply(versions, tm_na_string, character(1)))
+  )
+}
+
+# The find_program() warnings a reader of the answer still hears. Named by the
+# classes to be RAISED rather than the one to be muffled, so a warning added
+# later is silent until it is decided about (D088, and the paragraph above
+# program_status()'s own use of this). One vector rather than two literals,
+# because has_encoder() muffles on the same partition and for the same reason,
+# and two copies drift.
+tm_audible_location_classes <- function() {
+  c(
+    "tidymedia_location_gone",
+    "tidymedia_location_unreadable",
+    # Added at M138, decided rather than inherited: a file that is there and
+    # cannot be run is a file on this machine the caller can repair, which is
+    # exactly the test D088 states for being audible.
+    "tidymedia_location_not_executable"
   )
 }
 
@@ -931,7 +1027,11 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   program <- rlang::arg_match(program, error_arg = "program", error_call = call)
   rlang::check_string(location, call = call)
   rlang::check_bool(confirm, call = call)
-  if (Sys.which(location) == "") {
+  # Asked of the filesystem for a path and of `PATH` for a bare name, which is
+  # the split tm_program_state() exists for: a bare name is what a caller who
+  # typed `set_ffmpeg("ffmpeg")` means, and a path is a file this machine can
+  # answer about without asking `which` (M138).
+  if (!tm_runnable_program(location)) {
     cli::cli_abort("Can't find an executable at {.file {location}}.",
                    class = "tidymedia_program_not_found", call = call,
                    tm_program = program, tm_location = location)
@@ -1707,9 +1807,15 @@ tm_install_binary <- function(install_dir, program) {
 # result and `file.info()` names its rows, and neither name belongs to this
 # question (M105).
 tm_usable_binary <- function(path) {
+  # The non-empty test stays here rather than moving into the predicate, for
+  # D083's reason: Windows has no execute bit, R reads `file.access(mode = 1)`
+  # as existence there, and a truncated `ffmpeg.exe` of zero length would
+  # otherwise be remembered as a working program on the one platform this
+  # install runs on. The predicate decides the rest, so the directory and
+  # absent forms are refused there and the three forms
+  # `tidymedia_program_unusable` partitions all still reach it (D084).
   info <- file.info(path, extra_cols = FALSE)
-  !is.na(info$isdir) & !info$isdir & info$size > 0 &
-    unname(Sys.which(path)) != ""
+  tm_runnable_program(path) & info$size > 0
 }
 
 # What the install would do, one item per line: the published digest where

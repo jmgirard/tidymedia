@@ -41,6 +41,31 @@ skip_if_no_ffmpeg <- function() {
   )
 }
 
+# M138: whether the binary is present and whether its BUILD has a given encoder
+# are two questions. Fedora's FFmpeg is built without libx264, because x264 is
+# not free software, and CRAN checks on two such machines -- so a fixture or an
+# assertion that names an encoder skips where that encoder is not compiled in,
+# rather than failing on a machine that is doing nothing wrong.
+#
+# skip_if_no_ffmpeg() first, so skip_on_cran() still runs ahead of every machine
+# question (D090) and the reason CRAN reports stays "On CRAN". Asking the pool
+# costs one `ffmpeg -encoders` for the whole session, which the capability memo
+# holds (D044).
+#
+# Names are the encoder names `ffmpeg_encoders()` spells, not codec names: this
+# asks what the build can RUN, and `ffmpeg -encoders` is the list that answers.
+skip_if_no_encoder <- function(...) {
+  skip_if_no_ffmpeg()
+  names <- c(...)
+  absent <- names[!vapply(names, has_encoder, logical(1), USE.NAMES = FALSE)]
+  testthat::skip_if(
+    length(absent) > 0L,
+    message = paste0(
+      "FFmpeg build has no ", paste(absent, collapse = ", "), " encoder"
+    )
+  )
+}
+
 skip_if_no_ffprobe <- function() {
   testthat::skip_on_cran()
   testthat::skip_if_not(

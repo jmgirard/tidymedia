@@ -420,10 +420,17 @@ test_that("readability is tested at one site, for the filter as well as the abor
   # decided by the parsed CALL-NODE walk, never by a substring search of the
   # deparsed text -- `file.access` inside a comment or a message string is not
   # a call, which is the confusion helper-input-paths.R exists to avoid.
+  #
+  # Two functions call `file.access()` and they ask different questions. Only
+  # `unreadable_paths()` asks about READABILITY, which is this test's subject.
+  # `tm_program_state()` asks `file.access(path, 1L)`, the execute bit, which is
+  # what replaced `Sys.which()` as the reader of a remembered program location
+  # (M138). A third name appearing here is what this test is for: it would mean
+  # readability had grown a second site, or executability a second one.
   graph <- tm_call_graph()
   callers <- names(graph)[vapply(graph, function(c) "file.access" %in% c,
                                  logical(1))]
-  expect_identical(callers, "unreadable_paths")
+  expect_identical(callers, c("tm_program_state", "unreadable_paths"))
 
   # The domain is non-empty and the one site is reached from both ends, so a
   # green here cannot mean the walk found nothing.

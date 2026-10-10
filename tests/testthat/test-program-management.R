@@ -2612,14 +2612,13 @@ test_that("tm_usable_binary() answers for a file, an absent path, an empty file 
   expect_false(tm_usable_binary(f$dir))
   # The premise the empty case rests on: it is refused for its size and not
   # for failing to resolve, which is what makes it a different case from
-  # `absent`. Asserted by what resolved, not by the string: Windows answers
-  # with the 8.3 short form of the same file, so path identity is not the
-  # portable way to say "this resolved".
+  # `absent`. Asked of the predicate the check now rests on rather than of
+  # `Sys.which()`, whose answer for a path is the host's `which` (M138): on the
+  # two CRAN Fedora images these three lines failed for the instrument, not for
+  # the code under test.
   expect_true(file.exists(f$empty))
-  resolved <- unname(Sys.which(f$empty))
-  expect_false(resolved == "")
-  expect_identical(basename(resolved), basename(f$empty))
-  expect_equal(unname(file.size(resolved)), 0)
+  expect_true(tm_runnable_program(f$empty))
+  expect_equal(unname(file.size(f$empty)), 0)
 })
 
 test_that("tm_usable_binary() refuses a file with no executable bit", {
@@ -2633,13 +2632,17 @@ test_that("tm_usable_binary() refuses a file with no executable bit", {
   expect_gt(file.size(f$noexec), 0)
 })
 
-test_that("tm_usable_binary() refuses a tilde-relative path naming a good program", {
-  # AC5, form 6 -- the M104 review F1 disagreement, asserted at the helper
-  # rather than only through the install: `file.info()` expands `~` and
-  # `Sys.which()` does not, so a tilde path is a non-empty file to one clause
-  # and absent to the other. `tm_install_binary()` is what keeps this out of
-  # the install by expanding where the path is built; the helper itself still
-  # answers FALSE, and this is the test that says so.
+test_that("tm_usable_binary() accepts a tilde-relative path naming a good program", {
+  # AC5's form 6, and the M104 review F1 disagreement CLOSED rather than
+  # disclosed (M138). That disagreement was between two readers of one path:
+  # `file.info()` expands `~` and `Sys.which()` does not, so a tilde path was a
+  # non-empty file to one clause and absent to the other, and the helper
+  # answered FALSE for a program that was there. Every reader now expands, so
+  # the two clauses ask about one file and the answer is TRUE.
+  #
+  # `tm_install_binary()` still expands where the path is BUILT, for D083's own
+  # reason: `set_program()` is what writes the location, and the install must
+  # not record a tilde string. The install test below pins that.
   skip_on_os("windows")
   home <- withr::local_tempdir()
   withr::local_envvar(HOME = home)
@@ -2649,28 +2652,29 @@ test_that("tm_usable_binary() refuses a tilde-relative path naming a good progra
   writeLines("stub program", exe)
   Sys.chmod(exe, "0755")
 
-  expect_false(tm_usable_binary("~/good.exe"))
-  # The same file, expanded, is usable -- so the FALSE above is the tilde and
-  # not the file.
+  expect_true(tm_usable_binary("~/good.exe"))
+  # The expanded form answers the same, which is what "one file" means here.
   expect_true(tm_usable_binary(path.expand("~/good.exe")))
+  # And the tilde is not a free pass: a tilde path naming nothing is refused by
+  # the same clause as any other absent path.
+  expect_false(tm_usable_binary("~/no-such-program.exe"))
 })
 
 test_that("tm_usable_binary() refuses a directory on its own account", {
-  # AC4. `Sys.which()` refuses a directory on macOS (measured 2026-09-03), so
-  # on that platform the directory clause could be doing nothing and the tests
-  # above would not notice. Mocking `Sys.which()` to resolve the directory
-  # takes that answer away: what is left to refuse it is the `!info$isdir`
-  # clause. Deleting that clause makes this expectation fail (checked at M105
-  # T4), which is what says the clause is load-bearing on the one platform
-  # this install runs on but cannot be measured on.
+  # AC4's directory clause. Before M138 this test mocked `Sys.which()` to
+  # resolve the directory, because `Sys.which()` refuses one on macOS and the
+  # `!info$isdir` clause could therefore have been doing nothing here. The
+  # predicate no longer asks `Sys.which()` about a path, and the thing that
+  # would otherwise accept a directory is `file.access(dir, 1L)`, which answers
+  # 0 for any directory you can search -- so the clause is load-bearing with no
+  # mock at all, and this asserts it directly.
   f <- tm_usable_fixtures()
-  local_mocked_bindings(
-    Sys.which = function(names) stats::setNames(names, names), .package = "base"
-  )
-  # The mock does what the test needs it to do: the directory now resolves.
-  expect_identical(unname(Sys.which(f$dir)), f$dir)
+  # The premise: the only clause left to refuse it is the directory test.
+  expect_identical(unname(file.access(f$dir, 1L)), 0L)
+  expect_true(file.exists(f$dir))
   expect_false(tm_usable_binary(f$dir))
-  # And the mock has not turned the check into one that refuses everything.
+  expect_identical(tm_program_state(f$dir), "absent")
+  # And the check has not become one that refuses everything.
   expect_true(tm_usable_binary(f$good))
 })
 
@@ -2680,11 +2684,10 @@ test_that("tm_usable_binary() answers elementwise", {
   # `file.info()` names its rows, so an unnamed answer is a promise about this
   # function rather than about either of them.
   skip_on_os("windows")
-  # The sixth path is AC5's sixth input and not a stand-in for it: a
-  # tilde-relative path naming a NON-EMPTY EXECUTABLE, which is the one form
-  # whose two readers disagree. A tilde path naming nothing would be refused
-  # by the same clause as `absent` and would leave that disagreement untested
-  # in the vector shape.
+  # The sixth path is a tilde-relative path naming a NON-EMPTY EXECUTABLE. It
+  # was the one form whose two readers disagreed before M138, and now it is the
+  # one form that proves they agree: it answers TRUE in the vector exactly as
+  # it does on its own.
   home <- withr::local_tempdir()
   withr::local_envvar(HOME = home)
   expect_identical(normalizePath(path.expand("~")), normalizePath(home))
@@ -2698,7 +2701,10 @@ test_that("tm_usable_binary() answers elementwise", {
   one_at_a_time <- vapply(paths, tm_usable_binary, logical(1), USE.NAMES = FALSE)
 
   expect_identical(tm_usable_binary(paths), one_at_a_time)
-  expect_identical(tm_usable_binary(paths), c(TRUE, rep(FALSE, 5L)))
+  expect_identical(
+    tm_usable_binary(paths),
+    c(TRUE, FALSE, FALSE, FALSE, FALSE, TRUE)
+  )
   expect_null(names(tm_usable_binary(paths)))
 })
 

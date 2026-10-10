@@ -75,6 +75,7 @@ FFmpeg.
 Other capability functions:
 \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}},
 \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}},
-\code{\link[=hardware_encoder]{hardware_encoder()}}
+\code{\link[=hardware_encoder]{hardware_encoder()}},
+\code{\link[=has_encoder]{has_encoder()}}
 }
 \concept{capability functions}

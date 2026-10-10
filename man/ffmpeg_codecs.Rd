@@ -41,6 +41,7 @@ codec in a pipeline, and \code{\link[=ffmpeg]{ffmpeg()}} for the direct command.
 Other capability functions:
 \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}},
 \code{\link[=hardware_encoder]{hardware_encoder()}},
+\code{\link[=has_encoder]{has_encoder()}},
 \code{\link[=refresh_ffmpeg_capabilities]{refresh_ffmpeg_capabilities()}}
 }
 \concept{capability functions}

@@ -53,9 +53,10 @@ realtime/streaming, and full filtergraph DAGs.
   diagnostic probes, which never run under `run = FALSE`. Command **execution**
   tests `skip_if` the ffmpeg/mediainfo binaries are absent, and `skip_on_cran()`
   ahead of that, so no *test* spawns a binary under CRAN's own check of the
-  tarball even where its machine has one; examples and vignette chunks are
-  gated on `Sys.which()` alone and still spawn wherever the binary is present
-  (D004, D024, D034, D090).
+  tarball even where its machine has one; examples and vignette chunks still
+  spawn wherever the binary is present, and since M138 the ones that re-encode
+  are gated on this build having the encoder they name as well, through the
+  exported `has_encoder()` (corrected M138; D004, D024, D034, D090, D095).
 - Batch is one tibble-in/tibble-out runner, `ffm_batch(jobs, .f, …)`; `.f`
   builds one pipeline per row (pmap-style), one reproducible command per job (D007).
 - testthat 3e; usethis scaffolding; GitHub Actions CI. `man/` and `README.md`
@@ -95,6 +96,16 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
 `segment_video`) emit multiple single-output pipelines (D007).
 
 ## Known issues
+
+- On Windows a remembered location that is there but cannot be run is still
+  reported as gone. The execute bit does not exist on that platform, and R reads
+  `file.access(path, 1L)` as existence there, so `tm_program_state()` cannot
+  tell the two states apart and answers "absent" for both. The
+  `tidymedia_location_not_executable` warning M138 added therefore never fires
+  on Windows, and its tests `skip_on_os("windows")`. Accepted rather than
+  carried as planned work: the state the diagnosis exists for is a POSIX
+  permission bit, and the Windows reading is the one that platform supports
+  (added 2026-10-10, M138 AC6).
 
 - Four costs and inconsistencies around the remembered-location warnings are accepted
   rather than pending a fix (M116 review). `unset_program()` discards the FFmpeg

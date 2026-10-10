@@ -185,6 +185,10 @@ unclassed `argument of length 0` where no binary resolves.
 - 2026-10-10: the verify slot found one more thing the return had introduced: `tm_local_windows()` lived inside `test-program-management.R`, where another test file cannot see it, so AC5's new arm could not have run where I put it. It moves to `helper-program-config.R`, which exists for the fixtures two files share. The suite is then clean: 0 failures, 0 errors.
 - 2026-10-10: review return 1: AC1 fails at `?ffm_run`, whose example re-encodes audio to the MP4 default with no `-c:a`, so one encoder at that site is still decided elsewhere. AC2(c) fails because the committed Fedora workflow echoes its two gates rather than gating on them, discards the check's exit status, and installs a dependency list that omits three Suggests. AC5 fails because the install-side arm is asserted without the `tm_os()` harness the criterion names. And T7 is ticked but undone: the new condition class is documented nowhere, while `?find_ffmpeg` and `?program_status` still promise a two-case partition that this milestone made false. Ten further findings are fix-now and five are candidate rows, all settled and recorded in the Review section.
 - 2026-10-10: M139's second criteria audit returned while this milestone was in progress. Its findings are recorded in M139's own work log, and that file now says its criteria need a re-cut through /milestone-plan before M139 is implemented. Nothing of M139's scope is dropped, and M138 is unaffected.
+- 2026-10-10: review pass 2 was interrupted after its fixes landed at `e84fd456`, before it recorded its findings. Pass 3 re-ran the review in full, at the maintainer's request to check the branch for errors and inefficiencies.
+- 2026-10-10: review return 2: (1) a `~` location is accepted and saved, but `run_program()` and `ffprobe()` cannot run it (measured), so T6's measurement was never made. (2) AC2(c) fails because the committed Fedora job omits the system libraries the green run installed, and `archive` does not install from its list (measured). (3) AC4's "a test asserts that `set_program()` ... writes it as typed" has no test.
+- 2026-10-10: amendment routed: AC6 — the clause "where the bit does not exist and the absent diagnosis stands" is false under D097, where a present file on Windows reads as runnable with no warning.
+- 2026-10-10: thrash rule (b) fires on AC2(c): pass 1 failed it because the committed job echoed its gates and omitted Suggests, and pass 3 fails it because the committed job omits what the run installed. Both are the committed file diverging from what was executed. The plan's recorded alternative, r-hub, was spent by the 2026-10-10 substantive amendment. Stopped for the maintainer's choice.
 
 ## Decisions
 
@@ -351,4 +355,146 @@ shows waldo calls `Sys.which`. — rejected, style
 - blame-history #8's second half, `skip_if_no_encoder()` asks the package's
   resolved FFmpeg while `skip_if_no_ffmpeg()` and `run_ffmpeg_fixture()` read
   `PATH`, so the two can disagree where a remembered location overrides `PATH`.
+
+### Pass 2 (2026-10-10) — interrupted
+
+Its fixes landed at `e84fd456` (the timeout-sweep attribution, the wrapper's two
+prefix rules, D097). Its findings and dispositions were never written here, so
+pass 3 re-read the whole branch with three fresh lenses rather than resume it.
+
+### Pass 3 (2026-10-10) — returned
+
+spawned: diff-bug, blame-history, prior-review.
+
+**Outcome: return 2, and thrash rule (b) fires on AC2(c).** AC2(c) fails a
+second time, by a new mechanism of the pass-1 shape: the committed Fedora job
+is not the job that was run. No criterion box is ticked.
+
+Evidence gathered before the return (fresh, this pass):
+- AC1: the procedure's grep lists every `examplesIf` and `nzchar(Sys.which` site.
+  The sites that re-encode are `R/ffm.R:1607` (`libx264`, `aac`),
+  `R/ffm_manifest.R:22` (`libmp3lame`) and `R/ffmpeg.R:5347` (`aac`), each guarded
+  on its encoder. The others query or stream-copy: `R/timeout.R:246` compiles to
+  `-codec:a copy`. `tools/vignette_chunk_guards.R` reports no unguarded spawning
+  chunk, and the three `has_mp3` chunks name `libmp3lame`.
+- AC2(a), first configuration: `R CMD check --as-cran` with the remote incoming
+  check off reports `Status: OK` with `libx264` hidden and with nothing hidden.
+  `devtools::test()` with `NOT_CRAN=true` reports 0 failed, 0 errors, 135 skips
+  hidden and 6 skips real. The all-three-hidden run was not made this pass.
+- AC2(b): at the merge base `18996d41` with `libx264` hidden, the check reports
+  `Status: 2 ERRORs, 1 NOTE`, both ERRORs the examples step at
+  `Unknown encoder 'libx264'`, and the suite 13 failed and 2 errors.
+- AC2(c): a `fedora:42` image built from the committed job's own `dnf` list
+  plus `R-fs` and `glibc-langpack-en` ends with `there is no package called
+  'archive'`. The job never installs `libarchive-devel`.
+- AC4: `grep -n "Sys.which" R/*.R | grep -v ":[0-9]*: *#"` returns
+  `R/program_management.R:104` (the predicate's bare-name branch) and `:121`
+  (`find_program()`'s lookup) only.
+- Measured with `HOME` redirected: after `set_program("ffprobe",
+  "~/bin/ffprobe")`, `find_ffprobe()` returns `~/bin/ffprobe` silently, then
+  `run_program()` and `ffprobe()` fail with `sh: ~/bin/ffprobe: No such file or
+  directory`. `ffmpeg()` alone works, because it passes the path to `system()`
+  unquoted.
+
+**Floor findings — what sends it back.**
+
+diff-bug #1, blame-history #1: a `~` location is accepted and saved but cannot
+be run by `run_program()` or `ffprobe()`, so every probe, verify and pipeline
+call fails after it. The merge base refused it. T6 asked for this measurement
+and kept the as-typed write only if the location spawned. — floor return
+
+diff-bug #2: the committed Fedora workflow is not the script that produced the
+quoted green run. It omits `libarchive-devel`, `libxml2-devel`, the compilers,
+`R-fs` (its comment says `dnf` installs it) and the locale. AC2(c) fails as
+written. — floor return
+
+diff-bug #8: AC4 says a test asserts that `set_program()` accepts a bare name
+and writes it as typed. No test asserts the write. — floor return
+
+diff-bug #7: AC6 says that on Windows "the absent diagnosis stands". Under
+D097 a file that is present on Windows reads as runnable, with no warning, so
+the clause describes behaviour the code does not have. `cairn/DESIGN.md`'s
+Known issues entry repeats it. — amendment routed for AC6; DESIGN fix now
+
+**Fix now, below the floor.**
+
+- diff-bug #4: the log grep's `R_user_dir` token can never match a printed
+  configuration path. — fix now
+- diff-bug #5: the WARNING/NOTE awk misses a block whose verdict is on its own
+  line, such as the `qpdf` WARNING. — fix now
+- diff-bug #6: `-w` matching of every encoder name the build lists (`text`,
+  `ass`, `png`) can fail the job on ordinary words, the incoming-feasibility
+  block included, which the criterion lists rather than fails. — fix now
+- diff-bug #18: the workflow repeats step 1's lines in gate 2, keeps checks
+  the previous step makes unreachable, and installs LaTeX for a `--no-manual`
+  run. — fix now
+- diff-bug #9: `?with_timeout` lists the reached-limit aborters without
+  `has_encoder()`, and says a function that starts no program never gives the
+  error. — fix now
+- diff-bug #10: the wrapper still rewrites an argument that only starts with a
+  hidden name (`aac_take1.mp3`, `title=aac_mix`), and its `<flag>=<name>`
+  branch models a syntax FFmpeg rejects. — fix now
+- diff-bug #11: three `aac` guards in `test-ffmpeg.R` and
+  `test-separate-audio-video-batch.R` cite a container default the verbs do
+  not use (they stream-copy), so they skip passing tests. — fix now
+- diff-bug #12, blame-history #3: `find_program()`'s header comment now sits
+  above `tm_program_state()`. — fix now
+- diff-bug #13: the `path.expand()` comment justifies a no-op at length. — fix
+  now, with the tilde repair
+- diff-bug #14: stale comments in `helper-program-config.R` and
+  `test-location-portability.R` (the `Sys.which` checks, the r-hub run). — fix
+  now
+- diff-bug #15, blame-history #10: `tm_program_state()` reads
+  `.Platform$OS.type` rather than the `tm_os()` seam (D086), so AC5's
+  `tm_local_windows()` changes nothing in it. — fix now
+- diff-bug #16, blame-history #9: `?has_encoder` says repeated calls "cost
+  nothing", but each call runs `find_ffmpeg()`. — fix now
+- diff-bug #17: the AC3 ordering test passes with `resolve_timeout()` placed
+  after the memo read. — fix now
+- diff-bug #19: NEWS says two examples now name their encoder; it is three. —
+  fix now
+- diff-bug #20: the `run = FALSE` error chunk hides wherever `libmp3lame` is
+  absent, only because it reuses `jobs`. — fix now
+- diff-bug #21: `?refresh_ffmpeg_capabilities` describes only the hardware
+  readers of the memo. — fix now
+- diff-bug #22: `tm_usable_binary()` states D083's non-empty reason twice. —
+  fix now
+- blame-history #2: the NEWS sentence on Windows extensionless locations gives
+  `Sys.which()`'s definition of an executable as the reason, where the new check
+  simply asks for the file as named. — fix now
+- blame-history #6: `test-input-path-front-door.R`'s title still says one
+  `file.access()` site. — fix now
+- prior-review #1: `tools/vignette_chunk_program_identity.R` does not expand
+  `has_mp3`, so it reports three guarded chunks as uncovered (run). — fix now
+- prior-review #2: two 27-word sentences in `?has_encoder` against the 25-word
+  rule `tools/doc_prose_report.R` checks (run). — fix now
+- prior-review #6: a ragged NEWS wrap. — fix now
+
+**Rejected, with the ground.**
+
+- diff-bug #3: "gate 2 does not gate". AC2(c) defines gate 2's two outcomes,
+  measured or resting on AC5's mock, and admits both. The step reports which.
+  Its "Not a gate" comment is reworded under the fix-now workflow item.
+  — rejected, false
+- blame-history #4, prior-review #4: `!is.na(info$size)` reverses M105's
+  removal, but the predicate now answers "runnable" for a bare name, and the
+  comment says so. — rejected, planned change
+- blame-history #5: D088 is not annotated. The code applies D088's own test to
+  the new class; no decision changed. — rejected, false
+- blame-history #7: the timeout sweep's post-baseline vectors record this
+  branch's own reading. Their comments say so, which is what the helper asks.
+  — rejected, planned change
+- blame-history #8: the absorber justification in the work log overstates.
+  The work log is history, and the test comment rests on the sweep.
+  — rejected, false against the code
+- blame-history #11: examples guard on `Sys.which()` while `has_encoder()`
+  resolves through `find_program()`. Already filed as item (d) of the
+  shipped-docs candidate row. — rejected, duplicate of a filed row
+- prior-review #5: the second `file.access()` site. Filed at pass 1.
+  — rejected, duplicate of a filed follow-up
+
+**Follow-up (candidate rows).**
+
+- diff-bug #23, prior-review #3: `?ffm_run` and `?ffm_manifest` start FFprobe
+  but guard on FFmpeg alone. Pre-existing on lines this diff touched.
 

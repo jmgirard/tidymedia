@@ -1,6 +1,6 @@
 # M138: The shipped docs and the remembered-location checks stop assuming what the host's FFmpeg build and `which` provide
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
@@ -201,6 +201,7 @@ unclassed `argument of length 0` where no binary resolves.
 - 2026-10-10: review return 3: (1) AC6's Windows clause "the absent diagnosis stands" is false under D099, where a Windows file with any extension reads as runnable. (2) AC4's "decided by `file.exists()`, a not-a-directory test and `file.access(path, 1L)`" is false on Windows, which asks no `file.access()`.
 - 2026-10-10: amendment routed: AC2 — "this run's URL" cannot come from the local run of the committed job, and this repo opens the pull request only after the merge approval.
 - 2026-10-10: thrash rule (a) fires at return 3. Stopped for the maintainer's choice.
+- 2026-10-10: the maintainer chose the descope. AC2(c), AC4 and AC6 are narrowed so they promise no run URL and no Windows reading. Windows keeps 0.2.1's lookup through R's own rule (D099), and a stricter Windows rule exits to a candidate row. The pass-4 fix-now findings and the move to Fedora 44 are worked with it. Status back to in-progress.
 
 ## Decisions
 

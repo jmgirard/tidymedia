@@ -30,13 +30,13 @@ unclassed `argument of length 0` where no binary resolves.
 
 ## Acceptance criteria
 
-- [ ] AC1: Each shipped-doc site that runs an FFmpeg encode names the encoder it uses, rather than inheriting
+- [x] AC1: Each shipped-doc site that runs an FFmpeg encode names the encoder it uses, rather than inheriting
       the output container's default, and is guarded on `has_encoder()` for that encoder. The domain is
       enumerated by procedure, never a copied list: `grep -n "examplesIf\|nzchar(Sys.which" R/*.R` for the
       example blocks, `tools/vignette_chunk_guards.R` for the chunks. Review re-runs it and quotes it. It
       returns six sites today, at `R/ffm.R:1607`, `R/ffm_manifest.R:22`, `R/ffmpeg.R:5266`, and
       `vignettes/verification.Rmd:108`, `:138`, `:169`.
-- [ ] AC2: The package passes its checks on a build without `libx264`. (a) With the committed wrapper
+- [x] AC2: The package passes its checks on a build without `libx264`. (a) With the committed wrapper
       `tools/ffmpeg_build_model/ffmpeg` first on `PATH`, which hides the encoders named in
       `TIDYMEDIA_HIDE_ENCODERS` from its `-encoders` output and answers a call naming one of them as the real
       binary answers an unknown encoder, `R CMD check --as-cran` reports 0 errors and 0 warnings beside the
@@ -62,7 +62,7 @@ unclassed `argument of length 0` where no binary resolves.
       are quoted in the Review section. The Fedora run's also give its error, warning and note counts and the
       commit it ran, as the runner echoes it into its run.log, and that commit's
       `.github/workflows/fedora-cran-model.yaml` is the one at the reviewed head.
-- [ ] AC3: `has_encoder()` answers one logical for one encoder name, and each clause here has its own test. It
+- [x] AC3: `has_encoder()` answers one logical for one encoder name, and each clause here has its own test. It
       reads `cached_encoder_names()`, and not the `tidymedia.hardware_encoders` option, which names the hardware
       pool only, so a session that set that option still gets a true answer for `libx264`. It calls
       `resolve_timeout()` before it consults the memo, so an unusable `tidymedia.timeout` is refused as the
@@ -71,7 +71,7 @@ unclassed `argument of length 0` where no binary resolves.
       at all it answers FALSE, with no error and no warning, while a warning naming a repairable remembered
       location still reaches the caller (D088). Where a location resolves, `ffmpeg -encoders` is spawned at most
       once per session, and `refresh_ffmpeg_capabilities()` makes the next call ask again.
-- [ ] AC4: One vectorized internal predicate decides whether a location names a runnable program, and
+- [x] AC4: One vectorized internal predicate decides whether a location names a runnable program, and
       `find_program()`, `tm_set_program()` and `tm_usable_binary()` all ask it. A location holding a directory
       separator is decided from the filesystem, never by `Sys.which()`, and on POSIX by an existence test, a
       not-a-directory test and `file.access(path, 1L)`. One holding none is still looked up on `PATH` by
@@ -82,7 +82,7 @@ unclassed `argument of length 0` where no binary resolves.
       leaves the predicate on the host's rule (D098). After this milestone `grep -n "Sys.which" R/*.R
       | grep -v ":[0-9]*: *#"` reports calls at two sites only: `find_program()`'s bare-name lookup, and the
       predicate's bare-name branch.
-- [ ] AC5: A committed test holds a mocked `base::Sys.which()` answering `""` for every argument that holds a
+- [x] AC5: A committed test holds a mocked `base::Sys.which()` answering `""` for every argument that holds a
       directory separator. The mock is a stipulated model of the failure, warranted by the quoted CRAN log
       rather than measured here. Under it `find_program()` returns the remembered location with no warning,
       `set_program()` accepts a path that exists, and `tm_usable_binary()` answers TRUE for a non-empty
@@ -90,7 +90,7 @@ unclassed `argument of length 0` where no binary resolves.
       exists, and with FALSE from `tm_usable_binary()`. The install-side arm is asserted at
       `tm_usable_binary()`, under the install mock that holds `tm_os()` at `"windows"`, because D086's platform
       gate refuses `install_on_win()` first here. Red and green are both quoted in the Review section.
-- [ ] AC6: On POSIX, a remembered location naming a file that exists, is not a directory, and that
+- [x] AC6: On POSIX, a remembered location naming a file that exists, is not a directory, and that
       `file.access(path, 1L)` refuses is diagnosed as that, and not as absent. `find_program()` warns that the
       file cannot be run and returns `NULL`, under the class `tidymedia_location_not_executable` with
       `tm_program` and `tm_location`, threading no `call`, as its two siblings do. On POSIX, an absent location
@@ -98,7 +98,7 @@ unclassed `argument of length 0` where no binary resolves.
       class. The not-executable test skips on Windows, where the execute bit does not exist. What a Windows
       location reads as is not promised here, and `cairn/DESIGN.md`'s Known issues records that this diagnosis
       never fires on Windows.
-- [ ] AC7: `cairn/PROFILE.md`'s verify and consistency-gate slots are clean with the real binaries present, the
+- [x] AC7: `cairn/PROFILE.md`'s verify and consistency-gate slots are clean with the real binaries present, the
       universal cairn-file checks included, and `NEWS.md` carries an entry for each user-visible change.
       `has_encoder()` has its `_pkgdown.yml` row in the same commit, and `.Rbuildignore`'s `^tools$` already
       covers the new wrapper.
@@ -633,5 +633,109 @@ only after the merge approval. — amendment routed for AC2
 
 - diff-bug #16: `ffmpeg()` passes the location to `system()` unquoted, so a
   location with a space breaks it. Pre-existing, and newly reachable through an
-  expanded `~` under a home folder with a space.
+  expanded `~` under a home folder with a space. Filed as item (c) of the
+  "Three gaps in reading or running a remembered location" row.
+
+### Pass 5 (2026-10-10) — passed
+
+spawned: diff-bug, blame-history, prior-review.
+
+**Outcome: every criterion verified as now written.** No floor finding. The
+fix-now findings landed at `364d38b9`, and every figure below was measured
+there. Commits after it touch only `cairn/`.
+
+Evidence, criterion by criterion (fresh, at `364d38b9`):
+- AC1: the procedure's grep lists the three re-encoding example sites,
+  `R/ffm.R:1607` (`libx264`, `aac`), `R/ffm_manifest.R:22` (`libmp3lame`) and
+  `R/ffmpeg.R:5348` (`aac`), each guarded on its encoder. `R/timeout.R:247`
+  stream-copies. `tools/vignette_chunk_guards.R`: no unguarded spawning chunk.
+  `tools/vignette_chunk_program_identity.R`: no chunk starts a program its
+  guard does not name. The three `has_mp3` chunks name `libmp3lame`.
+- AC2(a): `R CMD check --as-cran` (remote incoming check off) reports
+  `Status: OK` with `libx264` hidden, and with `libx264`, `libmp3lame` and
+  `aac` hidden. `devtools::test()` with `NOT_CRAN=true` reports 0 failed and 0
+  errors in both, with 135 and 148 skips. Their skips name the hidden encoder
+  (`FFmpeg build has no libx264 encoder`).
+- AC2(b): at the merge base `18996d41` with `libx264` hidden, the check reports
+  `Status: 2 ERRORs, 1 NOTE`, both the examples step at
+  `Unknown encoder 'libx264'`. The fixture `make_mp3_audio_video()` fails with
+  `Unknown encoder 'libx264'` (status 8). Measured this session at pass 3.
+- AC2(c): `tools/fedora_workflow_local.R` ran every `run:` step of the
+  committed job at `364d38b9` (its run.log: `=== commit 364d38b9f9b9…`), whose
+  workflow file is the reviewed head's. `fedora:44`, `ffmpeg-free-8.1.3`,
+  `which-2.25`, `NOT_CRAN` unset. Gate 1: `libx264 absent`. Gate 2: `path:[
+  /tmp/whichprobe/stub]`, so the location half rests on AC5's model. Check:
+  0 errors, 1 WARNING, 0 NOTEs, examples, tests (`[ FAIL 0 | WARN 0 | SKIP 304
+  | PASS 13927 ]`) and vignettes `OK`. The log gate: `OK: nothing in a warning
+  or note names an encoder or a remembered location`. Listed, not fixed: the
+  incoming-feasibility WARNING (`Insufficient package version (submitted:
+  0.2.1, existing: 0.2.1)`, and a URL check that could not connect). CRAN's
+  0.2.1 log for `r-devel-linux-x86_64-fedora-clang` is the red control, as
+  quoted in the work log.
+- AC3: `test-has-encoder.R` passes, including the ordering test that pass 3
+  proved able to fail.
+- AC4: `grep -n "Sys.which" R/*.R | grep -v ":[0-9]*: *#"` returns
+  `R/program_management.R:117` (the predicate's bare-name branch) and `:137`
+  (`find_program()`'s lookup). On POSIX the predicate asks `file.info()` for
+  existence and not-a-directory, then `file.access(path, 1L)`. The bare-name
+  write test passes. `tm_usable_binary(f$empty)` is FALSE, and the three D084
+  forms reach `tidymedia_program_unusable` in the install tests.
+- AC5: at the merge base under the committed model, `find_ffmpeg()` warns
+  `tidymedia_location_gone` and returns NULL, `set_program()` aborts
+  `tidymedia_program_not_found`, and `tm_usable_binary()` is FALSE for a stub
+  that exists. At `364d38b9` all three accept it. The install-side arm runs
+  under `tm_local_windows()`.
+- AC6: `test-location-portability.R` fires both classes and asserts each, and
+  the not-executable tests skip on Windows. DESIGN's Known issues records that
+  the diagnosis never fires there.
+- AC7: `devtools::test()` (real binaries): 0 failed, 0 errors, 6 skips.
+  `R CMD check --as-cran`: `Status: OK`. `devtools::document()` writes nothing.
+  `pkgdown::check_pkgdown()`: no problems. `cairn_validate.py`: all checks
+  passed. `README.Rmd` untouched. `NEWS.md` covers `has_encoder()`, the
+  examples, the filesystem reading, `~`, and the new class. `has_encoder` has
+  its `_pkgdown.yml` row, and `.Rbuildignore`'s `^tools$` covers the wrapper and
+  the runner.
+
+**Fix now, fixed `364d38b9`.**
+
+- diff-bug #1: the audio-container guard named `libvorbis`, which no container
+  used here, and missed `mp2` and `sbc`. Measured by probing each of the 17
+  outputs. — fix now, fixed 364d38b9
+- diff-bug #3, blame-history #3: a test comment still gave D097's withdrawn
+  reason. — fix now, fixed 364d38b9
+- diff-bug #4: the Fedora job pinned `checkout@v4` and `upload-artifact@v4`
+  where the repo's other workflows use v6 and v7. — fix now, fixed 364d38b9
+- diff-bug #5: the runner ignored step `env:`, `continue-on-error:`,
+  `timeout-minutes:` and job `defaults:`. — fix now, fixed 364d38b9
+- blame-history #1: the Windows-only test ran on CRAN's Windows machines
+  before anyone measured its premise there. Now `skip_on_cran()`. — fix now,
+  fixed 364d38b9
+- blame-history #2: `tm_encoder_available()`'s comment kept the "never
+  reported" wording the help page dropped. — fix now, fixed 364d38b9
+- blame-history #4, prior-review #3: NEWS's Windows sentence named neither
+  exception. — fix now, fixed 364d38b9
+- blame-history #5: a test comment named only `fedora:42`. — fix now, fixed
+  364d38b9
+- prior-review #1: the not-executable bullet did not say `tm_location` holds
+  the line as the file holds it. — fix now, fixed 364d38b9
+
+**Rejected, with the ground.**
+
+- diff-bug #6, blame-history #7 and #8, prior-review #4: over-long comment
+  lines. — rejected, style
+- blame-history #6: `set_program()`'s refusal says "Can't find" for a file
+  without the bit, and its `tm_location` holds the expanded path. The first is
+  pass 1's filed follow-up (diff-bug #14a). The second is what `?set_program`
+  documents. — rejected, duplicate and planned change
+- prior-review #2: the `tm_install_binary()` comment keeps a reason for its
+  `path.expand()`, the form every path the install reports is written in.
+  — rejected, planned change
+- prior-review #5: Windows reads `notes.txt` as runnable. D100 records that as
+  the maintainer's descope. — rejected, planned change
+
+**Follow-up (candidate rows).**
+
+- diff-bug #2: the Fedora job's `dependencies = TRUE` installs the Suggests of
+  every listed package. With pass 1's no-caching finding (diff-bug #14d), this
+  is the job's install cost.
 

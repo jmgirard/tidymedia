@@ -5,15 +5,16 @@
 #
 # Why it exists. M138's review returned twice because the committed workflow
 # and the script that produced the quoted green run were different files. Here
-# there is only one: each `run:` block is taken from the YAML, in order, and run
-# the way GitHub runs it (`bash --noprofile --norc -eo pipefail`), with the
-# job's own container image and `env:`. `actions/checkout` is modelled by
-# unpacking `git archive HEAD`, which is the committed tree and nothing else. A
-# `uses:` step this script cannot run is named and skipped, and the
-# `upload-artifact` step is replaced by copying the same files out.
+# there is only one: each `run:` block is taken from the YAML as committed at
+# HEAD, in order, and run the way GitHub runs a step that sets no `shell:`
+# (`bash -e`), with the job's own container image and `env:`.
+# `actions/checkout` is modelled by unpacking `git archive HEAD`, which is the
+# committed tree and nothing else. A `uses:` step this script cannot run is
+# named and skipped, and the `upload-artifact` step is replaced by copying the
+# same files out.
 #
-# Run from the package root, with docker (colima works) and the R `yaml`
-# package: Rscript tools/fedora_workflow_local.R --out=DIR
+# Run from the package root, with docker (colima works), R 4.4 or later, and
+# the R `yaml` package: Rscript tools/fedora_workflow_local.R --out=DIR
 # Exits with the container's status: 0 only when every step passed.
 # A developer tool, kept out of the build by `.Rbuildignore`'s `^tools$`.
 
@@ -23,8 +24,13 @@ if (length(out) != 1L) stop("usage: Rscript tools/fedora_workflow_local.R --out=
 dir.create(out, recursive = TRUE, showWarnings = FALSE)
 out <- normalizePath(out)
 
-workflow <- ".github/workflows/fedora-cran-model.yaml"
-job <- yaml::read_yaml(workflow)$jobs[["fedora-check"]]
+# The workflow as committed, not as it sits in the working tree, so the steps
+# and the package source come from the same commit.
+workflow <- system2(
+  "git", c("show", "HEAD:.github/workflows/fedora-cran-model.yaml"),
+  stdout = TRUE
+)
+job <- yaml::yaml.load(paste(workflow, collapse = "\n"))$jobs[["fedora-check"]]
 image <- job$container
 if (!is.character(image) || length(image) != 1L) stop("the job names no container image")
 
@@ -45,7 +51,7 @@ for (i in seq_along(job$steps)) {
       driver,
       sprintf("echo '=== step %d: %s'", i, gsub("'", "", label)),
       sprintf(
-        "bash --noprofile --norc -eo pipefail /steps/%s || { echo '=== FAILED at step %d'; exit 1; }",
+        "bash -e /steps/%s || { echo '=== FAILED at step %d'; exit 1; }",
         file, i
       )
     )
@@ -73,7 +79,6 @@ docker <- function(args, ...) system2("docker", args, ...)
 if (docker(c("create", "--name", name, env, image, "bash", "/steps/driver.sh")) != 0L) {
   stop("docker create failed")
 }
-on.exit(docker(c("rm", "-f", name), stdout = FALSE), add = TRUE)
 docker(c("cp", shQuote(stage), paste0(name, ":/steps")))
 docker(c("cp", shQuote(src), paste0(name, ":/src.tar")))
 
@@ -88,5 +93,8 @@ for (f in c("00check.log", "00install.out", "tests")) {
     stdout = FALSE, stderr = FALSE
   )
 }
+# Removed here rather than by `on.exit()`, which does not run at the top level
+# of an Rscript file.
+docker(c("rm", "-f", name), stdout = FALSE)
 cat("container exit status:", status, "\nlog:", file.path(out, "run.log"), "\n")
 quit(status = status)

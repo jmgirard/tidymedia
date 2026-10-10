@@ -4607,3 +4607,25 @@ applied to the two writers. The predicate itself expands nothing, since
 **Falsified by** a Windows program this rule reads as absent and `system2()`
 can run, or by a spawner that does expand a quoted `~`, which would make the
 expansion at entry unnecessary.
+
+## D099 — On Windows a location is read by the rule of R's own `expandcmd()`, not by `?Sys.which`'s one-sentence definition (2026-10-10, from M138's return-2 claim audit; supersedes D098's Windows rule and leaves its `~` rule and every rule D083, D084 and D046 state standing)
+
+D098 took `?Sys.which`'s sentence, that a Windows executable is a file with
+extension `.exe`, `.com`, `.cmd` or `.bat`, as the rule `Sys.which()` applied
+before M138. The claim audit read R's source and found it is not. On Windows
+`Sys.which()` and `system()` both go through `expandcmd()` in
+`src/gnuwin32/run.c`. A name whose last component holds a `.` is searched for
+as it is, whatever the extension. A name without one is tried with `.exe`,
+`.com`, `.cmd` and `.bat` appended, in that order. So D098's rule refused
+`C:/tools/ffmpeg`, which 0.2.1 accepted and ran as `C:/tools/ffmpeg.exe`.
+
+**The rule.** On Windows `tm_program_state()` applies `expandcmd()`'s rule to
+the filesystem: a location with an extension is "runnable" when it is a file,
+and one without is "runnable" when the location with one of the four
+extensions appended is a file. Anything else is "absent". The execute
+question stays unasked there, and the platform is still read through the `os`
+argument rather than `tm_os()`, for D098's reasons. The one difference from
+`expandcmd()` is that a directory never counts, which D084 requires.
+
+**Falsified by** a Windows location this rule reads as absent and R's
+`system()` runs, or one it reads as runnable and `system()` cannot start.

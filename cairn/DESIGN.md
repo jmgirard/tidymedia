@@ -100,9 +100,10 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
 - On Windows a remembered location that is there but cannot be run is still
   reported as gone. The execute bit does not exist on that platform, and
   `?file.access` documents no behaviour for mode 1 there, so
-  `tm_program_state()` does not ask it on Windows. It applies the rule
-  `?Sys.which` states instead: a program is a file ending in `.exe`, `.com`,
-  `.cmd` or `.bat`, and any other file reads as absent (corrected M138, D098).
+  `tm_program_state()` does not ask it on Windows. It applies the rule of R's
+  own `Sys.which()` there instead. A name with an extension is taken as it is.
+  A name without one is tried with `.exe`, `.com`, `.cmd` and `.bat` appended.
+  A location that rule does not find reads as absent (corrected M138, D099).
   The `tidymedia_location_not_executable` warning M138 added therefore never
   fires on Windows, and its tests `skip_on_os("windows")`. Accepted rather than
   carried as planned work: the state the diagnosis exists for is a POSIX

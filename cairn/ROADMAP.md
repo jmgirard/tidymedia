@@ -13,7 +13,7 @@ _Last hygiene check: 2026-09-18 (M137 done and archived. PR #141 squash-merged w
 | M135 | The re-encoding task functions take a `quality` argument that passes the encoder's own rate-control value through | done | — | normal | milestones/archive/M135-quality-argument-scalar-verbs.md |
 | M136 | The batch re-encoding functions take `quality` as an argument and as a jobs column | done | M135 | normal | milestones/archive/M136-quality-column-batch-verbs.md |
 | M137 | `ffm_jobs()` lists every container the package itself writes | done | — | normal | milestones/archive/M137-jobs-vocabulary-round-trip.md |
-| M138 | The shipped docs and the remembered-location checks stop assuming what the host's FFmpeg build and `which` provide | in-progress | — | high | milestones/M138-encoder-and-location-portability.md |
+| M138 | The shipped docs and the remembered-location checks stop assuming what the host's FFmpeg build and `which` provide | review | — | high | milestones/M138-encoder-and-location-portability.md |
 | M139 | A re-encoding function refuses by name when this FFmpeg build has no encoder for what the caller asked | planned | M138 | normal | milestones/M139-missing-encoder-front-door.md |
 
 ## Candidates

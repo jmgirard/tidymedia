@@ -75,29 +75,40 @@ test_that("set_program() and tm_usable_binary() agree with the filesystem, not w
   expect_identical(tm_program_state(unpacked), "runnable")
 })
 
-test_that("on Windows a program is a file with an executable extension", {
-  # D098. `?Sys.which` defines a Windows executable as a file ending in `.exe`,
-  # `.com`, `.cmd` or `.bat`, which is what `Sys.which()` applied there before
-  # M138. The execute bit is not asked: the `.exe` below is mode 0644, which the
-  # POSIX branch would call "not_executable".
+test_that("on Windows a location is read the way R's own Sys.which() reads it", {
+  # D099. R's `expandcmd()` (src/gnuwin32/run.c) takes a name whose last
+  # component holds a `.` as it is, and tries a name without one with `.exe`,
+  # `.com`, `.cmd` and `.bat` appended. The execute bit is not asked: every
+  # file below is mode 0644, which the POSIX branch would call
+  # "not_executable".
   skip_on_os("windows")
   dir <- withr::local_tempdir()
   exe <- file.path(dir, "ffmpeg.exe")
-  bat <- file.path(dir, "ffmpeg.BAT")
-  bare <- file.path(dir, "ffmpeg")
+  script <- file.path(dir, "tool.sh")
+  only_bare <- file.path(dir, "nameonly")
+  sub <- file.path(dir, "sub")
+  dir.create(sub)
+  bat <- file.path(sub, "probe.bat")
+  for (f in c(exe, script, only_bare, bat)) writeLines("stub program", f)
+  Sys.chmod(c(exe, script, only_bare, bat), "0644")
   folder <- file.path(dir, "folder.exe")
-  for (f in c(exe, bat, bare)) writeLines("stub program", f)
-  Sys.chmod(c(exe, bat, bare), "0644")
   dir.create(folder)
-  # The premise: the POSIX branch reads the same files by the bit.
+  # The premise: the POSIX branch reads the same file by the bit.
   expect_identical(tm_program_state(exe), "not_executable")
 
+  paths <- c(
+    exe,                            # an extension, and a file: as it is
+    script,                         # any extension counts, as in expandcmd()
+    file.path(dir, "ffmpeg"),       # no extension: ffmpeg.exe is found
+    file.path(sub, "probe"),        # no extension: probe.bat is found
+    only_bare,                      # no extension and no extended file
+    folder,                         # a directory, whatever its name
+    file.path(dir, "gone.exe")      # nothing there
+  )
   expect_identical(
-    tm_program_state(
-      c(exe, bat, bare, folder, file.path(dir, "gone.exe")),
-      os = "windows"
-    ),
-    c("runnable", "runnable", "absent", "absent", "absent")
+    tm_program_state(paths, os = "windows"),
+    c("runnable", "runnable", "runnable", "runnable",
+      "absent", "absent", "absent")
   )
 })
 

@@ -1,6 +1,6 @@
 # M138: The shipped docs and the remembered-location checks stop assuming what the host's FFmpeg build and `which` provide
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
@@ -144,9 +144,9 @@ unclassed `argument of length 0` where no binary resolves.
       chunk, the reached-limit table's provenance, the wrapper's path substitution and its prefix claim,
       `tm_usable_binary()`'s NA parity, the NEWS sentence for the Windows location shape, the `path.expand()`
       comment, and the unmeasured Windows `file.access()` claim.
-- [ ] T15: review return 2's floor: expand a `~` location where it enters the package (D098), add AC4's test that
+- [x] T15: review return 2's floor: expand a `~` location where it enters the package (D098), add AC4's test that
       `set_program()` writes a bare name as typed, and make the quoted Fedora run execute the committed job's own steps.
-- [ ] T16: pass 3's fix-now findings, listed in the Review section, with the Windows extension rule that keeps AC6's
+- [x] T16: pass 3's fix-now findings, listed in the Review section, with the Windows extension rule that keeps AC6's
       Windows clause true.
 
 ## Work log
@@ -197,6 +197,9 @@ unclassed `argument of length 0` where no binary resolves.
 - 2026-10-10: the routed AC6 amendment is not executed. The code was brought to the criterion instead: on Windows `tm_program_state()` now applies `?Sys.which`'s own definition of an executable (`.exe`, `.com`, `.cmd`, `.bat`), so a present file without one reads as absent and AC6's "the absent diagnosis stands" is true as written (D098). No criterion text changed.
 - 2026-10-10: decided, not asked: the predicate reads the host platform through an `os` argument rather than `tm_os()`. Routing it through `tm_os()` was tried first and failed three M104/M105 install tests that plant a POSIX no-execute file under the Windows mock, because the faithful Windows reading accepts it (D098).
 - 2026-10-10: T15 and T16 written; checkpoint before the verify slot and the Fedora run, which reads the committed tree. Both new tests were planted red in a scratch copy: removing the two `path.expand()` calls fails the `~` test, and reading the limit after the memo fails the AC3 ordering test.
+- 2026-10-10: the colima disk filled during the first run of `tools/fedora_workflow_local.R`. This session's own containers and image were removed (2.1 GB of dangling layers pruned), and no image of another project was touched. The runner's second run passed every step of the committed job at `19c948fe`.
+- 2026-10-10: claim audit: 80 claims read, 5 corrected — R/program_management.R, NEWS.md, tools/fedora_workflow_local.R, .github/workflows/fedora-cran-model.yaml, tests/testthat/test-location-portability.R. The five: (1) the Windows rule called "what `Sys.which()` applied before M138" was not, since R's `expandcmd()` appends the four extensions to a name without one and takes any extension as it is, so the code now follows `expandcmd()` (D099) and NEWS loses its Windows warning. (2) "The spawners quote it" overstated, since `ffmpeg()` passes the path unquoted. (3) The runner used `bash --noprofile --norc -eo pipefail`, where GitHub uses `bash -e` for a step with no `shell:`. (4) The runner read the workflow from the working tree and the source from HEAD. (5) The feasibility block holds more than the version number. Two defects outside the claims were fixed with them: a top-level `on.exit()` that never ran in Rscript, and an unstated R 4.4 floor for `%||%`.
+- 2026-10-10: every task is done and the verify slot is clean (`devtools::test()`: 0 failed, 0 errors, 6 skips, 17806 passed; `devtools::document()` wrote only the page this return edited). To review.
 
 ## Decisions
 

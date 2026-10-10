@@ -25,20 +25,15 @@ CRAN uses.
   provides, and some machines answer nothing at all for a path. `find_ffmpeg()`
   and its siblings, `set_ffmpeg()` and its siblings, and `install_on_win()` now
   ask the filesystem instead. A location you type as a bare name, with no
-  folder in it, is still looked up on your `PATH`.
-
-    On Windows, name the file with its extension. The check looks for the file
-    exactly as you named it, and a file counts as a program there only when
-    its name ends in `.exe`, `.com`, `.cmd` or `.bat`. So a saved location such
-    as `C:/tools/ffmpeg` is read as a file that is not there. Use
-    `C:/tools/ffmpeg.exe`. `install_on_win()` already writes the full name, so
-    a location it saved needs nothing.
+  folder in it, is still looked up on your `PATH`. On Windows a location is
+  read the way R's own `Sys.which()` reads it there, so a location such as
+  `C:/tools/ffmpeg` still finds `C:/tools/ffmpeg.exe`.
 
 * **A location that starts with `~` now works.** `set_ffmpeg("~/bin/ffmpeg")`
   and its siblings used to refuse it. They now save it with your home folder
   written out in full, and a saved location that starts with `~` is read the
-  same way. FFmpeg and the other programs are started with the location in
-  quotes, and the system does not expand a `~` inside quotes.
+  same way. Most calls start the program with its location in quotes, and the
+  system does not expand a `~` inside quotes.
 
 * **A saved location that cannot be run now says so.** Where the file is there
   but has no permission to execute, the warning says the file cannot be run.

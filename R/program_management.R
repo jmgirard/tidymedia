@@ -59,11 +59,13 @@ tm_install_dir <- function() {
 # they pin are read by the host's own rule (D098).
 # * POSIX: a file whose execute bit is set, `file.access(path, 1L) == 0`. A file
 #   that is there without the bit is "not_executable".
-# * Windows: a file with an extension `system()` will try. `?Sys.which` defines a
-#   Windows executable as a file ending in `.exe`, `.com`, `.cmd` or `.bat`, and
-#   that is the rule `Sys.which()` applied here before M138. `file.access()`
-#   documents nothing for mode 1 on Windows, so it is not asked. A file without
-#   one of those extensions is "absent", as `Sys.which()` reported it.
+# * Windows: the rule R's own `Sys.which()` and `system()` apply there, which is
+#   `expandcmd()` in R's `src/gnuwin32/run.c` (read 2026-10-10). A name whose
+#   last component holds a `.` is taken as it is, and any file there counts. A
+#   name without one is tried with `.exe`, `.com`, `.cmd` and `.bat` appended,
+#   in that order. Anything else is "absent", as `Sys.which()` reported it
+#   before M138 (D099). `file.access()` documents nothing for mode 1 on
+#   Windows, so it is not asked.
 # `tm_usable_binary()` keeps its own non-empty test on top, because neither rule
 # refuses a truncated `ffmpeg.exe` (D083).
 #
@@ -88,10 +90,13 @@ tm_program_state <- function(location, os = .Platform$OS.type) {
     info <- file.info(path, extra_cols = FALSE)
     is_file <- !is.na(info$isdir) & !info$isdir
     state[named_path] <- if (identical(os, "windows")) {
-      ifelse(
-        is_file & grepl("[.](exe|com|cmd|bat)$", path, ignore.case = TRUE),
-        "runnable", "absent"
-      )
+      has_ext <- grepl("[.][^/\\\\]*$", path)
+      found <- is_file & has_ext
+      for (ext in c(".exe", ".com", ".cmd", ".bat")) {
+        with_ext <- file.info(paste0(path, ext), extra_cols = FALSE)
+        found <- found | (!has_ext & !is.na(with_ext$isdir) & !with_ext$isdir)
+      }
+      ifelse(found, "runnable", "absent")
     } else {
       ifelse(
         is_file & file.access(path, 1L) == 0L,
@@ -920,8 +925,8 @@ tm_na_string <- function(x) {
 #'   it cannot be run. Give it permission to execute, or use the `set_*()`
 #'   function to point at another copy. The condition holds the program name in
 #'   `tm_program` and the location in `tm_location`. This case does not arise
-#'   on Windows. There a file counts as a program only when its name ends in
-#'   `.exe`, `.com`, `.cmd` or `.bat`, and a file with another name gives
+#'   on Windows, which has no execute bit. There a location is read the way R's
+#'   own `Sys.which()` reads it, and one that does not name a program gives
 #'   `tidymedia_location_gone`.
 #' * `tidymedia_location_unreadable`: the file does not hold exactly one
 #'   location. It is empty, has more than one line, or has one empty line. The
@@ -1067,9 +1072,9 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   rlang::check_string(location, call = call)
   rlang::check_bool(confirm, call = call)
   # Expanded where the location is BUILT, so what is checked, shown in the
-  # prompt and written is the path the spawners will run: they quote it, and
-  # the shell does not expand a quoted `~` (D098). A bare name has no `~` to
-  # expand and is written as typed.
+  # prompt and written is the path the spawners will run. `run_program()`,
+  # `ffprobe()` and `mediainfo()` quote it, and the shell does not expand a
+  # quoted `~` (D098). A bare name has no `~` to expand and is written as typed.
   location <- path.expand(location)
   # Asked of the filesystem for a path and of `PATH` for a bare name, which is
   # the split tm_program_state() exists for: a bare name is what a caller who

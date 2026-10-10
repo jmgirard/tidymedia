@@ -111,8 +111,9 @@ jobs:
           # One block per `* ` line. A block is kept when its first line ends
           # in WARNING or NOTE, or when a later line of it is that word alone,
           # which is how the check prints a verdict that follows output. The
-          # incoming-feasibility block is left out: it is about the version
-          # number, and it is listed rather than fixed.
+          # incoming-feasibility block is left out: it is about the submission
+          # (version number, maintainer, URLs), and it is read and listed by
+          # hand rather than fixed.
           awk '
             function flush() { if (keep && !feasibility) printf "%s", block }
             /^\* / { flush(); block = ""; keep = 0

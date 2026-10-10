@@ -41,8 +41,8 @@ location in \code{tm_location}.
 it cannot be run. Give it permission to execute, or use the \verb{set_*()}
 function to point at another copy. The condition holds the program name in
 \code{tm_program} and the location in \code{tm_location}. This case does not arise
-on Windows. There a file counts as a program only when its name ends in
-\code{.exe}, \code{.com}, \code{.cmd} or \code{.bat}, and a file with another name gives
+on Windows, which has no execute bit. There a location is read the way R's
+own \code{Sys.which()} reads it, and one that does not name a program gives
 \code{tidymedia_location_gone}.
 \item \code{tidymedia_location_unreadable}: the file does not hold exactly one
 location. It is empty, has more than one line, or has one empty line. The

@@ -144,10 +144,8 @@ unclassed `argument of length 0` where no binary resolves.
       chunk, the reached-limit table's provenance, the wrapper's path substitution and its prefix claim,
       `tm_usable_binary()`'s NA parity, the NEWS sentence for the Windows location shape, the `path.expand()`
       comment, and the unmeasured Windows `file.access()` claim.
-- [x] T15: review return 2's floor: expand a `~` location where it enters the package (D098), add AC4's test that
-      `set_program()` writes a bare name as typed, and make the quoted Fedora run execute the committed job's own steps.
-- [x] T16: pass 3's fix-now findings, listed in the Review section, with the Windows extension rule that keeps AC6's
-      Windows clause true.
+- [x] T15: return 2's floor: expand `~` at entry (D098), AC4's bare-name write test, Fedora run from the job's own steps.
+- [x] T16: pass 3's fix-now findings (Review section), with the Windows rule that keeps AC6's Windows clause true.
 
 ## Work log
 

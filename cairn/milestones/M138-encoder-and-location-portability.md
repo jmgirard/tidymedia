@@ -1,6 +1,6 @@
 # M138: The shipped docs and the remembered-location checks stop assuming what the host's FFmpeg build and `which` provide
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** high
 - **Depends on:** —
 - **Driving RR:** —
@@ -22,7 +22,7 @@ Fedora flavors reported against the current release. The deadline is
 its encoder and is guarded on this build having it, behind a new exported `has_encoder()`. Second, one
 internal predicate answers whether a location names a runnable program, reading the filesystem rather
 than `Sys.which()`, for `find_program()`, `tm_set_program()` and `tm_usable_binary()`. With it comes the
-diagnosis that tells a file that cannot be run from one that is not there. A Fedora CI job is also in.
+diagnosis, on POSIX, that tells a file that cannot be run from one that is not there. A Fedora CI job is also in.
 
 **Out:** refusing a caller's own missing encoder, which is M139. `find_program()`'s directory-shaped
 config path, which `readLines()` still dies on, stays a candidate row. So does `ffmpeg_encoders()`'s
@@ -46,9 +46,11 @@ unclassed `argument of length 0` where no binary resolves.
       (b) On the merge-base commit the first configuration reports the `tidymedia-Ex.R` examples ERROR quoting
       `Unknown encoder 'libx264'`, and at least one fixture error. That is the defect this green is read
       against. (c) A committed GitHub Actions job runs `R CMD check --as-cran` inside a Fedora container with
-      Fedora's own `ffmpeg-free` installed, quoted from a run made on this branch, with `NOT_CRAN` left unset so
-      the run is the reading CRAN itself made. Two of the four lines the job records before the check are gates.
-      The criterion is met only where the recorded `ffmpeg -encoders` shows `libx264` absent. The location half
+      Fedora's own `ffmpeg-free` installed, quoted from a run of that job's `run:` steps, with its checkout and log
+      upload modelled as the runner's header states, made on this branch by `tools/fedora_workflow_local.R`, which
+      reads them from the committed file, with `NOT_CRAN` left unset so the run is the reading CRAN itself made.
+      Two of the steps the job runs before the check are gates. The criterion is met only where gate 1 reports
+      `libx264` absent from the build's `ffmpeg -encoders`. The location half
       counts as measured only where `Sys.which()` answers `""` for an absolute path to a stub the job just
       created while answering for the bare name `ffmpeg`, and where it does not, that half rests on AC5's
       stipulated mock, which is what AC5 is for. The check reports 0 errors, and a `grep` over the saved log
@@ -57,7 +59,9 @@ unclassed `argument of length 0` where no binary resolves.
       container's own environment is listed in the Review section rather than fixed, and so is the
       incoming-feasibility WARNING. The red control is CRAN's own check log for 0.2.1 on
       `r-devel-linux-x86_64-fedora-clang`, a real machine's reading of both defects. Every run's relevant lines
-      are quoted in the Review section, with this run's URL and its error, warning and note counts.
+      are quoted in the Review section. The Fedora run's also give its error, warning and note counts and the
+      commit it ran, as the runner echoes it into its run.log, and that commit's
+      `.github/workflows/fedora-cran-model.yaml` is the one at the reviewed head.
 - [ ] AC3: `has_encoder()` answers one logical for one encoder name, and each clause here has its own test. It
       reads `cached_encoder_names()`, and not the `tidymedia.hardware_encoders` option, which names the hardware
       pool only, so a session that set that option still gets a true answer for `libx264`. It calls
@@ -69,11 +73,13 @@ unclassed `argument of length 0` where no binary resolves.
       once per session, and `refresh_ffmpeg_capabilities()` makes the next call ask again.
 - [ ] AC4: One vectorized internal predicate decides whether a location names a runnable program, and
       `find_program()`, `tm_set_program()` and `tm_usable_binary()` all ask it. A location holding a directory
-      separator is decided by `file.exists()`, a not-a-directory test and `file.access(path, 1L)`, never by
-      `Sys.which()`. One holding none is still looked up on `PATH` by `Sys.which()`, and a test asserts that
-      `set_program()` accepts such a name and writes it as typed. `tm_usable_binary()` keeps the non-empty test
-      on top of the predicate, so D083's truncated `ffmpeg.exe` is still refused on Windows and all three forms
-      D084 partitions still reach `tidymedia_program_unusable`. After this milestone `grep -n "Sys.which" R/*.R
+      separator is decided from the filesystem, never by `Sys.which()`, and on POSIX by an existence test, a
+      not-a-directory test and `file.access(path, 1L)`. One holding none is still looked up on `PATH` by
+      `Sys.which()`, and a test asserts that `set_program()` accepts such a name and writes it as typed.
+      `tm_usable_binary()` keeps the non-empty test on top of the predicate, the guard D083 put there for a
+      truncated `ffmpeg.exe`, so a zero-length file the predicate accepts is refused, and on a POSIX host the three
+      forms D084 partitions still reach `tidymedia_program_unusable` under the install tests' `tm_os()` mock, which
+      leaves the predicate on the host's rule (D098). After this milestone `grep -n "Sys.which" R/*.R
       | grep -v ":[0-9]*: *#"` reports calls at two sites only: `find_program()`'s bare-name lookup, and the
       predicate's bare-name branch.
 - [ ] AC5: A committed test holds a mocked `base::Sys.which()` answering `""` for every argument that holds a
@@ -84,12 +90,14 @@ unclassed `argument of length 0` where no binary resolves.
       exists, and with FALSE from `tm_usable_binary()`. The install-side arm is asserted at
       `tm_usable_binary()`, under the install mock that holds `tm_os()` at `"windows"`, because D086's platform
       gate refuses `install_on_win()` first here. Red and green are both quoted in the Review section.
-- [ ] AC6: A remembered location naming a file that exists and cannot be executed is diagnosed as that, and not
-      as absent. `find_program()` warns that the file cannot be run and returns `NULL`, under the class
-      `tidymedia_location_not_executable` with `tm_program` and `tm_location`, threading no `call`, as its two
-      siblings do. An absent location keeps `tidymedia_location_gone` and its present wording. A test fires each
-      of the two and asserts the class. It skips on Windows, where the bit does not exist and the absent
-      diagnosis stands, which is a gap `cairn/DESIGN.md`'s Known issues records.
+- [ ] AC6: On POSIX, a remembered location naming a file that exists, is not a directory, and that
+      `file.access(path, 1L)` refuses is diagnosed as that, and not as absent. `find_program()` warns that the
+      file cannot be run and returns `NULL`, under the class `tidymedia_location_not_executable` with
+      `tm_program` and `tm_location`, threading no `call`, as its two siblings do. On POSIX, an absent location
+      keeps `tidymedia_location_gone` and its present wording. A test fires each of the two and asserts the
+      class. The not-executable test skips on Windows, where the execute bit does not exist. What a Windows
+      location reads as is not promised here, and `cairn/DESIGN.md`'s Known issues records that this diagnosis
+      never fires on Windows.
 - [ ] AC7: `cairn/PROFILE.md`'s verify and consistency-gate slots are clean with the real binaries present, the
       universal cairn-file checks included, and `NEWS.md` carries an entry for each user-visible change.
       `has_encoder()` has its `_pkgdown.yml` row in the same commit, and `.Rbuildignore`'s `^tools$` already
@@ -116,26 +124,17 @@ unclassed `argument of length 0` where no binary resolves.
 - [x] T4: Guard the execution tests that name an encoder in the executed call. The set is what the wrapper runs
       redden. Re-run until clean, in both configurations.
 - [x] T5: Make each AC1 site name its encoder and guard on it. Regenerate `man/`, `README.md` and the vignettes.
-- [x] T6: Write the shared path predicate and route `find_program()`, `tm_set_program()` and
-      `tm_usable_binary()` through it, keeping the non-empty test at the install check. Measure whether a tilde
-      location still spawns, and keep writing the location as typed if it does.
-- [x] T7: Add the `tidymedia_location_not_executable` diagnosis, and document it in the find-a-program page's
-      Problems section. Correct the two sentences that still promise a two-case partition: `?find_ffmpeg`'s
-      "one of two classes" and `?program_status`'s "There are two cases".
+- [x] T6: Route `find_program()`, `tm_set_program()` and `tm_usable_binary()` through one path predicate, keeping
+      the install's non-empty test. Measure whether a tilde location spawns, and write it as typed only if it does.
+- [x] T7: Add and document `tidymedia_location_not_executable`, and correct the two two-case sentences in
+      `?find_ffmpeg` and `?program_status`.
 - [x] T8: Rewrite the tests pinning the old rule: the tilde pair, the `Sys.which` premises, and the directory
       mock in `test-program-management.R`. Add the AC5 model-mock test, with its merge-base red recorded.
-- [x] T9: Add `.github/workflows/fedora-cran-model.yaml`, on `workflow_dispatch` and `pull_request`, in a Fedora
-      container. It installs `ffmpeg-free` BY NAME, because that package does not `Provide: ffmpeg` and RPM
-      Fusion's `ffmpeg` carries `libx264`, which would make the run vacuous. It installs pandoc, so AC1's four
-      vignette sites are inside the run. Before the check it records the four lines AC2(c) names. Remove the
-      r-hub workflow this task first added, and record the run's figures.
-- [x] T10: Write the records: `NEWS.md`; `cairn/DESIGN.md`'s Conventions sentence and AC6's Windows gap in Known
-      issues; one D-entry superseding D090's "What this does not cover" paragraph; one annotating D083 and D084's
-      "What the check asks"; the `Sys.which` lesson extended within its byte budget; and the two candidate rows
-      this milestone closes.
-- [x] T11: AC1's own rule at `?ffm_run`, whose example re-encodes audio to the MP4 default with no `-c:a`: name
-      that encoder and extend the guard, then re-read every running site for a second encoder the container
-      decides rather than the code.
+- [x] T9: Add `.github/workflows/fedora-cran-model.yaml` in a Fedora container, installing `ffmpeg-free` by name
+      (RPM Fusion's `ffmpeg` carries `libx264`) and pandoc, and record the run's figures.
+- [x] T10: Write the records: NEWS, DESIGN's Conventions sentence and Known issues entry, D095 and D096, the
+      `Sys.which` lesson within its byte budget, and the candidate rows this milestone closes.
+- [x] T11: Name `?ffm_run`'s audio encoder, and re-read every running site for an encoder the container decides.
 - [x] T12: AC2(c)'s gates. Make the two recorded lines gate rather than echo, stop discarding the check's exit
       status, widen the log grep to what the criterion states, and install the three Suggests the list omits.
 - [x] T13: AC5's stated instrument. Assert the install-side arm under the install mock that holds `tm_os()` at
@@ -143,8 +142,8 @@ unclassed `argument of length 0` where no binary resolves.
 - [x] T14: pass 1's ten fix-now findings, listed in the Review section.
 - [x] T15: return 2's floor: expand `~` at entry (D098), AC4's bare-name write test, Fedora run from the job's own steps.
 - [x] T16: pass 3's fix-now findings (Review section), with the Windows rule that keeps AC6's Windows clause true.
-- [ ] T17: the descope: narrow AC2(c), AC4 and AC6, record D100, and move the stricter Windows rule to a candidate row.
-- [ ] T18: pass 4's fix-now findings (Review section), with the Fedora job on `fedora:44`.
+- [x] T17: the descope: narrow AC2(c), AC4 and AC6, record D100, and move the stricter Windows rule to a candidate row.
+- [x] T18: pass 4's fix-now findings (Review section), with the Fedora job on `fedora:44`.
 
 ## Work log
 
@@ -209,6 +208,13 @@ unclassed `argument of length 0` where no binary resolves.
 - 2026-10-10: re-audit: AC6 (full) — two more repairs. A directory that `file.access()` refuses is folded into absent, so "is not a directory" joins the first sentence. And the absent arm still reads as unscoped beside the Windows disclaimer, so it is scoped to POSIX too. The Scope's diagnosis sentence needs "on POSIX" to agree. Each criterion now has two re-audit lines, so the wording goes to the maintainer.
 - 2026-10-10: claim audit: 45 claims read, 4 corrected — R/program_management.R, man/find_ffmpeg.Rd, tests/testthat/test-location-portability.R, cairn/DESIGN.md. (1) `file.access()` does document mode 1 on Windows, in a help section macOS does not render, so the comment and DESIGN now give the true reason it is not asked (D101). (2) `tm_usable_binary()`'s comment named one disagreeing form where there are two. (3) The Windows-only test runs on CRAN's Windows machines too. (4) The help page's Windows sentence now names its two exceptions, a folder and a leading `~`.
 - 2026-10-10: the committed job ran from the file at `3bd389ee` on `fedora:44`, with `which` 2.25 and `ffmpeg-free` 8.1.3: every step passed, `libx264` absent, the lookup condition not reproduced, `Status: 1 WARNING` (incoming feasibility), tests `[ FAIL 0 | WARN 0 | SKIP 304 | PASS 13927 ]`.
+- 2026-10-10: the maintainer approved the twice-audited wording at the stop, with the Scope sentence scoped to POSIX.
+- 2026-10-10: amendment return: AC2 — "quoted from a run of that job's `run:` steps, with its checkout and log upload modelled as the runner's header states, made on this branch by `tools/fedora_workflow_local.R`, which reads them from the committed file, … Two of the steps the job runs before the check are gates. The criterion is met only where gate 1 reports `libx264` absent from the build's `ffmpeg -encoders`. … Every run's relevant lines are quoted in the Review section. The Fedora run's also give its error, warning and note counts and the commit it ran, as the runner echoes it into its run.log, and that commit's `.github/workflows/fedora-cran-model.yaml` is the one at the reviewed head."
+- 2026-10-10: substantive amendment: AC4 — "A location holding a directory separator is decided from the filesystem, never by `Sys.which()`, and on POSIX by an existence test, a not-a-directory test and `file.access(path, 1L)`. … `tm_usable_binary()` keeps the non-empty test on top of the predicate, the guard D083 put there for a truncated `ffmpeg.exe`, so a zero-length file the predicate accepts is refused, and on a POSIX host the three forms D084 partitions still reach `tidymedia_program_unusable` under the install tests' `tm_os()` mock, which leaves the predicate on the host's rule (D098)." The descope of return 3, at the maintainer's choice.
+- 2026-10-10: substantive amendment: AC6 — "On POSIX, a remembered location naming a file that exists, is not a directory, and that `file.access(path, 1L)` refuses is diagnosed as that, and not as absent. … On POSIX, an absent location keeps `tidymedia_location_gone` and its present wording. … The not-executable test skips on Windows, where the execute bit does not exist. What a Windows location reads as is not promised here, and `cairn/DESIGN.md`'s Known issues records that this diagnosis never fires on Windows." The descope of return 3, at the maintainer's choice.
+- 2026-10-10: substantive amendment: Scope — "With it comes the diagnosis, on POSIX, that tells a file that cannot be run from one that is not there."
+- 2026-10-10: T16's "the Windows rule that keeps AC6's Windows clause true" describes a promise the descope dropped. The rule it names was replaced by D099 at return 2.
+- 2026-10-10: T17 and T18 done, and the verify slot is clean (`devtools::test()`: 0 failed, 0 errors, 7 skips, 17812 passed; `devtools::document()` writes nothing). To review.
 
 ## Decisions
 

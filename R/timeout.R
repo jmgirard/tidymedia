@@ -166,7 +166,8 @@ resolve_check_tracks <- function(call = rlang::caller_env()) {
 #' before it starts any job. A function that starts no program gives no such
 #' error. For example, [has_hardware_encoder()] starts none when you set
 #' `tidymedia.hardware_encoders`. A `probe_*()` function that you give a
-#' `probe` object also starts none.
+#' `probe` object also starts none. [has_encoder()] is the exception: it checks
+#' the limit first, even on a machine where it finds no FFmpeg to start.
 #'
 #' Most functions check their own arguments before the limit. So a wrong
 #' argument gives its own error, even when the limit is also wrong. A few
@@ -193,8 +194,8 @@ resolve_check_tracks <- function(call = rlang::caller_env()) {
 #' * the task functions whose names do not end in `_batch`, except
 #'   [segment_video()]
 #' * [ffm_run()], [ffmpeg()], [ffprobe()] and [mediainfo()]
-#' * [ffmpeg_codecs()], [ffmpeg_encoders()] and [has_hardware_encoder()] when
-#'   it asks FFmpeg
+#' * [ffmpeg_codecs()], [ffmpeg_encoders()], [has_encoder()], and
+#'   [has_hardware_encoder()] when it asks FFmpeg
 #' * [verify_media()], because a check with no answer is not a "no"
 #'
 #' These functions give a warning instead, so that one hung file does not lose

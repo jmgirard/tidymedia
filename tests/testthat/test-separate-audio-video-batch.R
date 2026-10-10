@@ -235,9 +235,7 @@ test_that("separate_audio_video_batch() return schema matches the other batch ve
 # Execution + ffm_batch forwarding (binary-gated) -------------------------
 
 test_that("separate_audio_video_batch() writes both streams end to end (binary-gated)", {
-  # The audio halves are written to .aac, so the container's default encoder is
-  # the one this needs (M138).
-  skip_if_no_encoder("aac")
+  skip_if_no_ffmpeg()
   src <- make_test_video()      # carries both a video and an audio track
   dir <- withr::local_tempdir()
   jobs <- tibble::tibble(

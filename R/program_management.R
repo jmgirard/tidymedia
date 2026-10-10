@@ -35,9 +35,6 @@ tm_install_dir <- function() {
 
 # find_program() ----------------------------------------------------------
 
-# The internal lookup behind find_ffmpeg() and its three siblings. It is not
-# exported, so its behavior is documented on their help page (?find_ffmpeg),
-# whose roxygen block sits on find_ffmpeg() below.
 # Whether a location names a program this machine can run, and where it cannot,
 # why not. One state per element: "runnable", "not_executable" or "absent".
 #
@@ -55,17 +52,30 @@ tm_install_dir <- function() {
 # `Sys.which()` is the instrument for. `set_program()` accepts that form, so the
 # call stays for it (the `onpath` case in test-program-management.R).
 #
-# `file.access(path, 1L)` is the execute test, asked on POSIX only: Windows has
-# no execute bit, `?file.access` documents nothing about mode 1 there, and the
-# branch below says why that question is not asked rather than guessed at. On
-# Windows the answer rests on existence and not-a-directory, which is why
-# `tm_usable_binary()` keeps its own non-empty test on top of this one (D083).
+# What "can run" means depends on the platform. `os` is the host's own
+# `.Platform$OS.type`, and a test passes "windows" to reach that branch on
+# another host. It is deliberately not `tm_os()`: the install tests hold that
+# seam at "windows" while planting POSIX permission states, and the refusals
+# they pin are read by the host's own rule (D098).
+# * POSIX: a file whose execute bit is set, `file.access(path, 1L) == 0`. A file
+#   that is there without the bit is "not_executable".
+# * Windows: a file with an extension `system()` will try. `?Sys.which` defines a
+#   Windows executable as a file ending in `.exe`, `.com`, `.cmd` or `.bat`, and
+#   that is the rule `Sys.which()` applied here before M138. `file.access()`
+#   documents nothing for mode 1 on Windows, so it is not asked. A file without
+#   one of those extensions is "absent", as `Sys.which()` reported it.
+# `tm_usable_binary()` keeps its own non-empty test on top, because neither rule
+# refuses a truncated `ffmpeg.exe` (D083).
+#
+# `~` is expanded by `file.info()` and `file.access()` themselves, so this
+# predicate needs no `path.expand()`. The two writers of a location expand it
+# instead, because `system2()` does not (D098).
 #
 # Vectorized, so the whole produced set of an install is asked in one call
 # (M105). A directory is folded into "absent" rather than given a state of its
 # own: find_program()'s two warnings are the only reader that branches on the
 # answer, and a directory at a remembered location was already reported as gone.
-tm_program_state <- function(location) {
+tm_program_state <- function(location, os = .Platform$OS.type) {
   state <- rep("absent", length(location))
   if (!length(location)) return(state)
   # NA in, "absent" out, so the three states in the header are the only three
@@ -74,30 +84,20 @@ tm_program_state <- function(location) {
   location[is.na(location)] <- ""
   named_path <- grepl("[/\\\\]", location)
   if (any(named_path)) {
-    # `file.info()` and `file.access()` expand `~` themselves, so this call
-    # changes no answer (measured 2026-10-10: both read `~/g.exe` correctly
-    # unexpanded). It stays because the expanded string is what the two readers
-    # are actually asked about, and writing it out is what keeps the next
-    # reader from re-deriving that -- not because the readers need it.
-    path <- path.expand(location[named_path])
+    path <- location[named_path]
     info <- file.info(path, extra_cols = FALSE)
     is_file <- !is.na(info$isdir) & !info$isdir
-    # The execute test is POSIX only, and deliberately not asked on Windows.
-    # `?file.access` documents no Windows behaviour for mode 1 either way, and
-    # the answer is load-bearing: were it -1 there, this would refuse every
-    # binary `install_on_win()` unpacks, on the one platform that installer
-    # runs on. So Windows decides on the two questions D083 says it can answer
-    # -- the thing is there, and it is a file -- with the non-empty test at
-    # `tm_usable_binary()` doing the rest. The not-executable state therefore
-    # never arises there, which is the gap `cairn/DESIGN.md` records.
-    runnable <- if (.Platform$OS.type == "windows") {
-      is_file
+    state[named_path] <- if (identical(os, "windows")) {
+      ifelse(
+        is_file & grepl("[.](exe|com|cmd|bat)$", path, ignore.case = TRUE),
+        "runnable", "absent"
+      )
     } else {
-      is_file & file.access(path, 1L) == 0L
+      ifelse(
+        is_file & file.access(path, 1L) == 0L,
+        "runnable", ifelse(is_file, "not_executable", "absent")
+      )
     }
-    state[named_path] <- ifelse(
-      runnable, "runnable", ifelse(is_file, "not_executable", "absent")
-    )
   }
   if (any(!named_path)) {
     state[!named_path] <- ifelse(
@@ -112,6 +112,9 @@ tm_runnable_program <- function(location) {
   tm_program_state(location) == "runnable"
 }
 
+# The internal lookup behind find_ffmpeg() and its three siblings. It is not
+# exported, so its behavior is documented on their help page (?find_ffmpeg),
+# whose roxygen block sits on find_ffmpeg() below.
 find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")) {
   
   # Validate arguments
@@ -155,6 +158,11 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
         )
         return(NULL)
       }
+      # A hand-edited `~` line is expanded here, where the location enters the
+      # package, because `system2()` and `ffprobe()` pass it to the shell
+      # quoted, and a quoted `~` is not expanded (measured 2026-10-10:
+      # `sh: ~/bin/ffprobe: No such file or directory`; D098).
+      location <- path.expand(location)
       # Is the location still a program this machine can run? Two ways it is
       # not, and they take different advice: a file that is no longer there is
       # repaired by pointing somewhere else, and one that is there but cannot
@@ -911,9 +919,10 @@ tm_na_string <- function(x) {
 #' * `tidymedia_location_not_executable`: a file is at the saved location, and
 #'   it cannot be run. Give it permission to execute, or use the `set_*()`
 #'   function to point at another copy. The condition holds the program name in
-#'   `tm_program` and the location in `tm_location`. Windows has no execute
-#'   bit, so this case does not arise there: a file that is present reads as a
-#'   program you can run.
+#'   `tm_program` and the location in `tm_location`. This case does not arise
+#'   on Windows. There a file counts as a program only when its name ends in
+#'   `.exe`, `.com`, `.cmd` or `.bat`, and a file with another name gives
+#'   `tidymedia_location_gone`.
 #' * `tidymedia_location_unreadable`: the file does not hold exactly one
 #'   location. It is empty, has more than one line, or has one empty line. The
 #'   condition holds the program name in `tm_program` and the file in
@@ -995,9 +1004,11 @@ find_ffplay <- function() {
 #'
 #' @details
 #' The file stays after the session ends, so the call asks you to confirm
-#' first. It writes nothing until you agree. The question shows the location as
-#' you typed it, which is what the call writes. It also shows the full path of
-#' the file. If you say no, the call changes nothing.
+#' first. It writes nothing until you agree. The question shows the location
+#' the call writes, which is the location as you typed it. The one change is a
+#' leading `~`, which is written as your home folder in full. The question
+#' also shows the full path of the file. If you say no, the call changes
+#' nothing.
 #'
 #' In a session where no one can answer, the call gives an error. Pass
 #' `confirm = FALSE` to write without the question, for example in a script
@@ -1055,6 +1066,11 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   program <- rlang::arg_match(program, error_arg = "program", error_call = call)
   rlang::check_string(location, call = call)
   rlang::check_bool(confirm, call = call)
+  # Expanded where the location is BUILT, so what is checked, shown in the
+  # prompt and written is the path the spawners will run: they quote it, and
+  # the shell does not expand a quoted `~` (D098). A bare name has no `~` to
+  # expand and is written as typed.
+  location <- path.expand(location)
   # Asked of the filesystem for a path and of `PATH` for a bare name, which is
   # the split tm_program_state() exists for: a bare name is what a caller who
   # typed `set_ffmpeg("ffmpeg")` means, and a path is a file this machine can
@@ -1815,41 +1831,26 @@ tm_install_binary <- function(install_dir, program) {
 # Being a file rather than a directory is part of that one question now, which
 # is why this body no longer asks it twice (M138/D096).
 #
-# The non-empty test beyond parity is what parity cannot promise on the one
-# platform this install runs on. Windows has no executable bit, and the
-# predicate therefore decides on existence there, so a truncated `ffmpeg.exe`
-# of zero length answers "runnable" and would be remembered as a working
-# program.
-# The directory is refused inside the predicate rather than by a clause of its
-# own here, and on evidence rather than by inference: `file.access(dir, 1L)`
-# answers 0 for any directory you can search, so the predicate's not-a-directory
-# test is the only thing refusing it, which its own test asserts without a mock.
+# The non-empty test is what the predicate cannot promise on the one platform
+# this install runs on: Windows has no execute bit, so a truncated `ffmpeg.exe`
+# of zero length answers "runnable" there and would be remembered as a working
+# program (D083). The predicate decides the rest, so the directory and absent
+# forms are refused there and all three forms `tidymedia_program_unusable`
+# partitions still reach it (D084). A directory is refused by the predicate's
+# not-a-directory test alone, because `file.access(dir, 1L)` answers 0 for any
+# directory you can search; its own test asserts that without a mock.
 #
 # What it deliberately does not do is RUN the program: that would be the first
 # probe in this seam to execute a downloaded binary, and it would turn a slow
 # or blocked spawn into an install failure (M104).
 #
-# It answers one logical per path. Both readers are already vectorized, so the
-# elementwise `&` is what the caller wanted anyway -- the whole produced set is
-# asked in one call rather than through a `vapply()` -- and it is what retires
-# the `!is.na(info$size)` clause the scalar `&&` needed: `size` is NA exactly
-# where `isdir` is, and `FALSE & NA` is FALSE, so the first clause already
-# decides an absent path. The answer is unnamed: `Sys.which()` names its
-# result and `file.info()` names its rows, and neither name belongs to this
-# question (M105).
+# It answers one unnamed logical per path, elementwise, so the whole produced
+# set is asked in one call (M105). `!is.na(info$size)` is back since M138: the
+# predicate answers "runnable" for a bare name found on `PATH`, whose
+# `file.info()` row is all NA, and `TRUE & NA` would be NA in the caller's
+# `unpacked[!...]`.
 tm_usable_binary <- function(path) {
-  # The non-empty test stays here rather than moving into the predicate, for
-  # D083's reason: Windows has no execute bit, so the predicate decides on
-  # existence there, and a truncated `ffmpeg.exe` of zero length would
-  # otherwise be remembered as a working program on the one platform this
-  # install runs on. The predicate decides the rest, so the directory and
-  # absent forms are refused there and the three forms
-  # `tidymedia_program_unusable` partitions all still reach it (D084).
   info <- file.info(path, extra_cols = FALSE)
-  # `!is.na(info$size)` rather than leaning on `FALSE & NA`: the predicate
-  # answers `runnable` for a BARE NAME found on `PATH`, whose `file.info()` row
-  # is all NA, and `TRUE & NA` is NA -- an answer this function never gave
-  # before and whose one caller would put into `unpacked[!...]` (M138 review).
   tm_runnable_program(path) & !is.na(info$size) & info$size > 0
 }
 

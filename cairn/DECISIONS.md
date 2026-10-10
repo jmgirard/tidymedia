@@ -4576,3 +4576,34 @@ Windows was an extension rather than a permission.
 **Falsified by** a measurement showing `file.access(path, 1L)` answering
 usefully on Windows, which would make the question worth asking there after
 all; or by a Windows caller harmed by a non-program being remembered as one.
+
+## D098 — On Windows a program is a file with an executable extension, and a `~` location is expanded where it enters the package (2026-10-10, from M138's third review; supersedes D097's Windows rule and D096's sentence that a tilde path "is therefore usable", and leaves every rule D083, D084, D086 and D046 state standing)
+
+D097 decided a Windows location by two tests: the thing is there, and it is a
+file. That made any file at a remembered location read as a program, which
+contradicted M138's own AC6, where the absent diagnosis stands on Windows. And
+D096 called a tilde location usable because the predicate's readers expand
+`~`. The readers do, but the spawners do not: `system2()` and `ffprobe()` hand
+the location to the shell quoted, and the shell does not expand a quoted `~`.
+So a `~` location was accepted, saved, and then failed at every call that ran
+it. Before M138, `Sys.which()` refused it.
+
+**The Windows rule.** On Windows `tm_program_state()` answers "runnable" for a
+file whose name ends in `.exe`, `.com`, `.cmd` or `.bat`, and "absent" for
+anything else. That is the definition `?Sys.which` gives of a Windows
+executable, so it is the rule the package applied there before M138, now asked
+of the filesystem. The execute question stays unasked on Windows, for D097's
+reason. The platform is read from `.Platform$OS.type` through an `os` argument
+a test can set, and not through `tm_os()`: the install tests hold `tm_os()` at
+"windows" while planting POSIX permission states, and the refusals they pin
+(D084) are read by the host's own rule.
+
+**The `~` rule.** A location is expanded where it enters the package: by
+`set_program()` before it checks, prompts and writes, and by `find_program()`
+when it reads a line back. That is D083's "expand where the path is BUILT",
+applied to the two writers. The predicate itself expands nothing, since
+`file.info()` and `file.access()` do it themselves.
+
+**Falsified by** a Windows program this rule reads as absent and `system2()`
+can run, or by a spawner that does expand a quoted `~`, which would make the
+expansion at entry unnecessary.

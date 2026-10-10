@@ -95,6 +95,10 @@ raw_eval_options <- function(file) {
 # The programs a guard expression NAMES, after expanding the vignettes' flags.
 covered_programs <- function(guard) {
   expanded <- guard
+  # `has_mp3` is FALSE in verification.Rmd's setup chunk and is set to
+  # `has_encoder("libmp3lame")` only inside a chunk guarded on `has_both`, so a
+  # chunk guarded on it is guarded on both programs (M138).
+  expanded <- gsub("has_mp3", "ffmpeg ffprobe", expanded, fixed = TRUE)
   expanded <- gsub("has_both", "ffmpeg ffprobe", expanded, fixed = TRUE)
   expanded <- gsub("has_ffmpeg", "ffmpeg", expanded, fixed = TRUE)
   expanded <- gsub("has_ffprobe", "ffprobe", expanded, fixed = TRUE)

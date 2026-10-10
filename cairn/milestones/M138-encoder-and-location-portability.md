@@ -98,11 +98,11 @@ unclassed `argument of length 0` where no binary resolves.
 ## Coverage
 
 - AC1 → T5, T11
-- AC2 → T1, T2, T3, T4, T5, T9, T12
-- AC3 → T2
-- AC4 → T6
-- AC5 → T8, T13
-- AC6 → T7, T8, T14
+- AC2 → T1, T2, T3, T4, T5, T9, T12, T15
+- AC3 → T2, T16
+- AC4 → T6, T15
+- AC5 → T8, T13, T16
+- AC6 → T7, T8, T14, T16
 - AC7 → T2, T5, T10
 
 ## Tasks
@@ -144,6 +144,10 @@ unclassed `argument of length 0` where no binary resolves.
       chunk, the reached-limit table's provenance, the wrapper's path substitution and its prefix claim,
       `tm_usable_binary()`'s NA parity, the NEWS sentence for the Windows location shape, the `path.expand()`
       comment, and the unmeasured Windows `file.access()` claim.
+- [ ] T15: review return 2's floor: expand a `~` location where it enters the package (D098), add AC4's test that
+      `set_program()` writes a bare name as typed, and make the quoted Fedora run execute the committed job's own steps.
+- [ ] T16: pass 3's fix-now findings, listed in the Review section, with the Windows extension rule that keeps AC6's
+      Windows clause true.
 
 ## Work log
 
@@ -190,6 +194,9 @@ unclassed `argument of length 0` where no binary resolves.
 - 2026-10-10: amendment routed: AC6 — the clause "where the bit does not exist and the absent diagnosis stands" is false under D097, where a present file on Windows reads as runnable with no warning.
 - 2026-10-10: thrash rule (b) fires on AC2(c): pass 1 failed it because the committed job echoed its gates and omitted Suggests, and pass 3 fails it because the committed job omits what the run installed. Both are the committed file diverging from what was executed. The plan's recorded alternative, r-hub, was spent by the 2026-10-10 substantive amendment. Stopped for the maintainer's choice.
 - 2026-10-10: the maintainer chose the rework in which the quoted Fedora run executes the committed workflow's own `run:` steps, read from the file, so the file and the run cannot diverge. Status back to in-progress for return 2 and the AC6 amendment.
+- 2026-10-10: the routed AC6 amendment is not executed. The code was brought to the criterion instead: on Windows `tm_program_state()` now applies `?Sys.which`'s own definition of an executable (`.exe`, `.com`, `.cmd`, `.bat`), so a present file without one reads as absent and AC6's "the absent diagnosis stands" is true as written (D098). No criterion text changed.
+- 2026-10-10: decided, not asked: the predicate reads the host platform through an `os` argument rather than `tm_os()`. Routing it through `tm_os()` was tried first and failed three M104/M105 install tests that plant a POSIX no-execute file under the Windows mock, because the faithful Windows reading accepts it (D098).
+- 2026-10-10: T15 and T16 written; checkpoint before the verify slot and the Fedora run, which reads the committed tree. Both new tests were planted red in a scratch copy: removing the two `path.expand()` calls fails the `~` test, and reading the limit after the memo fails the AC3 ordering test.
 
 ## Decisions
 

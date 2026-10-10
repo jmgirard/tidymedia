@@ -85,8 +85,6 @@ test_that("ffmpeg_encoders() returns a tidy tibble", {
 })
 
 test_that("extract_audio() writes an audio file", {
-  # The output is .aac, so the container default is the aac encoder (M138).
-  skip_if_no_encoder("aac")
   infile <- make_test_video()
   outfile <- withr::local_tempfile(fileext = ".aac")
   extract_audio(infile, outfile)
@@ -632,8 +630,7 @@ test_that("separate_audio_video() omits the stream copy when both codecs are NUL
 })
 
 test_that("separate_audio_video() copy outputs exist and are nonempty", {
-  # The audio half is written to .aac (M138).
-  skip_if_no_encoder("aac")
+  skip_if_no_ffmpeg()
   src <- make_test_video()
   dir <- withr::local_tempdir()
   audiofile <- file.path(dir, "a.aac")

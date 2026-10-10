@@ -413,7 +413,7 @@ test_that("the duplicated-input abort is worded at one site", {
   expect_identical(hits, "reject_duplicate_inputs")
 })
 
-test_that("readability is tested at one site, for the filter as well as the abort", {
+test_that("readability is tested at one site, and file.access() has two known callers", {
   # D041 made readability one predicate and had both ends reach it, but only
   # for the ABORT: check_batch_inputs() kept a second file.access(mode = 4) of
   # its own to pick which carrier columns to name (M81/D059). Membership is

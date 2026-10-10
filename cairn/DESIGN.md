@@ -100,10 +100,11 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
 - On Windows a remembered location that is there but cannot be run is still
   reported as gone. The execute bit does not exist on that platform, and
   `?file.access` documents no behaviour for mode 1 there, so
-  `tm_program_state()` does not ask it on Windows: it decides on existence and
-  not-a-directory, and cannot tell the two states apart. The
-  `tidymedia_location_not_executable` warning M138 added therefore never fires
-  on Windows, and its tests `skip_on_os("windows")`. Accepted rather than
+  `tm_program_state()` does not ask it on Windows. It applies the rule
+  `?Sys.which` states instead: a program is a file ending in `.exe`, `.com`,
+  `.cmd` or `.bat`, and any other file reads as absent (corrected M138, D098).
+  The `tidymedia_location_not_executable` warning M138 added therefore never
+  fires on Windows, and its tests `skip_on_os("windows")`. Accepted rather than
   carried as planned work: the state the diagnosis exists for is a POSIX
   permission bit, and the Windows reading is the one that platform supports
   (added 2026-10-10, M138 AC6).

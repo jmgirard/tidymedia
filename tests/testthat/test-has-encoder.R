@@ -126,14 +126,21 @@ test_that("has_encoder() refuses an unusable session limit in its own name", {
   # AC3's D074/D075 clause. The limit is read above the location question, so
   # the refusal does not depend on whether this machine has FFmpeg.
   withr::local_options(tidymedia.timeout = -1)
+  # The memo mock records whether it was reached, so this test fails if the
+  # limit were read after the memo rather than before it (M138 review).
+  memo_read <- FALSE
   local_mocked_bindings(
     find_ffmpeg = function() "/usr/bin/ffmpeg",
-    cached_encoder_names = function() "libx264"
+    cached_encoder_names = function() {
+      memo_read <<- TRUE
+      "libx264"
+    }
   )
 
   cnd <- expect_error(has_encoder("libx264"), class = "rlang_error")
   expect_match(conditionMessage(cnd), "tidymedia.timeout", fixed = TRUE)
   expect_identical(rlang::call_name(conditionCall(cnd)), "has_encoder")
+  expect_false(memo_read)
 })
 
 test_that("has_encoder() refuses an unusable session limit on a machine with no FFmpeg", {

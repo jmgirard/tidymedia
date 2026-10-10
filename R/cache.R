@@ -33,9 +33,10 @@ cached_encoder_names <- function() {
 #' Discard the package's record of which encoders your FFmpeg build has. The
 #' next query then asks FFmpeg again.
 #'
-#' The first call in an R session that uses \code{hardware = "nvenc"} or
-#' \code{hardware = "videotoolbox"} asks FFmpeg which encoders it has. The
-#' package remembers that answer for the rest of the session. Later calls reuse
+#' The first call in an R session to \code{\link{has_encoder}}, or one that
+#' uses \code{hardware = "nvenc"} or \code{hardware = "videotoolbox"}, asks
+#' FFmpeg which encoders it has. The package remembers that answer for the rest
+#' of the session. Later calls reuse
 #' it and do not start FFmpeg again each time, so a large batch stays fast.
 #'
 #' So the package does not see a change to your FFmpeg build until you discard

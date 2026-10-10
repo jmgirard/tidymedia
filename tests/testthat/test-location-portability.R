@@ -7,7 +7,8 @@
 # the suite had just created, which failed 82 tests through this seam; the log
 # is quoted in M138's record. `Sys.which()` on this machine does answer for an
 # absolute path, so the failure mode is reproducible here only by stipulating
-# it. The r-hub Fedora run is what measures the real machines.
+# it. The `fedora:42` container M138 ran answered for a path too, so no machine
+# this project can reach reproduces it.
 
 # `Sys.which()` as the Fedora images answered it: nothing for a path, the real
 # answer for a bare name. The original function object is captured before the
@@ -52,10 +53,11 @@ test_that("set_program() and tm_usable_binary() agree with the filesystem, not w
   #
   # The install-side reader is asserted under `tm_local_windows()`, which holds
   # `tm_os()` at "windows", because that is the platform install_on_win() runs
-  # on and the one whose gate (D086) refuses the call outright here. The helper
-  # itself is platform-free, so the mock changes nothing about what it answers;
-  # it is what makes the assertion the install's own reading rather than a
-  # neighbouring one.
+  # on and the one whose gate (D086) refuses the call outright here. The
+  # predicate reads the host's own platform rather than `tm_os()` (D098), so
+  # the mock does not move it onto its Windows branch; the next test reaches
+  # that branch directly. The file is named as the install unpacks it, so the
+  # answer is the same on either branch.
   dirs <- tm_redirect_config()
   stub <- tm_stub_executable()
   tm_local_pathless_which()
@@ -63,10 +65,86 @@ test_that("set_program() and tm_usable_binary() agree with the filesystem, not w
   expect_true(set_program("ffmpeg", stub, confirm = FALSE))
   expect_identical(readLines(tm_config_file("ffmpeg", dirs$new)), stub)
 
+  unpacked <- file.path(withr::local_tempdir(), "ffmpeg.exe")
+  writeLines("stub program", unpacked)
+  Sys.chmod(unpacked, "0755")
   tm_local_windows()
   expect_identical(tm_os(), "windows")
-  expect_true(tm_usable_binary(stub))
-  expect_identical(tm_program_state(stub), "runnable")
+  expect_identical(unname(Sys.which(unpacked)), "")
+  expect_true(tm_usable_binary(unpacked))
+  expect_identical(tm_program_state(unpacked), "runnable")
+})
+
+test_that("on Windows a program is a file with an executable extension", {
+  # D098. `?Sys.which` defines a Windows executable as a file ending in `.exe`,
+  # `.com`, `.cmd` or `.bat`, which is what `Sys.which()` applied there before
+  # M138. The execute bit is not asked: the `.exe` below is mode 0644, which the
+  # POSIX branch would call "not_executable".
+  skip_on_os("windows")
+  dir <- withr::local_tempdir()
+  exe <- file.path(dir, "ffmpeg.exe")
+  bat <- file.path(dir, "ffmpeg.BAT")
+  bare <- file.path(dir, "ffmpeg")
+  folder <- file.path(dir, "folder.exe")
+  for (f in c(exe, bat, bare)) writeLines("stub program", f)
+  Sys.chmod(c(exe, bat, bare), "0644")
+  dir.create(folder)
+  # The premise: the POSIX branch reads the same files by the bit.
+  expect_identical(tm_program_state(exe), "not_executable")
+
+  expect_identical(
+    tm_program_state(
+      c(exe, bat, bare, folder, file.path(dir, "gone.exe")),
+      os = "windows"
+    ),
+    c("runnable", "runnable", "absent", "absent", "absent")
+  )
+})
+
+test_that("set_program() writes a bare name found on PATH as typed", {
+  # AC4's write clause: the bare-name branch asks `Sys.which()`, and what is
+  # written is the name the caller typed, not the path it resolved to.
+  skip_on_os("windows")
+  dirs <- tm_redirect_config()
+  stub <- tm_stub_executable(name = "onpath")
+  withr::local_path(dirname(stub))
+
+  expect_true(set_program("ffmpeg", basename(stub), confirm = FALSE))
+  expect_identical(
+    readLines(tm_config_file("ffmpeg", dirs$new)), basename(stub)
+  )
+})
+
+test_that("a location written with `~` is expanded where it enters the package", {
+  # D098. `system2()` and `ffprobe()` hand the location to the shell quoted,
+  # and the shell does not expand a quoted `~`, so a `~` string that reached
+  # them failed with "No such file or directory" (measured 2026-10-10). So
+  # `set_program()` writes the expanded path, and `find_program()` expands a
+  # hand-edited `~` line before it checks or returns it.
+  skip_on_os("windows")
+  home <- withr::local_tempdir()
+  withr::local_envvar(HOME = home)
+  # The instrument, asserted rather than assumed.
+  expect_identical(normalizePath(path.expand("~")), normalizePath(home))
+  dir.create(file.path(home, "bin"))
+  exe <- file.path(home, "bin", "ffprobe")
+  writeLines(c("#!/bin/sh", "echo tilde-ok"), exe)
+  Sys.chmod(exe, "0755")
+  dirs <- tm_redirect_config()
+
+  expect_true(set_program("ffprobe", "~/bin/ffprobe", confirm = FALSE))
+  written <- readLines(tm_config_file("ffprobe", dirs$new))
+  expect_identical(written, path.expand("~/bin/ffprobe"))
+  expect_false(grepl("~", written, fixed = TRUE))
+
+  tm_write_location(dirs$new, "ffprobe", "~/bin/ffprobe")
+  expect_no_warning(found <- find_ffprobe())
+  expect_identical(found, path.expand("~/bin/ffprobe"))
+
+  # And the location runs. This starts the stub shell script above, never
+  # FFmpeg, but it is still a spawn, so it stays off CRAN's machines (D090).
+  skip_on_cran()
+  expect_identical(run_program(found, character(0)), "tilde-ok")
 })
 
 test_that("a bare name is still searched for on PATH", {

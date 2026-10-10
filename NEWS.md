@@ -13,10 +13,11 @@ CRAN uses.
 
 * **Examples and vignette chunks that re-encode now run only where your build
   has the encoder they name.** On a build without `libx264`, the example on
-  `?ffm_run` used to fail with FFmpeg's own "Unknown encoder" error. Two
-  examples that had left the encoder to the output container now name it, on
-  `?ffm_manifest` and `?normalize_audio_batch`. Nothing about a call you write
-  yourself has changed.
+  `?ffm_run` used to fail with FFmpeg's own "Unknown encoder" error. Three
+  examples that had left an encoder to the output container now name it: the
+  audio encoder on `?ffm_run`, and the examples on `?ffm_manifest` and
+  `?normalize_audio_batch`. Nothing about a call you write yourself has
+  changed.
 
 * **A remembered program location is now read from the filesystem.** Finding out
   whether a saved path still names a program you can run went through
@@ -26,19 +27,25 @@ CRAN uses.
   ask the filesystem instead. A location you type as a bare name, with no
   folder in it, is still looked up on your `PATH`.
 
-    On Windows, name the file with its extension. R counts a file as an
-    executable there only when it ends in `.exe`, `.com`, `.cmd` or `.bat`, so
-    a saved location such as `C:/tools/ffmpeg` is read as a file that is not
-    there. Use `C:/tools/ffmpeg.exe`. `install_on_win()` already writes the
-    full name, so a location it saved needs nothing.
+    On Windows, name the file with its extension. The check looks for the file
+    exactly as you named it, and a file counts as a program there only when
+    its name ends in `.exe`, `.com`, `.cmd` or `.bat`. So a saved location such
+    as `C:/tools/ffmpeg` is read as a file that is not there. Use
+    `C:/tools/ffmpeg.exe`. `install_on_win()` already writes the full name, so
+    a location it saved needs nothing.
+
+* **A location that starts with `~` now works.** `set_ffmpeg("~/bin/ffmpeg")`
+  and its siblings used to refuse it. They now save it with your home folder
+  written out in full, and a saved location that starts with `~` is read the
+  same way. FFmpeg and the other programs are started with the location in
+  quotes, and the system does not expand a `~` inside quotes.
 
 * **A saved location that cannot be run now says so.** Where the file is there
   but has no permission to execute, the warning says the file cannot be run.
   It carries the class `tidymedia_location_not_executable` rather than
-  reporting that the file no longer exists.
-  `program_status()` surfaces it beside the
-  other two repairable states. On Windows there is no execute bit, so this
-  warning does not arise there.
+  reporting that the file no longer exists. `program_status()` surfaces it
+  beside the other two repairable states. On Windows there is no execute bit,
+  so this warning does not arise there.
 
 # tidymedia 0.2.1
 

@@ -78,37 +78,37 @@ if [ -z "$hidden" ]; then
   exec "$real" "$@"
 fi
 
-# Which hidden encoder does this call ask for? Only an argument that IS an
-# encoder name counts: the name itself, or `<flag>=<name>`. Matching the name
-# anywhere in an argument rewrote FILE PATHS -- a temp directory called
-# `libx264` had the sentinel substituted into it, the real binary failed on a
-# path that does not exist, and the reverse substitution put the name back, so
-# the message named a directory that was there all along (M138 review).
+# Which hidden encoder does this call ask for? Only the argument that follows
+# an encoder flag counts (`-c`, `-c:v`, `-codec:a`, `-vcodec`, `-acodec`,
+# `-scodec`, and any stream specifier after `-c:` or `-codec:`). Matching on
+# any argument rewrote file names and metadata values that merely started with
+# a hidden name, such as an output called `aac_take1.mp3` (M138 review).
 #
 # The prefix rule of the `-encoders` filter applies here too: hiding `libx264`
 # hides `libx264rgb` from the listing, so a call naming `libx264rgb` has to
-# fail as well, or the wrapper would pass a call Fedora refuses. An argument
-# holding a path separator is never an encoder name, which is what keeps a file
-# called `libx264rgb.mp4` out of it.
-asked=""
-for arg in "$@"; do
-  case "$arg" in
-    */* | *\\*) continue ;;
+# fail as well, or the wrapper would pass a call Fedora refuses.
+is_encoder_flag() {
+  case "$1" in
+    -c | -c:* | -codec | -codec:* | -vcodec | -acodec | -scodec) return 0 ;;
   esac
-  candidate=${arg#*=}
+  return 1
+}
+is_hidden() {
   for name in $hidden; do
-    # `"$name"*` and not a character class: the listing filter below hides every
-    # name the hidden one is a PREFIX of, and the two rules have to agree or the
-    # wrapper passes a call Fedora refuses. A class of `[A-Za-z0-9_]` left
-    # `libx264-foo` hidden from the listing and still running (M138 review).
-    case "$candidate" in
-      "$name"*)
-        asked=$arg
-        break
-        ;;
+    case "$1" in
+      "$name"*) return 0 ;;
     esac
   done
-  [ -z "$asked" ] || break
+  return 1
+}
+asked=""
+prev=""
+for arg in "$@"; do
+  if is_encoder_flag "$prev" && is_hidden "$arg"; then
+    asked=$arg
+    break
+  fi
+  prev=$arg
 done
 
 # The encoder list, less the hidden names and anything prefixed by one.
@@ -134,33 +134,27 @@ if [ -z "$asked" ]; then
 fi
 
 # Ask the real binary about a name no build has, so the message and the status
-# are its own, then put the hidden name back.
+# are its own, then put the hidden name back. Only the value after an encoder
+# flag is replaced; no other argument is touched.
 sentinel="tidymedia_absent_encoder"
-# The matched argument is replaced WHOLESALE -- `$asked` is the whole argument,
-# so a `-c:v=libx264` keeps its flag only because the sentinel takes the value
-# after the `=`. No substring of any other argument is touched.
-case "$asked" in
-  *=*) replacement="${asked%%=*}=$sentinel" ;;
-  *)   replacement=$sentinel ;;
-esac
 i=0
 count=$#
+prev=""
 while [ "$i" -lt "$count" ]; do
   arg=$1
   shift
-  if [ "$arg" = "$asked" ]; then
-    arg=$replacement
+  next=$arg
+  if is_encoder_flag "$prev" && [ "$arg" = "$asked" ]; then
+    next=$sentinel
   fi
-  set -- "$@" "$arg"
+  set -- "$@" "$next"
+  prev=$arg
   i=$((i + 1))
 done
-
-# The value the sentinel stood in for, which is what the message must name.
-asked_value=${asked#*=}
 
 errfile=$(mktemp "${TMPDIR:-/tmp}/ffmpeg_build_model.XXXXXX")
 "$real" "$@" 2>"$errfile"
 status=$?
-sed "s/$sentinel/$asked_value/g" "$errfile" >&2
+sed "s/$sentinel/$asked/g" "$errfile" >&2
 rm -f "$errfile"
 exit $status

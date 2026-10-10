@@ -43,7 +43,8 @@ a wrong value, even when \code{run = FALSE}. \code{\link[=ffm_batch]{ffm_batch()
 before it starts any job. A function that starts no program gives no such
 error. For example, \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} starts none when you set
 \code{tidymedia.hardware_encoders}. A \verb{probe_*()} function that you give a
-\code{probe} object also starts none.
+\code{probe} object also starts none. \code{\link[=has_encoder]{has_encoder()}} is the exception: it checks
+the limit first, even on a machine where it finds no FFmpeg to start.
 
 Most functions check their own arguments before the limit. So a wrong
 argument gives its own error, even when the limit is also wrong. A few
@@ -73,8 +74,8 @@ the program and the limit:
 \item the task functions whose names do not end in \verb{_batch}, except
 \code{\link[=segment_video]{segment_video()}}
 \item \code{\link[=ffm_run]{ffm_run()}}, \code{\link[=ffmpeg]{ffmpeg()}}, \code{\link[=ffprobe]{ffprobe()}} and \code{\link[=mediainfo]{mediainfo()}}
-\item \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}}, \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}} and \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} when
-it asks FFmpeg
+\item \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}}, \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}}, \code{\link[=has_encoder]{has_encoder()}}, and
+\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} when it asks FFmpeg
 \item \code{\link[=verify_media]{verify_media()}}, because a check with no answer is not a "no"
 }
 

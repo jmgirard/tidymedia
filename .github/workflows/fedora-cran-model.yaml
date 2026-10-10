@@ -6,8 +6,8 @@
 # `libx264`, because x264 is not free software, so an example that named that
 # encoder failed. And `Sys.which()` there answered nothing for the absolute
 # paths the test suite creates, which failed 82 tests. This job runs the same
-# check on Fedora, so both answers come from the operating system rather than
-# from a model of it.
+# check on Fedora, so the encoder answer comes from the operating system rather
+# than from a model of it.
 #
 # `ffmpeg-free` is named deliberately. It is Fedora's own FFmpeg package, the
 # one with the reduced encoder set. It does not `Provide: ffmpeg`, and the
@@ -19,9 +19,9 @@
 # tests that still run are the pure-R ones, which is why CRAN reached the
 # remembered-location failures at 0.2.1.
 #
-# The four lines printed before the check say what the machine is, so a green
-# check is read against a machine whose conditions are known rather than
-# assumed.
+# The same steps run locally with `Rscript tools/fedora_workflow_local.R`,
+# which reads them from this file, so a local reading and a CI reading are
+# readings of one job.
 
 name: Fedora (CRAN model)
 
@@ -34,23 +34,30 @@ jobs:
     runs-on: ubuntu-latest
     container: fedora:42
     name: fedora:42, R release, ffmpeg-free
+    env:
+      LANG: en_US.UTF-8
 
     steps:
-      - name: Install R, FFmpeg and the check toolchain
+      - name: Install R, FFmpeg and the build toolchain
         run: |
+          # `R-fs` comes from dnf because `fs` does not compile on Fedora
+          # aarch64. `libarchive-devel` and `libxml2-devel` are what `archive`
+          # and `xml2` compile against, and `glibc-langpack-en` provides the
+          # locale `LANG` names. No LaTeX: the check runs with `--no-manual`.
           dnf -y install --setopt=install_weak_deps=False \
-            R-core R-core-devel R-devel \
-            ffmpeg-free mediainfo \
-            pandoc texlive-collection-latexrecommended \
-            git tar gzip qpdf which
-          R --version
-          echo "::group::what this machine is"
-          cat /etc/fedora-release
-          rpm -q which || echo "which: not installed"
-          rpm -q ffmpeg-free
-          echo "::endgroup::"
+            R-core R-core-devel R-fs \
+            ffmpeg-free mediainfo pandoc qpdf \
+            glibc-langpack-en libarchive-devel libxml2-devel \
+            make gcc gcc-c++ git tar gzip which
+          mkdir -p /usr/local/lib/R/site-library
 
       - uses: actions/checkout@v4
+
+      - name: Record what this machine is
+        run: |
+          cat /etc/fedora-release
+          rpm -q which ffmpeg-free R-core
+          R --version | head -1
 
       - name: Gate 1 — this build must not have libx264
         run: |
@@ -62,76 +69,73 @@ jobs:
           fi
           echo "libx264 absent: the encoder condition is reproduced."
 
-      - name: Gate 2 — record what Sys.which() answers for a path
+      - name: Gate 2 — does Sys.which() answer for a path here?
         run: |
+          # This gate decides what the run can claim, not whether it passes.
+          # Where `Sys.which()` answers nothing for a path and still answers for
+          # the bare name, the run measures the lookup defect. Where it answers
+          # for the path, that half rests on the stipulated model in
+          # `test-location-portability.R`, and the line below says so.
           mkdir -p /tmp/whichprobe
           printf '#!/bin/sh\n' > /tmp/whichprobe/stub
           chmod 0755 /tmp/whichprobe/stub
-          cat /etc/fedora-release
-          rpm -q which || echo "which: not installed"
           Rscript -e 'p <- unname(Sys.which("/tmp/whichprobe/stub"))' \
                   -e 'b <- unname(Sys.which("ffmpeg"))' \
                   -e 'cat("path:[", p, "] bare:[", b, "] NOT_CRAN:[", Sys.getenv("NOT_CRAN"), "]\n", sep = "")' \
                   -e 'if (!nzchar(p) && nzchar(b)) cat("the lookup condition IS reproduced here\n")' \
-                  -e 'if (nzchar(p)) cat("the lookup condition is NOT reproduced here: that half rests on the stipulated mock in test-location-portability.R\n")'
-          # Not a gate: this one records which of the two CRAN failures the run
-          # reproduces the conditions for. Gate 1 is the one that can make the
-          # run vacuous, so gate 1 is the one that exits non-zero.
+                  -e 'if (nzchar(p)) cat("the lookup condition is NOT reproduced here: that half rests on the stipulated model in test-location-portability.R\n")'
 
       - name: Install the package dependencies
         run: |
           # Every Imports and every Suggests, with their closure: `--as-cran`
-          # ERRORs on a missing Suggests, and `furrr`, `future` and `roxygen2`
-          # are three this list used to omit. `R-fs` comes from dnf above
-          # because `fs` does not compile on Fedora.
-          Rscript -e 'install.packages(c("archive","cli","digest","dplyr","glue","purrr","rappdirs","rlang","tibble","withr","furrr","future","knitr","rmarkdown","roxygen2","spelling","testthat"), repos = "https://cloud.r-project.org", dependencies = TRUE)'
+          # ERRORs on a missing Suggests.
+          Rscript -e 'install.packages(c("archive","cli","digest","dplyr","glue","purrr","rappdirs","rlang","tibble","withr","furrr","future","knitr","rmarkdown","roxygen2","spelling","testthat"), lib = "/usr/local/lib/R/site-library", repos = "https://cloud.r-project.org", dependencies = TRUE, Ncpus = 4)'
+          # `install.packages()` reports a failed install as a warning and
+          # exits 0, so the step asks for every package by name.
+          Rscript -e 'p <- c("archive","cli","digest","dplyr","glue","purrr","rappdirs","rlang","tibble","withr","furrr","future","knitr","rmarkdown","roxygen2","spelling","testthat"); miss <- p[!vapply(p, requireNamespace, logical(1), quietly = TRUE)]; if (length(miss)) stop("not installed: ", paste(miss, collapse = ", "))'
 
       - name: Build and check
         run: |
           R CMD build .
-          # The status is NOT discarded: a check that dies before it writes a
-          # `Status:` line must fail this step rather than reach the gate below
-          # with no line for it to find.
+          # `R CMD check` exits non-zero on an ERROR, and a non-zero exit fails
+          # this step, so no later step needs to look for one.
           R CMD check --as-cran --no-manual tidymedia_*.tar.gz
-          echo "=== Status ==="
           tail -3 tidymedia.Rcheck/00check.log
 
-      - name: The check must report no errors, and no encoder or location warning
+      - name: No warning or note names an encoder or a remembered location
         run: |
           log=tidymedia.Rcheck/00check.log
           echo "::group::check log"
           cat "$log"
           echo "::endgroup::"
-          # A missing `Status:` line is a failure, not a pass: the check must
-          # have got far enough to write one.
-          if ! grep -qE '^Status:' "$log"; then
-            echo "FAIL: the check wrote no Status: line, so it never finished"
-            exit 1
-          fi
-          if grep -qE '^Status:.*ERROR' "$log"; then
-            echo "FAIL: the check reported an ERROR"
-            exit 1
-          fi
-          # Scoped to the WARNING and NOTE blocks, which is what the criterion
-          # asks about: from each `* checking … WARNING|NOTE` line to the next
-          # `* checking` line. A whole-log grep would match an encoder name in
-          # an ordinary line, and a `png` or `srt` in a filename is not a
-          # warning about an encoder.
-          awk '/^\* checking .*(WARNING|NOTE)/ { p = 1; print; next }
-               /^\* checking/ { p = 0 }
-               p { print }' "$log" > /tmp/warnings.txt
-          # Every encoder this build actually has, plus libx264 and the four
-          # remembered-location classes. The encoder names come from the build's
-          # own listing rather than from a list written here, so the pattern
-          # cannot go stale as the build changes.
+          # One block per `* ` line. A block is kept when its first line ends
+          # in WARNING or NOTE, or when a later line of it is that word alone,
+          # which is how the check prints a verdict that follows output. The
+          # incoming-feasibility block is left out: it is about the version
+          # number, and it is listed rather than fixed.
+          awk '
+            function flush() { if (keep && !feasibility) printf "%s", block }
+            /^\* / { flush(); block = ""; keep = 0
+                     feasibility = ($0 ~ /CRAN incoming feasibility/)
+                     if ($0 ~ /(WARNING|NOTE)$/) keep = 1 }
+            /^ *(WARNING|NOTE)$/ { keep = 1 }
+            { block = block $0 "\n" }
+            END { flush() }' "$log" > /tmp/warnings.txt
+          echo "::group::warning and note blocks"
+          cat /tmp/warnings.txt
+          echo "::endgroup::"
+          # The encoder names come from the build's own listing, so the pattern
+          # cannot go stale as the build changes. The configuration directory
+          # is the path R prints, computed here rather than written out.
           names=$(awk '$1 ~ /^[VAS.][F.][S.][X.][B.][D.]$/ && $2 ~ /^[A-Za-z0-9_.-]+$/ { print $2 }' \
                     /tmp/encoders.txt | sort -u | tr '\n' '|')
-          pattern="libx264|tidymedia_location_gone|tidymedia_location_not_executable|tidymedia_location_unreadable|tidymedia_no_remembered_location|R_user_dir|${names%|}"
-          if grep -nwE "$pattern" /tmp/warnings.txt; then
+          config=$(Rscript -e 'cat(tools::R_user_dir("tidymedia", "config"))')
+          pattern="libx264|tidymedia_location_gone|tidymedia_location_not_executable|tidymedia_location_unreadable|tidymedia_no_remembered_location|${names%|}"
+          if grep -nwE "$pattern" /tmp/warnings.txt || grep -nF "$config" /tmp/warnings.txt; then
             echo "FAIL: a warning or note names an encoder or a remembered location"
             exit 1
           fi
-          echo "OK: no error, and nothing named an encoder or a remembered location"
+          echo "OK: nothing in a warning or note names an encoder or a remembered location"
 
       - name: Keep the logs
         if: always()

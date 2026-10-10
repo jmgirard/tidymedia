@@ -2623,12 +2623,13 @@ test_that("tm_usable_binary() accepts a tilde-relative path naming a good progra
   # disclosed (M138). That disagreement was between two readers of one path:
   # `file.info()` expands `~` and `Sys.which()` does not, so a tilde path was a
   # non-empty file to one clause and absent to the other, and the helper
-  # answered FALSE for a program that was there. Every reader now expands, so
-  # the two clauses ask about one file and the answer is TRUE.
+  # answered FALSE for a program that was there. Both readers the predicate
+  # asks now, `file.info()` and `file.access()`, expand `~` themselves, so the
+  # clauses ask about one file and the answer is TRUE.
   #
-  # `tm_install_binary()` still expands where the path is BUILT, for D083's own
-  # reason: `set_program()` is what writes the location, and the install must
-  # not record a tilde string. The install test below pins that.
+  # `tm_install_binary()` and `set_program()` still expand where the path is
+  # BUILT, for D083's and D098's reason: the spawners do not expand a quoted
+  # `~`, so no tilde string may be recorded. The install test above pins that.
   skip_on_os("windows")
   home <- withr::local_tempdir()
   withr::local_envvar(HOME = home)

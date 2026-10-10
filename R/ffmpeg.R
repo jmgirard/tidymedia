@@ -3141,13 +3141,13 @@ hardware_encoder_available <- function(codec, hardware, call) {
 #' \code{libx264} refuses every call that names it, and some Linux
 #' distributions ship exactly that build, because x264 is not free software.
 #' This function answers whether one encoder is in the build this package
-#' resolves, so you can name another encoder, or skip the work, before you run
-#' anything.
+#' resolves. You can then name another encoder, or skip the work, before you
+#' run anything.
 #'
-#' The answer comes from the list \code{\link{ffmpeg_encoders}} returns. It is
-#' asked of FFmpeg once per session and then remembered, so repeated calls cost
-#' nothing. \code{\link{refresh_ffmpeg_capabilities}} makes the next call ask
-#' again.
+#' The answer comes from the list \code{\link{ffmpeg_encoders}} returns. The
+#' list is asked of FFmpeg once per session and then remembered, so a repeated
+#' call does not start FFmpeg again. \code{\link{refresh_ffmpeg_capabilities}}
+#' makes the next call ask again.
 #'
 #' The \code{tidymedia.hardware_encoders} option does not change this answer.
 #' That option names the hardware encoders of the machine, and this question is
@@ -3155,9 +3155,9 @@ hardware_encoder_available <- function(codec, hardware, call) {
 #' backends.
 #'
 #' Where the package finds no FFmpeg at all, the answer is \code{FALSE}: nothing
-#' can be encoded, so no encoder is available. A location you remembered with
-#' \code{\link{set_ffmpeg}} that no longer works still warns, so a machine you
-#' can repair is never reported as a build without the encoder.
+#' can be encoded, so no encoder is available. A location you saved with
+#' \code{\link{set_ffmpeg}} that no longer works still gives its warning. So a
+#' machine you can repair is never reported as a build without the encoder.
 #'
 #' @param name A string naming one encoder, spelled as
 #'   \code{\link{ffmpeg_encoders}} spells it, such as \code{"libx264"},

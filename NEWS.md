@@ -27,7 +27,8 @@ CRAN uses.
   ask the filesystem instead. A location you type as a bare name, with no
   folder in it, is still looked up on your `PATH`. On Windows a location is
   read the way R's own `Sys.which()` reads it there, so a location such as
-  `C:/tools/ffmpeg` still finds `C:/tools/ffmpeg.exe`.
+  `C:/tools/ffmpeg` still finds `C:/tools/ffmpeg.exe`. The two exceptions are
+  that a folder never counts as a program and a leading `~` is expanded.
 
 * **A location that starts with `~` now works.** `set_ffmpeg("~/bin/ffmpeg")`
   and its siblings used to refuse it. They now save it with your home folder

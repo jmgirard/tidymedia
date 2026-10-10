@@ -12,8 +12,10 @@
 # committed tree and nothing else. A `uses:` step this script cannot run is
 # named and skipped, and the `upload-artifact` step is replaced by copying the
 # same files out. `CI=true` and `HOME=/github/home` are set as GitHub sets them
-# in a container job. A `run:` step that sets `shell:`, `if:` or
-# `working-directory:` stops the script, because it does not model those keys.
+# in a container job. A `run:` step that sets `shell:`, `if:`,
+# `working-directory:`, `env:`, `continue-on-error:` or `timeout-minutes:`, or
+# a job that sets `defaults:`, stops the script, because it does not model
+# those keys.
 #
 # What it cannot model: a `pull_request` run checks out GitHub's merge of the
 # branch into the base, where this unpacks the branch's own HEAD, and it runs
@@ -41,6 +43,7 @@ workflow <- system2(
 job <- yaml::yaml.load(paste(workflow, collapse = "\n"))$jobs[["fedora-check"]]
 image <- job$container
 if (!is.character(image) || length(image) != 1L) stop("the job names no container image")
+if (!is.null(job$defaults)) stop("the job sets `defaults:`, which this script does not model")
 
 stage <- tempfile("fedora-steps-")
 dir.create(stage)
@@ -53,7 +56,11 @@ driver <- c(
 for (i in seq_along(job$steps)) {
   step <- job$steps[[i]]
   label <- step$name %||% step$uses %||% paste("step", i)
-  unmodelled <- intersect(names(step), c("shell", "if", "working-directory"))
+  unmodelled <- intersect(
+    names(step),
+    c("shell", "if", "working-directory", "env", "continue-on-error",
+      "timeout-minutes")
+  )
   if (!is.null(step$run) && length(unmodelled)) {
     stop("step ", i, " sets ", paste(unmodelled, collapse = ", "),
          ", which this script does not model")

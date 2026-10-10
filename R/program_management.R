@@ -936,7 +936,8 @@ tm_na_string <- function(x) {
 #' * `tidymedia_location_not_executable`: a file is at the saved location, and
 #'   it cannot be run. Give it permission to execute, or use the `set_*()`
 #'   function to point at another copy. The condition holds the program name in
-#'   `tm_program` and the location in `tm_location`. This case does not arise
+#'   `tm_program` and the location in `tm_location`, as the file holds it.
+#'   This case does not arise
 #'   on Windows, which has no execute bit. There a location is read the way R's
 #'   own `Sys.which()` reads it, except that a folder never counts and a
 #'   leading `~` is expanded.

@@ -3197,8 +3197,8 @@ tm_encoder_available <- function(name, call) {
   # FFmpeg is missing, and the verb they call next is what says so. The three
   # warnings that name a file on this machine the caller can repair stay
   # audible, on the partition D088 drew and the vector program_status() reads,
-  # so a remembered location that has gone is never reported as a build without
-  # the encoder.
+  # so a remembered location that has gone is never reported silently as a
+  # build without the encoder: the FALSE comes with its warning.
   location <- withCallingHandlers(
     find_ffmpeg(),
     warning = function(w) {

@@ -7,8 +7,8 @@
 # the suite had just created, which failed 82 tests through this seam; the log
 # is quoted in M138's record. `Sys.which()` on this machine does answer for an
 # absolute path, so the failure mode is reproducible here only by stipulating
-# it. The `fedora:42` container M138 ran answered for a path too, so no machine
-# this project can reach reproduces it.
+# it. The `fedora:42` and `fedora:44` containers M138 ran answered for a path
+# too, so no machine this project can reach reproduces it.
 
 # `Sys.which()` as the Fedora images answered it: nothing for a path, the real
 # answer for a bare name. The original function object is captured before the
@@ -77,10 +77,12 @@ test_that("set_program() and tm_usable_binary() agree with the filesystem, not w
 
 test_that("on Windows the predicate agrees with R's own Sys.which()", {
   # D099 and D100, measured on the platform itself: this runs only on Windows,
-  # which is CI's Windows leg here and also CRAN's Windows machines, where it
-  # starts no program. A name without an extension finds the `.bat` beside it, as
+  # and only off CRAN, so CI's Windows leg is what measures it. Its premise is
+  # a reading of R's source, so CRAN's own check is not where it is first
+  # tested. A name without an extension finds the `.bat` beside it, as
   # `Sys.which()` does there, and every other path answers as `Sys.which()`
   # answers it.
+  skip_on_cran()
   skip_on_os(c("mac", "linux", "solaris"))
   dir <- withr::local_tempdir()
   writeLines("@echo off", file.path(dir, "stub.bat"))

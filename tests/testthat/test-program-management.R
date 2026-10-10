@@ -2659,9 +2659,9 @@ test_that("tm_usable_binary() refuses a directory on its own account", {
   # The premise, on the platform where the predicate asks the execute question
   # at all: the only clause left to refuse a directory is the directory test,
   # because `file.access()` answers 0 for one you can search. On Windows the
-  # predicate does not ask it (`?file.access` documents nothing for mode 1
-  # there), so existence is the premise and the directory test is again the only
-  # clause left.
+  # predicate does not ask it (D101: its Windows rule counts a directory as
+  # executable), so existence is the premise and the directory test is again
+  # the only clause left.
   if (.Platform$OS.type == "windows") {
     expect_true(file.exists(f$dir))
   } else {

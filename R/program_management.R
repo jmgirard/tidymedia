@@ -55,10 +55,11 @@ tm_install_dir <- function() {
 # `Sys.which()` is the instrument for. `set_program()` accepts that form, so the
 # call stays for it (the `onpath` case in test-program-management.R).
 #
-# `file.access(path, 1L)` is the execute test on POSIX. Windows has no execute
-# bit and R reads mode 1 as existence there, which is the same reach
-# `Sys.which()` had on that platform, and which is why `tm_usable_binary()`
-# keeps its own non-empty test on top of this one (D083).
+# `file.access(path, 1L)` is the execute test, asked on POSIX only: Windows has
+# no execute bit, `?file.access` documents nothing about mode 1 there, and the
+# branch below says why that question is not asked rather than guessed at. On
+# Windows the answer rests on existence and not-a-directory, which is why
+# `tm_usable_binary()` keeps its own non-empty test on top of this one (D083).
 #
 # Vectorized, so the whole produced set of an install is asked in one call
 # (M105). A directory is folded into "absent" rather than given a state of its
@@ -67,18 +68,35 @@ tm_install_dir <- function() {
 tm_program_state <- function(location) {
   state <- rep("absent", length(location))
   if (!length(location)) return(state)
+  # NA in, "absent" out, so the three states in the header are the only three
+  # this answers. `Sys.which()` returns NA for an NA name, which would have
+  # made a fourth (M138 review).
+  location[is.na(location)] <- ""
   named_path <- grepl("[/\\\\]", location)
   if (any(named_path)) {
-    # Expanded here and nowhere else: `file.info()` and `file.access()` both
-    # expand `~`, and asking them about the unexpanded string would ask about a
-    # file that is not there (M104 review F1, the other half of D083's note).
+    # `file.info()` and `file.access()` expand `~` themselves, so this call
+    # changes no answer (measured 2026-10-10: both read `~/g.exe` correctly
+    # unexpanded). It stays because the expanded string is what the two readers
+    # are actually asked about, and writing it out is what keeps the next
+    # reader from re-deriving that -- not because the readers need it.
     path <- path.expand(location[named_path])
     info <- file.info(path, extra_cols = FALSE)
     is_file <- !is.na(info$isdir) & !info$isdir
+    # The execute test is POSIX only, and deliberately not asked on Windows.
+    # `?file.access` documents no Windows behaviour for mode 1 either way, and
+    # the answer is load-bearing: were it -1 there, this would refuse every
+    # binary `install_on_win()` unpacks, on the one platform that installer
+    # runs on. So Windows decides on the two questions D083 says it can answer
+    # -- the thing is there, and it is a file -- with the non-empty test at
+    # `tm_usable_binary()` doing the rest. The not-executable state therefore
+    # never arises there, which is the gap `cairn/DESIGN.md` records.
+    runnable <- if (.Platform$OS.type == "windows") {
+      is_file
+    } else {
+      is_file & file.access(path, 1L) == 0L
+    }
     state[named_path] <- ifelse(
-      is_file & file.access(path, 1L) == 0L,
-      "runnable",
-      ifelse(is_file, "not_executable", "absent")
+      runnable, "runnable", ifelse(is_file, "not_executable", "absent")
     )
   }
   if (any(!named_path)) {
@@ -768,14 +786,17 @@ install_on_win <- function(download_url = NULL,
 #'
 #' A saved location that cannot be used still gives a warning. Without it, the
 #' `NA` would look like a program you never had. Each warning names the saved
-#' location or the file that holds it, so you can fix it. There are two cases:
+#' location or the file that holds it, so you can fix it. There are three cases:
 #'
 #' * `tidymedia_location_gone`: no program is at the saved location now.
+#' * `tidymedia_location_not_executable`: a file is there, and it cannot be
+#'   run. Give it permission to execute, or save another copy. This case does
+#'   not arise on Windows, which has no execute bit.
 #' * `tidymedia_location_unreadable`: the file that stores the location does
 #'   not hold exactly one location.
 #'
-#' In both cases, the row has `NA` in both columns. [unset_program()] forgets
-#' the location, and [set_program()] replaces it.
+#' In all three cases, the row has `NA` in both columns. [unset_program()]
+#' forgets the location, and [set_program()] replaces it.
 #'
 #' The version is what the program reports about itself. For `ffmpeg`,
 #' `ffprobe` and `ffplay`, it is the FFmpeg build number. For `mediainfo`, it is
@@ -882,11 +903,17 @@ tm_na_string <- function(x) {
 #'
 #' @section Problems with a saved location:
 #' A saved location that no longer works gives a warning, and the function
-#' returns `NULL`. The warning has one of two classes that you can catch:
+#' returns `NULL`. The warning has one of three classes that you can catch:
 #'
 #' * `tidymedia_location_gone`: the function read the location, but no program
 #'   is there now. The condition holds the program name in `tm_program` and the
 #'   location in `tm_location`.
+#' * `tidymedia_location_not_executable`: a file is at the saved location, and
+#'   it cannot be run. Give it permission to execute, or use the `set_*()`
+#'   function to point at another copy. The condition holds the program name in
+#'   `tm_program` and the location in `tm_location`. Windows has no execute
+#'   bit, so this case does not arise there: a file that is present reads as a
+#'   program you can run.
 #' * `tidymedia_location_unreadable`: the file does not hold exactly one
 #'   location. It is empty, has more than one line, or has one empty line. The
 #'   condition holds the program name in `tm_program` and the file in
@@ -1789,9 +1816,10 @@ tm_install_binary <- function(install_dir, program) {
 # is why this body no longer asks it twice (M138/D096).
 #
 # The non-empty test beyond parity is what parity cannot promise on the one
-# platform this install runs on. Windows has no executable bit, R reads
-# `file.access(mode = 1)` as existence there, so a truncated `ffmpeg.exe` of
-# zero length answers "runnable" and would be remembered as a working program.
+# platform this install runs on. Windows has no executable bit, and the
+# predicate therefore decides on existence there, so a truncated `ffmpeg.exe`
+# of zero length answers "runnable" and would be remembered as a working
+# program.
 # The directory is refused inside the predicate rather than by a clause of its
 # own here, and on evidence rather than by inference: `file.access(dir, 1L)`
 # answers 0 for any directory you can search, so the predicate's not-a-directory
@@ -1811,14 +1839,18 @@ tm_install_binary <- function(install_dir, program) {
 # question (M105).
 tm_usable_binary <- function(path) {
   # The non-empty test stays here rather than moving into the predicate, for
-  # D083's reason: Windows has no execute bit, R reads `file.access(mode = 1)`
-  # as existence there, and a truncated `ffmpeg.exe` of zero length would
+  # D083's reason: Windows has no execute bit, so the predicate decides on
+  # existence there, and a truncated `ffmpeg.exe` of zero length would
   # otherwise be remembered as a working program on the one platform this
   # install runs on. The predicate decides the rest, so the directory and
   # absent forms are refused there and the three forms
   # `tidymedia_program_unusable` partitions all still reach it (D084).
   info <- file.info(path, extra_cols = FALSE)
-  tm_runnable_program(path) & info$size > 0
+  # `!is.na(info$size)` rather than leaning on `FALSE & NA`: the predicate
+  # answers `runnable` for a BARE NAME found on `PATH`, whose `file.info()` row
+  # is all NA, and `TRUE & NA` is NA -- an answer this function never gave
+  # before and whose one caller would put into `unpacked[!...]` (M138 review).
+  tm_runnable_program(path) & !is.na(info$size) & info$size > 0
 }
 
 # What the install would do, one item per line: the published digest where

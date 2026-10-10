@@ -52,29 +52,47 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Record the two gates
+      - name: Gate 1 — this build must not have libx264
         run: |
-          echo "=== GATE 1: does this build have libx264? ==="
-          ffmpeg -hide_banner -encoders | grep -c 'libx264' \
-            && echo "libx264 PRESENT (this run says nothing about the encoder defect)" \
-            || echo "libx264 ABSENT (the encoder condition is reproduced)"
-          echo "=== GATE 2: what does Sys.which() answer for a path? ==="
+          ffmpeg -hide_banner -encoders > /tmp/encoders.txt
+          if grep -q 'libx264' /tmp/encoders.txt; then
+            echo "FAIL: this build HAS libx264, so the run would say nothing about the defect."
+            echo "Fedora's ffmpeg-free is the package to install; RPM Fusion's ffmpeg carries it."
+            exit 1
+          fi
+          echo "libx264 absent: the encoder condition is reproduced."
+
+      - name: Gate 2 — record what Sys.which() answers for a path
+        run: |
           mkdir -p /tmp/whichprobe
           printf '#!/bin/sh\n' > /tmp/whichprobe/stub
           chmod 0755 /tmp/whichprobe/stub
-          Rscript -e 'cat("path  :[", unname(Sys.which("/tmp/whichprobe/stub")), "]\n", sep = "")' \
-                  -e 'cat("bare  :[", unname(Sys.which("ffmpeg")), "]\n", sep = "")' \
-                  -e 'cat("NOT_CRAN:[", Sys.getenv("NOT_CRAN"), "]\n", sep = "")'
-          echo "The location condition is reproduced only where path is empty and bare is not."
+          cat /etc/fedora-release
+          rpm -q which || echo "which: not installed"
+          Rscript -e 'p <- unname(Sys.which("/tmp/whichprobe/stub"))' \
+                  -e 'b <- unname(Sys.which("ffmpeg"))' \
+                  -e 'cat("path:[", p, "] bare:[", b, "] NOT_CRAN:[", Sys.getenv("NOT_CRAN"), "]\n", sep = "")' \
+                  -e 'if (!nzchar(p) && nzchar(b)) cat("the lookup condition IS reproduced here\n")' \
+                  -e 'if (nzchar(p)) cat("the lookup condition is NOT reproduced here: that half rests on the stipulated mock in test-location-portability.R\n")'
+          # Not a gate: this one records which of the two CRAN failures the run
+          # reproduces the conditions for. Gate 1 is the one that can make the
+          # run vacuous, so gate 1 is the one that exits non-zero.
 
       - name: Install the package dependencies
         run: |
-          Rscript -e 'install.packages(c("archive","cli","digest","dplyr","glue","purrr","rappdirs","rlang","tibble","withr","knitr","rmarkdown","testthat","spelling"), repos = "https://cloud.r-project.org")'
+          # Every Imports and every Suggests, with their closure: `--as-cran`
+          # ERRORs on a missing Suggests, and `furrr`, `future` and `roxygen2`
+          # are three this list used to omit. `R-fs` comes from dnf above
+          # because `fs` does not compile on Fedora.
+          Rscript -e 'install.packages(c("archive","cli","digest","dplyr","glue","purrr","rappdirs","rlang","tibble","withr","furrr","future","knitr","rmarkdown","roxygen2","spelling","testthat"), repos = "https://cloud.r-project.org", dependencies = TRUE)'
 
       - name: Build and check
         run: |
           R CMD build .
-          R CMD check --as-cran --no-manual tidymedia_*.tar.gz || true
+          # The status is NOT discarded: a check that dies before it writes a
+          # `Status:` line must fail this step rather than reach the gate below
+          # with no line for it to find.
+          R CMD check --as-cran --no-manual tidymedia_*.tar.gz
           echo "=== Status ==="
           tail -3 tidymedia.Rcheck/00check.log
 
@@ -84,11 +102,32 @@ jobs:
           echo "::group::check log"
           cat "$log"
           echo "::endgroup::"
+          # A missing `Status:` line is a failure, not a pass: the check must
+          # have got far enough to write one.
+          if ! grep -qE '^Status:' "$log"; then
+            echo "FAIL: the check wrote no Status: line, so it never finished"
+            exit 1
+          fi
           if grep -qE '^Status:.*ERROR' "$log"; then
             echo "FAIL: the check reported an ERROR"
             exit 1
           fi
-          if grep -nE 'libx264|tidymedia_location_(gone|not_executable|unreadable)|tidymedia_no_remembered_location|R_user_dir' "$log"; then
+          # Scoped to the WARNING and NOTE blocks, which is what the criterion
+          # asks about: from each `* checking … WARNING|NOTE` line to the next
+          # `* checking` line. A whole-log grep would match an encoder name in
+          # an ordinary line, and a `png` or `srt` in a filename is not a
+          # warning about an encoder.
+          awk '/^\* checking .*(WARNING|NOTE)/ { p = 1; print; next }
+               /^\* checking/ { p = 0 }
+               p { print }' "$log" > /tmp/warnings.txt
+          # Every encoder this build actually has, plus libx264 and the four
+          # remembered-location classes. The encoder names come from the build's
+          # own listing rather than from a list written here, so the pattern
+          # cannot go stale as the build changes.
+          names=$(awk '$1 ~ /^[VAS.][F.][S.][X.][B.][D.]$/ && $2 ~ /^[A-Za-z0-9_.-]+$/ { print $2 }' \
+                    /tmp/encoders.txt | sort -u | tr '\n' '|')
+          pattern="libx264|tidymedia_location_gone|tidymedia_location_not_executable|tidymedia_location_unreadable|tidymedia_no_remembered_location|R_user_dir|${names%|}"
+          if grep -nwE "$pattern" /tmp/warnings.txt; then
             echo "FAIL: a warning or note names an encoder or a remembered location"
             exit 1
           fi

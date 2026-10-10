@@ -32,15 +32,18 @@ and not four warnings.
 
 A saved location that cannot be used still gives a warning. Without it, the
 \code{NA} would look like a program you never had. Each warning names the saved
-location or the file that holds it, so you can fix it. There are two cases:
+location or the file that holds it, so you can fix it. There are three cases:
 \itemize{
 \item \code{tidymedia_location_gone}: no program is at the saved location now.
+\item \code{tidymedia_location_not_executable}: a file is there, and it cannot be
+run. Give it permission to execute, or save another copy. This case does
+not arise on Windows, which has no execute bit.
 \item \code{tidymedia_location_unreadable}: the file that stores the location does
 not hold exactly one location.
 }
 
-In both cases, the row has \code{NA} in both columns. \code{\link[=unset_program]{unset_program()}} forgets
-the location, and \code{\link[=set_program]{set_program()}} replaces it.
+In all three cases, the row has \code{NA} in both columns. \code{\link[=unset_program]{unset_program()}}
+forgets the location, and \code{\link[=set_program]{set_program()}} replaces it.
 
 The version is what the program reports about itself. For \code{ffmpeg},
 \code{ffprobe} and \code{ffplay}, it is the FFmpeg build number. For \code{mediainfo}, it is

@@ -98,9 +98,10 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
 ## Known issues
 
 - On Windows a remembered location that is there but cannot be run is still
-  reported as gone. The execute bit does not exist on that platform, and R reads
-  `file.access(path, 1L)` as existence there, so `tm_program_state()` cannot
-  tell the two states apart and answers "absent" for both. The
+  reported as gone. The execute bit does not exist on that platform, and
+  `?file.access` documents no behaviour for mode 1 there, so
+  `tm_program_state()` does not ask it on Windows: it decides on existence and
+  not-a-directory, and cannot tell the two states apart. The
   `tidymedia_location_not_executable` warning M138 added therefore never fires
   on Windows, and its tests `skip_on_os("windows")`. Accepted rather than
   carried as planned work: the state the diagnosis exists for is a POSIX

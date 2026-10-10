@@ -32,11 +32,17 @@ the program, the function gives a warning and returns \code{NULL}.
 \section{Problems with a saved location}{
 
 A saved location that no longer works gives a warning, and the function
-returns \code{NULL}. The warning has one of two classes that you can catch:
+returns \code{NULL}. The warning has one of three classes that you can catch:
 \itemize{
 \item \code{tidymedia_location_gone}: the function read the location, but no program
 is there now. The condition holds the program name in \code{tm_program} and the
 location in \code{tm_location}.
+\item \code{tidymedia_location_not_executable}: a file is at the saved location, and
+it cannot be run. Give it permission to execute, or use the \verb{set_*()}
+function to point at another copy. The condition holds the program name in
+\code{tm_program} and the location in \code{tm_location}. Windows has no execute
+bit, so this case does not arise there: a file that is present reads as a
+program you can run.
 \item \code{tidymedia_location_unreadable}: the file does not hold exactly one
 location. It is empty, has more than one line, or has one empty line. The
 condition holds the program name in \code{tm_program} and the file in

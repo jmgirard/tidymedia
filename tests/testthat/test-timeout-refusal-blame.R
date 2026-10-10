@@ -422,23 +422,18 @@ test_that("a REACHED limit still aborts or warns exactly as it did (AC6)", {
   # claim about a column of one value.
   expect_true(all(c("abort", "warn") %in% recorded))
 
-  # The recorded table says what each member did AT `ae5ff1c`, so it can only be
-  # compared against the members that existed there. An export added since has
-  # no such reading, and giving it one by measuring today and filing it under
-  # that ref would compose a history rather than record one -- the reason
-  # `tm_timeout_post_baseline()` exists, applied here too (M138, which added
-  # `has_encoder()` to the domain). Those members are still held to D049's rule,
-  # which is the line above the comparison and the one that matters.
-  baseline <- tm_timeout_baseline_domain()
+  # Every member is compared, the post-baseline ones included: their values live
+  # in `tm_timeout_reached_master()`'s second vector with their own measurement
+  # date, rather than being defaulted into the `ae5ff1c` reading. Excluding them
+  # instead -- which M138 first did -- stopped comparing a member that was
+  # passing and hid one whose default was wrong (M138 review).
   for (name in tm_timeout_domain()) {
     got <- tm_force_timeout(name, specs[[name]])
     # D049's rule first: a reached limit is never silent.
     expect_true(got$aborted || got$warned, info = name)
-    if (name %in% baseline) {
-      expect_identical(
-        if (got$aborted) "abort" else "warn", recorded[[name]],
-        info = name
-      )
-    }
+    expect_identical(
+      if (got$aborted) "abort" else "warn", recorded[[name]],
+      info = name
+    )
   }
 })

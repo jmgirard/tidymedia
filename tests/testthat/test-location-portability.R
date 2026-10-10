@@ -49,12 +49,22 @@ test_that("set_program() and tm_usable_binary() agree with the filesystem, not w
   # AC5's other two readers. Both answered the Fedora images' `""` before M138:
   # set_program() aborted `tidymedia_program_not_found` for a file that was
   # there, and install_on_win() refused a good build as unusable.
+  #
+  # The install-side reader is asserted under `tm_local_windows()`, which holds
+  # `tm_os()` at "windows", because that is the platform install_on_win() runs
+  # on and the one whose gate (D086) refuses the call outright here. The helper
+  # itself is platform-free, so the mock changes nothing about what it answers;
+  # it is what makes the assertion the install's own reading rather than a
+  # neighbouring one.
   dirs <- tm_redirect_config()
   stub <- tm_stub_executable()
   tm_local_pathless_which()
 
   expect_true(set_program("ffmpeg", stub, confirm = FALSE))
   expect_identical(readLines(tm_config_file("ffmpeg", dirs$new)), stub)
+
+  tm_local_windows()
+  expect_identical(tm_os(), "windows")
   expect_true(tm_usable_binary(stub))
   expect_identical(tm_program_state(stub), "runnable")
 })

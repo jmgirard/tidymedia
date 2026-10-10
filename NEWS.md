@@ -26,6 +26,12 @@ CRAN uses.
   ask the filesystem instead. A location you type as a bare name, with no
   folder in it, is still looked up on your `PATH`.
 
+    On Windows, name the file with its extension. R counts a file as an
+    executable there only when it ends in `.exe`, `.com`, `.cmd` or `.bat`, so
+    a saved location such as `C:/tools/ffmpeg` is read as a file that is not
+    there. Use `C:/tools/ffmpeg.exe`. `install_on_win()` already writes the
+    full name, so a location it saved needs nothing.
+
 * **A saved location that cannot be run now says so.** Where the file is there
   but has no permission to execute, the warning says the file cannot be run.
   It carries the class `tidymedia_location_not_executable` rather than

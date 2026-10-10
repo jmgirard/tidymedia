@@ -30,122 +30,120 @@ unclassed `argument of length 0` where no binary resolves.
 
 ## Acceptance criteria
 
-- [ ] AC1: Each shipped-doc site that runs an FFmpeg encode names the encoder it uses, rather than
-      inheriting the output container's default, and is guarded on `has_encoder()` for that encoder. The
-      domain is enumerated by procedure, never a copied list: `grep -n "examplesIf\|nzchar(Sys.which"
-      R/*.R` for the example blocks, `tools/vignette_chunk_guards.R` for the chunks. Review re-runs it and
-      quotes it. It returns six sites today, at `R/ffm.R:1607`, `R/ffm_manifest.R:22`, `R/ffmpeg.R:5266`,
-      and `vignettes/verification.Rmd:108`, `:138`, `:169`.
+- [ ] AC1: Each shipped-doc site that runs an FFmpeg encode names the encoder it uses, rather than inheriting
+      the output container's default, and is guarded on `has_encoder()` for that encoder. The domain is
+      enumerated by procedure, never a copied list: `grep -n "examplesIf\|nzchar(Sys.which" R/*.R` for the
+      example blocks, `tools/vignette_chunk_guards.R` for the chunks. Review re-runs it and quotes it. It
+      returns six sites today, at `R/ffm.R:1607`, `R/ffm_manifest.R:22`, `R/ffmpeg.R:5266`, and
+      `vignettes/verification.Rmd:108`, `:138`, `:169`.
 - [ ] AC2: The package passes its checks on a build without `libx264`. (a) With the committed wrapper
       `tools/ffmpeg_build_model/ffmpeg` first on `PATH`, which hides the encoders named in
-      `TIDYMEDIA_HIDE_ENCODERS` from its `-encoders` output and answers a call naming one of them as the
-      real binary answers an unknown encoder, `R CMD check --as-cran` reports 0 errors and 0 warnings
-      beside the incoming-feasibility one of a re-checked release, and `devtools::test()` with
-      `NOT_CRAN=true` reports 0 failures, 0 errors and at least one skip naming a hidden encoder. Both
-      runs are made twice: once modelling the CRAN machines, with `libx264` hidden and `libmp3lame` and
-      `aac` present, and once hiding all three. (b) On the merge-base commit the first configuration
-      reports the `tidymedia-Ex.R` examples ERROR quoting `Unknown encoder 'libx264'`, and at least one
-      fixture error. That is the defect this green is read against. (c) A committed GitHub Actions job
-      runs `R CMD check --as-cran` inside a Fedora container with Fedora's own `ffmpeg-free` installed,
-      quoted from a run made on this branch, with `NOT_CRAN` left unset so the run is the reading CRAN
-      itself made. Two of the four lines the job records before the check are gates. The criterion is met
-      only where the recorded `ffmpeg -encoders` shows `libx264` absent. The location half counts as
-      measured only where `Sys.which()` answers `""` for an absolute path to a stub the job just created
-      while answering for the bare name `ffmpeg`, and where it does not, that half rests on AC5's
-      stipulated mock, which is what AC5 is for. The check reports 0 errors, and a `grep` over the saved
-      log finds no WARNING or NOTE naming `libx264`, any encoder the run's own `-encoders` listed, one of
-      the four remembered-location condition classes, or the configuration directory path. A WARNING or
-      NOTE about the container's own environment is listed in the Review section rather than fixed, and so
-      is the incoming-feasibility WARNING. The red control is CRAN's own check log for 0.2.1 on
-      `r-devel-linux-x86_64-fedora-clang`, a real machine's reading of both defects. Every run's relevant
-      lines are quoted in the Review section, with this run's URL and its error, warning and note counts.
-- [ ] AC3: `has_encoder()` answers one logical for one encoder name, and each clause here has its own
-      test. It reads `cached_encoder_names()`, and not the `tidymedia.hardware_encoders` option, which
-      names the hardware pool only, so a session that set that option still gets a true answer for
-      `libx264`. It calls `resolve_timeout()` before it consults the memo, so an unusable
-      `tidymedia.timeout` is refused as the hardware sibling refuses it (D074, D075). Under a mocked
-      `cached_encoder_names()` that omits `libx264` it answers FALSE for that name, and TRUE for a name the
-      mock lists. Where `find_ffmpeg()` finds no location at all it answers FALSE, with no error and no
-      warning, while a warning naming a repairable remembered location still reaches the caller (D088).
-      Where a location resolves, `ffmpeg -encoders` is spawned at most once per session, and
-      `refresh_ffmpeg_capabilities()` makes the next call ask again.
+      `TIDYMEDIA_HIDE_ENCODERS` from its `-encoders` output and answers a call naming one of them as the real
+      binary answers an unknown encoder, `R CMD check --as-cran` reports 0 errors and 0 warnings beside the
+      incoming-feasibility one of a re-checked release, and `devtools::test()` with `NOT_CRAN=true` reports 0
+      failures, 0 errors and at least one skip naming a hidden encoder. Both runs are made twice: once modelling
+      the CRAN machines, with `libx264` hidden and `libmp3lame` and `aac` present, and once hiding all three.
+      (b) On the merge-base commit the first configuration reports the `tidymedia-Ex.R` examples ERROR quoting
+      `Unknown encoder 'libx264'`, and at least one fixture error. That is the defect this green is read
+      against. (c) A committed GitHub Actions job runs `R CMD check --as-cran` inside a Fedora container with
+      Fedora's own `ffmpeg-free` installed, quoted from a run made on this branch, with `NOT_CRAN` left unset so
+      the run is the reading CRAN itself made. Two of the four lines the job records before the check are gates.
+      The criterion is met only where the recorded `ffmpeg -encoders` shows `libx264` absent. The location half
+      counts as measured only where `Sys.which()` answers `""` for an absolute path to a stub the job just
+      created while answering for the bare name `ffmpeg`, and where it does not, that half rests on AC5's
+      stipulated mock, which is what AC5 is for. The check reports 0 errors, and a `grep` over the saved log
+      finds no WARNING or NOTE naming `libx264`, any encoder the run's own `-encoders` listed, one of the four
+      remembered-location condition classes, or the configuration directory path. A WARNING or NOTE about the
+      container's own environment is listed in the Review section rather than fixed, and so is the
+      incoming-feasibility WARNING. The red control is CRAN's own check log for 0.2.1 on
+      `r-devel-linux-x86_64-fedora-clang`, a real machine's reading of both defects. Every run's relevant lines
+      are quoted in the Review section, with this run's URL and its error, warning and note counts.
+- [ ] AC3: `has_encoder()` answers one logical for one encoder name, and each clause here has its own test. It
+      reads `cached_encoder_names()`, and not the `tidymedia.hardware_encoders` option, which names the hardware
+      pool only, so a session that set that option still gets a true answer for `libx264`. It calls
+      `resolve_timeout()` before it consults the memo, so an unusable `tidymedia.timeout` is refused as the
+      hardware sibling refuses it (D074, D075). Under a mocked `cached_encoder_names()` that omits `libx264` it
+      answers FALSE for that name, and TRUE for a name the mock lists. Where `find_ffmpeg()` finds no location
+      at all it answers FALSE, with no error and no warning, while a warning naming a repairable remembered
+      location still reaches the caller (D088). Where a location resolves, `ffmpeg -encoders` is spawned at most
+      once per session, and `refresh_ffmpeg_capabilities()` makes the next call ask again.
 - [ ] AC4: One vectorized internal predicate decides whether a location names a runnable program, and
-      `find_program()`, `tm_set_program()` and `tm_usable_binary()` all ask it. A location holding a
-      directory separator is decided by `file.exists()`, a not-a-directory test and `file.access(path,
-      1L)`, never by `Sys.which()`. One holding none is still looked up on `PATH` by `Sys.which()`, and a
-      test asserts that `set_program()` accepts such a name and writes it as typed. `tm_usable_binary()`
-      keeps the non-empty test on top of the predicate, so D083's truncated `ffmpeg.exe` is still refused
-      on Windows and all three forms D084 partitions still reach `tidymedia_program_unusable`. After this
-      milestone `grep -n "Sys.which" R/*.R | grep -v ":[0-9]*: *#"` reports calls at two sites only:
-      `find_program()`'s bare-name lookup, and the predicate's bare-name branch.
-- [ ] AC5: A committed test holds a mocked `base::Sys.which()` answering `""` for every argument that
-      holds a directory separator. The mock is a stipulated model of the failure, warranted by the quoted
-      CRAN log rather than measured here. Under it `find_program()` returns the remembered location with no
-      warning, `set_program()` accepts a path that exists, and `tm_usable_binary()` answers TRUE for a
-      non-empty executable file. On the merge-base commit that test fails with
-      `tidymedia_location_gone` for a stub that exists, and with FALSE from `tm_usable_binary()`. The
-      install-side arm is asserted at `tm_usable_binary()`, under the install mock that holds `tm_os()` at
-      `"windows"`, because D086's platform gate refuses `install_on_win()` first here. Red and green are
-      both quoted in the Review section.
-- [ ] AC6: A remembered location naming a file that exists and cannot be executed is diagnosed as that,
-      and not as absent. `find_program()` warns that the file cannot be run and returns `NULL`, under the
-      class `tidymedia_location_not_executable` with `tm_program` and `tm_location`, threading no `call`,
-      as its two siblings do. An absent location keeps `tidymedia_location_gone` and its present wording.
-      A test fires each of the two and asserts the class. It skips on Windows, where the bit does not
-      exist and the absent diagnosis stands, which is a gap `cairn/DESIGN.md`'s Known issues records.
-- [ ] AC7: `cairn/PROFILE.md`'s verify and consistency-gate slots are clean with the real binaries
-      present, the universal cairn-file checks included, and `NEWS.md` carries an entry for each
-      user-visible change. `has_encoder()` has its `_pkgdown.yml` row in the same commit, and
-      `.Rbuildignore`'s `^tools$` already covers the new wrapper.
+      `find_program()`, `tm_set_program()` and `tm_usable_binary()` all ask it. A location holding a directory
+      separator is decided by `file.exists()`, a not-a-directory test and `file.access(path, 1L)`, never by
+      `Sys.which()`. One holding none is still looked up on `PATH` by `Sys.which()`, and a test asserts that
+      `set_program()` accepts such a name and writes it as typed. `tm_usable_binary()` keeps the non-empty test
+      on top of the predicate, so D083's truncated `ffmpeg.exe` is still refused on Windows and all three forms
+      D084 partitions still reach `tidymedia_program_unusable`. After this milestone `grep -n "Sys.which" R/*.R
+      | grep -v ":[0-9]*: *#"` reports calls at two sites only: `find_program()`'s bare-name lookup, and the
+      predicate's bare-name branch.
+- [ ] AC5: A committed test holds a mocked `base::Sys.which()` answering `""` for every argument that holds a
+      directory separator. The mock is a stipulated model of the failure, warranted by the quoted CRAN log
+      rather than measured here. Under it `find_program()` returns the remembered location with no warning,
+      `set_program()` accepts a path that exists, and `tm_usable_binary()` answers TRUE for a non-empty
+      executable file. On the merge-base commit that test fails with `tidymedia_location_gone` for a stub that
+      exists, and with FALSE from `tm_usable_binary()`. The install-side arm is asserted at
+      `tm_usable_binary()`, under the install mock that holds `tm_os()` at `"windows"`, because D086's platform
+      gate refuses `install_on_win()` first here. Red and green are both quoted in the Review section.
+- [ ] AC6: A remembered location naming a file that exists and cannot be executed is diagnosed as that, and not
+      as absent. `find_program()` warns that the file cannot be run and returns `NULL`, under the class
+      `tidymedia_location_not_executable` with `tm_program` and `tm_location`, threading no `call`, as its two
+      siblings do. An absent location keeps `tidymedia_location_gone` and its present wording. A test fires each
+      of the two and asserts the class. It skips on Windows, where the bit does not exist and the absent
+      diagnosis stands, which is a gap `cairn/DESIGN.md`'s Known issues records.
+- [ ] AC7: `cairn/PROFILE.md`'s verify and consistency-gate slots are clean with the real binaries present, the
+      universal cairn-file checks included, and `NEWS.md` carries an entry for each user-visible change.
+      `has_encoder()` has its `_pkgdown.yml` row in the same commit, and `.Rbuildignore`'s `^tools$` already
+      covers the new wrapper.
 
 ## Coverage
 
-- AC1 → T5
-- AC2 → T1, T2, T3, T4, T5, T9
+- AC1 → T5, T11
+- AC2 → T1, T2, T3, T4, T5, T9, T12
 - AC3 → T2
 - AC4 → T6
-- AC5 → T8
-- AC6 → T7, T8
+- AC5 → T8, T13
+- AC6 → T7, T8, T14
 - AC7 → T2, T5, T10
 
 ## Tasks
 
-- [x] T1: Commit `tools/ffmpeg_build_model/ffmpeg` with its header, then run `R CMD check --as-cran` and
-      the `NOT_CRAN=true` suite under it at the merge base, and record what reddens (AC2b).
-- [x] T2: Add exported `has_encoder()` on `cached_encoder_names()`, with no option override,
-      `resolve_timeout()` first, and FALSE where no location is found. Add its tests, its `_pkgdown.yml`
-      row and `devtools::document()`.
-- [x] T3: Add `skip_if_no_encoder()` to `tests/testthat/helper-skip.R`, calling `testthat::skip_on_cran()`
-      before it asks the pool (D090). Guard the `tests/testthat/helper-media.R` fixture builders that name
-      an encoder.
-- [x] T4: Guard the execution tests that name an encoder in the executed call. The set is what the
-      wrapper runs redden. Re-run until clean, in both configurations.
-- [x] T5: Make each AC1 site name its encoder and guard on it. Regenerate `man/`, `README.md` and the
-      vignettes.
-- [x] T6: Write the shared path predicate. Route `find_program()` (`R/program_management.R:85`),
-      `tm_set_program()` (`:934`) and `tm_usable_binary()` (`:1712`) through it, keeping the non-empty test
-      at the install check. Measure whether a tilde location still spawns: `run_program()` hands
-      `system2()` the location unquoted (`:1157`), so `sh` expands it, and on that measurement the
-      location stays written as typed.
-- [x] T7: Add the `tidymedia_location_not_executable` diagnosis. Document it in the find-a-program page's
-      Problems section.
-- [x] T8: Rewrite the tests pinning the old rule: the tilde pair at
-      `tests/testthat/test-program-management.R:2636` and `:2677`, the `Sys.which` premises at
-      `:2619-2622`, and the directory mock at `:2667`. Add the AC5 model-mock test, with its merge-base
-      red recorded.
-- [x] T9: Add `.github/workflows/fedora-cran-model.yaml`, on `workflow_dispatch` and `pull_request`, in a
-      Fedora container. It installs `ffmpeg-free` BY NAME, because that package does not
-      `Provide: ffmpeg` and RPM Fusion's `ffmpeg` carries `libx264`, which would make the run vacuous. It
-      installs pandoc, so AC1's four vignette sites are inside the run rather than silently outside it.
-      Before the check it records four lines: the Fedora release, `rpm -q which`, whether
-      `ffmpeg -encoders` lists `libx264`, and what `Sys.which()` answers for a just-created absolute stub
-      path beside its answer for `ffmpeg`. Remove the r-hub workflow this task first added. Push the
-      branch, dispatch the run, record its URL and figures.
-- [x] T10: Write the records. `NEWS.md` entries. Correct `cairn/DESIGN.md`'s Conventions sentence about
-      examples and vignettes, and add AC6's Windows gap to Known issues. One D-entry superseding D090's
-      "What this does not cover" paragraph. One D-entry annotating D083 and D084's "What the check asks".
-      Extend the `Sys.which` lesson in `cairn/LESSONS.md`, paying for the bytes by compressing the line it
-      extends. Annotate the two candidate rows this milestone closes.
+- [x] T1: Commit `tools/ffmpeg_build_model/ffmpeg` with its header, then run the check and the `NOT_CRAN=true`
+      suite under it at the merge base and record what reddens (AC2b).
+- [x] T2: Add exported `has_encoder()` on `cached_encoder_names()`, with no option override, `resolve_timeout()`
+      first, and FALSE where no location is found. Add its tests, its `_pkgdown.yml` row and `document()`.
+- [x] T3: Add `skip_if_no_encoder()` to `tests/testthat/helper-skip.R`, calling `testthat::skip_on_cran()` before
+      it asks the pool (D090), and guard the `helper-media.R` fixture builders that name an encoder.
+- [x] T4: Guard the execution tests that name an encoder in the executed call. The set is what the wrapper runs
+      redden. Re-run until clean, in both configurations.
+- [x] T5: Make each AC1 site name its encoder and guard on it. Regenerate `man/`, `README.md` and the vignettes.
+- [x] T6: Write the shared path predicate and route `find_program()`, `tm_set_program()` and
+      `tm_usable_binary()` through it, keeping the non-empty test at the install check. Measure whether a tilde
+      location still spawns, and keep writing the location as typed if it does.
+- [ ] T7: Add the `tidymedia_location_not_executable` diagnosis, and document it in the find-a-program page's
+      Problems section. Correct the two sentences that still promise a two-case partition: `?find_ffmpeg`'s
+      "one of two classes" and `?program_status`'s "There are two cases".
+- [x] T8: Rewrite the tests pinning the old rule: the tilde pair, the `Sys.which` premises, and the directory
+      mock in `test-program-management.R`. Add the AC5 model-mock test, with its merge-base red recorded.
+- [x] T9: Add `.github/workflows/fedora-cran-model.yaml`, on `workflow_dispatch` and `pull_request`, in a Fedora
+      container. It installs `ffmpeg-free` BY NAME, because that package does not `Provide: ffmpeg` and RPM
+      Fusion's `ffmpeg` carries `libx264`, which would make the run vacuous. It installs pandoc, so AC1's four
+      vignette sites are inside the run. Before the check it records the four lines AC2(c) names. Remove the
+      r-hub workflow this task first added, and record the run's figures.
+- [x] T10: Write the records: `NEWS.md`; `cairn/DESIGN.md`'s Conventions sentence and AC6's Windows gap in Known
+      issues; one D-entry superseding D090's "What this does not cover" paragraph; one annotating D083 and D084's
+      "What the check asks"; the `Sys.which` lesson extended within its byte budget; and the two candidate rows
+      this milestone closes.
+- [ ] T11: AC1's own rule at `?ffm_run`, whose example re-encodes audio to the MP4 default with no `-c:a`: name
+      that encoder and extend the guard, then re-read every running site for a second encoder the container
+      decides rather than the code.
+- [ ] T12: AC2(c)'s gates. Make the two recorded lines gate rather than echo, stop discarding the check's exit
+      status, widen the log grep to what the criterion states, and install the three Suggests the list omits.
+- [ ] T13: AC5's stated instrument. Assert the install-side arm under the install mock that holds `tm_os()` at
+      `"windows"`, as the criterion names.
+- [ ] T14: the ten fix-now findings the review pass settled, listed in the Review section: the vignette's `jobs`
+      chunk, the reached-limit table's provenance, the wrapper's path substitution and its prefix claim,
+      `tm_usable_binary()`'s NA parity, the NEWS sentence for the Windows location shape, the `path.expand()`
+      comment, and the unmeasured Windows `file.access()` claim.
 
 ## Work log
 
@@ -178,6 +176,12 @@ unclassed `argument of length 0` where no binary resolves.
 - 2026-10-10: AC2(c) is green on Fedora. `R CMD check --as-cran` in `fedora:42` with `ffmpeg-free` reports `Status: 2 WARNINGs` and 0 ERRORs. `checking examples ... OK`, `checking examples with --run-donttest ... OK`, `checking tests ... [80s/84s] OK` with `[ FAIL 0 | WARN 0 | SKIP 302 | PASS 13908 ]`, and `checking re-building of vignette outputs ... OK`. The grep over the log finds nothing naming `libx264`, a remembered-location class, or the configuration directory. Both WARNINGs are the container's own environment, which the criterion exempts by name: CRAN incoming feasibility reporting 0.2.1 against the released 0.2.1 with a URL check that could not reach the network, and `qpdf` absent for the PDF size check. Logs kept at `scratchpad/fedora-check-green.log` and `scratchpad/fedora-gates-green.log`.
 - 2026-10-10: eight container runs were needed, and the first seven failed on the image's own toolchain rather than on the package. `fs` does not compile on Fedora aarch64, which took `testthat` and `rmarkdown` with it. Fedora's `R-rlang` is 1.1.6 against a declared floor of 1.2.0. `git clone` refuses a tree owned by another user inside the container. A mixed RPM and CRAN dependency set left `lifecycle` and then `R6` missing. And colima does not share this scratchpad path, so the logs come out by `docker cp` rather than a bind mount. The run that worked takes `R-fs` from `dnf` and everything else from CRAN with `dependencies = TRUE`, plus `glibc-langpack-en` for the locale.
 - 2026-10-10: every task is done and the profile's verify slot is clean, so this goes to review. The four suite configurations all report 0 failures: real binaries, `libx264` hidden, and all three hidden, the last with 143 skips naming the encoder they miss. `R CMD check --as-cran` reports 0 errors in all four readings taken, which are the two wrapper configurations, the real-binary one, and Fedora. `devtools::document()` produces no diff, `pkgdown::check_pkgdown()` finds no problems, and `README.Rmd` is untouched so `README.md` needs no rebuild.
+- 2026-10-10: return 1 worked. T11: `?ffm_run`'s example names `audio = "aac"` beside `libx264` and guards on both, and the other three running sites were re-read by compiling each command: `-codec:a libmp3lame -vn` at `?ffm_manifest` and the vignette chunks, `-codec:a aac -map 0:a:0` at `?normalize_audio_batch`. No running site now leaves an encoder to the container.
+- 2026-10-10: T12: the Fedora job's gate 1 exits non-zero where `libx264` is present, the check's exit status is no longer discarded, a missing `Status:` line fails rather than passes, the log grep is scoped to the WARNING and NOTE blocks and derives its encoder names from the build's own `-encoders` listing, and the dependency install takes every Suggests with `dependencies = TRUE`. Proven able to fail: against the real Fedora log it passes, and with a planted encoder mention and a planted location class it catches both.
+- 2026-10-10: T13: AC5's install-side arm now runs under `tm_local_windows()`, which holds `tm_os()` at `"windows"`, as the criterion names.
+- 2026-10-10: T7 done properly this time. `tidymedia_location_not_executable` is documented on both pages, and the two sentences that promised a two-case partition now name three cases, including that the new one does not arise on Windows.
+- 2026-10-10: T14, the ten fix-now findings. The vignette's `jobs`-reading chunk is guarded on `has_mp3`, and a sweep over the file confirms no chunk reads a `has_mp3` name under a weaker guard. The reached-limit table gained a second, dated vector so every member is compared again, including `program_status`, which the first attempt had stopped comparing. The wrapper matches only an argument that IS an encoder name, so a path component called `libx264` is left alone, and it now fails a `libx264rgb` call to match its own prefix rule. `tm_usable_binary()` answers FALSE rather than NA for `NA` and for a bare name. NEWS tells Windows users to name the executable extension. The `path.expand()` comment says what was measured. And the unmeasured claim that Windows reads `file.access(mode = 1)` as existence is gone: `?file.access` documents nothing there, so the predicate does not ask it on Windows at all, which also removes the risk that it would have refused every binary the installer unpacks.
+- 2026-10-10: the criteria were reflowed to fit the 150-line cap and not reworded. Proven: each of the seven is byte-identical to the committed version after the whitespace normalisation the binding-criteria check uses. An earlier attempt did reword AC2 while compressing it, and was reverted — on a return the work moves, not the promise.
 - 2026-10-10: review return 1: AC1 fails at `?ffm_run`, whose example re-encodes audio to the MP4 default with no `-c:a`, so one encoder at that site is still decided elsewhere. AC2(c) fails because the committed Fedora workflow echoes its two gates rather than gating on them, discards the check's exit status, and installs a dependency list that omits three Suggests. AC5 fails because the install-side arm is asserted without the `tm_os()` harness the criterion names. And T7 is ticked but undone: the new condition class is documented nowhere, while `?find_ffmpeg` and `?program_status` still promise a two-case partition that this milestone made false. Ten further findings are fix-now and five are candidate rows, all settled and recorded in the Review section.
 - 2026-10-10: M139's second criteria audit returned while this milestone was in progress. Its findings are recorded in M139's own work log, and that file now says its criteria need a re-cut through /milestone-plan before M139 is implemented. Nothing of M139's scope is dropped, and M138 is unaffected.
 

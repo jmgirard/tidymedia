@@ -213,7 +213,7 @@ file.exists("session01_manifest.csv")
 A batch run with `run = FALSE` runs nothing, so it has no manifest. Reading the
 manifest of such a batch is an error, not an empty tibble:
 
-```{r, eval = has_both, error = TRUE}
+```{r, eval = has_mp3, error = TRUE}
 compiled <- ffm_batch(jobs, run = FALSE, manifest = TRUE, .f = function(input, output, ...) {
   ffm_files(input, output) |> ffm_drop("video")
 })

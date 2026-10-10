@@ -542,13 +542,21 @@ tm_timeout_blame_master <- function() {
 }
 
 # tm_timeout_reached_master(): what each domain member did when the limit was
-# actually REACHED, on master -- "abort" or "warn", measured 2026-08-30 at
-# ae5ff1c through `tm_force_timeout()`.
+# actually REACHED -- "abort" or "warn" -- through `tm_force_timeout()`.
 #
 # D049 promises only that a reached limit is never SILENT, so the grid at
 # test-timeout-silence.R records the disjunction and nothing finer. This table
 # records which of the two each member does, so AC6 can say the blame sweep left
 # that choice alone rather than only that it left some condition behind.
+#
+# TWO vectors, because a value carries the date it was measured on. The first
+# was measured 2026-08-30 at ae5ff1c. A member that did not exist then cannot
+# be filed under that measurement, and the default of the `ifelse()` below is
+# "warn", so an unlisted new member would be compared against a value nobody
+# ever took -- which is what happened to `has_encoder()` at M138, where the
+# default read "warn" and the member aborts. The second vector is where a
+# post-baseline member's own measurement goes, with its own date, so every
+# member of the live domain is compared and each value says when it was taken.
 tm_timeout_reached_master <- function() {
   aborts <- c(
     "anonymize_video", "compare_videos", "concatenate_videos", "convert_audio",
@@ -558,8 +566,17 @@ tm_timeout_reached_master <- function() {
     "sample_frames", "separate_audio_video", "standardize_video",
     "strip_metadata", "verify_media"
   )
+  # Measured 2026-10-10 at M138, each through tm_force_timeout(): has_encoder()
+  # aborts, because it reaches the spawn through cached_encoder_names() and
+  # ffmpeg_encoders() aborts on a reached limit; program_status() warns, which
+  # is what it did at ae5ff1c too and what D088's absorber partition expects.
+  aborts_post <- c("has_encoder")
+  warns_post <- c("program_status")
   dom <- tm_timeout_domain()
-  stats::setNames(ifelse(dom %in% aborts, "abort", "warn"), dom)
+  stats::setNames(
+    ifelse(dom %in% c(aborts, aborts_post), "abort", "warn"),
+    dom
+  )
 }
 
 # M094: what the valid and unset paths did on master, recorded ---------------

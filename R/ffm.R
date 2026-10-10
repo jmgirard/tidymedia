@@ -1604,12 +1604,12 @@ n_files <- function(x) {
 #' @seealso [ffm_compile()] to get the command without running it, [ffm_batch()]
 #'   to run many files, and [verify_media()] for the \code{verify} list.
 #' @family pipeline functions
-#' @examplesIf nzchar(Sys.which("ffmpeg")) && has_encoder("libx264")
+#' @examplesIf nzchar(Sys.which("ffmpeg")) && has_encoder("libx264") && has_encoder("aac")
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 #' out <- tempfile(fileext = ".mp4")
 #' ffm_files(video, out) |>
 #'   ffm_scale(width = 160, height = 120) |>
-#'   ffm_codec(video = "libx264") |>
+#'   ffm_codec(video = "libx264", audio = "aac") |>
 #'   ffm_run(verify = list(width = 160, height = 120))
 #' @export
 ffm_run <- function(object, verify = NULL) {

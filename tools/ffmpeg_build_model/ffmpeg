@@ -78,15 +78,28 @@ if [ -z "$hidden" ]; then
   exec "$real" "$@"
 fi
 
-# Which hidden name does this call ask for? A match is an argument that is the
-# name, or that holds it as a word, so `-c:v libx264` and `-codec:v=libx264`
-# both match.
+# Which hidden encoder does this call ask for? Only an argument that IS an
+# encoder name counts: the name itself, or `<flag>=<name>`. Matching the name
+# anywhere in an argument rewrote FILE PATHS -- a temp directory called
+# `libx264` had the sentinel substituted into it, the real binary failed on a
+# path that does not exist, and the reverse substitution put the name back, so
+# the message named a directory that was there all along (M138 review).
+#
+# The prefix rule of the `-encoders` filter applies here too: hiding `libx264`
+# hides `libx264rgb` from the listing, so a call naming `libx264rgb` has to
+# fail as well, or the wrapper would pass a call Fedora refuses. An argument
+# holding a path separator is never an encoder name, which is what keeps a file
+# called `libx264rgb.mp4` out of it.
 asked=""
 for arg in "$@"; do
+  case "$arg" in
+    */* | *\\*) continue ;;
+  esac
+  candidate=${arg#*=}
   for name in $hidden; do
-    case "$arg" in
-      "$name" | *[!A-Za-z0-9_-]"$name" | "$name"[!A-Za-z0-9_-]* | *[!A-Za-z0-9_-]"$name"[!A-Za-z0-9_-]*)
-        asked=$name
+    case "$candidate" in
+      "$name" | "$name"[A-Za-z0-9_]*)
+        asked=$arg
         break
         ;;
     esac
@@ -119,23 +132,31 @@ fi
 # Ask the real binary about a name no build has, so the message and the status
 # are its own, then put the hidden name back.
 sentinel="tidymedia_absent_encoder"
-# Rebuild the argument list with the asked-for name replaced by the sentinel.
+# The matched argument is replaced WHOLESALE -- `$asked` is the whole argument,
+# so a `-c:v=libx264` keeps its flag only because the sentinel takes the value
+# after the `=`. No substring of any other argument is touched.
+case "$asked" in
+  *=*) replacement="${asked%%=*}=$sentinel" ;;
+  *)   replacement=$sentinel ;;
+esac
 i=0
 count=$#
 while [ "$i" -lt "$count" ]; do
   arg=$1
   shift
-  case "$arg" in
-    "$asked") arg=$sentinel ;;
-    *"$asked"*) arg=$(printf '%s' "$arg" | sed "s/$asked/$sentinel/g") ;;
-  esac
+  if [ "$arg" = "$asked" ]; then
+    arg=$replacement
+  fi
   set -- "$@" "$arg"
   i=$((i + 1))
 done
 
+# The value the sentinel stood in for, which is what the message must name.
+asked_value=${asked#*=}
+
 errfile=$(mktemp "${TMPDIR:-/tmp}/ffmpeg_build_model.XXXXXX")
 "$real" "$@" 2>"$errfile"
 status=$?
-sed "s/$sentinel/$asked/g" "$errfile" >&2
+sed "s/$sentinel/$asked_value/g" "$errfile" >&2
 rm -f "$errfile"
 exit $status

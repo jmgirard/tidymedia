@@ -157,8 +157,9 @@ tm_timeout_recorded_domain <- function() {
 # reading and cannot be given one: measuring it today and filing it under
 # "measured at ae5ff1c" would be composing a history rather than recording one.
 # So it is excluded from those two membership comparisons, by name, here.
-# `tm_timeout_reached_master()` needs no exclusion: it is computed from the live
-# domain rather than from a written list.
+# `tm_timeout_reached_master()` once needed no exclusion, being computed from the
+# live domain; since M138 it carries its own dated post-baseline vectors instead,
+# so a member added later is measured there rather than excluded here.
 #
 # Exclusion is not exemption. Every name below is still swept by the live rules
 # -- it blames itself for an invalid limit, and a reached limit still reaches
@@ -568,11 +569,28 @@ tm_timeout_reached_master <- function() {
   )
   # Measured 2026-10-10 at M138, each through tm_force_timeout(): has_encoder()
   # aborts, because it reaches the spawn through cached_encoder_names() and
-  # ffmpeg_encoders() aborts on a reached limit; program_status() warns, which
-  # is what it did at ae5ff1c too and what D088's absorber partition expects.
+  # ffmpeg_encoders() aborts on a reached limit, and program_status() warns,
+  # which is what D088's absorber partition expects of it. Neither reading is
+  # attributed to ae5ff1c: program_status() did not exist at that ref (M113
+  # added it), and has_encoder() was added here.
   aborts_post <- c("has_encoder")
   warns_post <- c("program_status")
   dom <- tm_timeout_domain()
+  # Both post vectors are load-bearing. `aborts_post` decides a value;
+  # `warns_post` is what makes a MISSING measurement loud. Without this check
+  # the `ifelse()` below would default a new domain member to "warn", which is
+  # a value nobody took -- exactly how `has_encoder()` came to be compared
+  # against a reading it does not match (M138 review).
+  unrecorded <- setdiff(tm_timeout_post_baseline(), c(aborts_post, warns_post))
+  if (length(unrecorded)) {
+    stop(
+      "no reached-limit measurement is recorded for: ",
+      paste(unrecorded, collapse = ", "),
+      ". Measure each through tm_force_timeout() and add it to aborts_post or ",
+      "warns_post with the date.",
+      call. = FALSE
+    )
+  }
   stats::setNames(
     ifelse(dom %in% c(aborts, aborts_post), "abort", "warn"),
     dom

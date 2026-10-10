@@ -4542,3 +4542,37 @@ on Windows, a path typed without its executable extension is the shape to
 watch, since `Sys.which()` there may have resolved one and the filesystem test
 asks about the string as given; or by a caller whose bare name must not be
 searched for on `PATH`.
+
+## D097 — The execute question is not asked on Windows at all, and D096's claim about what `file.access(mode = 1)` answers there is withdrawn (2026-10-10, from M138's review; corrects one sentence of D096 and leaves every rule D096, D083, D084 and D046 state standing)
+
+D096 wrote, of the predicate that replaced `Sys.which()`, that "Windows has no
+execute bit and R reads `file.access(mode = 1)` as existence there". That second
+clause was composed rather than measured. `?file.access` documents mode 1 as
+"test for execute permission" and says nothing about Windows either way, and no
+run in this project has measured it on that platform.
+
+It was also load-bearing in the wrong direction. Had `file.access(path, 1L)`
+answered -1 on Windows rather than 0, the predicate would have refused every
+binary `install_on_win()` unpacks, on the one platform that installer runs on,
+and the only thing standing between that and a release was an undocumented
+behaviour nobody here had checked.
+
+**The rule.** `tm_program_state()` does not ask the execute question on
+Windows. A location holding a directory separator is decided there by two
+tests: the thing is there, and it is a file. `tm_usable_binary()` keeps the
+non-empty test on top, which is what D083 put there for exactly this platform,
+so a truncated `ffmpeg.exe` is still refused and the three forms D084 partitions
+still reach `tidymedia_program_unusable`. On POSIX nothing changes: the execute
+test decides, and `tidymedia_location_not_executable` is a state only POSIX can
+reach.
+
+**What this costs.** On Windows a remembered location naming a file that cannot
+be run reads as runnable, and a file that is not a program at all reads as one
+if it is where the location says. `cairn/DESIGN.md`'s Known issues records the
+first; the second is the price of a platform with no bit to ask about, and
+`Sys.which()` did not refuse it either, since what that call asked about on
+Windows was an extension rather than a permission.
+
+**Falsified by** a measurement showing `file.access(path, 1L)` answering
+usefully on Windows, which would make the question worth asking there after
+all; or by a Windows caller harmed by a non-program being remembered as one.

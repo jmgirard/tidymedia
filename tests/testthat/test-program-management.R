@@ -2655,9 +2655,18 @@ test_that("tm_usable_binary() refuses a directory on its own account", {
   # 0 for any directory you can search -- so the clause is load-bearing with no
   # mock at all, and this asserts it directly.
   f <- tm_usable_fixtures()
-  # The premise: the only clause left to refuse it is the directory test.
-  expect_identical(unname(file.access(f$dir, 1L)), 0L)
-  expect_true(file.exists(f$dir))
+  # The premise, on the platform where the predicate asks the execute question
+  # at all: the only clause left to refuse a directory is the directory test,
+  # because `file.access()` answers 0 for one you can search. On Windows the
+  # predicate does not ask it (`?file.access` documents nothing for mode 1
+  # there), so existence is the premise and the directory test is again the only
+  # clause left.
+  if (.Platform$OS.type == "windows") {
+    expect_true(file.exists(f$dir))
+  } else {
+    expect_identical(unname(file.access(f$dir, 1L)), 0L)
+    expect_true(file.exists(f$dir))
+  }
   expect_false(tm_usable_binary(f$dir))
   expect_identical(tm_program_state(f$dir), "absent")
   # And the check has not become one that refuses everything.

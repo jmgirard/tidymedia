@@ -99,8 +99,9 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
 
 - On Windows a remembered location that is there but cannot be run is not
   diagnosed. The execute bit does not exist on that platform, and
-  `?file.access` documents no behaviour for mode 1 there, so
-  `tm_program_state()` does not ask it on Windows. It applies the rule of R's
+  `file.access()`'s Windows rule counts a directory as executable (corrected
+  M138: its Windows help section says so), so `tm_program_state()` does not
+  ask it on Windows. It applies the rule of R's
   own `Sys.which()` there instead. A name with an extension is taken as it is.
   A name without one is tried with `.exe`, `.com`, `.cmd` and `.bat` appended.
   So a file such as `notes.txt` or an empty `ffmpeg.exe` reads as a program,

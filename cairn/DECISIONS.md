@@ -4649,3 +4649,19 @@ there, which D084 requires.
 **Falsified by** a Windows location this rule reads as absent that
 `Sys.which()` at 0.2.1 found, or the reverse, outside a directory. The
 Windows CI leg runs a test that compares the two on the platform itself.
+
+## D101 — `file.access()` does document mode 1 on Windows, and it still is not asked there (2026-10-10, from M138's claim audit after the descope; corrects the reason D097 gives and leaves D097's rule, as D099 and D100 now state it, standing)
+
+D097 said `?file.access` "says nothing about Windows either way". That was read
+from the help page as macOS renders it, which drops the Windows section. R's
+source, `src/library/base/man/file.access.Rd`, has one: Windows has no
+executable-file concept, so mode 1 counts directories and files ending in
+`.exe`, `.bat`, `.cmd` or `.com` as executable, the assumption `system()` and
+`Sys.which()` share.
+
+**The rule stands, for a different reason.** That answer counts a directory,
+which D084 refuses, and it does not try the four extensions on a bare name,
+which `expandcmd()` does. So it is not the question the Windows branch asks.
+
+**Falsified by** a Windows `file.access(path, 1L)` reading that matches
+`expandcmd()` on a bare name, which would make it usable there.

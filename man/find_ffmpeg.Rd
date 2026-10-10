@@ -42,7 +42,8 @@ it cannot be run. Give it permission to execute, or use the \verb{set_*()}
 function to point at another copy. The condition holds the program name in
 \code{tm_program} and the location in \code{tm_location}. This case does not arise
 on Windows, which has no execute bit. There a location is read the way R's
-own \code{Sys.which()} reads it.
+own \code{Sys.which()} reads it, except that a folder never counts and a
+leading \code{~} is expanded.
 \item \code{tidymedia_location_unreadable}: the file does not hold exactly one
 location. It is empty, has more than one line, or has one empty line. The
 condition holds the program name in \code{tm_program} and the file in

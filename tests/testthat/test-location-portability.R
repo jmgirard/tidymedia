@@ -76,8 +76,9 @@ test_that("set_program() and tm_usable_binary() agree with the filesystem, not w
 })
 
 test_that("on Windows the predicate agrees with R's own Sys.which()", {
-  # D099 and D100, measured on the platform itself: this runs only on the
-  # Windows CI leg. A name without an extension finds the `.bat` beside it, as
+  # D099 and D100, measured on the platform itself: this runs only on Windows,
+  # which is CI's Windows leg here and also CRAN's Windows machines, where it
+  # starts no program. A name without an extension finds the `.bat` beside it, as
   # `Sys.which()` does there, and every other path answers as `Sys.which()`
   # answers it.
   skip_on_os(c("mac", "linux", "solaris"))

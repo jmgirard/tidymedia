@@ -65,8 +65,10 @@ tm_install_dir <- function() {
 #   name without one is tried with `.exe`, `.com`, `.cmd` and `.bat` appended.
 #   Anything else is "absent" (D099). Two departures: a directory never counts
 #   here, which D084 requires and `expandcmd()`'s `SearchPath()` may not
-#   promise; and `file.access()` is not asked, since it documents nothing for
-#   mode 1 on Windows. The rule accepts a file `system()` cannot start, such as
+#   promise; and `file.access()` is not asked. Its Windows help section (read
+#   in R's source, 2026-10-10) counts a directory as executable and does not
+#   try the four extensions on a bare name, so it answers a different
+#   question. The rule accepts a file `system()` cannot start, such as
 #   `notes.txt`, exactly as `Sys.which()` did (D100).
 # `tm_usable_binary()` keeps its own non-empty test on top, because neither rule
 # refuses a truncated `ffmpeg.exe` (D083).
@@ -936,7 +938,8 @@ tm_na_string <- function(x) {
 #'   function to point at another copy. The condition holds the program name in
 #'   `tm_program` and the location in `tm_location`. This case does not arise
 #'   on Windows, which has no execute bit. There a location is read the way R's
-#'   own `Sys.which()` reads it.
+#'   own `Sys.which()` reads it, except that a folder never counts and a
+#'   leading `~` is expanded.
 #' * `tidymedia_location_unreadable`: the file does not hold exactly one
 #'   location. It is empty, has more than one line, or has one empty line. The
 #'   condition holds the program name in `tm_program` and the file in
@@ -1850,9 +1853,10 @@ tm_install_binary <- function(install_dir, program) {
 # program (D083). The predicate decides the rest, so the directory and absent
 # forms are refused there and all three forms `tidymedia_program_unusable`
 # partitions still reach it (D084). The one caller passes paths the install
-# built, which name the file itself. An extensionless Windows path is the one
-# form where the two disagree: the predicate may find it with `.exe` appended,
-# while the size test reads the bare path and answers FALSE. A directory is refused by the predicate's
+# built, which name the file itself. Two forms it never passes are read
+# differently by the predicate and the size test: a bare name found on `PATH`
+# (below), and an extensionless Windows path the predicate finds with `.exe`
+# appended, where the size test reads whatever is at the bare path. A directory is refused by the predicate's
 # not-a-directory test alone, because `file.access(dir, 1L)` answers 0 for any
 # directory you can search; its own test asserts that without a mock.
 #

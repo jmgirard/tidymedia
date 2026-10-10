@@ -31,7 +31,10 @@
 # Every call goes through to the real FFmpeg. Two calls are changed.
 #   * `-encoders` output loses the rows for the hidden names.
 #   * A call naming a hidden encoder gets the real binary's own message and exit
-#     status for an unknown encoder. The wrapper asks the real binary about a
+#     status for an unknown encoder. "Naming" means the argument after `-c`,
+#     `-codec`, either with a stream specifier (`-c:v`, `-codec:a:0`), or after
+#     `-vcodec`, `-acodec` or `-scodec`. Another spelling, such as `-dcodec`,
+#     passes through unseen; no call this package compiles uses one. The wrapper asks the real binary about a
 #     name no build has, then puts the hidden name back into what it printed, so
 #     the text and the status are the running binary's own rather than this
 #     script's guess at them.

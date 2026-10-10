@@ -2566,7 +2566,7 @@ test_that("an install directory written with a tilde is not refused as unusable"
 
 # The six inputs AC5 names, built once. `good` and `empty` are both
 # executable, so the size clause is the only thing between them: an empty file
-# with the bit set resolves through `Sys.which()` exactly as a real program
+# with the bit set reads as runnable to the predicate exactly as a real program
 # does, which is the Windows truncation the check exists to catch.
 tm_usable_fixtures <- function(env = parent.frame()) {
   dir <- withr::local_tempdir(.local_envir = env)
@@ -3116,7 +3116,7 @@ test_that("every exported set_* function takes confirm, refuses, and writes unde
   for (fn in fns) tm_set_export_cell(fn, stub)
 })
 
-test_that("the consent prompt names the file it would write and the location as typed", {
+test_that("the consent prompt names the file it would write and the location it would write", {
   # AC4. The prompt is read at menu(), where the caller would see it. Two of
   # the three locations carry braces, which cli would otherwise interpolate in
   # the calling frame: `{program}` names a local of the prompt-building frame,
@@ -3154,6 +3154,19 @@ test_that("the consent prompt names the file it would write and the location as 
   prompt <- cli::ansi_strip(titles[[length(titles)]])
   expect_match(prompt, paste0("'", basename(stub), "'"), fixed = TRUE)
   expect_false(grepl(dirname(stub), prompt, fixed = TRUE))
+
+  # A leading `~` is the one change: the call writes the expanded path (D098),
+  # so that is what the prompt names.
+  skip_on_os("windows")
+  home <- withr::local_tempdir()
+  withr::local_envvar(HOME = home)
+  expect_identical(normalizePath(path.expand("~")), normalizePath(home))
+  writeLines("#!/bin/sh", file.path(home, "tilde.sh"))
+  Sys.chmod(file.path(home, "tilde.sh"), "0755")
+  expect_false(set_program("ffmpeg", "~/tilde.sh"))
+  prompt <- cli::ansi_strip(titles[[length(titles)]])
+  expect_match(prompt, path.expand("~/tilde.sh"), fixed = TRUE)
+  expect_false(grepl("~/tilde.sh", prompt, fixed = TRUE))
 })
 
 test_that("a set_* call returns TRUE or FALSE invisibly, and the Rd page says both", {

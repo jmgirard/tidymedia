@@ -74,8 +74,8 @@ the program and the limit:
 \item the task functions whose names do not end in \verb{_batch}, except
 \code{\link[=segment_video]{segment_video()}}
 \item \code{\link[=ffm_run]{ffm_run()}}, \code{\link[=ffmpeg]{ffmpeg()}}, \code{\link[=ffprobe]{ffprobe()}} and \code{\link[=mediainfo]{mediainfo()}}
-\item \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}}, \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}}, \code{\link[=has_encoder]{has_encoder()}}, and
-\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} when it asks FFmpeg
+\item \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}} and \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}}
+\item \code{\link[=has_encoder]{has_encoder()}} and \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} when they ask FFmpeg
 \item \code{\link[=verify_media]{verify_media()}}, because a check with no answer is not a "no"
 }
 

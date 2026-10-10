@@ -75,6 +75,23 @@ test_that("set_program() and tm_usable_binary() agree with the filesystem, not w
   expect_identical(tm_program_state(unpacked), "runnable")
 })
 
+test_that("on Windows the predicate agrees with R's own Sys.which()", {
+  # D099 and D100, measured on the platform itself: this runs only on the
+  # Windows CI leg. A name without an extension finds the `.bat` beside it, as
+  # `Sys.which()` does there, and every other path answers as `Sys.which()`
+  # answers it.
+  skip_on_os(c("mac", "linux", "solaris"))
+  dir <- withr::local_tempdir()
+  writeLines("@echo off", file.path(dir, "stub.bat"))
+  writeLines("text", file.path(dir, "notes.txt"))
+  paths <- file.path(dir, c("stub", "stub.bat", "notes.txt", "gone", "gone.exe"))
+  expect_identical(tm_program_state(file.path(dir, "stub")), "runnable")
+  expect_identical(
+    tm_program_state(paths) == "runnable",
+    unname(nzchar(Sys.which(paths)))
+  )
+})
+
 test_that("on Windows a location is read the way R's own Sys.which() reads it", {
   # D099. R's `expandcmd()` (src/gnuwin32/run.c) takes a name whose last
   # component holds a `.` as it is, and tries a name without one with `.exe`,
@@ -151,6 +168,13 @@ test_that("a location written with `~` is expanded where it enters the package",
   tm_write_location(dirs$new, "ffprobe", "~/bin/ffprobe")
   expect_no_warning(found <- find_ffprobe())
   expect_identical(found, path.expand("~/bin/ffprobe"))
+
+  # A `~` line that names nothing is reported as the file holds it, so the
+  # caller can find that line.
+  tm_write_location(dirs$new, "ffprobe", "~/bin/gone")
+  cnd <- expect_warning(find_ffprobe(), class = "tidymedia_location_gone")
+  expect_identical(cnd$tm_location, "~/bin/gone")
+  tm_write_location(dirs$new, "ffprobe", "~/bin/ffprobe")
 
   # And the location runs. This starts the stub shell script above, never
   # FFmpeg, but it is still a spawn, so it stays off CRAN's machines (D090).

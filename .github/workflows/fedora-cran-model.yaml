@@ -32,8 +32,10 @@ on:
 jobs:
   fedora-check:
     runs-on: ubuntu-latest
-    container: fedora:42
-    name: fedora:42, R release, ffmpeg-free
+    # Fedora 44 is the release CRAN's check-flavors page lists for both Fedora
+    # flavors (read 2026-10-10).
+    container: fedora:44
+    name: fedora:44, R release, ffmpeg-free
     env:
       LANG: en_US.UTF-8
 
@@ -109,8 +111,9 @@ jobs:
           cat "$log"
           echo "::endgroup::"
           # One block per `* ` line. A block is kept when its first line ends
-          # in WARNING or NOTE, or when a later line of it is that word alone,
-          # which is how the check prints a verdict that follows output. The
+          # in WARNING or NOTE, or when a later line of it is that word alone or
+          # after a timing such as `[80s/31s]`, which is how the check prints a
+          # verdict that follows output. The
           # incoming-feasibility block is left out: it is about the submission
           # (version number, maintainer, URLs), and it is read and listed by
           # hand rather than fixed.
@@ -119,7 +122,7 @@ jobs:
             /^\* / { flush(); block = ""; keep = 0
                      feasibility = ($0 ~ /CRAN incoming feasibility/)
                      if ($0 ~ /(WARNING|NOTE)$/) keep = 1 }
-            /^ *(WARNING|NOTE)$/ { keep = 1 }
+            /^ *(\[[^]]*\] *)?(WARNING|NOTE)$/ { keep = 1 }
             { block = block $0 "\n" }
             END { flush() }' "$log" > /tmp/warnings.txt
           echo "::group::warning and note blocks"

@@ -3156,8 +3156,9 @@ hardware_encoder_available <- function(codec, hardware, call) {
 #'
 #' Where the package finds no FFmpeg at all, the answer is \code{FALSE}: nothing
 #' can be encoded, so no encoder is available. A location you saved with
-#' \code{\link{set_ffmpeg}} that no longer works still gives its warning. So a
-#' machine you can repair is never reported as a build without the encoder.
+#' \code{\link{set_ffmpeg}} that no longer works still gives its warning beside
+#' the \code{FALSE}. So a machine you can repair is never reported silently as a
+#' build without the encoder.
 #'
 #' @param name A string naming one encoder, spelled as
 #'   \code{\link{ffmpeg_encoders}} spells it, such as \code{"libx264"},

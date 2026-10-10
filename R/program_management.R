@@ -62,10 +62,12 @@ tm_install_dir <- function() {
 # * Windows: the rule R's own `Sys.which()` and `system()` apply there, which is
 #   `expandcmd()` in R's `src/gnuwin32/run.c` (read 2026-10-10). A name whose
 #   last component holds a `.` is taken as it is, and any file there counts. A
-#   name without one is tried with `.exe`, `.com`, `.cmd` and `.bat` appended,
-#   in that order. Anything else is "absent", as `Sys.which()` reported it
-#   before M138 (D099). `file.access()` documents nothing for mode 1 on
-#   Windows, so it is not asked.
+#   name without one is tried with `.exe`, `.com`, `.cmd` and `.bat` appended.
+#   Anything else is "absent" (D099). Two departures: a directory never counts
+#   here, which D084 requires and `expandcmd()`'s `SearchPath()` may not
+#   promise; and `file.access()` is not asked, since it documents nothing for
+#   mode 1 on Windows. The rule accepts a file `system()` cannot start, such as
+#   `notes.txt`, exactly as `Sys.which()` did (D100).
 # `tm_usable_binary()` keeps its own non-empty test on top, because neither rule
 # refuses a truncated `ffmpeg.exe` (D083).
 #
@@ -92,9 +94,13 @@ tm_program_state <- function(location, os = .Platform$OS.type) {
     state[named_path] <- if (identical(os, "windows")) {
       has_ext <- grepl("[.][^/\\\\]*$", path)
       found <- is_file & has_ext
+      bare <- which(!has_ext)
       for (ext in c(".exe", ".com", ".cmd", ".bat")) {
-        with_ext <- file.info(paste0(path, ext), extra_cols = FALSE)
-        found <- found | (!has_ext & !is.na(with_ext$isdir) & !with_ext$isdir)
+        if (!length(bare)) break
+        with_ext <- file.info(paste0(path[bare], ext), extra_cols = FALSE)
+        hit <- !is.na(with_ext$isdir) & !with_ext$isdir
+        found[bare[hit]] <- TRUE
+        bare <- bare[!hit]
       }
       ifelse(found, "runnable", "absent")
     } else {
@@ -166,16 +172,20 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
       # A hand-edited `~` line is expanded here, where the location enters the
       # package, because `system2()` and `ffprobe()` pass it to the shell
       # quoted, and a quoted `~` is not expanded (measured 2026-10-10:
-      # `sh: ~/bin/ffprobe: No such file or directory`; D098).
-      location <- path.expand(location)
+      # `sh: ~/bin/ffprobe: No such file or directory`; D098). The two
+      # warnings below still name the line as the file holds it, so a caller
+      # can find it there.
+      expanded <- path.expand(location)
       # Is the location still a program this machine can run? Two ways it is
       # not, and they take different advice: a file that is no longer there is
       # repaired by pointing somewhere else, and one that is there but cannot
       # be run is repaired by the permission bit. Before M138 both answered
       # `Sys.which() == ""` and both were reported as gone, which sent a caller
       # looking for a file that was in front of them.
-      state <- tm_program_state(location)
-      if (identical(state, "not_executable")) {
+      state <- tm_program_state(expanded)
+      if (identical(state, "runnable")) {
+        location <- expanded
+      } else if (identical(state, "not_executable")) {
         cli::cli_warn(
           c(
             "{program} is configured at {.file {location}}, but that file \\
@@ -191,7 +201,7 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
           tm_location = location
         )
         location <- NULL
-      } else if (!identical(state, "runnable")) {
+      } else {
         cli::cli_warn(
           c(
             "{program} was configured at {.file {location}} but that file no \\
@@ -920,14 +930,13 @@ tm_na_string <- function(x) {
 #'
 #' * `tidymedia_location_gone`: the function read the location, but no program
 #'   is there now. The condition holds the program name in `tm_program` and the
-#'   location in `tm_location`.
+#'   location in `tm_location`, as the file holds it.
 #' * `tidymedia_location_not_executable`: a file is at the saved location, and
 #'   it cannot be run. Give it permission to execute, or use the `set_*()`
 #'   function to point at another copy. The condition holds the program name in
 #'   `tm_program` and the location in `tm_location`. This case does not arise
 #'   on Windows, which has no execute bit. There a location is read the way R's
-#'   own `Sys.which()` reads it, and one that does not name a program gives
-#'   `tidymedia_location_gone`.
+#'   own `Sys.which()` reads it.
 #' * `tidymedia_location_unreadable`: the file does not hold exactly one
 #'   location. It is empty, has more than one line, or has one empty line. The
 #'   condition holds the program name in `tm_program` and the file in
@@ -936,8 +945,9 @@ tm_na_string <- function(x) {
 #' A line that holds only spaces counts as a location. So it gives
 #' `tidymedia_location_gone`, not `tidymedia_location_unreadable`.
 #'
-#' To fix either problem, forget the location with [unset_program()], or
-#' replace it with [set_program()].
+#' To fix any of the three, forget the location with [unset_program()], or
+#' replace it with [set_program()]. A file that cannot be run can also be fixed
+#' by giving it permission to execute.
 #'
 #' @section Locations saved by earlier versions:
 #' Versions of the package before 0.2.0 saved locations in a different folder,
@@ -1818,14 +1828,12 @@ tm_close <- function(con) {
   invisible(tryCatch(if (isOpen(con)) close(con), error = function(cnd) NULL))
 }
 
-# `path.expand()` here rather than at either reader. Two callers ask about
-# this path and they do not agree about `~` on their own: `file.info()` expands
-# it and `Sys.which()` does not, so `install_on_win(install_dir = "~/ffmpeg")`
-# gave a registration check that refused a good build and blamed the archive
-# for it (M104 review F1). Expanding once, where the path is built, is what
-# keeps the check and the `set_program()` call that follows it asking about the
-# same file -- expanding inside the check alone would only move the failure
-# into the loop, which is the partial registration M104 exists to stop.
+# `path.expand()` where the path is built (M104 review F1, D083). Before M138
+# the check asked `Sys.which()`, which does not expand `~`, while `file.info()`
+# does, so `install_on_win(install_dir = "~/ffmpeg")` refused a good build and
+# blamed the archive. `set_program()` now expands too (D098), so this call is
+# no longer the only guard, but it keeps every path the install reports in the
+# form that is written.
 tm_install_binary <- function(install_dir, program) {
   path.expand(file.path(install_dir, "bin", paste0(program, ".exe")))
 }
@@ -1841,7 +1849,10 @@ tm_install_binary <- function(install_dir, program) {
 # of zero length answers "runnable" there and would be remembered as a working
 # program (D083). The predicate decides the rest, so the directory and absent
 # forms are refused there and all three forms `tidymedia_program_unusable`
-# partitions still reach it (D084). A directory is refused by the predicate's
+# partitions still reach it (D084). The one caller passes paths the install
+# built, which name the file itself. An extensionless Windows path is the one
+# form where the two disagree: the predicate may find it with `.exe` appended,
+# while the size test reads the bare path and answers FALSE. A directory is refused by the predicate's
 # not-a-directory test alone, because `file.access(dir, 1L)` answers 0 for any
 # directory you can search; its own test asserts that without a mock.
 #
@@ -1891,10 +1902,11 @@ tm_install_details <- function(download_url, install_dir, programs,
   )
 }
 
-# What a set_program() call would do, one item per line: the location as the
-# caller typed it, and the file that would record it. The typed string is what
-# gets written, so it is what the prompt names -- never a path `Sys.which()`
-# resolved it to, which is not what lands in the file.
+# What a set_program() call would do, one item per line: the location it would
+# write, and the file that would record it. That is the location as the caller
+# typed it, with a leading `~` expanded (D098), so it is what the prompt names
+# -- never a path `Sys.which()` resolved it to, which is not what lands in the
+# file.
 #
 # Every value goes through a cli field, which does not recurse into the value,
 # so a location containing braces is shown rather than evaluated (M44); the

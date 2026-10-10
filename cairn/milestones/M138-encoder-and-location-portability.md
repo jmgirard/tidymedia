@@ -98,11 +98,11 @@ unclassed `argument of length 0` where no binary resolves.
 ## Coverage
 
 - AC1 → T5, T11
-- AC2 → T1, T2, T3, T4, T5, T9, T12, T15
+- AC2 → T1, T2, T3, T4, T5, T9, T12, T15, T17, T18
 - AC3 → T2, T16
-- AC4 → T6, T15
+- AC4 → T6, T15, T17
 - AC5 → T8, T13, T16
-- AC6 → T7, T8, T14, T16
+- AC6 → T7, T8, T14, T16, T17
 - AC7 → T2, T5, T10
 
 ## Tasks
@@ -140,12 +140,11 @@ unclassed `argument of length 0` where no binary resolves.
       status, widen the log grep to what the criterion states, and install the three Suggests the list omits.
 - [x] T13: AC5's stated instrument. Assert the install-side arm under the install mock that holds `tm_os()` at
       `"windows"`, as the criterion names.
-- [x] T14: the ten fix-now findings the review pass settled, listed in the Review section: the vignette's `jobs`
-      chunk, the reached-limit table's provenance, the wrapper's path substitution and its prefix claim,
-      `tm_usable_binary()`'s NA parity, the NEWS sentence for the Windows location shape, the `path.expand()`
-      comment, and the unmeasured Windows `file.access()` claim.
+- [x] T14: pass 1's ten fix-now findings, listed in the Review section.
 - [x] T15: return 2's floor: expand `~` at entry (D098), AC4's bare-name write test, Fedora run from the job's own steps.
 - [x] T16: pass 3's fix-now findings (Review section), with the Windows rule that keeps AC6's Windows clause true.
+- [ ] T17: the descope: narrow AC2(c), AC4 and AC6, record D100, and move the stricter Windows rule to a candidate row.
+- [ ] T18: pass 4's fix-now findings (Review section), with the Fedora job on `fedora:44`.
 
 ## Work log
 
@@ -202,6 +201,9 @@ unclassed `argument of length 0` where no binary resolves.
 - 2026-10-10: amendment routed: AC2 — "this run's URL" cannot come from the local run of the committed job, and this repo opens the pull request only after the merge approval.
 - 2026-10-10: thrash rule (a) fires at return 3. Stopped for the maintainer's choice.
 - 2026-10-10: the maintainer chose the descope. AC2(c), AC4 and AC6 are narrowed so they promise no run URL and no Windows reading. Windows keeps 0.2.1's lookup through R's own rule (D099), and a stricter Windows rule exits to a candidate row. The pass-4 fix-now findings and the move to Fedora 44 are worked with it. Status back to in-progress.
+- 2026-10-10: re-audit: AC2 (full) — the narrowing passes, with four repairs taken: "its" rebound to every run, so "this run's" is restored. The runner now resolves one SHA and echoes it, so "the commit it ran" is recorded. "Two of the four lines" named no four lines, so it reads "Two of the steps". And the encoder listing is not copied out, so the clause reads gate 1's report instead.
+- 2026-10-10: re-audit: AC4 (full) — two repairs taken: the code asks no `file.exists()`, so the clause names an existence test. And "D083's truncated `ffmpeg.exe` is still refused on Windows" cannot be shown before the merge, so it reads as a zero-length file the predicate accepts, under the install tests' mock.
+- 2026-10-10: re-audit: AC6 (full) — three repairs taken: the first sentence still promised every platform, so it is scoped to POSIX and to what `file.access()` refuses. "It skips on Windows" was ambiguous between two tests. And "records the gap" named no gap.
 
 ## Decisions
 

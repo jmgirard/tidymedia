@@ -4629,3 +4629,23 @@ argument rather than `tm_os()`, for D098's reasons. The one difference from
 
 **Falsified by** a Windows location this rule reads as absent and R's
 `system()` runs, or one it reads as runnable and `system()` cannot start.
+
+## D100 — M138 keeps 0.2.1's Windows reading of a remembered location and promises no stricter one (2026-10-10, from M138's descope at review return 3; corrects D099's falsifier and leaves D099's rule, D098's `~` rule and D083, D084 and D046 standing)
+
+D099's second falsifier, "one it reads as runnable and `system()` cannot
+start", is met by its own rule: `expandcmd()` takes any name with an extension
+as it is, so `notes.txt` reads as runnable and `system()` cannot start it. The
+rule is right for its purpose and the falsifier was wrong. The rule's purpose
+is that Windows reads a location exactly as `Sys.which()` read it at 0.2.1.
+
+**The decision.** At review return 3 the maintainer chose to descope rather
+than retry. M138 promises no Windows reading beyond 0.2.1's: AC4's execute
+test and AC6's diagnosis are POSIX promises, and on Windows a present file
+that cannot be run reads as a program, as it did before. A stricter Windows
+rule (a non-empty file with one of the four executable extensions) is a
+candidate row, not part of M138. The predicate still refuses a directory
+there, which D084 requires.
+
+**Falsified by** a Windows location this rule reads as absent that
+`Sys.which()` at 0.2.1 found, or the reverse, outside a directory. The
+Windows CI leg runs a test that compares the two on the platform itself.

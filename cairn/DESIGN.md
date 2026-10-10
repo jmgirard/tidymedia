@@ -97,18 +97,19 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
 
 ## Known issues
 
-- On Windows a remembered location that is there but cannot be run is still
-  reported as gone. The execute bit does not exist on that platform, and
+- On Windows a remembered location that is there but cannot be run is not
+  diagnosed. The execute bit does not exist on that platform, and
   `?file.access` documents no behaviour for mode 1 there, so
   `tm_program_state()` does not ask it on Windows. It applies the rule of R's
   own `Sys.which()` there instead. A name with an extension is taken as it is.
   A name without one is tried with `.exe`, `.com`, `.cmd` and `.bat` appended.
-  A location that rule does not find reads as absent (corrected M138, D099).
+  So a file such as `notes.txt` or an empty `ffmpeg.exe` reads as a program,
+  and the failure comes at the first call that starts it, as at 0.2.1. A
+  location the rule does not find reads as gone (corrected M138, D099, D100).
   The `tidymedia_location_not_executable` warning M138 added therefore never
   fires on Windows, and its tests `skip_on_os("windows")`. Accepted rather than
-  carried as planned work: the state the diagnosis exists for is a POSIX
-  permission bit, and the Windows reading is the one that platform supports
-  (added 2026-10-10, M138 AC6).
+  carried as planned work at M138's descope: Windows keeps 0.2.1's reading,
+  and a stricter rule is a candidate row (added 2026-10-10, M138 AC6).
 
 - Four costs and inconsistencies around the remembered-location warnings are accepted
   rather than pending a fix (M116 review). `unset_program()` discards the FFmpeg

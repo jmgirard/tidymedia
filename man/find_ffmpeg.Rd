@@ -36,14 +36,13 @@ returns \code{NULL}. The warning has one of three classes that you can catch:
 \itemize{
 \item \code{tidymedia_location_gone}: the function read the location, but no program
 is there now. The condition holds the program name in \code{tm_program} and the
-location in \code{tm_location}.
+location in \code{tm_location}, as the file holds it.
 \item \code{tidymedia_location_not_executable}: a file is at the saved location, and
 it cannot be run. Give it permission to execute, or use the \verb{set_*()}
 function to point at another copy. The condition holds the program name in
 \code{tm_program} and the location in \code{tm_location}. This case does not arise
 on Windows, which has no execute bit. There a location is read the way R's
-own \code{Sys.which()} reads it, and one that does not name a program gives
-\code{tidymedia_location_gone}.
+own \code{Sys.which()} reads it.
 \item \code{tidymedia_location_unreadable}: the file does not hold exactly one
 location. It is empty, has more than one line, or has one empty line. The
 condition holds the program name in \code{tm_program} and the file in
@@ -53,8 +52,9 @@ condition holds the program name in \code{tm_program} and the file in
 A line that holds only spaces counts as a location. So it gives
 \code{tidymedia_location_gone}, not \code{tidymedia_location_unreadable}.
 
-To fix either problem, forget the location with \code{\link[=unset_program]{unset_program()}}, or
-replace it with \code{\link[=set_program]{set_program()}}.
+To fix any of the three, forget the location with \code{\link[=unset_program]{unset_program()}}, or
+replace it with \code{\link[=set_program]{set_program()}}. A file that cannot be run can also be fixed
+by giving it permission to execute.
 }
 
 \section{Locations saved by earlier versions}{

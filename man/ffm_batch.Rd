@@ -101,7 +101,20 @@ says how that is decided. Such a job still runs, and it still gets
 warning of class \code{tidymedia_encoder_unavailable} for all such jobs. It
 names each encoder and the jobs that used it. Its fields hold one element for
 each job and codec: \code{tm_encoder}, \code{tm_stream} and \code{tm_row},
-the job's row number in \code{jobs}.
+the job's row number in \code{jobs}. A task function's \code{_batch} form
+can pass \code{ffm_batch()} a table of its own, so for
+\code{\link{separate_audio_video_batch}} and
+\code{normalize_audio_batch(two_pass = TRUE)} these are not the rows of the
+table you gave.
+
+The same class is also an error, for example when a hardware encoder is
+missing and \code{fallback = FALSE}. A \code{tryCatch()} handler for the
+class therefore also catches this warning and loses the batch's result. Use
+\code{withCallingHandlers()} to act on the warning and keep the result.
+
+If reading FFmpeg's encoder lists reaches the \code{tidymedia.timeout}
+limit, the batch gives one warning of class \code{tidymedia_probe_timeout},
+and the later jobs do not read the lists again.
 }
 
 \examples{

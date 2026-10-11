@@ -104,8 +104,9 @@ package remembers each list for the session once it reads it (see
 list, the check says nothing, and the error is the
 \code{tidymedia_ffmpeg_exit} error alone. If reading a list reaches the
 \code{tidymedia.timeout} limit, a warning of class
-\code{tidymedia_probe_timeout} also says so. \code{\link{ffm_batch}} gives
-one warning with this class for all its rows.
+\code{tidymedia_probe_timeout} also says so, once per call.
+\code{\link{ffm_batch}} gives one \code{tidymedia_encoder_unavailable}
+warning for all its rows instead of an error for each.
 }
 
 \examples{

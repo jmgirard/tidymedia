@@ -447,9 +447,10 @@ test_that("the batch gate reads the extension without regard to case", {
       warning = function(w) w
     )
   }
-  # The row fails either way -- an unknown encoder -- and the multi-track
-  # warning is the only warning this verb raises, so a dropped row leaves the
-  # batch silent (M091: "an all-listed batch warns not at all").
+  # The row fails either way -- an unknown encoder -- and, with M139's encoder
+  # warning set aside, the multi-track warning is the only separation warning
+  # this verb raises, so a dropped row leaves the batch without one (M091: "an
+  # all-listed batch warns not at all").
   upper <- fail_into("OUT.MKA")
   expect_s3_class(upper, "tbl_df")
   expect_false(all(upper$success))
@@ -1332,9 +1333,11 @@ test_that("a failed batch row on a listed container contributes no bullet", {
   )
 })
 
-test_that("a batch whose failed rows are all listed containers warns not at all", {
-  # AC2, second half. Dropping every row must leave silence, not an empty
-  # warning with a "0 audio outputs failed" headline.
+test_that("a batch whose failed rows are all listed containers gives no separation warning", {
+  # AC2, second half. Dropping every row must leave no separation warning, not
+  # an empty one with a "0 audio outputs failed" headline. Since M139 the batch
+  # still gives the encoder warning for these rows, and that is the only
+  # warning it gives, which the last block asserts.
   skip_if_no_ffprobe()
   multi <- make_multitrack_video()
   dir <- withr::local_tempdir()
@@ -1347,6 +1350,16 @@ test_that("a batch whose failed rows are all listed containers warns not at all"
   expect_no_warning(res <- without_encoder_warning(separate_audio_video_batch(jobs)))
   expect_false(res$success[[1]])
   expect_false(res$success[[3]])
+
+  classes <- character()
+  withCallingHandlers(
+    separate_audio_video_batch(jobs),
+    warning = function(w) {
+      classes <<- c(classes, class(w)[[1]])
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_identical(classes, "tidymedia_encoder_unavailable")
 })
 
 test_that("every unlisted container keeps the batch warning's per-row bullet", {

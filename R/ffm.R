@@ -1627,8 +1627,9 @@ n_files <- function(x) {
 #' list, the check says nothing, and the error is the
 #' \code{tidymedia_ffmpeg_exit} error alone. If reading a list reaches the
 #' \code{tidymedia.timeout} limit, a warning of class
-#' \code{tidymedia_probe_timeout} also says so. \code{\link{ffm_batch}} gives
-#' one warning with this class for all its rows.
+#' \code{tidymedia_probe_timeout} also says so, once per call.
+#' \code{\link{ffm_batch}} gives one \code{tidymedia_encoder_unavailable}
+#' warning for all its rows instead of an error for each.
 #' @seealso [ffm_compile()] to get the command without running it, [ffm_batch()]
 #'   to run many files, and [verify_media()] for the \code{verify} list.
 #' @family pipeline functions
@@ -1694,7 +1695,13 @@ ffm_run <- function(object, verify = NULL) {
     # the diagnosis is its fail-open answer, and the abort below is unchanged.
     call <- attr(object, "tm_call", exact = TRUE)
     if (is.null(call)) call <- rlang::current_env()
-    missing <- diagnose_missing_encoders(object, call = call)
+    # `tm_no_diagnosis` is set by a caller whose earlier run's listing read
+    # reached the limit, so one call warns once (D049; R/ffmpeg.R says how).
+    missing <- if (isTRUE(attr(object, "tm_no_diagnosis", exact = TRUE))) {
+      character()
+    } else {
+      diagnose_missing_encoders(object, call = call)
+    }
     if (length(missing)) {
       # One bullet per missing codec. The stream word is one of two constants and
       # the name reaches cli only through {.val}, so a brace in a codec name is

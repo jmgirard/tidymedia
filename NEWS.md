@@ -12,15 +12,24 @@ CRAN uses.
   `tm_encoder` and `tm_stream` fields hold the names and `"video"` or
   `"audio"`. A codec name such as `"h264"` counts when the build can encode
   it. The error names the function you called, such as `standardize_video()`.
+  The class says the build lacks the encoder, not that the lack made the run
+  fail: FFmpeg uses no video encoder for an input without video, so such a
+  run can fail for another reason and still get the class.
   One case keeps its old error: `separate_audio_video()` on an input with
   several audio tracks, with no `audio_stream` and an audio file type that
   holds only one track (such as `.mp3` or `.aac`), still gives its error about
   several audio tracks.
   A batch gives one warning of the same class after its jobs run, naming each
-  encoder and the job rows. A run that succeeds, and a call with
-  `run = FALSE`, behave as before, so a dry run can still show a command
-  your build cannot run. The hardware-encoder error for `fallback = FALSE`
-  now has the same class.
+  encoder and the rows of the jobs table `ffm_batch()` ran. For
+  `separate_audio_video_batch()` and `normalize_audio_batch(two_pass = TRUE)`
+  that table is not the one you gave. If reading FFmpeg's lists reaches
+  `options(tidymedia.timeout = )`, one `tidymedia_probe_timeout` warning says
+  so, once per call. A run that succeeds, and a call with `run = FALSE`,
+  compile and start what they did before, so a dry run can still show a
+  command your build cannot run. The hardware-encoder error for
+  `fallback = FALSE`, which a dry run can also give, now has the same class.
+  `ffmpeg_encoders()` and `ffmpeg_codecs()` no longer print FFmpeg's version
+  banner.
 
 * **New `has_encoder()`** asks whether your FFmpeg build has a named encoder,
   such as `"libx264"` or `"libmp3lame"`. Builds differ in what they were

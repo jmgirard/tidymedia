@@ -141,23 +141,68 @@ test_that("a listing that cannot be read leaves the merge-base condition", {
   expect_match(msg, "FFmpeg exited with status 8.", fixed = TRUE)
 })
 
-test_that("a limit reached during the listing warns and leaves the condition", {
-  local_failed_run(encoders = function() abort_timeout("FFmpeg", 5))
-  cnd <- NULL
-  w <- tryCatch(
+# Run `expr`, collecting every warning it signals and the error it ends with,
+# from the one evaluation.
+collect_conditions <- function(expr) {
+  warnings <- list()
+  err <- tryCatch(
     withCallingHandlers(
-      ffm_run(pipeline_with(video = "libx264")),
-      error = function(e) cnd <<- e
+      {
+        expr
+        NULL
+      },
+      warning = function(w) {
+        warnings[[length(warnings) + 1L]] <<- w
+        invokeRestart("muffleWarning")
+      }
     ),
-    tidymedia_probe_timeout = function(w) w
+    error = function(e) e
   )
-  # The warning comes first, so catch it, then run again to read the error.
+  list(warnings = warnings, error = err)
+}
+
+test_that("a limit reached during the listing warns once and leaves the condition", {
+  reads <- local_failed_run(encoders = function() abort_timeout("FFmpeg", 5))
+  got <- collect_conditions(ffm_run(pipeline_with(video = "libx264")))
+
+  # One warning, of the probe-timeout class, naming the frame the error names.
+  expect_length(got$warnings, 1L)
+  w <- got$warnings[[1]]
   expect_s3_class(w, "tidymedia_probe_timeout")
+  expect_identical(w$tm_limit, 5)
   expect_match(cli::ansi_strip(conditionMessage(w)), "timed out after 5 seconds",
                fixed = TRUE)
-  cnd <- tryCatch(suppressWarnings(ffm_run(pipeline_with(video = "libx264"))),
-                  error = function(e) e)
-  expect_identical(class(cnd), exit_classes)
+  expect_identical(rlang::call_name(conditionCall(w)), "ffm_run")
+  # The same run's error is the merge-base exit condition.
+  expect_identical(class(got$error), exit_classes)
+  expect_identical(reads$encoders, 1L)
+})
+
+test_that("a single-file verb's two runs warn once when the listing hangs", {
+  # separate_audio_video() runs two pipelines. Both fail here, and the listing
+  # read reaches the limit on the first, so the second skips the diagnosis.
+  bad <- "nosuchenc"
+  asks <- 0L
+  local_mocked_bindings(
+    run_program = function(location, args, ...) {
+      if (any(args %in% bad)) structure(character(), status = 8L) else character()
+    },
+    cached_encoder_names = function() {
+      asks <<- asks + 1L
+      abort_timeout("FFmpeg", 5)
+    },
+    cached_encodable_codecs = function() character()
+  )
+  f <- make_input()
+  dir <- withr::local_tempdir()
+  got <- collect_conditions(
+    separate_audio_video(f, file.path(dir, "a.m4a"), file.path(dir, "v.mp4"),
+                         audio_codec = bad, video_codec = bad, audio_stream = 0)
+  )
+  classes <- vapply(got$warnings, function(w) class(w)[[1]], character(1))
+  expect_identical(classes, "tidymedia_probe_timeout")
+  expect_identical(asks, 1L)
+  expect_s3_class(got$error, "tidymedia_ffmpeg_exit")
 })
 
 test_that("the codec listing is remembered once read, and only once read", {
@@ -310,6 +355,20 @@ test_that("a single-file call names the function the caller typed", {
     expect_s3_class(cnd, "tidymedia_encoder_unavailable")
     expect_identical(rlang::call_name(conditionCall(cnd)), name, info = name)
   }
+
+  # separate_audio_video() runs two pipelines, and the call above fails only
+  # its audio half. Here the audio half copies and succeeds, and the video half
+  # names the missing encoder, so the video run's own frame is what is read.
+  vcnd <- tryCatch(
+    suppressWarnings(separate_audio_video(
+      f, file.path(dir, "a2.m4a"), file.path(dir, "v2.mp4"),
+      audio_codec = "copy", video_codec = bad
+    )),
+    error = function(e) e
+  )
+  expect_s3_class(vcnd, "tidymedia_encoder_unavailable")
+  expect_identical(vcnd$tm_stream, "video")
+  expect_identical(rlang::call_name(conditionCall(vcnd)), "separate_audio_video")
 })
 
 test_that("the listed exceptions compile no codec but copy", {
@@ -426,6 +485,47 @@ test_that("one encoder missing on several rows is one bullet naming them all", {
   expect_identical(w$tm_row, c(1L, 3L))
   expect_match(cli::ansi_strip(conditionMessage(w)),
                'No video encoder "nosuch_v": rows 1, 3.', fixed = TRUE)
+})
+
+test_that("a batch whose listing read hangs warns once and reads once", {
+  # Three failing rows. The listing read reaches the limit on the first; the
+  # later rows skip the diagnosis, and the batch gives one warning (D049).
+  asks <- 0L
+  local_mocked_bindings(
+    run_program = function(...) structure(character(), status = 8L),
+    cached_encoder_names = function() {
+      asks <<- asks + 1L
+      abort_timeout("FFmpeg", 5)
+    },
+    cached_encodable_codecs = function() character()
+  )
+  jobs <- batch_jobs(vc = rep("nosuch_v", 3), ac = rep("aac", 3))
+  got <- collect_conditions(res <- ffm_batch(jobs, build_row))
+  expect_null(got$error)
+  classes <- vapply(got$warnings, function(w) class(w)[[1]], character(1))
+  expect_identical(classes, "tidymedia_probe_timeout")
+  expect_identical(got$warnings[[1]]$tm_limit, 5)
+  expect_identical(asks, 1L)
+  expect_identical(res$success, c(FALSE, FALSE, FALSE))
+})
+
+test_that("successful runs and dry runs read neither listing", {
+  # AC2's success and dry-run paths, at the three sites that run pipelines:
+  # a batch, the two separation runs, and a verb's run = FALSE.
+  reads <- local_failed_run()
+  local_mocked_bindings(run_program = function(...) character())
+  jobs <- batch_jobs(vc = c("libx264", "nosuch_v"), ac = c("aac", "aac"))
+  expect_no_warning(res <- ffm_batch(jobs, build_row))
+  expect_identical(res$success, c(TRUE, TRUE))
+  f <- make_input()
+  dir <- withr::local_tempdir()
+  separate_audio_video(f, file.path(dir, "a.m4a"), file.path(dir, "v.mp4"),
+                       audio_codec = "nosuch_a", video_codec = "nosuch_v",
+                       audio_stream = 0)
+  standardize_video(f, file.path(dir, "s.mp4"), video_codec = "nosuch_v",
+                    run = FALSE)
+  expect_identical(reads$encoders, 0L)
+  expect_identical(reads$codecs, 0L)
 })
 
 test_that("a batch with no diagnosed row, and a dry-run batch, do not warn", {

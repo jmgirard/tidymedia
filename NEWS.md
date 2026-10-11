@@ -4,6 +4,20 @@ The package no longer assumes things about the machine it runs on that are not
 true everywhere. Both fixes answer check failures on the two Fedora flavors
 CRAN uses.
 
+* **A failed run now says when your FFmpeg build lacks an encoder it used.**
+  After FFmpeg exits non-zero, `ffm_run()` and the task functions that use it
+  check the video and audio codec the run named. If your build lists no such
+  encoder, the error names it and has the new class
+  `tidymedia_encoder_unavailable`, before `tidymedia_ffmpeg_exit`. Its
+  `tm_encoder` and `tm_stream` fields hold the names and `"video"` or
+  `"audio"`. A codec name such as `"h264"` counts when the build can encode
+  it. The error names the function you called, such as `standardize_video()`.
+  A batch gives one warning of the same class after its jobs run, naming each
+  encoder and the job rows. A run that succeeds, and a call with
+  `run = FALSE`, behave as before, so a dry run can still show a command
+  your build cannot run. The hardware-encoder error for `fallback = FALSE`
+  now has the same class.
+
 * **New `has_encoder()`** asks whether your FFmpeg build has a named encoder,
   such as `"libx264"` or `"libmp3lame"`. Builds differ in what they were
   compiled with, and some Linux distributions ship an FFmpeg without `libx264`,

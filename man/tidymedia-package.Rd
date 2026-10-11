@@ -56,6 +56,12 @@ measurement. In the \verb{_batch} form, \code{tm_rows} holds the rows, and
 \item \code{tidymedia_multitrack_separation}: \code{\link[=separate_audio_video]{separate_audio_video()}} could not
 write several audio tracks into one audio file. The \verb{_batch} form gives a
 warning.
+\item \code{tidymedia_encoder_unavailable}: this FFmpeg build lists no encoder for a
+codec the call used. After a failed run, \code{\link[=ffm_run]{ffm_run()}} adds it before
+\code{tidymedia_ffmpeg_exit}, and \code{\link[=ffm_batch]{ffm_batch()}} gives one warning for all its
+rows. A hardware encoder that \code{fallback = FALSE} cannot use gives it too.
+\code{tm_encoder} holds the names and \code{tm_stream} says \code{"video"} or \code{"audio"}
+for each. "When the build lacks an encoder" on \code{\link[=ffm_run]{ffm_run()}} says more.
 }
 }
 

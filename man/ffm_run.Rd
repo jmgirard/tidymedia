@@ -77,6 +77,37 @@ So \code{tidymedia_loudnorm_no_measurement} is the one class that covers
 the analysis pass in both forms.
 }
 
+\section{When the build lacks an encoder}{
+
+After FFmpeg exits non-zero, \code{ffm_run()} looks at the video and audio
+codecs that \code{\link{ffm_codec}} set on the pipeline. A name is
+encodable if \code{\link{ffmpeg_encoders}} lists it, or if
+\code{\link{ffmpeg_codecs}} lists it as a codec this build can encode, such
+as \code{"h264"}. If a codec is not encodable, the error also has the class
+\code{tidymedia_encoder_unavailable}, before \code{tidymedia_ffmpeg_exit}.
+It carries \code{tm_encoder}, the names, and \code{tm_stream}, which is
+\code{"video"} or \code{"audio"} for each name.
+
+The message says that this build lists no such encoder. It does not say
+that the missing encoder made the run fail. FFmpeg uses no video encoder for
+an input that has no video, so a run can fail for another reason. When a
+task function such as \code{\link{standardize_video}} runs its command, the
+error names that function.
+
+The check runs only after a failed run. A successful run, and a call with
+\code{run = FALSE}, never start it. It skips \code{"copy"}, a codec the
+pipeline does not set, the hardware encoders that
+\code{\link{hardware_encoder}} names, and encoders given through
+\code{\link{ffm_output_options}}. It asks FFmpeg for the two lists, and the
+package remembers each list for the session once it reads it (see
+\code{\link{refresh_ffmpeg_capabilities}}). If the package cannot read a
+list, the check says nothing, and the error is the
+\code{tidymedia_ffmpeg_exit} error alone. If reading a list reaches the
+\code{tidymedia.timeout} limit, a warning of class
+\code{tidymedia_probe_timeout} also says so. \code{\link{ffm_batch}} gives
+one warning with this class for all its rows.
+}
+
 \examples{
 \dontshow{if (nzchar(Sys.which("ffmpeg")) && has_encoder("libx264") && has_encoder("aac")) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

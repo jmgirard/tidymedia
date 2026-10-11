@@ -64,6 +64,15 @@
 #'   When \code{verify} is supplied, it also has a \code{verified} column.
 #'   When \code{manifest = TRUE}, a provenance manifest is attached as an
 #'   attribute; read it with \code{\link{ffm_manifest}}.
+#' @section When the build lacks an encoder:
+#' A job can fail while its pipeline names a codec this FFmpeg build does not
+#' list as encodable. The section of the same name on \code{\link{ffm_run}}
+#' says how that is decided. Such a job still runs, and it still gets
+#' \code{success = FALSE}. After all the jobs run, \code{ffm_batch()} gives one
+#' warning of class \code{tidymedia_encoder_unavailable} for all such jobs. It
+#' names each encoder and the jobs that used it. Its fields hold one element for
+#' each job and codec: \code{tm_encoder}, \code{tm_stream} and \code{tm_row},
+#' the job's row number in \code{jobs}.
 #' @seealso [segment_video()], which is built on \code{ffm_batch()};
 #'   [verify_media()] for the verification spec and [ffm_manifest()] for the
 #'   provenance manifest.

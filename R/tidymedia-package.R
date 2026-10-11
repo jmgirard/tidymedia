@@ -44,6 +44,12 @@
 #' * `tidymedia_multitrack_separation`: [separate_audio_video()] could not
 #'   write several audio tracks into one audio file. The `_batch` form gives a
 #'   warning.
+#' * `tidymedia_encoder_unavailable`: this FFmpeg build lists no encoder for a
+#'   codec the call used. After a failed run, [ffm_run()] adds it before
+#'   `tidymedia_ffmpeg_exit`, and [ffm_batch()] gives one warning for all its
+#'   rows. A hardware encoder that `fallback = FALSE` cannot use gives it too.
+#'   `tm_encoder` holds the names and `tm_stream` says `"video"` or `"audio"`
+#'   for each. "When the build lacks an encoder" on [ffm_run()] says more.
 "_PACKAGE"
 
 ## usethis namespace: start

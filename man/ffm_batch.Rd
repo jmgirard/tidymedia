@@ -92,6 +92,18 @@ an output whose last \code{-f} option is \code{-f null}, as
 \code{\link[=with_timeout]{with_timeout()}} explains how to limit how long R waits for each program in
 a job, and what happens when a program reaches the limit.
 }
+\section{When the build lacks an encoder}{
+
+A job can fail while its pipeline names a codec this FFmpeg build does not
+list as encodable. The section of the same name on \code{\link{ffm_run}}
+says how that is decided. Such a job still runs, and it still gets
+\code{success = FALSE}. After all the jobs run, \code{ffm_batch()} gives one
+warning of class \code{tidymedia_encoder_unavailable} for all such jobs. It
+names each encoder and the jobs that used it. Its fields hold one element for
+each job and codec: \code{tm_encoder}, \code{tm_stream} and \code{tm_row},
+the job's row number in \code{jobs}.
+}
+
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 jobs <- tibble::tibble(

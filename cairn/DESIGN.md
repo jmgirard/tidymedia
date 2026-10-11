@@ -166,3 +166,18 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
   criterion as written and each was raised at both of M092's review gates; the
   maintainer chose to hold the criteria rather than widen them. Accepted, not deferred
   — there is no candidate row and no fix planned (M092 review, findings 1-5; D072).
+
+- The missing-encoder diagnosis (M139) has five accepted limits. First, it runs only
+  after FFmpeg fails, so a `run = FALSE` call can still print a command this build
+  cannot run. A check before the start was rejected, because FFmpeg uses no encoder
+  for a stream kind the output lacks, so such a check refuses calls that run today.
+  Second, the hardware encoder names keep FFmpeg's own error on two routes:
+  `ffm_codec()` in Layer 1, and a Layer 2 `video_codec` with `hardware = "none"`.
+  Third, the diagnosis reads the session's remembered listings (D044). A listing
+  remembered before a change to the FFmpeg program, or a parallel worker's own
+  listing, can misreport an encoder. Fourth, the batch warning numbers rows in the
+  jobs table `ffm_batch()` receives. `separate_audio_video_batch()` gives it a table
+  with two rows for each caller row, and one of its rows can draw both this warning
+  and its own separation warning. Fifth, `normalize_audio_batch(two_pass = TRUE)`
+  gives it only the rows that are not silent. So after the first silent row, the
+  warning's row numbers are smaller than the caller's.

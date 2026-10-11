@@ -186,6 +186,8 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - 2026-10-10: T7 done. Full suite: 1814 tests, 0 failed, 7 skipped.
 - 2026-10-10: claim audit: 54 claims read, 6 corrected — R/ffm_batch.R (two), NEWS.md (two), R/ffmpeg.R (two comments), R/ffm.R. Scope: every line the return added since `d8a2d1b3`, plus the full NEWS entry and both "When the build lacks an encoder" sections. The corrections: one listing read per worker under `parallel = TRUE`, two-pass rows that differ only when an input is silent, "compile the same command" in NEWS in place of "start what they did before", one encoder-check warning per call beside the track-count probe's own, and the muffled classes named. The same reader's re-read is pending.
 - 2026-10-10: claim audit re-read: all 8 corrected sites true. Full suite over them: 1814 tests, 0 failed, 7 skipped, and `document()` gives no diff. Return 1 complete, status set to review.
+- 2026-10-10: review pass 2 settled 20 findings with no return: 15 fixed in `97eb0488`, 1 to a candidate row, 4 rejected. All five criteria verified.
+- 2026-10-10: step-7 approval: m139-missing-encoder-diagnosis approved for merge. The user chose "Merge now" over the recommended hold until 0.2.2 ships, so M139 lands on master before 0.2.2 is cut. The ROADMAP's note that 0.2.2 ships M138 alone stays the user's release declaration to revise.
 
 ## Decisions
 

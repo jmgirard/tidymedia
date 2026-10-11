@@ -1,4 +1,4 @@
-# M139: A re-encoding function refuses by name when this FFmpeg build has no encoder for what the caller asked
+# M139: A failed FFmpeg run names the encoder this build lacks
 
 - **Status:** planned
 - **Priority:** normal
@@ -6,113 +6,132 @@
 - **Driving RR:** —
 - **Principles touched:** GP1
 - **Resolves:** —
-- **Surface tier:** user-facing. It adds a refusal a caller sees, and a condition class.
+- **Surface tier:** user-facing. It adds a condition class, a batch warning and help text a caller sees.
 - **Branch/PR:** —
 
 ## Goal
 
-When a call is about to run FFmpeg, refuse by name if this build has no encoder
-for what the call will use. Today FFmpeg's own unknown-encoder exit reaches the
-caller instead.
+FFmpeg can fail on a run whose codec this FFmpeg build cannot encode. Then the
+error the caller gets names the missing encoder and the function the caller
+typed, and it carries a class a caller can catch. Today only FFmpeg's own
+console message names the encoder.
 
 ## Scope
 
-**In:** the refusal, sited where a verb is about to spawn. The verb set is swept
-rather than listed. Both the scalar argument and the jobs column are covered.
-The name asked about is the encoder the call actually emits, so a hardware
-backend is judged on its own encoder. One condition class covers the event, and
-the hardware sibling's unclassed abort takes it too. The decision entries this
-needs are written here.
+**In:** a diagnosis in `ffm_run()` that runs only after FFmpeg exits with a
+non-zero status, under D024's diagnostic licence, in the shape
+`run_separation_audio()` already uses. One condition class covers the event,
+and `check_hardware_available()`'s availability abort takes it too. A
+single-file call names the function the caller typed. A batch warns once with
+the rows. The help text and Known issues that the diagnosis needs.
 
-**Out:** compilation stays binary-free, so a `run = FALSE` call still previews a
-command this build cannot run. That is disclosed in `cairn/DESIGN.md`'s Known
-issues rather than fixed. `verify_media()`'s codec arguments, which are
-expectations read from a file's metadata rather than encoders to run. A refusal
-for a muxer, filter or decoder this build lacks.
+**Out:** nothing checks the encoder before FFmpeg starts, so a `run = FALSE`
+call still previews a command this build cannot run. A check before the start
+refuses calls that run today (plan gate, 2026-10-10, second round). Names the
+hardware backend table holds keep FFmpeg's error on two routes: `ffm_codec()`
+in Layer 1, and a Layer 2 `video_codec` with `hardware = "none"`. Encoders
+passed through `ffm_output_options()`, and the encoder FFmpeg picks for a
+container that gets no codec. `verify_media()`'s codec arguments, which are
+expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
+(D002).
 
 ## Acceptance criteria
 
-- [ ] AC1: The refusal fires where the call is about to spawn, and never where it compiles.
-      Every `run = FALSE` call spawns exactly the programs it spawned before. The committed
-      spawn-trace sweeps measure that, and so do the five purity tests at
-      `tests/testthat/test-audio-stream-passthrough.R:161`, `test-audio-stream-crop-segment.R:290`,
-      `test-audio-stream-format-web.R:131`, `test-audio-stream-normalize.R:306` and
-      `test-audio-track-drop.R:63`, each still asserting zero spawns. A refusal planted above the
-      `run` gate reddens at least one of them. `tm_outfiles_baseline()` is re-measured at the
-      merge base in the same run rather than trusted.
-- [ ] AC2: On the run path, a call that uses an encoder this build lacks refuses before it
-      spawns. The refusal names the encoder, the argument or column it came from, and the verb
-      the caller typed. The name asked about is `intended_encoder(video_codec, hardware)`, so
-      `video_codec = "libx264"` with `hardware = "videotoolbox"` is judged on
-      `h264_videotoolbox` and is not refused for lacking `libx264`. The refusal carries the class
-      `tidymedia_encoder_unavailable` with `tm_` fields for the encoder and the verb, and
-      `check_hardware_available()`'s availability abort at `R/ffmpeg.R:3432` carries it too, so
-      one event is not classed at one site and unclassed at the other (D062, D063). The domain is
-      the exported verbs whose codec argument reaches the codec emitters, enumerated by a sweep
-      over the installed namespace's formals, whose output is quoted at review. `verify_media()`
-      is excluded by name and by reason, because its codec arguments are expectations about a
-      file. `format_for_web()` and `format_for_web_batch()` are included by hand, because they
-      hardcode theirs. Cells carrying `"copy"`, `NULL` or a column `NA` are outside the promise,
-      because none of the three names an encoder (D022).
-- [ ] AC3: The batch forms refuse the same way for a codec read from a jobs column, and the
-      message names the row. The cell where a column overrides the argument is asserted on its
-      own. The verb-and-column pairs come from AC2's sweep, and the absent-column and `NA`-cell
-      readings follow D022. This moves a refusal that D074 property 1, D076 and D085 all leave
-      disclosed inside the per-row fan-out, so this milestone writes the entry superseding that
-      disposition, trims `cairn/DESIGN.md`'s Known issues entry that carries it, and trims the
-      ROADMAP candidate row that holds the remainder.
-- [ ] AC4: The new refusal reports below every check that cannot depend on its answer (D075), and
-      it displaces no limit error. It reads the session memo without re-reading
-      `tidymedia.timeout`, so the verb's own re-call still refuses an unusable limit (D074
-      property 1), and a caller's `pixel_format` or `regions` error still reports at
-      `crop_video()`, `format_for_web()`, `standardize_video()` and `anonymize_video()`. A test
-      fires each of those four with a bad limit and a bad argument together. The orderings are
-      generated and never listed: a committed generator crosses the swept verb set with the
-      argument contradictions, the cheap value guards, the hardware-availability refusals and the
-      `run` guard, in both the scalar and the column form, each cell with a live control. A
-      planted reordering reddens the affected cells.
-- [ ] AC5: Where no FFmpeg location resolves, the new refusal stays silent. The run path then
-      gives the existing not-found refusal from the spawn site, and the `run = FALSE` path still
-      compiles with no new refusal. The silence is conditioned on a location resolving, and not on
-      `has_encoder()` answering FALSE, which it also does on a machine that has no FFmpeg at all.
-- [ ] AC6: `cairn/PROFILE.md`'s verify and consistency-gate slots are clean, the universal
-      cairn-file checks included. `NEWS.md` carries an entry for the new refusal.
-      `cairn/DESIGN.md`'s Known issues entry opening "Ten arguments are refused below the verb the
-      caller typed" is corrected for what AC3 and AC4 change. Each cell's instrument is named:
-      M138's `TIDYMEDIA_HIDE_ENCODERS` wrapper, a mocked `cached_encoder_names()`, or the
-      `tidymedia.hardware_encoders` option seam for the hardware half, which `has_encoder()`
-      deliberately does not read.
+- [ ] AC1: FFmpeg can exit with a non-zero status from `ffm_run()` while the pipeline's
+      video or audio codec names something the session's remembered listing (D044) does
+      not hold as encodable. Then the condition `ffm_run()` raises carries the class
+      `tidymedia_encoder_unavailable` beside `tidymedia_ffmpeg_exit` and its `tm_status`.
+      It carries the fields `tm_encoder` and `tm_stream` (`"video"` or `"audio"`), one
+      element per such codec. Its message states that the build lacks each encoder,
+      beside the bullets the merge base prints. It does not state that the missing
+      encoder caused the exit. If `ffmpeg_encoders()` lists a name, or `ffmpeg_codecs()`
+      lists it with `encoding = TRUE`, the name is encodable. So `"h264"` and `"mp3"`
+      never trigger the diagnosis on a build that encodes those codecs. The diagnosis
+      reads `codec_video` and `codec_audio` off the pipeline `ffm_run()` receives. It
+      excludes `"copy"` and a codec the pipeline leaves unset (`NULL`, or a column `NA`,
+      D022). It also excludes any name `tm_hardware_encoder()` can return, and anything
+      passed through `ffm_output_options()`. `check_hardware_available()`'s
+      availability abort carries the same class, with `tm_encoder` and
+      `tm_stream = "video"` (D062, D063).
+- [ ] AC2: A run that FFmpeg completes, and every `run = FALSE` call, behaves as at the
+      merge base, because the diagnosis is reached only after a non-zero exit inside
+      `ffm_run()`. The remembered codec reader has one caller in `tm_call_graph()`, the
+      diagnosis, and `ffmpeg_codecs()` stays uncached (D044). The codec listing is
+      remembered beside the encoder listing once it is read. A failed read is not
+      remembered, and each of D089's four routes discards both listings. If the listing
+      cannot be read, the condition is the merge base's condition, unchanged (D024's
+      fail-open consequence). If the read reaches the limit, one
+      `tidymedia_probe_timeout` warning also reports it, in the single-file and the batch
+      forms (D049).
+- [ ] AC3: A single-file call names the function the caller typed. The domain is the
+      exports that reach `ffm_run()` and not `ffm_batch()` in the namespace call graph
+      (`tm_reaches()` in `tests/testthat/helper-input-paths.R`), less `ffm_batch()`, plus
+      `ffm_run()`. Measured 2026-10-10, they are `anonymize_video`, `compare_videos`,
+      `concatenate_videos`, `convert_audio`, `crop_video`, `extract_audio`,
+      `extract_frame`, `format_for_web`, `normalize_audio`, `picture_in_picture`,
+      `sample_frames`, `separate_audio_video`, `standardize_video`, `strip_metadata` and
+      `ffm_run`. Take each one whose pipeline can carry a codec other than `"copy"`. A
+      `run = TRUE` call whose run fails with an encoder the build lacks raises AC1's
+      condition with that export as its `conditionCall()`. For `separate_audio_video()`,
+      the promise covers a single-track input whose other half succeeds. Its track-count
+      diagnostic and D068's held video error keep their merge-base behavior. Where AC1's
+      diagnosis does not fire, `ffm_run()`'s exit, timeout and verify-failure conditions
+      keep their class, fields and message. Their call still names `ffm_run`.
+- [ ] AC4: A batch run starts and records every row as it does at the merge base. Some
+      rows can raise AC1's condition. If so, after the rows run, `ffm_batch()` raises one
+      warning of class `tidymedia_encoder_unavailable` with the fields `tm_encoder`,
+      `tm_stream` and `tm_row`. It names each such encoder and the numbers of those rows
+      in the jobs table `ffm_batch()` received. This holds under `parallel = FALSE`,
+      `parallel = TRUE` and `progress = TRUE`. `segment_video()` and the `_batch` exports
+      run their codec-carrying rows through `ffm_batch()`. A `run = FALSE` batch is
+      unchanged.
+- [ ] AC5: The profile's `verify` and consistency-gate slots in `cairn/PROFILE.md` are
+      clean, the universal cairn-file checks included. `NEWS.md` carries an entry for the
+      class and the batch warning. `?ffm_run` states that the diagnosis can silently not
+      run (D024). `?refresh_ffmpeg_capabilities` states that a failed run can fill the
+      remembered listings. The class list in `?tidymedia` gains the class.
+      `cairn/DESIGN.md`'s Known issues states five things. A dry run can preview a
+      command this build cannot run. The two hardware-name routes keep FFmpeg's error. A
+      stale remembered listing, or a parallel worker's own listing, can misreport an
+      encoder. `separate_audio_video_batch()` numbers its rows in a table with two rows
+      per caller row. One of its rows can draw both its own separation warning and the
+      new one. `normalize_audio_batch(two_pass = TRUE)` numbers its rows without its
+      silent rows.
 
 ## Coverage
 
 - AC1 → T1, T2
-- AC2 → T2, T3
-- AC3 → T4
-- AC4 → T5, T6
-- AC5 → T2
-- AC6 → T7
+- AC2 → T1, T5
+- AC3 → T3
+- AC4 → T4
+- AC5 → T6
 
 ## Tasks
 
-- [ ] T1: Record the baseline. Re-measure the spawn-trace sweeps and
-      `tm_outfiles_baseline()` at the merge base, and pin the five purity tests
-      as the controls AC1 reads.
-- [ ] T2: Write the refusal and site it at the spawn gate, above every spawn and
-      below the `run` gate. Add the class, and the no-location silence.
-- [ ] T3: Sweep the verb set from the installed namespace's formals. Apply the
-      refusal across it, less `verify_media()`, plus the two `format_for_web`
-      functions. Quote the sweep.
-- [ ] T4: Carry the refusal into the batch forms over a jobs column, with the row
-      in the message and the column-overrides-argument cell asserted.
-- [ ] T5: Give `check_hardware_available()`'s availability abort the same class,
-      and keep the limit re-read out of the probe's path.
-- [ ] T6: Write the ordering generator and its live controls, and plant a
-      reordering to see the affected cells redden.
-- [ ] T7: Write the records. `NEWS.md`. The entry under D024's third exclusion,
-      answering D035's three conditions for a new abort gate. The entry
-      superseding the disclosed per-row disposition of D074 property 1, D076 and
-      D085. The `cairn/DESIGN.md` Conventions and Known issues corrections, and
-      the ROADMAP candidate-row trims.
+- [ ] T1: Add the remembered codec listing beside the encoder listing, the encodable
+      test, and the diagnosis after the exit in `ffm_run()`. Test with a mocked exit,
+      `cached_encoder_names()` and codec listing, which are the CI-portable cells. Cover
+      `"h264"`, `"mp3"`, `"copy"`, unset and backend-table names. Also cover a listing
+      error, a reached limit during the listing, and both codecs missing at once. Add
+      cells with M138's `TIDYMEDIA_HIDE_ENCODERS` wrapper, which run only where a real
+      FFmpeg is present.
+- [ ] T2: Give `check_hardware_available()`'s availability abort the class and fields,
+      tested with the `tidymedia.hardware_encoders` option seam.
+- [ ] T3: Carry the caller's frame from `ffm_finish()` and the four direct `ffm_run()`
+      sites to the diagnosis, through an internal implementation, because
+      `test-exported-call-formal.R` refuses a `call` formal on an export (D087). Write
+      the call-graph sweep. It lists each export whose pipeline carries no codec but
+      `"copy"`, with its reason. If the tested and listed exports differ from the
+      computed domain, it fails.
+- [ ] T4: Carry the diagnosed encoder back from each row in `ffm_batch()`, workers
+      included, and raise the one warning. The parallel cells are wrapper cells under a
+      multisession plan, because mocks do not reach workers.
+- [ ] T5: Run the purity tests, the timeout sweeps and the recorded spawn baselines
+      unchanged, with no re-recording. Plant a listing read on the success path and see
+      a spawn baseline redden.
+- [ ] T6: Write the records: `NEWS.md`, the three help pages, the `cairn/DESIGN.md`
+      Known issues text, and the trim of the ROADMAP hardware-surface row's sentence
+      naming this milestone.
 
 ## Work log
 
@@ -127,7 +146,16 @@ for a muxer, filter or decoder this build lacks.
 - 2026-10-10: re-audit: the formals sweep is a proxy for "reaches the codec emitters" and misses the Layer-1 route, `ffm_codec(video = "libx264")` into `ffm_run()` or `ffm_batch()`, which reaches the same spawn gate. Layer 0 `ffmpeg()` stays out by D002. Name the reachability reading rather than resting on formals.
 - 2026-10-10: re-audit: AC4's clause that the probe "reads the session memo without re-reading `tidymedia.timeout`" is false against M138's deliverable, whose `has_encoder()` reads the limit first. What delivers the promise is ordering: the verb's own re-call is machine-independent and sits above the probe. The grid's axes also miss the limit error the criterion is about, the no-location state, and the carve-out cells, and D039's record asks for a completeness reader plus controls compared at crossing grain.
 - 2026-10-10: re-audit: three smaller repairs. AC1's planted refusal must run with the memo discarded, or assert the refusal rather than the spawn count, because a plant reading a warm memo spawns nothing and the control stays green. AC5 adds that the remembered-location warning reaches the caller exactly once. AC6 must say which cells are wrapper cells, which run only where a real FFmpeg is on `PATH`, and which are mock cells, which are the CI-portable ones. The `cairn/DESIGN.md` Known issues entry gains a member rather than losing one.
+- 2026-10-10: re-cut by /milestone-plan. The plan-owned sections above are replaced, and the title in ROADMAP is changed to match. The criteria audit ran after the first question round instead of before it, so a second round asked the one question its finding raised.
+- 2026-10-10: question set: in a batch, what happens to a row whose encoder this build lacks. Answer: skip the row, run the rest, and warn once with the encoder and the rows. The second round below removed the skip, because rows now start as at the merge base. The one warning stays.
+- 2026-10-10: question set: which function a single-file error names. Answer: the function the caller typed, through an internal implementation (D087).
+- 2026-10-10: question set, second round: refuse before FFmpeg starts, or explain after FFmpeg fails. Answer: explain after FFmpeg fails. This supersedes the first plan-gate line's spawn-gate siting.
+- 2026-10-10: approach: rejected a check before FFmpeg starts. FFmpeg does not look up an encoder for a stream kind the output lacks. The first audit reader measured `-map 0:v?` on an audio-only input and `-an`, and both exit 0 with an unknown encoder. So such a check refuses calls that run today. An example is `standardize_video()` on an audio-only file on a build without libx264, because its default `video_codec` is `"libx264"`. Falsified by a caller harmed because FFmpeg starts before the error, for example a failed run that changes a file before the encoder lookup.
+- 2026-10-10: approach: rejected naming `ffm_run()` in the single-file condition, as FFmpeg's exit error does today. It needs no threading, but it names a function that the caller did not always type. Falsified by a caller who catches the condition by its call and expects `ffm_run`.
+- 2026-10-10: criteria audit (full mode), round 1, fresh Opus reader, over a draft that refused before the spawn. Findings taken, nine. The false claim that the gate refuses only runs FFmpeg refuses, which raised the second question. `ffm_batch` inside and `ffm_run` outside the blame domain, and `segment_video` in the batch group. The once-per-session count, which a failed listing breaks. Nonexistent `pixel_format` and `regions` pairs at `crop_video()` and `format_for_web()`. A dry-run claim wider than its tests. Row numbers with no referent. Parallel cells that mocks cannot reach. A second hardware-name route. A review act written as a criterion.
+- 2026-10-10: criteria audit (full mode), round 2, a second fresh Opus reader, over the diagnosis draft. Ten findings, all taken by narrowing. A limit reached during the listing now also warns (D049). The conditions that keep their call are named. The blame domain is written out, and `separate_audio_video()` is limited to a single-track input. Batch row numbers are those of `ffm_batch()`'s jobs table, with the two-pass silent-row offset disclosed. "This build" reads the remembered listing (D044), with staleness disclosed. `tm_encoder` and `tm_stream` are at every site of the class. The grep is replaced by one caller in the call graph. Three help pages join the records. Reading codecs off the pipeline replaces the column-override exemplar. The message does not claim the encoder caused the exit.
 
 ## Decisions
 
 ## Review
+- 2026-10-10: remainder ledger: the refusal everywhere a caller names an encoder (M138's question set) ships as a classed diagnosis after FFmpeg fails, at the user's second-round answer. A check before the start is not planned and not a candidate, because it refuses calls that run today. Hardware-table names and `ffm_output_options()` encoders keep FFmpeg's error, disclosed in Known issues by AC5.

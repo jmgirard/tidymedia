@@ -189,6 +189,38 @@ test_that("the codec listing has one reader, the diagnosis", {
   expect_identical(callers, "diagnose_missing_encoders")
 })
 
+test_that("the hardware availability abort carries the same class and fields", {
+  # The option seam is the instrument: it names this machine's hardware
+  # encoders, so `character(0)` is a machine with none, and no FFmpeg is asked.
+  withr::local_options(tidymedia.hardware_encoders = character(0))
+  f <- make_input()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  cnd <- tryCatch(
+    standardize_video(f, out, hardware = "nvenc", run = FALSE),
+    error = function(e) e
+  )
+  expect_identical(
+    class(cnd),
+    c("tidymedia_encoder_unavailable", "rlang_error", "error", "condition")
+  )
+  expect_identical(cnd$tm_encoder, "h264_nvenc")
+  expect_identical(cnd$tm_stream, "video")
+  expect_identical(rlang::call_name(conditionCall(cnd)), "standardize_video")
+
+  # The fan-out front door reaches the same function, so the same class.
+  jobs <- tibble::tibble(input = f, output = out)
+  bcnd <- tryCatch(
+    standardize_video_batch(jobs, hardware = "videotoolbox", run = FALSE),
+    error = function(e) e
+  )
+  expect_s3_class(bcnd, "tidymedia_encoder_unavailable")
+  expect_identical(bcnd$tm_encoder, "h264_videotoolbox")
+
+  # The control: the machine has the encoder, and the call compiles.
+  withr::local_options(tidymedia.hardware_encoders = "h264_nvenc")
+  expect_no_error(standardize_video(f, out, hardware = "nvenc", run = FALSE))
+})
+
 # Wrapper cells ---------------------------------------------------------------
 
 local_build_model <- function(hide, env = parent.frame()) {

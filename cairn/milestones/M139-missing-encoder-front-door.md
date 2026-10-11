@@ -115,7 +115,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
       error, a reached limit during the listing, and both codecs missing at once. Add
       cells with M138's `TIDYMEDIA_HIDE_ENCODERS` wrapper, which run only where a real
       FFmpeg is present.
-- [ ] T2: Give `check_hardware_available()`'s availability abort the class and fields,
+- [x] T2: Give `check_hardware_available()`'s availability abort the class and fields,
       tested with the `tidymedia.hardware_encoders` option seam.
 - [ ] T3: Carry the caller's frame from `ffm_finish()` and the four direct `ffm_run()`
       sites to the diagnosis, through an internal implementation, because
@@ -157,6 +157,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - 2026-10-10: implement started on branch `m139-missing-encoder-diagnosis`, cut from master at `db99245a`. The uncommitted `CRAN-SUBMISSION` change is unrelated and stays unstaged.
 - 2026-10-10: T1 done. `cached_encodable_codecs()` in `R/cache.R`, `hardware_encoder_names()` and `diagnose_missing_encoders()` in `R/ffmpeg.R`, and the diagnosed abort in `ffm_run()`'s exit branch. The encoder list is read first, and the codec list only for a name the encoder list lacks. Warnings from the listing's own program lookup are muffled, because the failed run already resolved the same program. `tests/testthat/test-encoder-diagnosis.R` has 11 tests, the 2 wrapper cells included. The full suite ran 1802 tests with 1 failure: `test-timeout-silence.R`'s absorber list, which `diagnose_missing_encoders()` joins by design. That list now names it, with its guard.
 - 2026-10-10: implementation choice: the frame a diagnosis names rides on the pipeline as attribute `tm_call`, set by the site that calls `ffm_run()`. This keeps every existing `ffm_run()` condition's frame as it is at the merge base, which an internal implementation function would change. No export gains a `call` formal (D087). T3's wording "through an internal implementation" is refined to this mechanism.
+- 2026-10-10: T2 done. `check_hardware_available()`'s availability abort carries class `tidymedia_encoder_unavailable`, `tm_encoder` and `tm_stream = "video"`, tested through the option seam at `standardize_video()` and `standardize_video_batch()`, with a control where the machine has the encoder. Full suite: 1803 tests, 0 failed.
 
 ## Decisions
 

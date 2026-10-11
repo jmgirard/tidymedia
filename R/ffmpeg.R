@@ -3575,14 +3575,22 @@ check_hardware_available <- function(video_codec, hardware = "none",
   }
   for (family in families) {
     if (!hardware_encoder_available(family, hardware, call = call)) {
+      encoder <- tm_hardware_encoder(family, hardware, call = call)
+      # The event ffm_run()'s diagnosis names after a failed run, classed the
+      # same here so one event is not classed at one site and unclassed at the
+      # other (M139, D062). The fields are the ones that site carries; this site
+      # establishes no exit, so it carries no `tidymedia_ffmpeg_exit` (D063).
       cli::cli_abort(
         c(
-          "{hardware} encoder {.val {tm_hardware_encoder(family, hardware, call = call)}} is
+          "{hardware} encoder {.val {encoder}} is
            not available.",
           "x" = "This FFmpeg build does not list it (see {.fn ffmpeg_encoders}).",
           "i" = "Use a machine whose FFmpeg build has it, or set
                  {.code fallback = TRUE} to encode in software instead."
         ),
+        class = "tidymedia_encoder_unavailable",
+        tm_encoder = encoder,
+        tm_stream = "video",
         call = call
       )
     }

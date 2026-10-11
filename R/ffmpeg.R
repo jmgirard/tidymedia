@@ -3247,9 +3247,10 @@ hardware_encoder_names <- function() {
 # is the fail-open answer: ffm_run() then raises the merge-base condition
 # unchanged. A reached limit is the one failure that also speaks, as a
 # `tidymedia_probe_timeout` warning, because a limit reached on a spawn is
-# never silent (D049). Warnings from the listing's own program lookup are
-# muffled: the failed run already resolved the same program, and anything it
-# had to say about its location was said there.
+# never silent (D049). Every warning raised while the listings are read is
+# muffled. The one expected is the program lookup's, and the failed run already
+# resolved the same program and said anything there was to say about its
+# location.
 diagnose_missing_encoders <- function(object, call) {
   wanted <- c(
     stats::setNames(object$codec_video, rep("video", length(object$codec_video))),
@@ -3584,10 +3585,11 @@ check_hardware_available <- function(video_codec, hardware = "none",
   for (family in families) {
     if (!hardware_encoder_available(family, hardware, call = call)) {
       encoder <- tm_hardware_encoder(family, hardware, call = call)
-      # The event ffm_run()'s diagnosis names after a failed run, classed the
-      # same here so one event is not classed at one site and unclassed at the
-      # other (M139, D062). The fields are the ones that site carries; this site
-      # establishes no exit, so it carries no `tidymedia_ffmpeg_exit` (D063).
+      # The same event as ffm_run()'s diagnosis, a build lacking an encoder,
+      # classed the same so one event is not classed at one site and unclassed
+      # at the other (M139, D062). It carries that site's `tm_encoder` and
+      # `tm_stream`. With no exit established here, it carries neither
+      # `tidymedia_ffmpeg_exit` nor `tm_status` (D063).
       cli::cli_abort(
         c(
           "{hardware} encoder {.val {encoder}} is

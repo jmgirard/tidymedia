@@ -31,8 +31,8 @@ cached_encoder_names <- function() {
 }
 
 # cached_encodable_codecs(): the codec names this build can encode, the rows of
-# `ffmpeg -codecs` marked with E, asked at most once per session beside the
-# encoder pool. A codec name is not an encoder name: `-c:v h264` and `-c:a mp3`
+# `ffmpeg -codecs` marked with E, remembered for the session once read, beside
+# the encoder pool. A codec name is not an encoder name: `-c:v h264` and `-c:a mp3`
 # run on a build whose `-encoders` lists neither, because FFmpeg maps a codec
 # name to one of its encoders. Read by one caller, diagnose_missing_encoders(),
 # and only after FFmpeg has already failed (M139). A failed read stores nothing,

@@ -40,12 +40,13 @@ baseline_pair <- function(infile, audiofile, videofile) {
   )
 }
 
-# The batch tests below make a row fail by naming `"notanencoder"`. Since M139
-# ffm_batch() also warns once about a row that named an encoder this build does
-# not list, and that warning comes first. These tests are about the separation
-# warning, so they set the encoder warning aside. That one row can draw both is
-# disclosed in cairn/DESIGN.md's Known issues, and the first batch test below
-# asserts that both arrive.
+# The batch tests that use this helper make a row fail by naming
+# `"notanencoder"`. Since M139 ffm_batch() also warns once about a row that
+# named an encoder this build does not list, and that warning comes first. These
+# tests are about the separation warning, so they set the encoder warning aside.
+# That one row can draw both is disclosed in cairn/DESIGN.md's Known issues, and
+# "a failed batch row on a listed container contributes no bullet" asserts that
+# both arrive.
 without_encoder_warning <- function(expr) {
   withCallingHandlers(
     expr,

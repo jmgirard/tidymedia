@@ -110,8 +110,9 @@ test_that("copy, an unset codec and a hardware-table name are never asked about"
     expect_identical(reads$encoders, 0L, info = label)
     expect_identical(reads$codecs, 0L, info = label)
   }
-  # Every name the backend table can return is in the excluded set, read off
-  # the table rather than listed here.
+  # The excluded set is computed from the backend table by
+  # hardware_encoder_names(). This pins it to the five names the table holds
+  # today.
   expect_setequal(
     hardware_encoder_names(),
     c("h264_nvenc", "hevc_nvenc", "av1_nvenc",
@@ -544,8 +545,9 @@ test_that("parallel workers carry the diagnosed rows back (wrapper)", {
 })
 
 test_that("a real codec-name run is not diagnosed while its encoder is hidden (wrapper)", {
-  # `h264` is a codec name: hiding libx264 still leaves the build's other h264
-  # encoders, so FFmpeg runs, or fails for another reason without the class.
+  # `h264` is a codec name the wrapper does not intercept, and `-codecs` still
+  # marks it encodable, so FFmpeg runs, or fails for another reason without the
+  # class.
   infile <- make_test_video()
   local_build_model("libx264")
   out <- withr::local_tempfile(fileext = ".mp4")

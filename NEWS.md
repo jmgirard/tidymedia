@@ -12,6 +12,9 @@ CRAN uses.
   `tm_encoder` and `tm_stream` fields hold the names and `"video"` or
   `"audio"`. A codec name such as `"h264"` counts when the build can encode
   it. The error names the function you called, such as `standardize_video()`.
+  One case keeps its old error: `separate_audio_video()` on an input with
+  several audio tracks and no `audio_stream` still gives its error about
+  several audio tracks.
   A batch gives one warning of the same class after its jobs run, naming each
   encoder and the job rows. A run that succeeds, and a call with
   `run = FALSE`, behave as before, so a dry run can still show a command

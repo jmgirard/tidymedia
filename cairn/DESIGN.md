@@ -167,7 +167,7 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
   maintainer chose to hold the criteria rather than widen them. Accepted, not deferred
   — there is no candidate row and no fix planned (M092 review, findings 1-5; D072).
 
-- The missing-encoder diagnosis (M139) has five accepted limits. First, it runs only
+- The missing-encoder diagnosis (M139) has six accepted limits. First, it runs only
   after FFmpeg fails, so a `run = FALSE` call can still print a command this build
   cannot run. A check before the start was rejected, because FFmpeg uses no encoder
   for a stream kind the output lacks, so such a check refuses calls that run today.
@@ -180,4 +180,7 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
   with two rows for each caller row, and one of its rows can draw both this warning
   and its own separation warning. Fifth, `normalize_audio_batch(two_pass = TRUE)`
   gives it only the rows that are not silent. So after the first silent row, the
-  warning's row numbers are smaller than the caller's.
+  warning's row numbers are smaller than the caller's. Sixth,
+  `separate_audio_video()` on an input with several audio tracks and no
+  `audio_stream` keeps its own error about several tracks, which replaces the
+  diagnosed condition, so that error carries no `tm_encoder` (M139 claim audit).

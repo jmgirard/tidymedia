@@ -1,6 +1,6 @@
 # M139: A failed FFmpeg run names the encoder this build lacks
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M138
 - **Driving RR:** —
@@ -168,6 +168,9 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - 2026-10-10: claim audit re-read: of 8 corrected claims, 6 true and 2 still wider. The separation exception holds only for an `audiofile` whose container holds one audio stream: into `.mka` the diagnosed condition arrives, measured by the reader with real FFmpeg. NEWS.md and the Known issues sentence now carry that narrower wording. One re-read only, so no further pass.
 - 2026-10-10: implement complete. `devtools::document()` gives no diff, and the final full suite ran 1811 tests with 0 failed and 7 skipped. Status set to review. Open concern for the merge question: the ROADMAP's 0.2.2 window ships M138 alone, and `NEWS.md` puts this milestone under the development heading. So if M139 merges before 0.2.2 is cut, it ships in 0.2.2.
 - 2026-10-10: review started. The plan's remainder-ledger line sat under `## Review`, because the re-cut edit wrote the section headings above it. It is moved, unchanged, to its place after the round-2 audit line. No PR exists, master has not moved since the branch was cut, and the Copilot round is off.
+- 2026-10-10: review return 1: AC2 fails. A limit reached while the diagnosis reads the listings gives one `tidymedia_probe_timeout` warning per failed row in a batch, and one per half in `separate_audio_video()`, against D049's one warning per call. Fix both, add a batch reached-limit cell, and take every fix-now finding in the Review section.
+- 2026-10-10: amendment routed: AC2 — "every `run = FALSE` call behaves as at the merge base" is falsified by AC1's own required class on `check_hardware_available()`'s abort, which fires at `run = FALSE`.
+- 2026-10-10: follow-ups filed as candidate rows: diff-bug #8 (unquoted path in `ffmpeg()`) and blame-history #2 (the track diagnostic over a diagnosed missing encoder). Status back to in-progress.
 
 ## Decisions
 
@@ -180,4 +183,29 @@ Evidence run 2026-10-10 at branch head `8ffc503c`, with `NOT_CRAN=true` and the 
 - AC4 evidence: "a batch runs every row and warns once with the diagnosed rows" covers 5 rows under `progress = FALSE` and `TRUE`. The `success` column is unchanged, a row failing for another reason is not named, and one warning carries `tm_row` 2 and 3 with `tm_encoder` and `tm_stream`. "one encoder missing on several rows is one bullet naming them all". "a batch with no diagnosed row, and a dry-run batch, do not warn". "a batch verb's codec column reaches the warning by its row" uses `standardize_video_batch()`. "parallel workers carry the diagnosed rows back (wrapper)" ran in two PSOCK workers with real FFmpeg and gave `success` FALSE then TRUE and `tm_row` 1. The call graph at review shows 16 exports reaching `ffm_batch()`: the 15 `_batch` exports and `segment_video()`. A grep shows `ffm_batch()`'s one `ffm_run()` call inside its `if (run)` branch (R/ffm_batch.R:184).
 - `devtools::check()` at `cc1ed806` (code identical to `8ffc503c`): 0 errors, 0 warnings, 0 notes. Its test run includes `test-timeout-refusal-blame.R`, the purity tests and the recorded spawn baselines.
 - AC3 evidence, completed: the timeout and verify-failure conditions of `ffm_run()` pass their existing tests unchanged in that `check()` run, which closes the last clause of AC3.
+- AC2 not ticked: diff-bug #1 below shows it failing (review return 1), and diff-bug #5 shows its run = FALSE clause wrong as worded (amendment routed).
+
+Review pass 1, 2026-10-10.
+- spawned: diff-bug, blame-history, prior-review
+- diff-bug #1: a batch gives one `tidymedia_probe_timeout` warning per failed row whose listing read reaches the limit (3 rows, 3 warnings, measured), against D049's one-per-call grain and AC2, and each later row waits on the listing again. `?ffm_run` says the batch gives one warning — floor return (AC2 failing): review return 1.
+- diff-bug #2: the listing reads print two FFmpeg version banners between FFmpeg's error output and the R error — fix now, in the return (read the listings with `-hide_banner`).
+- diff-bug #3: no test fails the video half of `separate_audio_video()`, so deleting its `tm_call` line stays green — fix now, in the return (a second sweep call).
+- diff-bug #4: the reached-limit test cannot see a wrong warning count, call or ordering — fix now, in the return.
+- diff-bug #5: NEWS says a `run = FALSE` call behaves as before, while AC1's hardware abort, which fires at `run = FALSE`, gains a class; AC2's "every `run = FALSE` call behaves as at the merge base" is falsified by AC1 itself — amendment routed for AC2's wording; NEWS fixed in the return.
+- diff-bug #6: one class used as an error and as a batch warning lets a `tryCatch()` for the hardware refusal swallow a batch's results — fix now, in the return (one sentence on `?ffm_batch` advising `withCallingHandlers()` for the warning).
+- diff-bug #7: NEWS does not say the class is not evidence of the cause — fix now, in the return.
+- diff-bug #8: `ffmpeg()` builds its command with an unquoted program path, so on a path with spaces every listing read fails and the diagnosis stays silent — follow-up: pre-existing in master, candidate row "`ffmpeg()` and the two listing functions break on an FFmpeg path with spaces".
+- blame-history #1: the batch per-row probe-timeout warnings — same defect as diff-bug #1, review return 1.
+- blame-history #2: on a multi-track input into a one-track container, `run_separation_audio()`'s track diagnostic replaces a diagnosed missing encoder with advice to pick one track — follow-up: AC3 holds that diagnostic's merge-base behavior, so changing it is outside this milestone; candidate row naming "The multi-track separation abort is still blind to WHY FFmpeg failed".
+- blame-history #3: the separation test named "warns not at all" now holds only for non-encoder warnings, and the all-listed case does not assert the encoder warning — fix now, in the return (rename, and assert that warning).
+- blame-history #4: `separate_audio_video()` can give two probe-timeout warnings in one call, one per half — part of review return 1 (D049's per-call grain).
+- blame-history #5: the absorber list's guard covers only the single-file reached-limit case — fix now, in the return (a batch reached-limit cell).
+- blame-history #6: a stale remembered listing can name an encoder the running binary has — reject, planned change: AC1 reads the session's remembered listing (D044) and AC5's Known issues discloses it.
+- blame-history #7: `tm_call` is a new mechanism, an attribute holding a frame — reject, planned change: the implement work log records the choice and why, and D087 governs exported formals only.
+- prior-review #1: batch row numbers are reshaped-table numbers for `separate_audio_video_batch()` and two-pass `normalize_audio_batch()` — the numbering is a planned change (AC4, Known issues); the NEWS wording "the job rows" is fixed in the return to say whose rows they are.
+- prior-review #2: the `tidymedia.timeout` help page lists every source of `tidymedia_probe_timeout` and misses the new one — fix now, in the return.
+- prior-review #3: `?ffm_run`'s "one warning with this class for all its rows" reads as the probe-timeout class — fix now, in the return (with diff-bug #1).
+- prior-review #4: separation tests trigger failure with `"notanencoder"` and mute the new warning — reject, planned change: AC5's Known issues discloses the double warning, and one test asserts both arrive.
+- prior-review #5: the listing read muffles every warning, not only the program lookup's — fix now, in the return (muffle by class).
+- prior-review #6: the parallel cell can skip under `load_all()` — reject, false: the evidence run above ran it on an installed copy, not skipped.
 

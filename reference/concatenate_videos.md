@@ -81,5 +81,5 @@ Other task functions:
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 concatenate_videos(c(video, video), "joined.mp4", run = FALSE)
-#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpZFb3HM/ffm-concat1f722be6b4c.txt\" -codec:v copy -codec:a copy -map \"0\" \"joined.mp4\""
+#> [1] "-y -f concat -safe 0 -i \"/tmp/RtmpGMQKjD/ffm-concat1e35260bf425.txt\" -codec:v copy -codec:a copy -map \"0\" \"joined.mp4\""
 ```

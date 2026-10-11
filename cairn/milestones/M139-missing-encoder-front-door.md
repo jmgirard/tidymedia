@@ -133,7 +133,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - [x] T6: Write the records: `NEWS.md`, the three help pages, the `cairn/DESIGN.md`
       Known issues text, and the trim of the ROADMAP hardware-surface row's sentence
       naming this milestone.
-- [ ] T7: Review return 1. Give one `tidymedia_probe_timeout` warning per call in
+- [x] T7: Review return 1. Give one `tidymedia_probe_timeout` warning per call in
       `ffm_batch()` and `separate_audio_video()`, and skip the listing read for the
       call's later runs after one reaches the limit. Add a batch reached-limit cell.
       Take the Review section's fix-now findings. Add listing-read counts for a
@@ -183,6 +183,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - 2026-10-10: amendment return: AC2 — "A run that FFmpeg completes, and every `run = FALSE` call, compiles the same command as at the merge base and, from the same remembered encoder listing (D044), starts the same programs as many times, because the diagnosis is reached only after a non-zero exit inside `ffm_run()`."
 - 2026-10-10: the user accepted that wording as final with no third reader, and chose `-hide_banner` in the shared listing reads, disclosed in NEWS. T7 added for review return 1, and Coverage maps AC2 to it.
 - 2026-10-10: T7 checkpoint, not yet checked off, full suite running. One probe-timeout warning per call: `ffm_batch()`'s `run_one()` holds the row's warning, skips the diagnosis for its later rows (`tm_no_diagnosis`), and the batch warns once with `tm_limit`. `separate_audio_video()` sets that attribute on the video run when the audio half's warning passes. Fix-now findings taken: `-hide_banner` in both listing reads, the location warnings muffled by class only, a video-half sweep cell, the reached-limit test rewritten to one run, a batch and a separation reached-limit cell, a read-count cell for a successful batch, a successful separation and a `run = FALSE` verb, the separation tests renamed with the all-listed case asserting the encoder warning, and help and NEWS corrections (`?ffm_run`, `?ffm_batch`, the `tidymedia.timeout` page). The four affected test files pass: 23, 58, 38 and 8 tests, 0 failed, 0 skipped, with the branch installed for the workers.
+- 2026-10-10: T7 done. Full suite: 1814 tests, 0 failed, 7 skipped.
 
 ## Decisions
 

@@ -228,4 +228,26 @@ Review pass 2, 2026-10-10, after return 1. Evidence run at branch head `74301c44
 - AC1 evidence, pass 2: the AC1 cells of pass 1 pass unchanged at this head, the hardware-abort cell and both wrapper cells included.
 - AC3 evidence, pass 2: the sweep passes, and it now also fails `separate_audio_video()`'s video half alone (audio copied), whose condition names `separate_audio_video`.
 - AC4 evidence, pass 2: the batch cells of pass 1 pass, the parallel wrapper cell ran in two PSOCK workers on the installed branch, and "a batch whose listing read hangs warns once and reads once" shows 3 failing rows give one `tidymedia_probe_timeout` warning and one listing read.
+- `devtools::check()` at `e6766a2e` (code identical to `74301c44`): 0 errors, 0 warnings, 0 notes.
+- spawned: diff-bug, blame-history, prior-review
+- diff-bug #1: the wrapper cell for `"h264"` cannot fail, because the run succeeds and the diagnosis never runs — fix now (force a non-zero exit, assert the exact exit classes).
+- diff-bug #2: `separate_audio_video()` skips the video diagnosis on any probe timeout, the track count's included — fix now (the diagnosis's warning carries `tm_check = "encoders"`, and only that sets the flag).
+- diff-bug #3: `run_one()` would muffle any probe-timeout warning raised inside `ffm_run()` — fix now (the same `tm_check` filter).
+- diff-bug #4: the reached-limit batch cell runs only the plain `lapply` path — fix now for `progress = TRUE`. The `parallel = TRUE` path stays untested for `probe_limit`; it rides the same list return the parallel encoder cell exercises.
+- diff-bug #5: a listing read that fails without a timeout is retried for every failed row — follow-up: absorbed into the candidate row on lookup-memoization gaps.
+- diff-bug #6: two `tidymedia_probe_timeout` warnings can arrive in one call from two checks — reject, false: D049's grain is one warning per check per call, the precedent its own text names (`probe_all()` and `count_audio_streams_all()` each warn once).
+- diff-bug #7: the batch warnings name `ffm_batch()`, not the verb typed — reject, planned change: AC4 has `ffm_batch()` raise the warning, matching `tidymedia_batch_timeout`.
+- diff-bug #8: `-hide_banner` changes what a cold hardware dry run prints — reject, planned change: the user chose it at the AC2 stop, and NEWS discloses it.
+- diff-bug #9: a stale comment quotes `ffmpeg("-codecs")` in `helper-timeout-sweep.R` — fix now.
+- blame-history #1: muffling only the three audible classes inverts D088's partition, which keeps a new warning silent until decided — fix now (the listing read muffles every warning again; the probe-timeout warning is raised outside that handler).
+- blame-history #2: the track-count timeout skips the video diagnosis — same fix as diff-bug #2.
+- blame-history #3: no test pins `-hide_banner` — fix now.
+- blame-history #4: no `progress = TRUE` cell for the batch flag — fix now (with diff-bug #4).
+- blame-history #5: `?ffm_batch` gives the `withCallingHandlers()` advice for the encoder class only, and the probe-timeout warning comes first — fix now.
+- blame-history #6: `run_one()` muffles a probe-timeout warning without `tm_limit` — same fix as diff-bug #3.
+- prior-review #1: no parallel cell for `probe_limit` — same disposition as diff-bug #4.
+- prior-review #2: two adjacent comments in `separate_audio_video()` read as contradicting — fix now (rewritten with the `tm_check` filter).
+- prior-review #3: "once per call" over-generalizes — reject, false: the sentence is about reading FFmpeg's lists, and D049's grain is per check.
+- prior-review #4: the class-only muffle — same fix as blame-history #1.
+- prior-review #5: the read-count cell has no control proving the counter moves — fix now.
 

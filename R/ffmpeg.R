@@ -1195,20 +1195,21 @@ separate_audio_video <- function(infile, audiofile, videofile,
     # The video run names this verb if its encoder is missing (M139; ffm_finish()
     # says why an attribute). The audio half's helper sets its own.
     attr(video, "tm_call") <- rlang::current_env()
-    # One call, one encoder-check timeout warning (D049): when the audio
-    # half's probe-timeout warning passes by, the video run skips the
-    # missing-encoder diagnosis rather than wait on the listing a second time
-    # (M139 review return 1). The track-count probe's own timeout warning is a
-    # different check and can arrive beside it.
-    # The track-count probe's own timeout warning sets it too; that only
-    # happens while the limit is being reached anyway.
+    # One call, one encoder-check timeout warning (D049): when the audio half's
+    # encoder-check warning (`tm_check = "encoders"`) passes by, the video run
+    # skips the missing-encoder diagnosis rather than wait on the listing a
+    # second time (M139 review return 1). The track-count probe's own timeout
+    # warning is another check: it passes by untouched and sets nothing (M139
+    # review pass 2).
     held <- withCallingHandlers(
       tryCatch({
         run_separation_audio(audio, infile, audiofile, audio_stream)
         NULL
       }, error = function(cnd) cnd),
       tidymedia_probe_timeout = function(w) {
-        attr(video, "tm_no_diagnosis") <<- TRUE
+        if (identical(w$tm_check, "encoders")) {
+          attr(video, "tm_no_diagnosis") <<- TRUE
+        }
       }
     )
     if (is.null(held)) {
@@ -3264,18 +3265,21 @@ hardware_encoder_names <- function() {
 # "audio"), possibly empty; or NULL when the listing could not be read, which
 # is the fail-open answer: ffm_run() then raises the merge-base condition
 # unchanged. A reached limit is the one failure that also speaks, as a
-# `tidymedia_probe_timeout` warning carrying `tm_limit`, because a limit reached
-# on a spawn is never silent (D049). D049's grain is one warning per call, so a
-# caller that runs several pipelines -- ffm_batch(), separate_audio_video() --
-# takes that warning from the first run whose read reaches the limit and sets
+# `tidymedia_probe_timeout` warning carrying `tm_limit` and
+# `tm_check = "encoders"`, because a limit reached on a spawn is never silent
+# (D049). D049's grain is one warning per check per call, so a caller that
+# runs several pipelines -- ffm_batch(), separate_audio_video() -- takes that
+# warning from the first run whose read reaches the limit and sets
 # `tm_no_diagnosis` on the later runs (in ffm_batch(), the later runs on the
 # same worker), which ffm_run() reads to skip this function (M139 review
-# return 1).
+# return 1). Those callers match `tm_check`, so another check's probe-timeout
+# warning neither sets the flag nor is held by them (M139 review pass 2).
 #
-# The three classed location warnings (tm_audible_location_classes()) are
-# muffled: the failed run already resolved the same program and said anything
-# there was to say about its location. Any other warning, the unclassed
-# "Failed to find" one included, passes through.
+# Every warning raised while the listings are read is muffled, the way
+# program_status() and has_encoder() keep a warning silent until it is decided
+# about (D088): the failed run already resolved the same program and said what
+# there was to say about its location. The probe-timeout warning below is
+# raised outside that handler.
 diagnose_missing_encoders <- function(object, call) {
   wanted <- c(
     stats::setNames(object$codec_video, rep("video", length(object$codec_video))),
@@ -3293,11 +3297,7 @@ diagnose_missing_encoders <- function(object, call) {
         }
         unlisted
       },
-      warning = function(w) {
-        if (inherits(w, tm_audible_location_classes())) {
-          invokeRestart("muffleWarning")
-        }
-      }
+      warning = function(w) invokeRestart("muffleWarning")
     ),
     tidymedia_timeout = function(cnd) {
       limit <- cnd$tm_limit
@@ -3310,6 +3310,7 @@ diagnose_missing_encoders <- function(object, call) {
         ),
         class = "tidymedia_probe_timeout",
         tm_limit = limit,
+        tm_check = "encoders",
         call = call
       )
       NULL

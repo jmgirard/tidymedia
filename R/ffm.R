@@ -1695,9 +1695,9 @@ ffm_run <- function(object, verify = NULL) {
     # the diagnosis is its fail-open answer, and the abort below is unchanged.
     call <- attr(object, "tm_call", exact = TRUE)
     if (is.null(call)) call <- rlang::current_env()
-    # `tm_no_diagnosis` is set by a caller whose earlier run reached the limit
-    # on a probe (the listing read, or separate_audio_video()'s track count),
-    # so one call warns once about the listing (D049; R/ffmpeg.R says how).
+    # `tm_no_diagnosis` is set by a caller whose earlier run's listing read
+    # reached the limit, so one call warns once about the listing (D049;
+    # R/ffmpeg.R says how).
     missing <- if (isTRUE(attr(object, "tm_no_diagnosis", exact = TRUE))) {
       character()
     } else {

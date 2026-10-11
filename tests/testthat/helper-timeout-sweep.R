@@ -1155,7 +1155,8 @@ tm_corrupt_master_ref <- "4063faa"
 # what AC3 closes.
 #
 # What that `:` entry does and does NOT prove (M96 review F8). Under this
-# sweep's mocks `ffmpeg("-codecs")` returns `character(0)`, so the parse below
+# sweep's mocks `ffmpeg("-hide_banner -codecs")` (spelled `ffmpeg("-codecs")`
+# before M139) returns `character(0)`, so the parse below
 # it aborts at `1:integer(0)` for EVERY value -- measured at
 # `tm_corrupt_master_ref`: `TRUE`, `FALSE` and `123` all give "argument of
 # length 0". So the drop says only that no front door refused the cell; it is

@@ -86,7 +86,9 @@
 #' If reading FFmpeg's encoder lists reaches the \code{tidymedia.timeout}
 #' limit, the batch gives one warning of class \code{tidymedia_probe_timeout}.
 #' The later jobs do not read the lists again. With \code{parallel = TRUE},
-#' each worker reads them up to once.
+#' each worker reads them up to once. That warning comes before the
+#' \code{tidymedia_encoder_unavailable} one, so a \code{tryCatch()} handler for
+#' it also loses the result; use \code{withCallingHandlers()} for it too.
 #' @seealso [segment_video()], which is built on \code{ffm_batch()};
 #'   [verify_media()] for the verification spec and [ffm_manifest()] for the
 #'   provenance manifest.
@@ -207,9 +209,13 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
       probe_limit <- NULL
       res <- withCallingHandlers(
         tryCatch(ffm_run(pipeline), error = function(e) e),
+        # Only the encoder check's warning is held; another check's passes by
+        # (M139 review pass 2).
         tidymedia_probe_timeout = function(w) {
-          probe_limit <<- w$tm_limit
-          invokeRestart("muffleWarning")
+          if (identical(w$tm_check, "encoders")) {
+            probe_limit <<- w$tm_limit
+            invokeRestart("muffleWarning")
+          }
         }
       )
       if (!is.null(probe_limit)) listing_timed_out <<- TRUE

@@ -115,7 +115,9 @@ class therefore also catches this warning and loses the batch's result. Use
 If reading FFmpeg's encoder lists reaches the \code{tidymedia.timeout}
 limit, the batch gives one warning of class \code{tidymedia_probe_timeout}.
 The later jobs do not read the lists again. With \code{parallel = TRUE},
-each worker reads them up to once.
+each worker reads them up to once. That warning comes before the
+\code{tidymedia_encoder_unavailable} one, so a \code{tryCatch()} handler for
+it also loses the result; use \code{withCallingHandlers()} for it too.
 }
 
 \examples{

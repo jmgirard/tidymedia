@@ -500,13 +500,65 @@ test_that("a batch whose listing read hangs warns once and reads once", {
     cached_encodable_codecs = function() character()
   )
   jobs <- batch_jobs(vc = rep("nosuch_v", 3), ac = rep("aac", 3))
-  got <- collect_conditions(res <- ffm_batch(jobs, build_row))
-  expect_null(got$error)
-  classes <- vapply(got$warnings, function(w) class(w)[[1]], character(1))
-  expect_identical(classes, "tidymedia_probe_timeout")
-  expect_identical(got$warnings[[1]]$tm_limit, 5)
-  expect_identical(asks, 1L)
-  expect_identical(res$success, c(FALSE, FALSE, FALSE))
+  for (progress in c(FALSE, TRUE)) {
+    asks <- 0L
+    info <- paste("progress =", progress)
+    got <- collect_conditions(
+      res <- ffm_batch(jobs, build_row, progress = progress)
+    )
+    expect_null(got$error, info = info)
+    classes <- vapply(got$warnings, function(w) class(w)[[1]], character(1))
+    expect_identical(classes, "tidymedia_probe_timeout", info = info)
+    expect_identical(got$warnings[[1]]$tm_limit, 5, info = info)
+    expect_identical(asks, 1L, info = info)
+    expect_identical(res$success, c(FALSE, FALSE, FALSE), info = info)
+  }
+})
+
+test_that("another check's probe timeout does not skip the video diagnosis", {
+  # separate_audio_video() skips the video run's diagnosis only for the
+  # encoder check's own timeout warning. A timeout warning from another check
+  # in the audio half (here a stand-in without `tm_check`) leaves the video
+  # condition diagnosed; the control, carrying `tm_check = "encoders"`, does
+  # skip it.
+  local_failed_run(encoders = character(), codecs = character())
+  f <- make_input()
+  dir <- withr::local_tempdir()
+  video_error_for <- function(check) {
+    local_mocked_bindings(run_separation_audio = function(...) {
+      cli::cli_warn("stand-in timeout", class = "tidymedia_probe_timeout",
+                    tm_check = check)
+      cli::cli_abort("audio failed", class = "tidymedia_ffmpeg_exit",
+                     tm_status = 8L)
+    })
+    cnd <- tryCatch(
+      suppressWarnings(separate_audio_video(
+        f, file.path(dir, "a.m4a"), file.path(dir, "v.mp4"),
+        audio_codec = "aac", video_codec = "nosuch_v"
+      )),
+      error = function(e) e
+    )
+    cnd$tm_video_error
+  }
+  other <- video_error_for(NULL)
+  expect_s3_class(other, "tidymedia_encoder_unavailable")
+  expect_identical(other$tm_encoder, "nosuch_v")
+  own <- video_error_for("encoders")
+  expect_s3_class(own, "tidymedia_ffmpeg_exit")
+  expect_false(inherits(own, "tidymedia_encoder_unavailable"))
+})
+
+test_that("the two listing reads ask FFmpeg with -hide_banner", {
+  # FFmpeg prints its version banner to stderr, which ffmpeg() does not
+  # capture. The reads pass -hide_banner so it does not reach the console.
+  commands <- character()
+  local_mocked_bindings(ffmpeg = function(command) {
+    commands <<- c(commands, command)
+    character()
+  })
+  try(ffmpeg_encoders(), silent = TRUE)
+  try(ffmpeg_codecs(), silent = TRUE)
+  expect_identical(commands, c("-hide_banner -encoders", "-hide_banner -codecs"))
 })
 
 test_that("successful runs and dry runs read neither listing", {
@@ -526,6 +578,17 @@ test_that("successful runs and dry runs read neither listing", {
                     run = FALSE)
   expect_identical(reads$encoders, 0L)
   expect_identical(reads$codecs, 0L)
+
+  # The control: the same counters move on a failed run, so the zeros above
+  # are the paths' doing and not a counter that never counts.
+  local_mocked_bindings(run_program = function(...) {
+    structure(character(), status = 8L)
+  })
+  expect_error(standardize_video(f, file.path(dir, "s2.mp4"),
+                                 video_codec = "nosuch_v"),
+               class = "tidymedia_encoder_unavailable")
+  expect_identical(reads$encoders, 1L)
+  expect_identical(reads$codecs, 1L)
 })
 
 test_that("a batch with no diagnosed row, and a dry-run batch, do not warn", {
@@ -646,12 +709,16 @@ test_that("parallel workers carry the diagnosed rows back (wrapper)", {
 
 test_that("a real codec-name run is not diagnosed while its encoder is hidden (wrapper)", {
   # `h264` is a codec name the wrapper does not intercept, and `-codecs` still
-  # marks it encodable, so FFmpeg runs, or fails for another reason without the
-  # class.
+  # marks it encodable. An unknown output option makes the run fail, so the
+  # diagnosis does run, reads the real listings, and must leave the plain exit
+  # condition (M139 review pass 2: without the forced failure the run succeeded
+  # and this cell could not fail).
   infile <- make_test_video()
   local_build_model("libx264")
   out <- withr::local_tempfile(fileext = ".mp4")
   p <- ffm_codec(ffm_files(infile, out), video = "h264", audio = "aac")
+  p <- ffm_output_options(p, "-boom boom")
   cnd <- tryCatch(ffm_run(p), error = function(e) e)
-  expect_false(inherits(cnd, "tidymedia_encoder_unavailable"))
+  expect_identical(class(cnd), exit_classes)
+  expect_false(identical(cnd$tm_status, 0L))
 })

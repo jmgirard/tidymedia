@@ -87,6 +87,45 @@ Two related paths do **not** give this class, each for its own reason:
 So `tidymedia_loudnorm_no_measurement` is the one class that covers the
 analysis pass in both forms.
 
+## When the build lacks an encoder
+
+After FFmpeg exits non-zero, `ffm_run()` looks at the video and audio
+codecs that
+[`ffm_codec`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md)
+set on the pipeline. A name is encodable if
+[`ffmpeg_encoders`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
+lists it, or if
+[`ffmpeg_codecs`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
+lists it as a codec this build can encode, such as `"h264"`. If a codec
+is not encodable, the error also has the class
+`tidymedia_encoder_unavailable`, before `tidymedia_ffmpeg_exit`. It
+carries `tm_encoder`, the names, and `tm_stream`, which is `"video"` or
+`"audio"` for each name.
+
+The message says that this build lists no such encoder. It does not say
+that the missing encoder made the run fail. FFmpeg uses no video encoder
+for an input that has no video, so a run can fail for another reason.
+When a task function such as
+[`standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md)
+runs its command, the error names that function.
+
+The check runs only after a failed run. A successful run, and a call
+with `run = FALSE`, never start it. It skips `"copy"`, a codec the
+pipeline does not set, the hardware encoders that
+[`hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
+names, and encoders given through
+[`ffm_output_options`](https://jmgirard.github.io/tidymedia/reference/ffm_output_options.md).
+It asks FFmpeg for the two lists, and the package remembers each list
+for the session once it reads it (see
+[`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)).
+If the package cannot read a list, the check says nothing, and the error
+is the `tidymedia_ffmpeg_exit` error alone. If reading a list reaches
+the `tidymedia.timeout` limit, a warning of class
+`tidymedia_probe_timeout` also says so, once per call.
+[`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+gives one `tidymedia_encoder_unavailable` warning for all its rows
+instead of an error for each.
+
 ## See also
 
 [`ffm_compile()`](https://jmgirard.github.io/tidymedia/reference/ffm_compile.md)

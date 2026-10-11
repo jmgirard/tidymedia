@@ -161,6 +161,33 @@ an output whose last <code>-f</code> option is <code>-f null</code>, as
 a job, and what happens when a program reaches the limit.</p>
     </div>
     <div class="section level2">
+    <h2 id="when-the-build-lacks-an-encoder">When the build lacks an encoder<a class="anchor" aria-label="anchor" href="#when-the-build-lacks-an-encoder"></a></h2>
+
+
+<p>A job can fail while its pipeline names a codec this FFmpeg build does not
+list as encodable. The section of the same name on <code><a href="ffm_run.html">ffm_run</a></code>
+says how that is decided. Such a job still runs, and it still gets
+<code>success = FALSE</code>. After all the jobs run, <code>ffm_batch()</code> gives one
+warning of class <code>tidymedia_encoder_unavailable</code> for all such jobs. It
+names each encoder and the jobs that used it. Its fields hold one element for
+each job and codec: <code>tm_encoder</code>, <code>tm_stream</code> and <code>tm_row</code>,
+the job's row number in <code>jobs</code>. A task function's <code>_batch</code> form
+can pass <code>ffm_batch()</code> a table of its own, so these can differ from the
+rows of the table you gave: <code><a href="separate_audio_video_batch.html">separate_audio_video_batch</a></code> gives
+<code>ffm_batch()</code> two rows for each input, and
+<code>normalize_audio_batch(two_pass = TRUE)</code> leaves out silent inputs.</p>
+<p>The same class is also an error, for example when a hardware encoder is
+missing and <code>fallback = FALSE</code>. A <code><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch()</a></code> handler for the
+class therefore also catches this warning and loses the batch's result. Use
+<code><a href="https://rdrr.io/r/base/conditions.html" class="external-link">withCallingHandlers()</a></code> to act on the warning and keep the result.</p>
+<p>If reading FFmpeg's encoder lists reaches the <code>tidymedia.timeout</code>
+limit, the batch gives one warning of class <code>tidymedia_probe_timeout</code>.
+The later jobs do not read the lists again. With <code>parallel = TRUE</code>,
+each worker reads them up to once. That warning comes before the
+<code>tidymedia_encoder_unavailable</code> one, so a <code><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch()</a></code> handler for
+it also loses the result; use <code><a href="https://rdrr.io/r/base/conditions.html" class="external-link">withCallingHandlers()</a></code> for it too.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="segment_video.html">segment_video()</a></code>, which is built on <code>ffm_batch()</code>;
 <code><a href="verify_media.html">verify_media()</a></code> for the verification spec and <code><a href="ffm_manifest.html">ffm_manifest()</a></code> for the

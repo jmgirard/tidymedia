@@ -119,6 +119,40 @@ output whose last `-f` option is `-f null`, as
 explains how to limit how long R waits for each program in a job, and
 what happens when a program reaches the limit.
 
+## When the build lacks an encoder
+
+A job can fail while its pipeline names a codec this FFmpeg build does
+not list as encodable. The section of the same name on
+[`ffm_run`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
+says how that is decided. Such a job still runs, and it still gets
+`success = FALSE`. After all the jobs run, `ffm_batch()` gives one
+warning of class `tidymedia_encoder_unavailable` for all such jobs. It
+names each encoder and the jobs that used it. Its fields hold one
+element for each job and codec: `tm_encoder`, `tm_stream` and `tm_row`,
+the job's row number in `jobs`. A task function's `_batch` form can pass
+`ffm_batch()` a table of its own, so these can differ from the rows of
+the table you gave:
+[`separate_audio_video_batch`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video_batch.md)
+gives `ffm_batch()` two rows for each input, and
+`normalize_audio_batch(two_pass = TRUE)` leaves out silent inputs.
+
+The same class is also an error, for example when a hardware encoder is
+missing and `fallback = FALSE`. A
+[`tryCatch()`](https://rdrr.io/r/base/conditions.html) handler for the
+class therefore also catches this warning and loses the batch's result.
+Use [`withCallingHandlers()`](https://rdrr.io/r/base/conditions.html) to
+act on the warning and keep the result.
+
+If reading FFmpeg's encoder lists reaches the `tidymedia.timeout` limit,
+the batch gives one warning of class `tidymedia_probe_timeout`. The
+later jobs do not read the lists again. With `parallel = TRUE`, each
+worker reads them up to once. That warning comes before the
+`tidymedia_encoder_unavailable` one, so a
+[`tryCatch()`](https://rdrr.io/r/base/conditions.html) handler for it
+also loses the result; use
+[`withCallingHandlers()`](https://rdrr.io/r/base/conditions.html) for it
+too.
+
 ## See also
 
 [`segment_video()`](https://jmgirard.github.io/tidymedia/reference/segment_video.md),

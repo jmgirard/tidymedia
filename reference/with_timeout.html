@@ -151,7 +151,10 @@ and the session has no stored answer. The glossary in
 <li><p>The dropped-track check of <code><a href="extract_audio.html">extract_audio()</a></code>, <code><a href="convert_audio.html">convert_audio()</a></code>,
 <code><a href="normalize_audio.html">normalize_audio()</a></code> and their <code>_batch</code> forms warns that it could not check.
 The track count that <code><a href="separate_audio_video.html">separate_audio_video()</a></code> reads after a failed run
-warns the same way. A batch manifest, see <code><a href="ffm_manifest.html">ffm_manifest()</a></code>, and
+warns the same way. So does the check of FFmpeg's encoder lists that
+<code><a href="ffm_run.html">ffm_run()</a></code>, the task functions and <code><a href="ffm_batch.html">ffm_batch()</a></code> make after a failed run,
+once per call (see "When the build lacks an encoder" on <code><a href="ffm_run.html">ffm_run()</a></code>). A
+batch manifest, see <code><a href="ffm_manifest.html">ffm_manifest()</a></code>, and
 <code><a href="program_status.html">program_status()</a></code> warn when they cannot read a program version. These
 warnings have the class <code>tidymedia_probe_timeout</code>, and the call goes on as
 it would for an unreadable input.</p></li>

@@ -137,7 +137,15 @@ lose the rest of the work:
   and their `_batch` forms warns that it could not check. The track
   count that
   [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
-  reads after a failed run warns the same way. A batch manifest, see
+  reads after a failed run warns the same way. So does the check of
+  FFmpeg's encoder lists that
+  [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md),
+  the task functions and
+  [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+  make after a failed run, once per call (see "When the build lacks an
+  encoder" on
+  [`ffm_run()`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)).
+  A batch manifest, see
   [`ffm_manifest()`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md),
   and
   [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)

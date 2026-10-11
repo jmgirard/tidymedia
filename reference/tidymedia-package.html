@@ -97,6 +97,12 @@ measurement. In the <code>_batch</code> form, <code>tm_rows</code> holds the row
 <li><p><code>tidymedia_multitrack_separation</code>: <code><a href="separate_audio_video.html">separate_audio_video()</a></code> could not
 write several audio tracks into one audio file. The <code>_batch</code> form gives a
 warning.</p></li>
+<li><p><code>tidymedia_encoder_unavailable</code>: this FFmpeg build lists no encoder for a
+codec the call used. After a failed run, <code><a href="ffm_run.html">ffm_run()</a></code> adds it before
+<code>tidymedia_ffmpeg_exit</code>, and <code><a href="ffm_batch.html">ffm_batch()</a></code> gives one warning for all its
+rows. A hardware encoder that <code>fallback = FALSE</code> cannot use gives it too.
+<code>tm_encoder</code> holds the names and <code>tm_stream</code> says <code>"video"</code> or <code>"audio"</code>
+for each. "When the build lacks an encoder" on <code><a href="ffm_run.html">ffm_run()</a></code> says more.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -118,6 +118,37 @@ exit statuses in the same order, with <code>NA</code> where a row exited zero.</
 the analysis pass in both forms.</p>
     </div>
     <div class="section level2">
+    <h2 id="when-the-build-lacks-an-encoder">When the build lacks an encoder<a class="anchor" aria-label="anchor" href="#when-the-build-lacks-an-encoder"></a></h2>
+
+
+<p>After FFmpeg exits non-zero, <code>ffm_run()</code> looks at the video and audio
+codecs that <code><a href="ffm_codec.html">ffm_codec</a></code> set on the pipeline. A name is
+encodable if <code><a href="ffmpeg_encoders.html">ffmpeg_encoders</a></code> lists it, or if
+<code><a href="ffmpeg_codecs.html">ffmpeg_codecs</a></code> lists it as a codec this build can encode, such
+as <code>"h264"</code>. If a codec is not encodable, the error also has the class
+<code>tidymedia_encoder_unavailable</code>, before <code>tidymedia_ffmpeg_exit</code>.
+It carries <code>tm_encoder</code>, the names, and <code>tm_stream</code>, which is
+<code>"video"</code> or <code>"audio"</code> for each name.</p>
+<p>The message says that this build lists no such encoder. It does not say
+that the missing encoder made the run fail. FFmpeg uses no video encoder for
+an input that has no video, so a run can fail for another reason. When a
+task function such as <code><a href="standardize_video.html">standardize_video</a></code> runs its command, the
+error names that function.</p>
+<p>The check runs only after a failed run. A successful run, and a call with
+<code>run = FALSE</code>, never start it. It skips <code>"copy"</code>, a codec the
+pipeline does not set, the hardware encoders that
+<code><a href="hardware_encoder.html">hardware_encoder</a></code> names, and encoders given through
+<code><a href="ffm_output_options.html">ffm_output_options</a></code>. It asks FFmpeg for the two lists, and the
+package remembers each list for the session once it reads it (see
+<code><a href="refresh_ffmpeg_capabilities.html">refresh_ffmpeg_capabilities</a></code>). If the package cannot read a
+list, the check says nothing, and the error is the
+<code>tidymedia_ffmpeg_exit</code> error alone. If reading a list reaches the
+<code>tidymedia.timeout</code> limit, a warning of class
+<code>tidymedia_probe_timeout</code> also says so, once per call.
+<code><a href="ffm_batch.html">ffm_batch</a></code> gives one <code>tidymedia_encoder_unavailable</code>
+warning for all its rows instead of an error for each.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="ffm_compile.html">ffm_compile()</a></code> to get the command without running it, <code><a href="ffm_batch.html">ffm_batch()</a></code>
 to run many files, and <code><a href="verify_media.html">verify_media()</a></code> for the <code>verify</code> list.</p>

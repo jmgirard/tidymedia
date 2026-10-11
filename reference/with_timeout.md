@@ -54,6 +54,9 @@ program gives no such error. For example,
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 starts none when you set `tidymedia.hardware_encoders`. A `probe_*()`
 function that you give a `probe` object also starts none.
+[`has_encoder()`](https://jmgirard.github.io/tidymedia/reference/has_encoder.md)
+is the exception: it checks the limit first, even on a machine where it
+finds no FFmpeg to start.
 
 Most functions check their own arguments before the limit. So a wrong
 argument gives its own error, even when the limit is also wrong. A few
@@ -90,11 +93,14 @@ names the program and the limit:
   and
   [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)
 
-- [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md),
+- [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
+  and
   [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
+
+- [`has_encoder()`](https://jmgirard.github.io/tidymedia/reference/has_encoder.md)
   and
   [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
-  when it asks FFmpeg
+  when they ask FFmpeg
 
 - [`verify_media()`](https://jmgirard.github.io/tidymedia/reference/verify_media.md),
   because a check with no answer is not a "no"

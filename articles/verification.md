@@ -232,6 +232,7 @@ Reading the manifest of such a batch is an error, not an empty tibble:
 
 ``` r
 
+jobs <- tibble::tibble(input = "session01.mp4", output = "session01.mp3")
 compiled <- ffm_batch(jobs, run = FALSE, manifest = TRUE, .f = function(input, output, ...) {
   ffm_files(input, output) |> ffm_drop("video")
 })

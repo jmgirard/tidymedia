@@ -76,17 +76,26 @@ the program, the function gives a warning and returns <code>NULL</code>.</p>
 
 
 <p>A saved location that no longer works gives a warning, and the function
-returns <code>NULL</code>. The warning has one of two classes that you can catch:</p><ul><li><p><code>tidymedia_location_gone</code>: the function read the location, but no program
+returns <code>NULL</code>. The warning has one of three classes that you can catch:</p><ul><li><p><code>tidymedia_location_gone</code>: the function read the location, but no program
 is there now. The condition holds the program name in <code>tm_program</code> and the
-location in <code>tm_location</code>.</p></li>
+location in <code>tm_location</code>, as the file holds it.</p></li>
+<li><p><code>tidymedia_location_not_executable</code>: a file is at the saved location, and
+it cannot be run. Give it permission to execute, or use the <code>set_*()</code>
+function to point at another copy. The condition holds the program name in
+<code>tm_program</code> and the location in <code>tm_location</code>, as the file holds it.
+This case does not arise
+on Windows, which has no execute bit. There a location is read the way R's
+own <code><a href="https://rdrr.io/r/base/Sys.which.html" class="external-link">Sys.which()</a></code> reads it, except that a folder never counts and a
+leading <code>~</code> is expanded.</p></li>
 <li><p><code>tidymedia_location_unreadable</code>: the file does not hold exactly one
 location. It is empty, has more than one line, or has one empty line. The
 condition holds the program name in <code>tm_program</code> and the file in
 <code>tm_file</code>.</p></li>
 </ul><p>A line that holds only spaces counts as a location. So it gives
 <code>tidymedia_location_gone</code>, not <code>tidymedia_location_unreadable</code>.</p>
-<p>To fix either problem, forget the location with <code><a href="unset_program.html">unset_program()</a></code>, or
-replace it with <code><a href="set_program.html">set_program()</a></code>.</p>
+<p>To fix any of the three, forget the location with <code><a href="unset_program.html">unset_program()</a></code>, or
+replace it with <code><a href="set_program.html">set_program()</a></code>. A file that cannot be run can also be fixed
+by giving it permission to execute.</p>
     </div>
     <div class="section level2">
     <h2 id="locations-saved-by-earlier-versions">Locations saved by earlier versions<a class="anchor" aria-label="anchor" href="#locations-saved-by-earlier-versions"></a></h2>

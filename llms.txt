@@ -407,6 +407,8 @@ encoders.
   : Get a data frame of all installed codecs
 - [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
   : Get a data frame of all installed encoders
+- [`has_encoder()`](https://jmgirard.github.io/tidymedia/reference/has_encoder.md)
+  : Ask whether your FFmpeg build has an encoder
 - [`hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
   [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
   : Hardware video encoders

@@ -38,14 +38,18 @@ one table and not four warnings.
 A saved location that cannot be used still gives a warning. Without it,
 the `NA` would look like a program you never had. Each warning names the
 saved location or the file that holds it, so you can fix it. There are
-two cases:
+three cases:
 
 - `tidymedia_location_gone`: no program is at the saved location now.
+
+- `tidymedia_location_not_executable`: a file is there, and it cannot be
+  run. Give it permission to execute, or save another copy. This case
+  does not arise on Windows, which has no execute bit.
 
 - `tidymedia_location_unreadable`: the file that stores the location
   does not hold exactly one location.
 
-In both cases, the row has `NA` in both columns.
+In all three cases, the row has `NA` in both columns.
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
 forgets the location, and
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)

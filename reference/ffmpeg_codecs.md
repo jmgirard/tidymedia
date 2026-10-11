@@ -71,6 +71,7 @@ for the direct command.
 Other capability functions:
 [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md),
 [`hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md),
+[`has_encoder()`](https://jmgirard.github.io/tidymedia/reference/has_encoder.md),
 [`refresh_ffmpeg_capabilities()`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
 
 ## Examples

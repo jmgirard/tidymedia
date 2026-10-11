@@ -1,6 +1,74 @@
 # Changelog
 
+## tidymedia (development version)
+
+The package no longer assumes things about the machine it runs on that
+are not true everywhere. Both fixes answer check failures on the two
+Fedora flavors CRAN uses.
+
+- **New
+  [`has_encoder()`](https://jmgirard.github.io/tidymedia/reference/has_encoder.md)**
+  asks whether your FFmpeg build has a named encoder, such as
+  `"libx264"` or `"libmp3lame"`. Builds differ in what they were
+  compiled with, and some Linux distributions ship an FFmpeg without
+  `libx264`, because x264 is not free software. The answer comes from
+  the same list
+  [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
+  returns, asked once per session and then remembered.
+  [`refresh_ffmpeg_capabilities()`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
+  makes the next call ask again.
+
+- **Examples and vignette chunks that re-encode now run only where your
+  build has the encoder they name.** On a build without `libx264`, the
+  example on
+  [`?ffm_run`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md)
+  used to fail with FFmpeg’s own “Unknown encoder” error. Three examples
+  that had left an encoder to the output container now name it: the
+  audio encoder on
+  [`?ffm_run`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md),
+  and the examples on
+  [`?ffm_manifest`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md)
+  and
+  [`?normalize_audio_batch`](https://jmgirard.github.io/tidymedia/reference/normalize_audio_batch.md).
+  Nothing about a call you write yourself has changed.
+
+- **A remembered program location is now read from the filesystem.**
+  Finding out whether a saved path still names a program you can run
+  went through [`Sys.which()`](https://rdrr.io/r/base/Sys.which.html).
+  That hands the question to whatever `which` the machine provides, and
+  some machines answer nothing at all for a path.
+  [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
+  and its siblings,
+  [`set_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+  and its siblings, and
+  [`install_on_win()`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md)
+  now ask the filesystem instead. A location you type as a bare name,
+  with no folder in it, is still looked up on your `PATH`. On Windows a
+  location is read the way R’s own
+  [`Sys.which()`](https://rdrr.io/r/base/Sys.which.html) reads it there,
+  so a location such as `C:/tools/ffmpeg` still finds
+  `C:/tools/ffmpeg.exe`. The two exceptions are that a folder never
+  counts as a program and a leading `~` is expanded.
+
+- **A location that starts with `~` now works.**
+  `set_ffmpeg("~/bin/ffmpeg")` and its siblings used to refuse it. They
+  now save it with your home folder written out in full, and a saved
+  location that starts with `~` is read the same way. Most calls start
+  the program with its location in quotes, and the system does not
+  expand a `~` inside quotes.
+
+- **A saved location that cannot be run now says so.** Where the file is
+  there but has no permission to execute, the warning says the file
+  cannot be run. It carries the class
+  `tidymedia_location_not_executable` rather than reporting that the
+  file no longer exists.
+  [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)
+  surfaces it beside the other two repairable states. On Windows there
+  is no execute bit, so this warning does not arise there.
+
 ## tidymedia 0.2.1
+
+CRAN release: 2026-10-10
 
 Documentation fixes for the first CRAN submission. No code changed, and
 no behavior differs from 0.2.0.

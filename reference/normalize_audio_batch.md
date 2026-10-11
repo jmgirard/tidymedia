@@ -323,9 +323,10 @@ normalize_audio_batch(jobs, run = FALSE)
 #> 2 /home/runner/work/_temp/Library/tidymedia/extd… /tmp/…             -16 "-y -i…
 # \donttest{
 # Accurate two-pass (measured/linear) normalization across the whole table.
-# This one runs FFmpeg to measure each input, so it needs the binary.
-if (nzchar(Sys.which("ffmpeg"))) {
-  normalize_audio_batch(jobs, two_pass = TRUE)
+# This one runs FFmpeg to measure each input, so it needs the binary, and it
+# re-encodes, so it needs an encoder this build has.
+if (nzchar(Sys.which("ffmpeg")) && has_encoder("aac")) {
+  normalize_audio_batch(jobs, two_pass = TRUE, audio_codec = "aac")
 }
 #> # A tibble: 2 × 11
 #>   input               output target_loudness measured_I measured_TP measured_LRA

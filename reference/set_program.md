@@ -54,8 +54,10 @@ said no.
 
 The file stays after the session ends, so the call asks you to confirm
 first. It writes nothing until you agree. The question shows the
-location as you typed it, which is what the call writes. It also shows
-the full path of the file. If you say no, the call changes nothing.
+location the call writes, which is the location as you typed it. The one
+change is a leading `~`, which is written as your home folder in full.
+The question also shows the full path of the file. If you say no, the
+call changes nothing.
 
 In a session where no one can answer, the call gives an error. Pass
 `confirm = FALSE` to write without the question, for example in a script

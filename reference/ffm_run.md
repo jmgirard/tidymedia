@@ -127,6 +127,6 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 out <- tempfile(fileext = ".mp4")
 ffm_files(video, out) |>
   ffm_scale(width = 160, height = 120) |>
-  ffm_codec(video = "libx264") |>
+  ffm_codec(video = "libx264", audio = "aac") |>
   ffm_run(verify = list(width = 160, height = 120))
 ```

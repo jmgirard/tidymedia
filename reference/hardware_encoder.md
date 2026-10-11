@@ -97,6 +97,7 @@ and
 Other capability functions:
 [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md),
 [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md),
+[`has_encoder()`](https://jmgirard.github.io/tidymedia/reference/has_encoder.md),
 [`refresh_ffmpeg_capabilities()`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
 
 ## Examples

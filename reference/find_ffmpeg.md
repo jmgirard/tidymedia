@@ -33,11 +33,20 @@ program, the function gives a warning and returns `NULL`.
 ## Problems with a saved location
 
 A saved location that no longer works gives a warning, and the function
-returns `NULL`. The warning has one of two classes that you can catch:
+returns `NULL`. The warning has one of three classes that you can catch:
 
 - `tidymedia_location_gone`: the function read the location, but no
   program is there now. The condition holds the program name in
-  `tm_program` and the location in `tm_location`.
+  `tm_program` and the location in `tm_location`, as the file holds it.
+
+- `tidymedia_location_not_executable`: a file is at the saved location,
+  and it cannot be run. Give it permission to execute, or use the
+  `set_*()` function to point at another copy. The condition holds the
+  program name in `tm_program` and the location in `tm_location`, as the
+  file holds it. This case does not arise on Windows, which has no
+  execute bit. There a location is read the way R's own
+  [`Sys.which()`](https://rdrr.io/r/base/Sys.which.html) reads it,
+  except that a folder never counts and a leading `~` is expanded.
 
 - `tidymedia_location_unreadable`: the file does not hold exactly one
   location. It is empty, has more than one line, or has one empty line.
@@ -47,10 +56,12 @@ returns `NULL`. The warning has one of two classes that you can catch:
 A line that holds only spaces counts as a location. So it gives
 `tidymedia_location_gone`, not `tidymedia_location_unreadable`.
 
-To fix either problem, forget the location with
+To fix any of the three, forget the location with
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md),
 or replace it with
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md).
+A file that cannot be run can also be fixed by giving it permission to
+execute.
 
 ## Locations saved by earlier versions
 

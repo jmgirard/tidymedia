@@ -15,11 +15,12 @@ refresh_ffmpeg_capabilities()
 
 ## Details
 
-The first call in an R session that uses `hardware = "nvenc"` or
-`hardware = "videotoolbox"` asks FFmpeg which encoders it has. The
-package remembers that answer for the rest of the session. Later calls
-reuse it and do not start FFmpeg again each time, so a large batch stays
-fast.
+The first call in an R session to
+[`has_encoder`](https://jmgirard.github.io/tidymedia/reference/has_encoder.md),
+or one that uses `hardware = "nvenc"` or `hardware = "videotoolbox"`,
+asks FFmpeg which encoders it has. The package remembers that answer for
+the rest of the session. Later calls reuse it and do not start FFmpeg
+again each time, so a large batch stays fast.
 
 So the package does not see a change to your FFmpeg build until you
 discard the record. Examples of a change are a new FFmpeg install, a new
@@ -83,7 +84,8 @@ points the package at a different FFmpeg program.
 Other capability functions:
 [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md),
 [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md),
-[`hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
+[`hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md),
+[`has_encoder()`](https://jmgirard.github.io/tidymedia/reference/has_encoder.md)
 
 ## Examples
 

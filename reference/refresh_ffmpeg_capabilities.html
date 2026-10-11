@@ -59,9 +59,10 @@ next query then asks FFmpeg again.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The first call in an R session that uses <code>hardware = "nvenc"</code> or
-<code>hardware = "videotoolbox"</code> asks FFmpeg which encoders it has. The
-package remembers that answer for the rest of the session. Later calls reuse
+    <p>The first call in an R session to <code><a href="has_encoder.html">has_encoder</a></code>, or one that
+uses <code>hardware = "nvenc"</code> or <code>hardware = "videotoolbox"</code>, asks
+FFmpeg which encoders it has. The package remembers that answer for the rest
+of the session. Later calls reuse
 it and do not start FFmpeg again each time, so a large batch stays fast.</p>
 <p>So the package does not see a change to your FFmpeg build until you discard
 the record. Examples of a change are a new FFmpeg install, a new graphics
@@ -112,7 +113,8 @@ FFmpeg.
 <p>Other capability functions:
 <code><a href="ffmpeg_codecs.html">ffmpeg_codecs()</a></code>,
 <code><a href="ffmpeg_encoders.html">ffmpeg_encoders()</a></code>,
-<code><a href="hardware_encoder.html">hardware_encoder()</a></code></p></div>
+<code><a href="hardware_encoder.html">hardware_encoder()</a></code>,
+<code><a href="has_encoder.html">has_encoder()</a></code></p></div>
     </div>
 
     <div class="section level2">

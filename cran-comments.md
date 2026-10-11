@@ -32,6 +32,11 @@ checks in. It reports "checking examples with --run-donttest ... OK",
 
 With both tools present, `devtools::check()` gives the same result, 0 notes.
 
+win-builder (R-devel, 2026-10-09 r90655 ucrt) gives 1 NOTE, from the incoming
+feasibility check: "Days since last update: 1". This update comes soon after
+0.2.1 because it fixes the check ERRORs CRAN asked to have corrected by
+2026-10-31. Every other check on win-builder is OK.
+
 ## Test environments
 
 * local macOS (arm64), R 4.6.1, with and without the two tools on the PATH

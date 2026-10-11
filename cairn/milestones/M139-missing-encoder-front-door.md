@@ -171,6 +171,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - 2026-10-10: review return 1: AC2 fails. A limit reached while the diagnosis reads the listings gives one `tidymedia_probe_timeout` warning per failed row in a batch, and one per half in `separate_audio_video()`, against D049's one warning per call. Fix both, add a batch reached-limit cell, and take every fix-now finding in the Review section.
 - 2026-10-10: amendment routed: AC2 — "every `run = FALSE` call behaves as at the merge base" is falsified by AC1's own required class on `check_hardware_available()`'s abort, which fires at `run = FALSE`.
 - 2026-10-10: follow-ups filed as candidate rows: diff-bug #8 (unquoted path in `ffmpeg()`) and blame-history #2 (the track diagnostic over a diagnosed missing encoder). Status back to in-progress.
+- 2026-10-10: the two follow-ups put `ROADMAP.md` at 61 lines against its cap of under 60, so both are absorbed into existing rows instead: diff-bug #8 into the row on the compiled command's bare token classes, and blame-history #2 as item (d) of the row "The multi-track separation abort is still blind to WHY FFmpeg failed". The Review section lines that name new rows are superseded by this line.
 
 ## Decisions
 

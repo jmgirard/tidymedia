@@ -53,9 +53,10 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
       passed through `ffm_output_options()`. `check_hardware_available()`'s
       availability abort carries the same class, with `tm_encoder` and
       `tm_stream = "video"` (D062, D063).
-- [ ] AC2: A run that FFmpeg completes, and every `run = FALSE` call, behaves as at the
-      merge base, because the diagnosis is reached only after a non-zero exit inside
-      `ffm_run()`. The remembered codec reader has one caller in `tm_call_graph()`, the
+- [ ] AC2: A run that FFmpeg completes, and every `run = FALSE` call, compiles the same
+      command as at the merge base and, from the same remembered encoder listing (D044),
+      starts the same programs as many times, because the diagnosis is reached only after
+      a non-zero exit inside `ffm_run()`. The remembered codec reader has one caller in `tm_call_graph()`, the
       diagnosis, and `ffmpeg_codecs()` stays uncached (D044). The codec listing is
       remembered beside the encoder listing once it is read. A failed read is not
       remembered, and each of D089's four routes discards both listings. If the listing
@@ -101,7 +102,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 ## Coverage
 
 - AC1 → T1, T2
-- AC2 → T1, T5
+- AC2 → T1, T5, T7
 - AC3 → T3
 - AC4 → T4
 - AC5 → T6
@@ -132,6 +133,11 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - [x] T6: Write the records: `NEWS.md`, the three help pages, the `cairn/DESIGN.md`
       Known issues text, and the trim of the ROADMAP hardware-surface row's sentence
       naming this milestone.
+- [ ] T7: Review return 1. Give one `tidymedia_probe_timeout` warning per call in
+      `ffm_batch()` and `separate_audio_video()`, and skip the listing read for the
+      call's later runs after one reaches the limit. Add a batch reached-limit cell.
+      Take the Review section's fix-now findings. Add listing-read counts for a
+      successful batch, a successful separation and a `run = FALSE` verb.
 
 ## Work log
 
@@ -174,6 +180,8 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - 2026-10-10: the two follow-ups put `ROADMAP.md` at 61 lines against its cap of under 60, so both are absorbed into existing rows instead: diff-bug #8 into the row on the compiled command's bare token classes, and blame-history #2 as item (d) of the row "The multi-track separation abort is still blind to WHY FFmpeg failed". The Review section lines that name new rows are superseded by this line.
 - 2026-10-10: re-audit: AC2 (full) — over the first proposed amendment ("compiles the same command and starts the same programs as at the merge base"), two findings. (1) A failed run's diagnosis fills the remembered encoder listing (D044), so a later hardware dry run starts no program where the merge base starts one. Measured by the reader: 1 listing read before, 0 after a diagnosed failure. Taken: the clause now reads "from the same remembered listings (D044)". (2) "one `tidymedia_probe_timeout` warning also reports it" binds per read, not per call. Held, not taken: writing the per-call grain into AC2 widens it, which D-118 rules out after a defect return. D049 binds the per-call grain on its own, and review return 1 fixes it as a defect, which also satisfies the per-read wording.
 - 2026-10-10: re-audit: AC2 (full) — second fresh reader, over the repaired clause ("compiles the same command as at the merge base and, from the same remembered listings (D044), starts the same programs"). It passes satisfiability, reachability, instrument, proportionality and narrowing, with three findings. (1) "starts the same programs" is ambiguous once diff-bug #2's `-hide_banner` lands in the shared listing reader, because a cold hardware dry run then starts `ffmpeg -hide_banner -encoders`. Repair: "starts the same programs as many times". (2) No plant or read count covers `run_one()`, the separation run block or `ffm_finish()`'s `run = FALSE` branch. This is evidence, not wording, and becomes a T7 item. (3) The merge base has no codec listing. Repair: "the same remembered encoder listing". This is the second re-audit line for AC2, so the wording goes to the user.
+- 2026-10-10: amendment return: AC2 — "A run that FFmpeg completes, and every `run = FALSE` call, compiles the same command as at the merge base and, from the same remembered encoder listing (D044), starts the same programs as many times, because the diagnosis is reached only after a non-zero exit inside `ffm_run()`."
+- 2026-10-10: the user accepted that wording as final with no third reader, and chose `-hide_banner` in the shared listing reads, disclosed in NEWS. T7 added for review return 1, and Coverage maps AC2 to it.
 
 ## Decisions
 

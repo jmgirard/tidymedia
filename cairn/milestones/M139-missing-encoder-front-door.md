@@ -129,7 +129,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - [x] T5: Run the purity tests, the timeout sweeps and the recorded spawn baselines
       unchanged, with no re-recording. Plant a listing read on the success path and see
       a spawn baseline redden.
-- [ ] T6: Write the records: `NEWS.md`, the three help pages, the `cairn/DESIGN.md`
+- [x] T6: Write the records: `NEWS.md`, the three help pages, the `cairn/DESIGN.md`
       Known issues text, and the trim of the ROADMAP hardware-surface row's sentence
       naming this milestone.
 
@@ -162,6 +162,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - 2026-10-10: T4 done. `ffm_batch()`'s `run_one()` returns the diagnosed encoders and streams, and one warning after the rows carries `tm_encoder`, `tm_stream` and `tm_row`, one element per row and codec. Cells cover `progress = FALSE` and `TRUE`, a row failing for another reason, one encoder over several rows, `run = FALSE`, and a `standardize_video_batch()` column override. The parallel cell runs real FFmpeg through the wrapper in two PSOCK workers. It ran green with the branch installed in a scratch library on `R_LIBS`, and it skips when workers load an older installed copy (M53). Four `test-separate-av-multitrack.R` tests forced a failure with `"notanencoder"` and caught the first warning, which is now the encoder warning. They set it aside through one helper, and one of them asserts that both warnings arrive, encoder first, with rows 1 and 3 of the two-rows-per-caller-row table. Full suite: 1811 tests, 0 failed.
 - 2026-10-10: T5 done, with no code change. Since the plan commit `db99245a`, the branch changes three test files: the new file, the absorber list in `test-timeout-silence.R`, and the four separation tests. No purity test, timeout sweep or recorded spawn baseline was edited or re-recorded, and all pass. Plant 1 put a listing read before the spawn in `ffm_run()` through `output_snapshot()`. `test-timeout-refusal-blame.R`'s byte-for-byte baseline test went red with 64 failures. Plant 2 put a listing read in `ffm_compile()`, on the dry-run path. Four of the five purity tests went red. `test-audio-track-drop.R:63` stayed green, because it watches only `run_program()` and the listing spawns through `ffmpeg()`.
 - 2026-10-10: T6 checkpoint, not yet checked off: the records are written and `devtools::document()` regenerated four Rd files, and the full suite over them is still running. Written: a `NEWS.md` entry, a section "When the build lacks an encoder" on `?ffm_run` and on `?ffm_batch`, the record paragraph on `?refresh_ffmpeg_capabilities`, the class in `?tidymedia`, the five-part Known issues entry in `cairn/DESIGN.md`, and the trim of the ROADMAP hardware-surface row. The help text's claim that FFmpeg uses no video encoder for an input without video was run here: `-map 0:v? -c:v no_such_enc` exits 0 on an audio-only input and 8 on a video input.
+- 2026-10-10: T6 done. The full suite over the records ran 1811 tests with 0 failures.
 
 ## Decisions
 

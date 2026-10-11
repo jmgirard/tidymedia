@@ -1,6 +1,6 @@
 # M139: A failed FFmpeg run names the encoder this build lacks
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M138
 - **Driving RR:** —
@@ -165,6 +165,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - 2026-10-10: T6 done. The full suite over the records ran 1811 tests with 0 failures.
 - 2026-10-10: claim audit: 58 claims read, 7 corrected — NEWS.md, R/cache.R, R/ffmpeg.R (two comments), tests/testthat/test-separate-av-multitrack.R (two claims in one comment), tests/testthat/test-encoder-diagnosis.R. One optional wording fix in the same test file was also taken. The NEWS correction names the case where `separate_audio_video()` keeps its several-tracks error. `cairn/DESIGN.md`'s Known issues gains it as a sixth limit. The same reader's re-read of the corrected claims is pending.
 - 2026-10-10: claim audit re-read: of 8 corrected claims, 6 true and 2 still wider. The separation exception holds only for an `audiofile` whose container holds one audio stream: into `.mka` the diagnosed condition arrives, measured by the reader with real FFmpeg. NEWS.md and the Known issues sentence now carry that narrower wording. One re-read only, so no further pass.
+- 2026-10-10: implement complete. `devtools::document()` gives no diff, and the final full suite ran 1811 tests with 0 failed and 7 skipped. Status set to review. Open concern for the merge question: the ROADMAP's 0.2.2 window ships M138 alone, and `NEWS.md` puts this milestone under the development heading. So if M139 merges before 0.2.2 is cut, it ships in 0.2.2.
 
 ## Decisions
 

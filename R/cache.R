@@ -30,6 +30,22 @@ cached_encoder_names <- function() {
   .tm_capabilities$encoder_names
 }
 
+# cached_encodable_codecs(): the codec names this build can encode, the rows of
+# `ffmpeg -codecs` marked with E, asked at most once per session beside the
+# encoder pool. A codec name is not an encoder name: `-c:v h264` and `-c:a mp3`
+# run on a build whose `-encoders` lists neither, because FFmpeg maps a codec
+# name to one of its encoders. Read by one caller, diagnose_missing_encoders(),
+# and only after FFmpeg has already failed (M139). A failed read stores nothing,
+# so the next diagnosis asks again. ffmpeg_codecs() itself stays uncached
+# (D044): it is the exported view of the build as it is now.
+cached_encodable_codecs <- function() {
+  if (is.null(.tm_capabilities$encodable_codecs)) {
+    codecs <- ffmpeg_codecs()
+    .tm_capabilities$encodable_codecs <- codecs$name[codecs$encoding]
+  }
+  .tm_capabilities$encodable_codecs
+}
+
 #' Forget what tidymedia remembers about your FFmpeg build
 #'
 #' Discard the package's record of which encoders your FFmpeg build has. The

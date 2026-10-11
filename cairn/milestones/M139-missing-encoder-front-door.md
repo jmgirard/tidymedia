@@ -1,13 +1,13 @@
 # M139: A failed FFmpeg run names the encoder this build lacks
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** M138
 - **Driving RR:** —
 - **Principles touched:** GP1
 - **Resolves:** —
 - **Surface tier:** user-facing. It adds a condition class, a batch warning and help text a caller sees.
-- **Branch/PR:** —
+- **Branch/PR:** m139-missing-encoder-diagnosis
 
 ## Goal
 
@@ -108,7 +108,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 
 ## Tasks
 
-- [ ] T1: Add the remembered codec listing beside the encoder listing, the encodable
+- [x] T1: Add the remembered codec listing beside the encoder listing, the encodable
       test, and the diagnosis after the exit in `ffm_run()`. Test with a mocked exit,
       `cached_encoder_names()` and codec listing, which are the CI-portable cells. Cover
       `"h264"`, `"mp3"`, `"copy"`, unset and backend-table names. Also cover a listing
@@ -154,6 +154,9 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - 2026-10-10: approach: rejected naming `ffm_run()` in the single-file condition, as FFmpeg's exit error does today. It needs no threading, but it names a function that the caller did not always type. Falsified by a caller who catches the condition by its call and expects `ffm_run`.
 - 2026-10-10: criteria audit (full mode), round 1, fresh Opus reader, over a draft that refused before the spawn. Findings taken, nine. The false claim that the gate refuses only runs FFmpeg refuses, which raised the second question. `ffm_batch` inside and `ffm_run` outside the blame domain, and `segment_video` in the batch group. The once-per-session count, which a failed listing breaks. Nonexistent `pixel_format` and `regions` pairs at `crop_video()` and `format_for_web()`. A dry-run claim wider than its tests. Row numbers with no referent. Parallel cells that mocks cannot reach. A second hardware-name route. A review act written as a criterion.
 - 2026-10-10: criteria audit (full mode), round 2, a second fresh Opus reader, over the diagnosis draft. Ten findings, all taken by narrowing. A limit reached during the listing now also warns (D049). The conditions that keep their call are named. The blame domain is written out, and `separate_audio_video()` is limited to a single-track input. Batch row numbers are those of `ffm_batch()`'s jobs table, with the two-pass silent-row offset disclosed. "This build" reads the remembered listing (D044), with staleness disclosed. `tm_encoder` and `tm_stream` are at every site of the class. The grep is replaced by one caller in the call graph. Three help pages join the records. Reading codecs off the pipeline replaces the column-override exemplar. The message does not claim the encoder caused the exit.
+- 2026-10-10: implement started on branch `m139-missing-encoder-diagnosis`, cut from master at `db99245a`. The uncommitted `CRAN-SUBMISSION` change is unrelated and stays unstaged.
+- 2026-10-10: T1 done. `cached_encodable_codecs()` in `R/cache.R`, `hardware_encoder_names()` and `diagnose_missing_encoders()` in `R/ffmpeg.R`, and the diagnosed abort in `ffm_run()`'s exit branch. The encoder list is read first, and the codec list only for a name the encoder list lacks. Warnings from the listing's own program lookup are muffled, because the failed run already resolved the same program. `tests/testthat/test-encoder-diagnosis.R` has 11 tests, the 2 wrapper cells included. The full suite ran 1802 tests with 1 failure: `test-timeout-silence.R`'s absorber list, which `diagnose_missing_encoders()` joins by design. That list now names it, with its guard.
+- 2026-10-10: implementation choice: the frame a diagnosis names rides on the pipeline as attribute `tm_call`, set by the site that calls `ffm_run()`. This keeps every existing `ffm_run()` condition's frame as it is at the merge base, which an internal implementation function would change. No export gains a `call` formal (D087). T3's wording "through an internal implementation" is refined to this mechanism.
 
 ## Decisions
 

@@ -3211,6 +3211,74 @@ tm_encoder_available <- function(name, call) {
   name %in% cached_encoder_names()
 }
 
+# hardware_encoder_names(): every name tm_hardware_encoder() can return, read off
+# the backend table. The diagnosis below leaves these alone: whether a backend
+# encoder is usable is check_hardware_available()'s question, answered through
+# the `tidymedia.hardware_encoders` seam, and has_encoder()'s pool deliberately
+# does not read that seam.
+hardware_encoder_names <- function() {
+  table <- hardware_backend_families()
+  unlist(lapply(names(table), function(hw) paste(table[[hw]], hw, sep = "_")),
+         use.names = FALSE)
+}
+
+# diagnose_missing_encoders(): after FFmpeg has ALREADY exited non-zero in
+# ffm_run(), name the pipeline's codecs this build does not list as encodable
+# (M139). D024's diagnostic licence, in the shape run_separation_audio() uses:
+# the call aborts under every outcome, and this decides only WHICH abort is
+# signalled -- never whether execution proceeds, what was compiled, a default,
+# or a pipeline.
+#
+# Why after the failure and never before the start: FFmpeg looks up an encoder
+# only for a stream kind the output has, so `-c:v libx264` on an audio-only
+# input runs on a build without libx264. A check before the start would refuse
+# that call, which runs today (M139 plan gate, second round).
+#
+# Returns a character vector of the missing names, named by stream ("video",
+# "audio"), possibly empty; or NULL when the listing could not be read, which
+# is the fail-open answer: ffm_run() then raises the merge-base condition
+# unchanged. A reached limit is the one failure that also speaks, as a
+# `tidymedia_probe_timeout` warning, because a limit reached on a spawn is
+# never silent (D049). Warnings from the listing's own program lookup are
+# muffled: the failed run already resolved the same program, and anything it
+# had to say about its location was said there.
+diagnose_missing_encoders <- function(object, call) {
+  wanted <- c(
+    stats::setNames(object$codec_video, rep("video", length(object$codec_video))),
+    stats::setNames(object$codec_audio, rep("audio", length(object$codec_audio)))
+  )
+  wanted <- wanted[!is.na(wanted) & nzchar(wanted) &
+                     !wanted %in% c("copy", hardware_encoder_names())]
+  if (length(wanted) == 0L) return(character())
+  rlang::try_fetch(
+    withCallingHandlers(
+      {
+        unlisted <- wanted[!wanted %in% cached_encoder_names()]
+        if (length(unlisted)) {
+          unlisted <- unlisted[!unlisted %in% cached_encodable_codecs()]
+        }
+        unlisted
+      },
+      warning = function(w) invokeRestart("muffleWarning")
+    ),
+    tidymedia_timeout = function(cnd) {
+      limit <- cnd$tm_limit
+      cli::cli_warn(
+        c(
+          "The encoder check timed out after {limit} second{?s}.",
+          "i" = "FFmpeg failed, and the package cannot say whether this \\
+                 FFmpeg build lacks an encoder the run named. Raise or remove \\
+                 {.code options(tidymedia.timeout = )}."
+        ),
+        class = "tidymedia_probe_timeout",
+        call = call
+      )
+      NULL
+    },
+    error = function(cnd) NULL
+  )
+}
+
 # codec_family(): infer the codec family from a software codec name, so a user
 # can turn `hardware` on while keeping a familiar video_codec (e.g. "libx264"
 # -> "h264"). Backend-free by design (D079): "libx264" is the h264 family under

@@ -1,0 +1,243 @@
+# M139: after FFmpeg exits non-zero in ffm_run(), a codec this build does not
+# list as encodable is named on the condition, under its own class.
+#
+# The absent-encoder state is not observable on a machine whose build has the
+# encoder, so most cells mock the exit and the two listings: they are the
+# CI-portable half. The wrapper cells at the end use M138's
+# `tools/ffmpeg_build_model/ffmpeg`, which hides an encoder from a real FFmpeg
+# and makes a run naming it fail the way Fedora's build does. They run only
+# where a real FFmpeg is present and the source tree's `tools/` is reachable.
+
+# A failed run, the two listings, and a count of how often each listing was
+# read. `encoders`/`codecs` are the answers; a function there is called instead,
+# so a cell can make the read fail.
+local_failed_run <- function(encoders = c("libopenh264", "aac", "libmp3lame"),
+                             codecs = c("h264", "aac", "mp3"),
+                             status = 8L, env = parent.frame()) {
+  reads <- new.env()
+  reads$encoders <- 0L
+  reads$codecs <- 0L
+  answer <- function(x) if (is.function(x)) x() else x
+  testthat::local_mocked_bindings(
+    run_program = function(...) structure(character(), status = status),
+    cached_encoder_names = function() {
+      reads$encoders <- reads$encoders + 1L
+      answer(encoders)
+    },
+    cached_encodable_codecs = function() {
+      reads$codecs <- reads$codecs + 1L
+      answer(codecs)
+    },
+    .env = env
+  )
+  reads
+}
+
+pipeline_with <- function(video = NULL, audio = NULL, env = parent.frame()) {
+  infile <- make_input(env = env)
+  out <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
+  ffm_codec(ffm_files(infile, out), audio = audio, video = video)
+}
+
+exit_classes <- c("tidymedia_ffmpeg_exit", "rlang_error", "error", "condition")
+diagnosed_classes <- c("tidymedia_encoder_unavailable", exit_classes)
+
+test_that("an encoder the build does not list is named on the exit condition", {
+  reads <- local_failed_run()
+  cnd <- tryCatch(ffm_run(pipeline_with(video = "libx264", audio = "aac")),
+                  error = function(e) e)
+
+  expect_identical(class(cnd), diagnosed_classes)
+  expect_identical(cnd$tm_status, 8L)
+  expect_identical(cnd$tm_encoder, "libx264")
+  expect_identical(cnd$tm_stream, "video")
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  expect_match(msg, "FFmpeg exited with status 8.", fixed = TRUE)
+  expect_match(msg, 'This FFmpeg build lists no video encoder "libx264".',
+               fixed = TRUE)
+  # The bullets the merge base prints are still there.
+  expect_match(msg, "FFmpeg's error output is printed above.", fixed = TRUE)
+  expect_match(msg, "The failing command was:", fixed = TRUE)
+  # The message states what the build lacks, never that the lack caused the
+  # exit: an unlisted codec can sit on a stream the output does not have.
+  expect_no_match(msg, "because|caused|due to", perl = TRUE)
+  # Called directly, the frame named is ffm_run()'s own.
+  expect_identical(rlang::call_name(conditionCall(cnd)), "ffm_run")
+  # The codec listing was read only for the name the encoder list lacked.
+  expect_identical(reads$encoders, 1L)
+  expect_identical(reads$codecs, 1L)
+})
+
+test_that("a codec name the build encodes is not diagnosed (h264, mp3)", {
+  # `-c:v h264` and `-c:a mp3` run on a build whose `-encoders` lists neither
+  # name. The control is the same call with an unlisted name, so a diagnosis
+  # that never fired would fail here.
+  reads <- local_failed_run()
+  cnd <- tryCatch(ffm_run(pipeline_with(video = "h264", audio = "mp3")),
+                  error = function(e) e)
+  expect_identical(class(cnd), exit_classes)
+  expect_identical(reads$codecs, 1L)
+
+  ctrl <- tryCatch(ffm_run(pipeline_with(video = "nosuch264", audio = "mp3")),
+                   error = function(e) e)
+  expect_identical(class(ctrl), diagnosed_classes)
+  expect_identical(ctrl$tm_encoder, "nosuch264")
+})
+
+test_that("both codecs missing are both named, video first", {
+  local_failed_run()
+  cnd <- tryCatch(ffm_run(pipeline_with(video = "libx264", audio = "libfdk_aac")),
+                  error = function(e) e)
+  expect_identical(class(cnd), diagnosed_classes)
+  expect_identical(cnd$tm_encoder, c("libx264", "libfdk_aac"))
+  expect_identical(cnd$tm_stream, c("video", "audio"))
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  expect_match(msg, 'lists no audio encoder "libfdk_aac".', fixed = TRUE)
+})
+
+test_that("copy, an unset codec and a hardware-table name are never asked about", {
+  for (args in list(
+    list(video = "copy", audio = "copy"),
+    list(),
+    list(video = "h264_nvenc"),
+    list(video = "hevc_videotoolbox", audio = "copy")
+  )) {
+    reads <- local_failed_run(encoders = character(), codecs = character())
+    cnd <- tryCatch(ffm_run(do.call(pipeline_with, args)),
+                    error = function(e) e)
+    label <- paste(names(args), unlist(args), collapse = ", ")
+    expect_identical(class(cnd), exit_classes, info = label)
+    expect_identical(reads$encoders, 0L, info = label)
+    expect_identical(reads$codecs, 0L, info = label)
+  }
+  # Every name the backend table can return is in the excluded set, read off
+  # the table rather than listed here.
+  expect_setequal(
+    hardware_encoder_names(),
+    c("h264_nvenc", "hevc_nvenc", "av1_nvenc",
+      "h264_videotoolbox", "hevc_videotoolbox")
+  )
+})
+
+test_that("a run FFmpeg completes never reads either listing", {
+  reads <- local_failed_run()
+  local_mocked_bindings(run_program = function(...) character())
+  expect_no_error(ffm_run(pipeline_with(video = "libx264", audio = "aac")))
+  expect_identical(reads$encoders, 0L)
+  expect_identical(reads$codecs, 0L)
+})
+
+test_that("a listing that cannot be read leaves the merge-base condition", {
+  local_failed_run(encoders = function() stop("listing broke"))
+  expect_no_warning(
+    cnd <- tryCatch(ffm_run(pipeline_with(video = "libx264")),
+                    error = function(e) e)
+  )
+  expect_identical(class(cnd), exit_classes)
+  expect_null(cnd$tm_encoder)
+  msg <- cli::ansi_strip(conditionMessage(cnd))
+  expect_no_match(msg, "lists no", fixed = TRUE)
+  expect_match(msg, "FFmpeg exited with status 8.", fixed = TRUE)
+})
+
+test_that("a limit reached during the listing warns and leaves the condition", {
+  local_failed_run(encoders = function() abort_timeout("FFmpeg", 5))
+  cnd <- NULL
+  w <- tryCatch(
+    withCallingHandlers(
+      ffm_run(pipeline_with(video = "libx264")),
+      error = function(e) cnd <<- e
+    ),
+    tidymedia_probe_timeout = function(w) w
+  )
+  # The warning comes first, so catch it, then run again to read the error.
+  expect_s3_class(w, "tidymedia_probe_timeout")
+  expect_match(cli::ansi_strip(conditionMessage(w)), "timed out after 5 seconds",
+               fixed = TRUE)
+  cnd <- tryCatch(suppressWarnings(ffm_run(pipeline_with(video = "libx264"))),
+                  error = function(e) e)
+  expect_identical(class(cnd), exit_classes)
+})
+
+test_that("the codec listing is remembered once read, and only once read", {
+  forget_ffmpeg_capabilities()
+  withr::defer(forget_ffmpeg_capabilities())
+  asks <- 0L
+  fail <- TRUE
+  local_mocked_bindings(ffmpeg_codecs = function(...) {
+    asks <<- asks + 1L
+    if (fail) stop("no listing")
+    tibble::tibble(name = c("h264", "pcm_bluray"), encoding = c(TRUE, FALSE))
+  })
+  # A failed read stores nothing, so the next diagnosis asks again.
+  expect_error(cached_encodable_codecs(), "no listing")
+  expect_null(.tm_capabilities$encodable_codecs)
+  fail <- FALSE
+  expect_identical(cached_encodable_codecs(), "h264")
+  expect_identical(cached_encodable_codecs(), "h264")
+  expect_identical(asks, 2L)
+  # The routes that discard the encoder pool discard this listing too: all of
+  # them go through forget_ffmpeg_capabilities() (D089).
+  forget_ffmpeg_capabilities()
+  expect_null(.tm_capabilities$encodable_codecs)
+})
+
+test_that("the codec listing has one reader, the diagnosis", {
+  graph <- tm_call_graph()
+  callers <- names(Filter(function(callees) "cached_encodable_codecs" %in% callees,
+                          graph))
+  expect_identical(callers, "diagnose_missing_encoders")
+})
+
+# Wrapper cells ---------------------------------------------------------------
+
+local_build_model <- function(hide, env = parent.frame()) {
+  skip_if_no_ffmpeg()
+  skip_on_os("windows")
+  dir <- normalizePath(testthat::test_path("..", "..", "tools", "ffmpeg_build_model"),
+                       mustWork = FALSE)
+  testthat::skip_if_not(file.exists(file.path(dir, "ffmpeg")),
+                        "the source tree's tools/ffmpeg_build_model is not here")
+  real_path <- Sys.getenv("PATH")
+  tm_redirect_config(env = env)
+  withr::local_envvar(
+    PATH = paste(dir, real_path, sep = .Platform$path.sep),
+    TIDYMEDIA_HIDE_ENCODERS = hide,
+    .local_envir = env
+  )
+  forget_ffmpeg_capabilities()
+  withr::defer(forget_ffmpeg_capabilities(), envir = env)
+  testthat::skip_if_not(identical(dirname(find_ffmpeg()), dir),
+                        "the build-model wrapper does not resolve first")
+  invisible(dir)
+}
+
+test_that("a real run naming a hidden encoder is diagnosed (wrapper)", {
+  infile <- make_test_video()
+  local_build_model("libx264")
+  out <- withr::local_tempfile(fileext = ".mp4")
+  p <- ffm_codec(ffm_files(infile, out), video = "libx264", audio = "aac")
+  cnd <- tryCatch(ffm_run(p), error = function(e) e)
+  expect_identical(class(cnd), diagnosed_classes)
+  expect_identical(cnd$tm_encoder, "libx264")
+  expect_false(identical(cnd$tm_status, 0L))
+
+  # The control: the same run with a different encoder hidden succeeds, so the
+  # failure above is the hidden encoder's.
+  withr::local_envvar(TIDYMEDIA_HIDE_ENCODERS = "libx265")
+  forget_ffmpeg_capabilities()
+  out2 <- withr::local_tempfile(fileext = ".mp4")
+  p2 <- ffm_codec(ffm_files(infile, out2), video = "libx264", audio = "aac")
+  expect_no_error(ffm_run(p2))
+})
+
+test_that("a real codec-name run is not diagnosed while its encoder is hidden (wrapper)", {
+  # `h264` is a codec name: hiding libx264 still leaves the build's other h264
+  # encoders, so FFmpeg runs, or fails for another reason without the class.
+  infile <- make_test_video()
+  local_build_model("libx264")
+  out <- withr::local_tempfile(fileext = ".mp4")
+  p <- ffm_codec(ffm_files(infile, out), video = "h264", audio = "aac")
+  cnd <- tryCatch(ffm_run(p), error = function(e) e)
+  expect_false(inherits(cnd, "tidymedia_encoder_unavailable"))
+})

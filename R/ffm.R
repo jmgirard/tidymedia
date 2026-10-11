@@ -1659,6 +1659,38 @@ ffm_run <- function(object, verify = NULL) {
   status <- attr(out, "status")
   if (!is.null(status)) {
     disposition <- remove_failed_output(output, object$overwrite, before)
+    # M139: name a codec this build does not list as encodable, only now that
+    # FFmpeg has failed (diagnose_missing_encoders() says why not before). The
+    # frame named is the verb the caller typed where one set `tm_call` on the
+    # pipeline (ffm_finish() and the separation runs), else this one. NULL from
+    # the diagnosis is its fail-open answer, and the abort below is unchanged.
+    call <- attr(object, "tm_call", exact = TRUE)
+    if (is.null(call)) call <- rlang::current_env()
+    missing <- diagnose_missing_encoders(object, call = call)
+    if (length(missing)) {
+      # One bullet per missing codec. The stream word is one of two constants and
+      # the name reaches cli only through {.val}, so a brace in a codec name is
+      # printed, never evaluated (M44).
+      lacks <- vapply(seq_along(missing), function(i) {
+        sprintf("This FFmpeg build lists no %s encoder {.val {missing[[%d]]}}.",
+                names(missing)[[i]], i)
+      }, character(1))
+      cli::cli_abort(
+        c(
+          "FFmpeg exited with status {status}.",
+          rlang::set_names(lacks, rep("x", length(lacks))),
+          "i" = "{.fn ffmpeg_encoders} lists the encoders this build has.",
+          "i" = "FFmpeg's error output is printed above.",
+          disposition,
+          "i" = "The failing command was: {.code ffmpeg {ffm_compile(object)}}"
+        ),
+        class = c("tidymedia_encoder_unavailable", "tidymedia_ffmpeg_exit"),
+        tm_status = as.integer(status),
+        tm_encoder = unname(missing),
+        tm_stream = names(missing),
+        call = call
+      )
+    }
     cli::cli_abort(
       c(
         "FFmpeg exited with status {status}.",

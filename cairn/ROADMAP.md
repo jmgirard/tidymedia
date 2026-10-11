@@ -13,7 +13,7 @@ _Last hygiene check: 2026-10-11 (M138 done and archived, PR #142 squash-merged w
 | M136 | The batch re-encoding functions take `quality` as an argument and as a jobs column | done | M135 | normal | milestones/archive/M136-quality-column-batch-verbs.md |
 | M137 | `ffm_jobs()` lists every container the package itself writes | done | — | normal | milestones/archive/M137-jobs-vocabulary-round-trip.md |
 | M138 | The shipped docs and the remembered-location checks stop assuming what the host's FFmpeg build and `which` provide | done | — | high | milestones/archive/M138-encoder-and-location-portability.md |
-| M139 | A failed FFmpeg run names the encoder this build lacks | planned | M138 | normal | milestones/M139-missing-encoder-front-door.md |
+| M139 | A failed FFmpeg run names the encoder this build lacks | in-progress | M138 | normal | milestones/M139-missing-encoder-front-door.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

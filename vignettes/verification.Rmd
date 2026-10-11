@@ -18,6 +18,14 @@ knitr::opts_chunk$set(
 has_ffmpeg <- nzchar(Sys.which("ffmpeg"))
 has_ffprobe <- nzchar(Sys.which("ffprobe"))
 has_both <- has_ffmpeg && has_ffprobe
+# Having FFmpeg is not the same as having an encoder: builds differ in what they
+# were compiled with, and some Linux distributions ship one without libx264 or
+# libmp3lame. The chunks that re-encode name their encoder and are evaluated
+# only where this build has it. Asking that question starts FFmpeg, so it is
+# asked in its own guarded chunk below rather than here: this chunk carries no
+# `eval` guard, because it is where the guards are defined, and an unguarded
+# chunk must start no program (`tools/vignette_chunk_guards.R`).
+has_mp3 <- FALSE
 # Recorded on stderr rather than into the page: this line is what a build log
 # shows for the three programs, so a build that was meant to run without them
 # can be checked rather than assumed. `message()` would be captured by knitr and
@@ -31,6 +39,12 @@ writeLines(
 # Work in a temporary directory: nothing is written beside the vignette sources,
 # and the paths in the reports below stay short enough to read.
 knitr::opts_knit$set(root.dir = tempdir())
+```
+
+```{r, include = FALSE, eval = has_both}
+# Guarded on the two programs, so the encoder question starts FFmpeg only where
+# FFmpeg is there to start.
+has_mp3 <- tidymedia::has_encoder("libmp3lame")
 ```
 
 ```{r setup}
@@ -105,7 +119,7 @@ adds a `verified` column to the result. The column is `TRUE` or `FALSE` for
 each job that ran and could be checked. It is `NA` for a job that failed or
 could not be checked. A named list applies the same checks to every job:
 
-```{r, eval = has_both}
+```{r, eval = has_mp3}
 jobs <- tibble::tibble(
   input  = "session01.mp4",
   output = "session01.mp3"
@@ -135,7 +149,7 @@ one command.
 `ffm_batch(manifest = TRUE)` records those facts. The manifest is stored with
 the batch result, and `ffm_manifest()` reads it:
 
-```{r, eval = has_both}
+```{r, eval = has_mp3}
 res <- ffm_batch(
   jobs,
   manifest = TRUE,
@@ -166,7 +180,7 @@ A job with several inputs lists them in one `input` cell, separated by `;`.
 With `checksums = TRUE`, each row also has `input_md5` and `output_md5`. A
 checksum lets you show later that a file on disk is the file in the record:
 
-```{r, eval = has_both}
+```{r, eval = has_mp3}
 res <- ffm_batch(
   jobs,
   manifest = TRUE,
@@ -190,7 +204,7 @@ The `*_batch()` task functions take `manifest` and `checksums` too. So
 If you give `ffm_manifest()` a `path`, it also writes the manifest to a CSV
 file. You can then keep that file next to the processed data:
 
-```{r, eval = has_both}
+```{r, eval = has_mp3}
 ffm_manifest(res, path = "session01_manifest.csv")
 
 file.exists("session01_manifest.csv")
@@ -200,6 +214,7 @@ A batch run with `run = FALSE` runs nothing, so it has no manifest. Reading the
 manifest of such a batch is an error, not an empty tibble:
 
 ```{r, eval = has_both, error = TRUE}
+jobs <- tibble::tibble(input = "session01.mp4", output = "session01.mp3")
 compiled <- ffm_batch(jobs, run = FALSE, manifest = TRUE, .f = function(input, output, ...) {
   ffm_files(input, output) |> ffm_drop("video")
 })

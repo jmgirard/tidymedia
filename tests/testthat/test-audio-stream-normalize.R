@@ -454,6 +454,14 @@ test_that("every plausible output container works, audio-only or not", {
   # are what falsified the previous approach. `.wma` is excluded and recorded
   # here as failing on master too (exit 234), so it is not this milestone's.
   skip_if_no_ffmpeg()
+  # Seventeen containers, each re-encoded to the default encoder this build
+  # picks for it. Measured 2026-10-10 on Homebrew FFmpeg 9.0.2 by probing each
+  # output: pcm_s16le, mp3, aac, opus, flac, ac3, mp2 and sbc. The guard names
+  # the ones a build can lack. `.mka`, `.mkv` and `.oga` fall back to an
+  # encoder the build has (ac3 or flac where libvorbis is absent), so they need
+  # none of their own (M138).
+  skip_if_no_encoder("pcm_s16le", "libmp3lame", "aac", "libopus", "flac",
+                     "mp2", "sbc")
   skip_if_no_ffprobe()
   infile <- system.file("extdata", "sample.mp4", package = "tidymedia")
   skip_if_not(nzchar(infile), "packaged sample video unavailable")

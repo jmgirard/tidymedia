@@ -125,7 +125,16 @@ test_that("an invalid limit displaces no argument error, at every formal", {
   # `mediainfo_template()` and has been removed, so it left the sweep's domain
   # rather than changing side. The census itself is the merge-base measurement
   # and is not rewritten.
-  expect_equal(setdiff(dropped, tm_corrupt_dropped_master()), character())
+  # M138 adds one cell to the dropped side, and it belongs there. `has_encoder()`
+  # is a question rather than a command: `rlang::check_string()` refuses the four
+  # wrong SHAPES, and the fifth wrong form is a legal string, which a question
+  # about an encoder name answers FALSE rather than refusing. So the token form
+  # names no frame. That is the same reading as `segment_video/outfiles ->
+  # <none>` below, which the sweep has always carried for the same reason.
+  expect_equal(
+    setdiff(dropped, tm_corrupt_dropped_master()),
+    "has_encoder/name -> <none>"
+  )
 
   # The counts, pinned as M095's sibling sweep pins its own. The two `setdiff()`
   # calls above compare UNIQUE member/argument/frame strings, which discards
@@ -151,9 +160,13 @@ test_that("an invalid limit displaces no argument error, at every formal", {
   # M136 adds the same formal to the eight batch verbs: 40 more rows, every
   # one kept (check_batch_quality() runs at the verb's front door, above the
   # probe). So 1555 + 40 rows, 1124 + 40 kept, 431 dropped unchanged.
-  expect_identical(nrow(res), 1595L)
-  expect_identical(sum(res$kept), 1164L)
-  expect_identical(sum(!res$kept), 431L)
+  # M138 adds one export with one formal, `has_encoder(name)`: one member
+  # crossed with the five wrong forms is 5 rows, four refused by the member
+  # itself and the fifth the legal-string form the paragraph above explains.
+  # So 1595 + 5 rows, 1164 + 4 kept, 431 + 1 dropped.
+  expect_identical(nrow(res), 1600L)
+  expect_identical(sum(res$kept), 1168L)
+  expect_identical(sum(!res$kept), 432L)
 
   # `segment_video/outfiles -> <none>` survives in both, and correctly: it is
   # the token form, the legal filename `"bad fmt!"`, which the verb compiled

@@ -1,0 +1,163 @@
+#!/bin/sh
+# An FFmpeg whose build is missing encoders, for testing a machine we do not have.
+#
+# WHAT THIS MODELS
+# CRAN's two Fedora check flavors run an FFmpeg built with `--disable-encoders`
+# and an explicit `--enable-encoder=` list. That list is printed in full in the
+# check log cited below, and it was read there on 2026-10-10: 215 encoders, of
+# which `libopenh264`, `libmp3lame`, `aac` and `srt` are present and neither
+# `libx264` nor `libx264rgb` is, x264 not being free software. At tidymedia
+# 0.2.1 the `?ffm_run` example named `libx264`, so the examples step failed:
+#
+#   [vost#0:0 @ 0x55591c7a6140] Unknown encoder 'libx264'
+#   Error opening output files: Encoder not found
+#   Error in `ffm_run()`: ! FFmpeg exited with status 8.
+#
+# Read from the check log of `r-devel-linux-x86_64-fedora-clang` on 2026-10-10,
+# at <https://www.r-project.org/nosvn/R.check/r-devel-linux-x86_64-fedora-clang/
+# tidymedia-00check.html>. The same failure stood on the `-gcc` flavor.
+#
+# HOW TO USE IT
+# Put this directory first on PATH and name the encoders to hide:
+#
+#   TIDYMEDIA_HIDE_ENCODERS=libx264 PATH="$PWD/tools/ffmpeg_build_model:$PATH" \
+#     R CMD check --as-cran tidymedia_*.tar.gz
+#
+# Names are separated by commas or spaces. A hidden name also hides every
+# encoder whose name starts with it, so hiding `libx264` also hides
+# `libx264rgb`. That matches the Fedora list read above, which holds neither.
+#
+# WHAT IT DOES
+# Every call goes through to the real FFmpeg. Two calls are changed.
+#   * `-encoders` output loses the rows for the hidden names.
+#   * A call naming a hidden encoder gets the real binary's own message and exit
+#     status for an unknown encoder. "Naming" means the argument after `-c`,
+#     `-codec`, either with a stream specifier (`-c:v`, `-codec:a:0`), or after
+#     `-vcodec`, `-acodec` or `-scodec`. Another spelling, such as `-dcodec`,
+#     passes through unseen; no call this package compiles uses one. The wrapper asks the real binary about a
+#     name no build has, then puts the hidden name back into what it printed, so
+#     the text and the status are the running binary's own rather than this
+#     script's guess at them.
+#
+# The real binary is `TIDYMEDIA_REAL_FFMPEG` when that is set, and otherwise the
+# first `ffmpeg` on PATH outside this directory. Only `ffmpeg` is wrapped, so
+# `ffprobe` and `mediainfo` resolve to the real programs.
+
+set -u
+
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+find_real() {
+  if [ -n "${TIDYMEDIA_REAL_FFMPEG:-}" ]; then
+    printf '%s\n' "$TIDYMEDIA_REAL_FFMPEG"
+    return 0
+  fi
+  saved_ifs=$IFS
+  IFS=:
+  for dir in $PATH; do
+    [ -n "$dir" ] || dir=.
+    case $(CDPATH= cd -- "$dir" 2>/dev/null && pwd) in
+      "$here") continue ;;
+    esac
+    if [ -x "$dir/ffmpeg" ]; then
+      IFS=$saved_ifs
+      printf '%s\n' "$dir/ffmpeg"
+      return 0
+    fi
+  done
+  IFS=$saved_ifs
+  return 1
+}
+
+real=$(find_real) || {
+  echo "ffmpeg_build_model: no real ffmpeg on PATH outside $here" >&2
+  exit 127
+}
+
+hidden=$(printf '%s' "${TIDYMEDIA_HIDE_ENCODERS:-}" | tr ',' ' ')
+
+# Nothing to hide, or nothing to hide it from: pass the call straight through.
+if [ -z "$hidden" ]; then
+  exec "$real" "$@"
+fi
+
+# Which hidden encoder does this call ask for? Only the argument that follows
+# an encoder flag counts (`-c`, `-c:v`, `-codec:a`, `-vcodec`, `-acodec`,
+# `-scodec`, and any stream specifier after `-c:` or `-codec:`). Matching on
+# any argument rewrote file names and metadata values that merely started with
+# a hidden name, such as an output called `aac_take1.mp3` (M138 review).
+#
+# The prefix rule of the `-encoders` filter applies here too: hiding `libx264`
+# hides `libx264rgb` from the listing, so a call naming `libx264rgb` has to
+# fail as well, or the wrapper would pass a call Fedora refuses.
+is_encoder_flag() {
+  case "$1" in
+    -c | -c:* | -codec | -codec:* | -vcodec | -acodec | -scodec) return 0 ;;
+  esac
+  return 1
+}
+is_hidden() {
+  for name in $hidden; do
+    case "$1" in
+      "$name"*) return 0 ;;
+    esac
+  done
+  return 1
+}
+asked=""
+prev=""
+for arg in "$@"; do
+  if is_encoder_flag "$prev" && is_hidden "$arg"; then
+    asked=$arg
+    break
+  fi
+  prev=$arg
+done
+
+# The encoder list, less the hidden names and anything prefixed by one.
+for arg in "$@"; do
+  if [ "$arg" = "-encoders" ]; then
+    out=$("$real" "$@")
+    status=$?
+    printf '%s\n' "$out" | awk -v hide="$hidden" '
+      BEGIN { n = split(hide, h, " ") }
+      {
+        name = $2
+        for (i = 1; i <= n; i++) {
+          if (name == h[i] || index(name, h[i]) == 1) next
+        }
+        print
+      }'
+    exit $status
+  fi
+done
+
+if [ -z "$asked" ]; then
+  exec "$real" "$@"
+fi
+
+# Ask the real binary about a name no build has, so the message and the status
+# are its own, then put the hidden name back. Only the value after an encoder
+# flag is replaced; no other argument is touched.
+sentinel="tidymedia_absent_encoder"
+i=0
+count=$#
+prev=""
+while [ "$i" -lt "$count" ]; do
+  arg=$1
+  shift
+  next=$arg
+  if is_encoder_flag "$prev" && [ "$arg" = "$asked" ]; then
+    next=$sentinel
+  fi
+  set -- "$@" "$next"
+  prev=$arg
+  i=$((i + 1))
+done
+
+errfile=$(mktemp "${TMPDIR:-/tmp}/ffmpeg_build_model.XXXXXX")
+"$real" "$@" 2>"$errfile"
+status=$?
+sed "s/$sentinel/$asked/g" "$errfile" >&2
+rm -f "$errfile"
+exit $status

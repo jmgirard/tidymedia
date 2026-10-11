@@ -118,7 +118,7 @@ test_that("anonymize_video() rejects a malformed regions table", {
 # Execution ---------------------------------------------------------------
 
 test_that("anonymize_video() runs end-to-end and writes a valid video", {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   src <- make_test_video()
   out <- withr::local_tempfile(fileext = ".mp4")
   regions <- data.frame(x = 8, y = 8, width = 24, height = 24)

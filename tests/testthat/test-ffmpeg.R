@@ -298,6 +298,7 @@ test_that("standardize_video() validates dimensions, fps, and the input file", {
 
 test_that("standardize_video() writes an output with the requested fps and width", {
   skip_if_no_mediainfo()
+  skip_if_no_encoder("libx264")
   infile <- make_test_video()
   outfile <- withr::local_tempfile(fileext = ".mp4")
   standardize_video(infile, outfile, width = 48, height = 32, fps = 5)
@@ -309,7 +310,7 @@ test_that("standardize_video() writes an output with the requested fps and width
 test_that("standardize_video() default path encodes an odd-dimensioned source", {
   # Regression: without the even-dimension safeguard the default libx264 /
   # yuv420p re-encode rejects odd dimensions and writes a 0-byte file.
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   infile <- withr::local_tempfile(fileext = ".mp4")
   run_ffmpeg_fixture(sprintf(
     "-y -f lavfi -i testsrc=duration=1:size=65x49:rate=10 -pix_fmt yuv444p \"%s\"",
@@ -326,6 +327,7 @@ test_that("standardize_video() stream-copies audio unchanged", {
   # Regression: a bare video re-encode transcodes audio to the container
   # default; -c:a copy must preserve the source audio codec.
   skip_if_no_ffprobe()
+  skip_if_no_encoder("libx264")
   infile <- withr::local_tempfile(fileext = ".mp4")
   run_ffmpeg_fixture(sprintf(paste(
     "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10",

@@ -1,0 +1,152 @@
+# Check the package on the operating system CRAN's two Fedora flavors run.
+#
+# WHY THIS EXISTS
+# At 0.2.1 CRAN reported two ERRORs on `r-devel-linux-x86_64-fedora-clang` and
+# `-gcc`, and neither is reproducible on macOS. Fedora builds FFmpeg without
+# `libx264`, because x264 is not free software, so an example that named that
+# encoder failed. And `Sys.which()` there answered nothing for the absolute
+# paths the test suite creates, which failed 82 tests. This job runs the same
+# check on Fedora, so the encoder answer comes from the operating system rather
+# than from a model of it.
+#
+# `ffmpeg-free` is named deliberately. It is Fedora's own FFmpeg package, the
+# one with the reduced encoder set. It does not `Provide: ffmpeg`, and the
+# `ffmpeg` of RPM Fusion carries `libx264`, so installing that one instead would
+# make this run say nothing about the encoder question.
+#
+# `NOT_CRAN` is left unset on purpose. That is the reading CRAN itself makes:
+# every `skip_if_no_*()` helper skips, and so do the three argument sweeps. The
+# tests that still run are the pure-R ones, which is why CRAN reached the
+# remembered-location failures at 0.2.1.
+#
+# The same steps run locally with `Rscript tools/fedora_workflow_local.R`,
+# which reads them from this file, so a local reading and a CI reading are
+# readings of one job.
+
+name: Fedora (CRAN model)
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  fedora-check:
+    runs-on: ubuntu-latest
+    # Fedora 44 is the release CRAN's check-flavors page lists for both Fedora
+    # flavors (read 2026-10-10).
+    container: fedora:44
+    name: fedora:44, R release, ffmpeg-free
+    env:
+      LANG: en_US.UTF-8
+
+    steps:
+      - name: Install R, FFmpeg and the build toolchain
+        run: |
+          # `R-fs` comes from dnf because `fs` does not compile on Fedora
+          # aarch64. `libarchive-devel` and `libxml2-devel` are what `archive`
+          # and `xml2` compile against, and `glibc-langpack-en` provides the
+          # locale `LANG` names. No LaTeX: the check runs with `--no-manual`.
+          dnf -y install --setopt=install_weak_deps=False \
+            R-core R-core-devel R-fs \
+            ffmpeg-free mediainfo pandoc qpdf \
+            glibc-langpack-en libarchive-devel libxml2-devel \
+            make gcc gcc-c++ git tar gzip which
+          mkdir -p /usr/local/lib/R/site-library
+
+      - uses: actions/checkout@v6
+
+      - name: Record what this machine is
+        run: |
+          cat /etc/fedora-release
+          rpm -q which ffmpeg-free R-core
+          R --version | head -1
+
+      - name: Gate 1 — this build must not have libx264
+        run: |
+          ffmpeg -hide_banner -encoders > /tmp/encoders.txt
+          if grep -q 'libx264' /tmp/encoders.txt; then
+            echo "FAIL: this build HAS libx264, so the run would say nothing about the defect."
+            echo "Fedora's ffmpeg-free is the package to install; RPM Fusion's ffmpeg carries it."
+            exit 1
+          fi
+          echo "libx264 absent: the encoder condition is reproduced."
+
+      - name: Gate 2 — does Sys.which() answer for a path here?
+        run: |
+          # This gate decides what the run can claim, not whether it passes.
+          # Where `Sys.which()` answers nothing for a path and still answers for
+          # the bare name, the run measures the lookup defect. Where it answers
+          # for the path, that half rests on the stipulated model in
+          # `test-location-portability.R`, and the line below says so.
+          mkdir -p /tmp/whichprobe
+          printf '#!/bin/sh\n' > /tmp/whichprobe/stub
+          chmod 0755 /tmp/whichprobe/stub
+          Rscript -e 'p <- unname(Sys.which("/tmp/whichprobe/stub"))' \
+                  -e 'b <- unname(Sys.which("ffmpeg"))' \
+                  -e 'cat("path:[", p, "] bare:[", b, "] NOT_CRAN:[", Sys.getenv("NOT_CRAN"), "]\n", sep = "")' \
+                  -e 'if (!nzchar(p) && nzchar(b)) cat("the lookup condition IS reproduced here\n")' \
+                  -e 'if (nzchar(p)) cat("the lookup condition is NOT reproduced here: that half rests on the stipulated model in test-location-portability.R\n")'
+
+      - name: Install the package dependencies
+        run: |
+          # Every Imports and every Suggests, with their closure: `--as-cran`
+          # ERRORs on a missing Suggests.
+          Rscript -e 'install.packages(c("archive","cli","digest","dplyr","glue","purrr","rappdirs","rlang","tibble","withr","furrr","future","knitr","rmarkdown","roxygen2","spelling","testthat"), lib = "/usr/local/lib/R/site-library", repos = "https://cloud.r-project.org", dependencies = TRUE, Ncpus = 4)'
+          # `install.packages()` reports a failed install as a warning and
+          # exits 0, so the step asks for every package by name.
+          Rscript -e 'p <- c("archive","cli","digest","dplyr","glue","purrr","rappdirs","rlang","tibble","withr","furrr","future","knitr","rmarkdown","roxygen2","spelling","testthat"); miss <- p[!vapply(p, requireNamespace, logical(1), quietly = TRUE)]; if (length(miss)) stop("not installed: ", paste(miss, collapse = ", "))'
+
+      - name: Build and check
+        run: |
+          R CMD build .
+          # `R CMD check` exits non-zero on an ERROR, and a non-zero exit fails
+          # this step, so no later step needs to look for one.
+          R CMD check --as-cran --no-manual tidymedia_*.tar.gz
+          tail -3 tidymedia.Rcheck/00check.log
+
+      - name: No warning or note names an encoder or a remembered location
+        run: |
+          log=tidymedia.Rcheck/00check.log
+          echo "::group::check log"
+          cat "$log"
+          echo "::endgroup::"
+          # One block per `* ` line. A block is kept when its first line ends
+          # in WARNING or NOTE, or when a later line of it is that word alone or
+          # after a timing such as `[80s/31s]`, which is how the check prints a
+          # verdict that follows output. The
+          # incoming-feasibility block is left out: it is about the submission
+          # (version number, maintainer, URLs), and it is read and listed by
+          # hand rather than fixed.
+          awk '
+            function flush() { if (keep && !feasibility) printf "%s", block }
+            /^\* / { flush(); block = ""; keep = 0
+                     feasibility = ($0 ~ /CRAN incoming feasibility/)
+                     if ($0 ~ /(WARNING|NOTE)$/) keep = 1 }
+            /^ *(\[[^]]*\] *)?(WARNING|NOTE)$/ { keep = 1 }
+            { block = block $0 "\n" }
+            END { flush() }' "$log" > /tmp/warnings.txt
+          echo "::group::warning and note blocks"
+          cat /tmp/warnings.txt
+          echo "::endgroup::"
+          # The encoder names come from the build's own listing, so the pattern
+          # cannot go stale as the build changes. The configuration directory
+          # is the path R prints, computed here rather than written out.
+          names=$(awk '$1 ~ /^[VAS.][F.][S.][X.][B.][D.]$/ && $2 ~ /^[A-Za-z0-9_.-]+$/ { print $2 }' \
+                    /tmp/encoders.txt | sort -u | tr '\n' '|')
+          config=$(Rscript -e 'cat(tools::R_user_dir("tidymedia", "config"))')
+          pattern="libx264|tidymedia_location_gone|tidymedia_location_not_executable|tidymedia_location_unreadable|tidymedia_no_remembered_location|${names%|}"
+          if grep -nwE "$pattern" /tmp/warnings.txt || grep -nF "$config" /tmp/warnings.txt; then
+            echo "FAIL: a warning or note names an encoder or a remembered location"
+            exit 1
+          fi
+          echo "OK: nothing in a warning or note names an encoder or a remembered location"
+
+      - name: Keep the logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fedora-check-logs
+          path: |
+            tidymedia.Rcheck/00check.log
+            tidymedia.Rcheck/00install.out
+            tidymedia.Rcheck/tests/

@@ -78,12 +78,12 @@ the analysis pass in both forms.
 }
 
 \examples{
-\dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
+\dontshow{if (nzchar(Sys.which("ffmpeg")) && has_encoder("libx264") && has_encoder("aac")) withAutoprint(\{ # examplesIf}
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 out <- tempfile(fileext = ".mp4")
 ffm_files(video, out) |>
   ffm_scale(width = 160, height = 120) |>
-  ffm_codec(video = "libx264") |>
+  ffm_codec(video = "libx264", audio = "aac") |>
   ffm_run(verify = list(width = 160, height = 120))
 \dontshow{\}) # examplesIf}
 }

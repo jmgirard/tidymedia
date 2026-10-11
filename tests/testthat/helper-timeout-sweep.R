@@ -131,7 +131,10 @@ tm_timeout_recorded_domain <- function() {
     "extract_frame_batch", "ffm_batch", "ffm_run", "ffmpeg", "ffmpeg_codecs",
     "ffmpeg_encoders", "ffprobe", "format_for_web", "format_for_web_batch",
     "get_duration", "get_frame_rate", "get_height", "get_sample_rate",
-    "get_width", "has_hardware_encoder", "mediainfo", "mediainfo_parameter",
+    # has_encoder() joined at M138: it reads the limit above its own location
+    # question, and reaches a spawn through cached_encoder_names().
+    "get_width", "has_encoder", "has_hardware_encoder", "mediainfo",
+    "mediainfo_parameter",
     "mediainfo_query", "mediainfo_template",
     "normalize_audio", "normalize_audio_batch", "picture_in_picture",
     "picture_in_picture_batch", "probe_all", "probe_audio", "probe_container",
@@ -154,8 +157,9 @@ tm_timeout_recorded_domain <- function() {
 # reading and cannot be given one: measuring it today and filing it under
 # "measured at ae5ff1c" would be composing a history rather than recording one.
 # So it is excluded from those two membership comparisons, by name, here.
-# `tm_timeout_reached_master()` needs no exclusion: it is computed from the live
-# domain rather than from a written list.
+# `tm_timeout_reached_master()` once needed no exclusion, being computed from the
+# live domain; since M138 it carries its own dated post-baseline vectors instead,
+# so a member added later is measured there rather than excluded here.
 #
 # Exclusion is not exemption. Every name below is still swept by the live rules
 # -- it blames itself for an invalid limit, and a reached limit still reaches
@@ -164,7 +168,7 @@ tm_timeout_recorded_domain <- function() {
 #
 # `program_status()` entered the domain at M113: it probes each program's
 # version, which spawns.
-tm_timeout_post_baseline <- function() "program_status"
+tm_timeout_post_baseline <- function() c("has_encoder", "program_status")
 
 # tm_timeout_baseline_domain(): the domain the recorded censuses can be compared
 # against, with the exclusion guarded rather than trusted.
@@ -236,6 +240,9 @@ tm_timeout_call_specs <- function(dir) {
     get_height = list(file = vid),
     get_sample_rate = list(file = vid),
     get_width = list(file = vid),
+    # has_encoder() takes one encoder name and reads the limit above the
+    # location question, so it joins the domain on every machine (M138).
+    has_encoder = list(name = "libx264"),
     has_hardware_encoder = list(hardware = "nvenc"),
     mediainfo = list(command = "--Version"),
     mediainfo_parameter =
@@ -536,13 +543,21 @@ tm_timeout_blame_master <- function() {
 }
 
 # tm_timeout_reached_master(): what each domain member did when the limit was
-# actually REACHED, on master -- "abort" or "warn", measured 2026-08-30 at
-# ae5ff1c through `tm_force_timeout()`.
+# actually REACHED -- "abort" or "warn" -- through `tm_force_timeout()`.
 #
 # D049 promises only that a reached limit is never SILENT, so the grid at
 # test-timeout-silence.R records the disjunction and nothing finer. This table
 # records which of the two each member does, so AC6 can say the blame sweep left
 # that choice alone rather than only that it left some condition behind.
+#
+# TWO vectors, because a value carries the date it was measured on. The first
+# was measured 2026-08-30 at ae5ff1c. A member that did not exist then cannot
+# be filed under that measurement, and the default of the `ifelse()` below is
+# "warn", so an unlisted new member would be compared against a value nobody
+# ever took -- which is what happened to `has_encoder()` at M138, where the
+# default read "warn" and the member aborts. The second vector is where a
+# post-baseline member's own measurement goes, with its own date, so every
+# member of the live domain is compared and each value says when it was taken.
 tm_timeout_reached_master <- function() {
   aborts <- c(
     "anonymize_video", "compare_videos", "concatenate_videos", "convert_audio",
@@ -552,8 +567,34 @@ tm_timeout_reached_master <- function() {
     "sample_frames", "separate_audio_video", "standardize_video",
     "strip_metadata", "verify_media"
   )
+  # Measured 2026-10-10 at M138, each through tm_force_timeout(): has_encoder()
+  # aborts, because it reaches the spawn through cached_encoder_names() and
+  # ffmpeg_encoders() aborts on a reached limit, and program_status() warns,
+  # which is what D088's absorber partition expects of it. Neither reading is
+  # attributed to ae5ff1c: program_status() did not exist at that ref (M113
+  # added it), and has_encoder() was added here.
+  aborts_post <- c("has_encoder")
+  warns_post <- c("program_status")
   dom <- tm_timeout_domain()
-  stats::setNames(ifelse(dom %in% aborts, "abort", "warn"), dom)
+  # Both post vectors are load-bearing. `aborts_post` decides a value;
+  # `warns_post` is what makes a MISSING measurement loud. Without this check
+  # the `ifelse()` below would default a new domain member to "warn", which is
+  # a value nobody took -- exactly how `has_encoder()` came to be compared
+  # against a reading it does not match (M138 review).
+  unrecorded <- setdiff(tm_timeout_post_baseline(), c(aborts_post, warns_post))
+  if (length(unrecorded)) {
+    stop(
+      "no reached-limit measurement is recorded for: ",
+      paste(unrecorded, collapse = ", "),
+      ". Measure each through tm_force_timeout() and add it to aborts_post or ",
+      "warns_post with the date.",
+      call. = FALSE
+    )
+  }
+  stats::setNames(
+    ifelse(dom %in% c(aborts, aborts_post), "abort", "warn"),
+    dom
+  )
 }
 
 # M094: what the valid and unset paths did on master, recorded ---------------

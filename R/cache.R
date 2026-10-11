@@ -18,9 +18,11 @@
 .tm_capabilities <- new.env(parent = emptyenv())
 
 # cached_encoder_names(): the encoder-name pool, asked of FFmpeg at most once per
-# session. Deliberately sited BELOW has_hardware_encoder()'s getOption() seam: ~80 test call
-# sites set `tidymedia.hardware_encoders` to control the answer, and a memo above
-# the seam would make them order-dependent.
+# session. Deliberately sited BELOW has_hardware_encoder()'s getOption() seam:
+# tests set `tidymedia.hardware_encoders` to control the answer (145
+# `test_that()` blocks name it, counted 2026-10-10 by parsing
+# `tests/testthat/test*.R`), and a memo above the seam would make them
+# order-dependent.
 cached_encoder_names <- function() {
   if (is.null(.tm_capabilities$encoder_names)) {
     .tm_capabilities$encoder_names <- ffmpeg_encoders()$name
@@ -33,9 +35,10 @@ cached_encoder_names <- function() {
 #' Discard the package's record of which encoders your FFmpeg build has. The
 #' next query then asks FFmpeg again.
 #'
-#' The first call in an R session that uses \code{hardware = "nvenc"} or
-#' \code{hardware = "videotoolbox"} asks FFmpeg which encoders it has. The
-#' package remembers that answer for the rest of the session. Later calls reuse
+#' The first call in an R session to \code{\link{has_encoder}}, or one that
+#' uses \code{hardware = "nvenc"} or \code{hardware = "videotoolbox"}, asks
+#' FFmpeg which encoders it has. The package remembers that answer for the rest
+#' of the session. Later calls reuse
 #' it and do not start FFmpeg again each time, so a large batch stays fast.
 #'
 #' So the package does not see a change to your FFmpeg build until you discard

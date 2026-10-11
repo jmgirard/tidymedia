@@ -137,7 +137,7 @@ test_that("ffm_run() rejects a non-list verify spec (no binary needed)", {
 })
 
 test_that("ffm_run(verify =) returns normally when every check passes", {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   src <- make_test_video()
   out <- withr::local_tempfile(fileext = ".mp4")
   expect_no_error(
@@ -149,7 +149,7 @@ test_that("ffm_run(verify =) returns normally when every check passes", {
 })
 
 test_that("ffm_run(verify =) aborts listing the failed checks", {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   src <- make_test_video()
   out <- withr::local_tempfile(fileext = ".mp4")
   expect_error(

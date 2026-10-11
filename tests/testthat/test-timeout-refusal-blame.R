@@ -422,6 +422,11 @@ test_that("a REACHED limit still aborts or warns exactly as it did (AC6)", {
   # claim about a column of one value.
   expect_true(all(c("abort", "warn") %in% recorded))
 
+  # Every member is compared, the post-baseline ones included: their values live
+  # in `tm_timeout_reached_master()`'s second vector with their own measurement
+  # date, rather than being defaulted into the `ae5ff1c` reading. Excluding them
+  # instead -- which M138 first did -- stopped comparing a member that was
+  # passing and hid one whose default was wrong (M138 review).
   for (name in tm_timeout_domain()) {
     got <- tm_force_timeout(name, specs[[name]])
     # D049's rule first: a reached limit is never silent.

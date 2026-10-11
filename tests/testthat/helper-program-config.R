@@ -4,11 +4,11 @@
 # tests of program_status() and unset_program() need the same three, and a test
 # file's definitions are not visible to another test file.
 
-# An executable `Sys.which()` resolves under an EMPTY `PATH`, which is what
-# set_program() demands of a location and what find_program() re-checks after
-# reading one back. An absolute path resolves without a search, so the suite's
-# own PATH never enters the evidence. On Windows `Sys.which()` needs an
-# executable extension; `.bat` is the one that needs no compiler.
+# An executable at an absolute path, which is what set_program() demands of a
+# location and what find_program() re-checks after reading one back. Both ask
+# `tm_program_state()`, which reads a path from the filesystem, so the suite's
+# own PATH never enters the evidence. On Windows a program needs an executable
+# extension; `.bat` is the one that needs no compiler.
 tm_stub_executable <- function(name = "stub", env = parent.frame()) {
   dir <- withr::local_tempdir(.local_envir = env)
   if (.Platform$OS.type == "windows") {
@@ -25,10 +25,11 @@ tm_stub_executable <- function(name = "stub", env = parent.frame()) {
 tm_program_vocabulary <- c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
 
 # find_program() under an empty PATH, so the Sys.which(program) branch cannot
-# short-circuit and every answer comes from a config file. Never a Sys.which()
-# mock: find_program() calls it AGAIN to validate what it read, so a mock that
-# empties it makes all three states below return NULL. An absolute path to an
-# executable still resolves under PATH = "" (measured at T4).
+# short-circuit and every answer comes from a config file. Since M138 the
+# location read back is checked by `tm_program_state()`, which asks
+# `Sys.which()` only about a bare name, so a `Sys.which()` mock that empties
+# every path leaves a remembered absolute path answering as it did
+# (`test-location-portability.R` holds that model).
 #
 # R_USER_CONFIG_DIR redirects tools::R_user_dir(); the legacy library is
 # redirected by a mock of rappdirs::user_config_dir() that answers from a
@@ -76,4 +77,21 @@ tm_collect_warnings <- function(expr) {
     }
   )
   list(value = value, warnings = warns)
+}
+
+# Moved here from test-program-management.R at M138: a test file's definitions
+# are not visible to another test file, and test-location-portability.R needs
+# this seam too, for AC5's install-side arm.
+# Run install_on_win() as if this were a Windows machine.
+#
+# M108 refuses a non-Windows host above every cost, so every test about what
+# the installer does BELOW that gate needs the seam held at `windows` -- on a
+# macOS or Linux developer machine, and on two of the three CI legs, it would
+# otherwise reach none of the behaviour it is about. Held at the seam and
+# nowhere else, so what the mock defeats is one function returning one word:
+# the seam is asserted against the real host in `tm_os()`'s own tests, and the
+# gate's real verdict per runner in `test-install-platform.R`, neither of which
+# mocks anything.
+tm_local_windows <- function(env = parent.frame()) {
+  testthat::local_mocked_bindings(tm_os = function(...) "windows", .env = env)
 }

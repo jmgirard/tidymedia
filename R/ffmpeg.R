@@ -3133,6 +3133,84 @@ hardware_encoder_available <- function(codec, hardware, call) {
   enc %in% pool
 }
 
+# has_encoder() ---------------------------------------------------------------
+
+#' Ask whether your FFmpeg build has an encoder
+#'
+#' FFmpeg builds differ in the encoders they were compiled with. A build without
+#' \code{libx264} refuses every call that names it, and some Linux
+#' distributions ship exactly that build, because x264 is not free software.
+#' This function answers whether one encoder is in the build this package
+#' resolves. You can then name another encoder, or skip the work, before you
+#' run anything.
+#'
+#' The answer comes from the list \code{\link{ffmpeg_encoders}} returns. The
+#' list is asked of FFmpeg once per session and then remembered, so a repeated
+#' call does not start FFmpeg again. \code{\link{refresh_ffmpeg_capabilities}}
+#' makes the next call ask again.
+#'
+#' The \code{tidymedia.hardware_encoders} option does not change this answer.
+#' That option names the hardware encoders of the machine, and this question is
+#' about the whole build. Use \code{\link{has_hardware_encoder}} for the GPU
+#' backends.
+#'
+#' Where the package finds no FFmpeg at all, the answer is \code{FALSE}: nothing
+#' can be encoded, so no encoder is available. A location you saved with
+#' \code{\link{set_ffmpeg}} that no longer works still gives its warning beside
+#' the \code{FALSE}. So a machine you can repair is never reported silently as a
+#' build without the encoder.
+#'
+#' @param name A string naming one encoder, spelled as
+#'   \code{\link{ffmpeg_encoders}} spells it, such as \code{"libx264"},
+#'   \code{"aac"} or \code{"libmp3lame"}.
+#' @return A single \code{TRUE} or \code{FALSE}.
+#' @seealso \code{\link{ffmpeg_encoders}} for the whole list,
+#'   \code{\link{has_hardware_encoder}} for the GPU backends, and
+#'   \code{\link{refresh_ffmpeg_capabilities}} to make the next call ask FFmpeg
+#'   again.
+#' @family capability functions
+#' @export
+#' @examplesIf nzchar(Sys.which("ffmpeg"))
+#' has_encoder("libx264")
+#' has_encoder("no_such_encoder")
+has_encoder <- function(name) {
+  # `call` is this frame, so a wrong `name` is refused in has_encoder()'s name
+  # when the caller typed it (D087).
+  tm_encoder_available(name, call = rlang::current_env())
+}
+
+# tm_encoder_available(): has_encoder()'s body with `call` threaded, the split
+# D087 fixes for an export whose refusal must name the function the caller
+# typed. `call` carries no default, for the reason the hardware sibling above
+# states.
+#
+# The limit is read FIRST, above the location question rather than inside it.
+# The sibling reads it inside its fall-through because its option seam asks
+# FFmpeg nothing; here there is no such seam, and siting the read below the
+# location question would make an unusable `tidymedia.timeout` refused on a
+# machine that has FFmpeg and ignored on one that does not (D074).
+tm_encoder_available <- function(name, call) {
+  rlang::check_string(name, call = call)
+  resolve_timeout(call = call)
+  # No FFmpeg, no encoder. find_program()'s plain not-found warning is muffled:
+  # a caller asking whether this build has an encoder has not asked to be told
+  # FFmpeg is missing, and the verb they call next is what says so. The three
+  # warnings that name a file on this machine the caller can repair stay
+  # audible, on the partition D088 drew and the vector program_status() reads,
+  # so a remembered location that has gone is never reported silently as a
+  # build without the encoder: the FALSE comes with its warning.
+  location <- withCallingHandlers(
+    find_ffmpeg(),
+    warning = function(w) {
+      if (!inherits(w, tm_audible_location_classes())) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+  if (is.null(location)) return(FALSE)
+  name %in% cached_encoder_names()
+}
+
 # codec_family(): infer the codec family from a software codec name, so a user
 # can turn `hardware` on while keeping a familiar video_codec (e.g. "libx264"
 # -> "h264"). Backend-free by design (D079): "libx264" is the h264 family under
@@ -5265,9 +5343,10 @@ derive_normalized_names <- function(input) {
 #' normalize_audio_batch(jobs, run = FALSE)
 #' \donttest{
 #' # Accurate two-pass (measured/linear) normalization across the whole table.
-#' # This one runs FFmpeg to measure each input, so it needs the binary.
-#' if (nzchar(Sys.which("ffmpeg"))) {
-#'   normalize_audio_batch(jobs, two_pass = TRUE)
+#' # This one runs FFmpeg to measure each input, so it needs the binary, and it
+#' # re-encodes, so it needs an encoder this build has.
+#' if (nzchar(Sys.which("ffmpeg")) && has_encoder("aac")) {
+#'   normalize_audio_batch(jobs, two_pass = TRUE, audio_codec = "aac")
 #' }
 #' }
 #' @export

@@ -1315,7 +1315,7 @@ test_that("ffm_pixel_format() rejects unclean format tokens", {
 # M06: safe execution with hostile paths (binary-gated) --------------------------
 
 test_that("ffm_run() handles paths with spaces, quotes, $, and backticks", {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   src <- make_test_video()
   dir <- withr::local_tempdir()
   hostile_in <- file.path(dir, "in put's $HOME `x`.mp4")

@@ -85,6 +85,7 @@ These task functions have the \code{hardware} argument:
 Other capability functions:
 \code{\link[=ffmpeg_codecs]{ffmpeg_codecs()}},
 \code{\link[=ffmpeg_encoders]{ffmpeg_encoders()}},
+\code{\link[=has_encoder]{has_encoder()}},
 \code{\link[=refresh_ffmpeg_capabilities]{refresh_ffmpeg_capabilities()}}
 }
 \concept{capability functions}

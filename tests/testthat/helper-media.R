@@ -81,7 +81,7 @@ make_test_video <- function(env = parent.frame()) {
 # an unset codec yields aac (M35). Skips the calling test if ffmpeg is
 # unavailable. Returns the file path.
 make_mp3_audio_video <- function(env = parent.frame()) {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264", "libmp3lame")
   path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
   command <- paste(
     "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
@@ -99,7 +99,7 @@ make_mp3_audio_video <- function(env = parent.frame()) {
 # a non-keyframe boundary and observe accurate vs keyframe-snapped behaviour.
 make_keyframed_video <- function(duration = 12, rate = 24, gop = 48,
                                  env = parent.frame()) {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
   command <- paste(
     sprintf("-y -f lavfi -i testsrc=duration=%s:size=128x72:rate=%s", duration, rate),
@@ -118,7 +118,7 @@ make_keyframed_video <- function(duration = 12, rate = 24, gop = 48,
 # tremolo takes no comma-bearing expression, so it survives the shell verbatim.
 # Skips the calling test if ffmpeg is unavailable. Returns the file path.
 make_dynamic_audio <- function(env = parent.frame()) {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("aac")
   path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
   command <- paste(
     "-y -f lavfi -i sine=frequency=440:duration=6:sample_rate=48000",
@@ -136,7 +136,7 @@ make_dynamic_audio <- function(env = parent.frame()) {
 # it as silence (M18) rather than a parse failure. Skips the calling test if
 # ffmpeg is unavailable. Returns the file path.
 make_silent_audio <- function(env = parent.frame()) {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("aac")
   path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
   command <- paste(
     "-y -f lavfi -i anullsrc=r=44100:cl=mono -t 1",
@@ -155,7 +155,7 @@ make_silent_audio <- function(env = parent.frame()) {
 # fatal rather than empty -- `-map 0:a` on this file exits 234 (M47). Skips the
 # calling test if ffmpeg is unavailable. Returns the file path.
 make_silent_video <- function(env = parent.frame()) {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   path <- withr::local_tempfile(fileext = ".mp4", .local_envir = env)
   command <- paste(
     "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10",
@@ -195,7 +195,7 @@ audio_languages <- function(path) {
 # default, emits no -disposition flags at all, so the 22 call sites that predate
 # this parameter compile the identical command they always did.
 make_multitrack_video <- function(default_track = NULL, env = parent.frame()) {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264", "aac")
   path <- withr::local_tempfile(fileext = ".mkv", .local_envir = env)
   disposition <- if (is.null(default_track)) {
     ""
@@ -272,7 +272,7 @@ audio_default_flags <- function(path) {
 # add a duration assertion here, that is the number to expect.
 # Skips the calling test if ffmpeg is unavailable. Returns the file path.
 make_subtitle_video <- function(env = parent.frame()) {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264", "aac", "srt")
   srt <- withr::local_tempfile(fileext = ".srt", .local_envir = env)
   writeLines(c("1", "00:00:00,000 --> 00:00:01,000", "hello", ""), srt)
   path <- withr::local_tempfile(fileext = ".mkv", .local_envir = env)
@@ -304,7 +304,7 @@ make_subtitle_video <- function(env = parent.frame()) {
 #
 # Skips the calling test if ffmpeg is unavailable. Returns the file path.
 make_multitrack_subtitle_video <- function(env = parent.frame()) {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264", "aac", "srt")
   srt <- withr::local_tempfile(fileext = ".srt", .local_envir = env)
   writeLines(c("1", "00:00:00,000 --> 00:00:01,000", "hello", ""), srt)
   path <- withr::local_tempfile(fileext = ".mkv", .local_envir = env)
@@ -343,7 +343,7 @@ make_multitrack_subtitle_video <- function(env = parent.frame()) {
 # Matroska because MP4 will not carry an arbitrary per-stream title tag.
 # Skips the calling test if ffmpeg is unavailable. Returns the file path.
 make_hostile_tag_video <- function(env = parent.frame()) {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264", "aac")
   path <- withr::local_tempfile(fileext = ".mkv", .local_envir = env)
   run_ffmpeg_fixture(paste0(
     "-y -f lavfi -i testsrc=duration=1:size=64x64:rate=10 ",

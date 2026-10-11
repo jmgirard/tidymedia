@@ -174,6 +174,7 @@ test_that("standardize_video_batch() rejects a non-character video_codec column"
 
 test_that("standardize_video_batch() writes standardized outputs (binary-gated)", {
   skip_if_no_mediainfo()
+  skip_if_no_encoder("libx264")
   a <- make_test_video()
   b <- make_test_video()
   out_a <- withr::local_tempfile(fileext = ".mp4")
@@ -196,7 +197,7 @@ test_that("standardize_video_batch() writes standardized outputs (binary-gated)"
 })
 
 test_that("standardize_video_batch() forwards verify (binary-gated)", {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   a <- make_test_video()
   b <- make_test_video()
   out_a <- withr::local_tempfile(fileext = ".mp4")
@@ -215,7 +216,7 @@ test_that("standardize_video_batch() forwards verify (binary-gated)", {
 })
 
 test_that("standardize_video_batch() forwards manifest, read by ffm_manifest (binary-gated)", {
-  skip_if_no_ffmpeg()
+  skip_if_no_encoder("libx264")
   a <- make_test_video()
   b <- make_test_video()
   out_a <- withr::local_tempfile(fileext = ".mp4")

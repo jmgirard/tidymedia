@@ -273,6 +273,8 @@ test_that("normalize_audio() rejects a non-string audio_codec", {
 
 test_that("normalize_audio(audio_codec = ) reaches the written output", {
   skip_if_no_ffprobe()
+  # The named codec is libmp3lame and the unset one takes the MP4 default (M138).
+  skip_if_no_encoder("libmp3lame", "aac")
   src <- make_test_video()  # skips if ffmpeg absent; AAC audio in MP4
   named <- withr::local_tempfile(fileext = ".mp4")
   unset <- withr::local_tempfile(fileext = ".mp4")

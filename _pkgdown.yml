@@ -118,6 +118,7 @@ reference:
   contents:
   - ffmpeg_codecs
   - ffmpeg_encoders
+  - has_encoder
   - hardware_encoder
   - refresh_ffmpeg_capabilities
 - title: "Program management"

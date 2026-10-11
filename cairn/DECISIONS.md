@@ -4443,3 +4443,225 @@ already records as a known exposure, not a new one.
 three skipped, which would show the cost was never concentrated where this entry
 says it was; or by a blame defect reaching a release because the only runner
 that would have caught it was one CRAN does not use.
+
+## D095 — A shipped-doc site that re-encodes is gated on the encoder it names, not on the binary alone (2026-10-10, from M138; supersedes D090's "What this does not cover" paragraph, and leaves every other part of D090, D004, D024, D034 and D094 standing)
+
+D090 gated the execution TESTS on CRAN and left examples and vignette chunks
+"gated on binary presence alone", recording the extension to them as "a
+separate decision with a real cost -- an example that never runs on CRAN's
+machines is an example whose output CRAN never checks -- and deliberately not
+taken here".
+
+CRAN then took it for us. At 0.2.1 the two Fedora check flavors reported the
+examples step as an ERROR, because Fedora builds FFmpeg with
+`--disable-encoders` and an explicit `--enable-encoder=` list that holds
+`libopenh264` and not `libx264`, x264 not being free software. The `?ffm_run`
+example named `libx264`, so FFmpeg answered `Unknown encoder 'libx264'` and
+`ffm_run()` aborted. The reviewer's instruction was that use of an external
+command be conditional on a test for its presence, and that the package pass
+its checks without it.
+
+**The rule.** A site in the shipped docs that runs an FFmpeg encode names the
+encoder it uses, rather than inheriting the output container's default, and is
+gated on `has_encoder()` for that encoder beside the binary test it already
+carried. The gate is the encoder question and not a CRAN question: the site
+still runs on CRAN's machines wherever that build has the encoder, so what
+D090's held-back paragraph was protecting -- CRAN checking the output of these
+examples -- is kept, and only a machine that cannot run the encode at all opts
+out.
+
+**Why name the encoder rather than gate on the default.** Two of the three
+examples and all three vignette chunks relied on the output container's default
+encoder, which is a name the site never writes down and the package cannot ask
+about. Naming it makes the site's dependency readable, makes the gate
+expressible, and leaves no site whose encoder is decided elsewhere. It also
+empties the half of this defect class that no instrument can model: a wrapper
+can hide an encoder from `-encoders` and refuse a call that names one, and it
+cannot know which encoder a container default would have chosen.
+
+**Why not add libx264 to SystemRequirements.** The reviewer ruled it out in the
+same message, on the ground that it is not free and is not a system
+requirement of this package. The package requires FFmpeg, which it declares;
+which encoders a given FFmpeg was built with is a property of that build, and
+the answer is `has_encoder()`.
+
+**Falsified by** a CRAN report that an example's output is no longer checked
+anywhere because every CRAN machine skips it, which would mean the gate had
+grown wider than the encoders this package's own examples name; or by a
+shipped-doc site that cannot name its encoder, which would put the
+container-default half of the class back in play.
+
+## D096 — Whether a location names a runnable program is a filesystem question, and `Sys.which()` answers only the bare-name half (2026-10-10, from M138; annotates D083's "What the check asks" paragraph and D084's partition, and leaves every rule D082, D083, D084 and D046 otherwise state standing)
+
+D083 fixed what the install's registration check asks: that the path resolve
+"as `set_program()` will ask it to (`Sys.which()`)", that it be a file rather
+than a directory, and that the file not be empty. `find_program()` and
+`set_program()` asked the same first question of a remembered or typed
+location.
+
+`Sys.which()` is not an instrument for that question. On Unix it shells out to
+`/usr/bin/which`, so its answer for an ABSOLUTE PATH is whatever that machine's
+`which` does with a path. At 0.2.1 the two CRAN Fedora flavors answered `""`
+for stub executables the suite had just created, and 82 tests failed through
+this one seam -- none of them about anything the package had got wrong. The
+suite's own control case passed on those machines, so the difference is in the
+host's `which` and not in the files.
+
+**The rule now.** One internal predicate, `tm_program_state()`, decides whether
+a location names a runnable program, and `find_program()`, `tm_set_program()`
+and `tm_usable_binary()` all ask it. A location holding a directory separator
+is a PATH, and the filesystem decides it: the thing is there, it is not a
+directory, and `file.access(path, 1L)` says it can be executed. A location
+holding no separator is a NAME, and finding it means searching `PATH`, which is
+the one question `Sys.which()` is the instrument for, and the form
+`set_program("ffmpeg", "ffmpeg")` means.
+
+**What D083's reasoning keeps.** The non-empty test stays at
+`tm_usable_binary()` rather than moving into the predicate, for the reason D083
+gives it: Windows has no execute bit, R reads `file.access(mode = 1)` as
+existence there, and a truncated `ffmpeg.exe` of zero length would otherwise be
+registered as a working program on the one platform the install runs on. The
+directory test stays too. So the three forms D084 partitions -- empty, a
+directory, no executable bit -- all still reach `tidymedia_program_unusable`.
+
+**What it changes beside the host question.** The two readers of a path now
+agree about `~`, because the predicate expands once and every reader it uses
+expands. A tilde path naming a good program is therefore usable, where M104's
+review F1 had it refused by one clause and accepted by the other; that
+disagreement is closed rather than disclosed, and `tm_install_binary()` still
+expands where the path is BUILT, because `set_program()` writes the string it
+is given and must not record a tilde. And the predicate can tell a file that
+cannot be run from one that is not there, which `Sys.which()` could not: a
+remembered location with no execute bit now warns
+`tidymedia_location_not_executable` instead of reporting that the file no
+longer exists, which closes the ROADMAP candidate that recorded the wrong
+diagnosis.
+
+**Falsified by** a location this predicate refuses and the machine can run --
+on Windows, a path typed without its executable extension is the shape to
+watch, since `Sys.which()` there may have resolved one and the filesystem test
+asks about the string as given; or by a caller whose bare name must not be
+searched for on `PATH`.
+
+## D097 — The execute question is not asked on Windows at all, and D096's claim about what `file.access(mode = 1)` answers there is withdrawn (2026-10-10, from M138's review; corrects one sentence of D096 and leaves every rule D096, D083, D084 and D046 state standing)
+
+D096 wrote, of the predicate that replaced `Sys.which()`, that "Windows has no
+execute bit and R reads `file.access(mode = 1)` as existence there". That second
+clause was composed rather than measured. `?file.access` documents mode 1 as
+"test for execute permission" and says nothing about Windows either way, and no
+run in this project has measured it on that platform.
+
+It was also load-bearing in the wrong direction. Had `file.access(path, 1L)`
+answered -1 on Windows rather than 0, the predicate would have refused every
+binary `install_on_win()` unpacks, on the one platform that installer runs on,
+and the only thing standing between that and a release was an undocumented
+behaviour nobody here had checked.
+
+**The rule.** `tm_program_state()` does not ask the execute question on
+Windows. A location holding a directory separator is decided there by two
+tests: the thing is there, and it is a file. `tm_usable_binary()` keeps the
+non-empty test on top, which is what D083 put there for exactly this platform,
+so a truncated `ffmpeg.exe` is still refused and the three forms D084 partitions
+still reach `tidymedia_program_unusable`. On POSIX nothing changes: the execute
+test decides, and `tidymedia_location_not_executable` is a state only POSIX can
+reach.
+
+**What this costs.** On Windows a remembered location naming a file that cannot
+be run reads as runnable, and a file that is not a program at all reads as one
+if it is where the location says. `cairn/DESIGN.md`'s Known issues records the
+first; the second is the price of a platform with no bit to ask about, and
+`Sys.which()` did not refuse it either, since what that call asked about on
+Windows was an extension rather than a permission.
+
+**Falsified by** a measurement showing `file.access(path, 1L)` answering
+usefully on Windows, which would make the question worth asking there after
+all; or by a Windows caller harmed by a non-program being remembered as one.
+
+## D098 — On Windows a program is a file with an executable extension, and a `~` location is expanded where it enters the package (2026-10-10, from M138's third review; supersedes D097's Windows rule and D096's sentence that a tilde path "is therefore usable", and leaves every rule D083, D084, D086 and D046 state standing)
+
+D097 decided a Windows location by two tests: the thing is there, and it is a
+file. That made any file at a remembered location read as a program, which
+contradicted M138's own AC6, where the absent diagnosis stands on Windows. And
+D096 called a tilde location usable because the predicate's readers expand
+`~`. The readers do, but the spawners do not: `system2()` and `ffprobe()` hand
+the location to the shell quoted, and the shell does not expand a quoted `~`.
+So a `~` location was accepted, saved, and then failed at every call that ran
+it. Before M138, `Sys.which()` refused it.
+
+**The Windows rule.** On Windows `tm_program_state()` answers "runnable" for a
+file whose name ends in `.exe`, `.com`, `.cmd` or `.bat`, and "absent" for
+anything else. That is the definition `?Sys.which` gives of a Windows
+executable, so it is the rule the package applied there before M138, now asked
+of the filesystem. The execute question stays unasked on Windows, for D097's
+reason. The platform is read from `.Platform$OS.type` through an `os` argument
+a test can set, and not through `tm_os()`: the install tests hold `tm_os()` at
+"windows" while planting POSIX permission states, and the refusals they pin
+(D084) are read by the host's own rule.
+
+**The `~` rule.** A location is expanded where it enters the package: by
+`set_program()` before it checks, prompts and writes, and by `find_program()`
+when it reads a line back. That is D083's "expand where the path is BUILT",
+applied to the two writers. The predicate itself expands nothing, since
+`file.info()` and `file.access()` do it themselves.
+
+**Falsified by** a Windows program this rule reads as absent and `system2()`
+can run, or by a spawner that does expand a quoted `~`, which would make the
+expansion at entry unnecessary.
+
+## D099 — On Windows a location is read by the rule of R's own `expandcmd()`, not by `?Sys.which`'s one-sentence definition (2026-10-10, from M138's return-2 claim audit; supersedes D098's Windows rule and leaves its `~` rule and every rule D083, D084 and D046 state standing)
+
+D098 took `?Sys.which`'s sentence, that a Windows executable is a file with
+extension `.exe`, `.com`, `.cmd` or `.bat`, as the rule `Sys.which()` applied
+before M138. The claim audit read R's source and found it is not. On Windows
+`Sys.which()` and `system()` both go through `expandcmd()` in
+`src/gnuwin32/run.c`. A name whose last component holds a `.` is searched for
+as it is, whatever the extension. A name without one is tried with `.exe`,
+`.com`, `.cmd` and `.bat` appended, in that order. So D098's rule refused
+`C:/tools/ffmpeg`, which 0.2.1 accepted and ran as `C:/tools/ffmpeg.exe`.
+
+**The rule.** On Windows `tm_program_state()` applies `expandcmd()`'s rule to
+the filesystem: a location with an extension is "runnable" when it is a file,
+and one without is "runnable" when the location with one of the four
+extensions appended is a file. Anything else is "absent". The execute
+question stays unasked there, and the platform is still read through the `os`
+argument rather than `tm_os()`, for D098's reasons. The one difference from
+`expandcmd()` is that a directory never counts, which D084 requires.
+
+**Falsified by** a Windows location this rule reads as absent and R's
+`system()` runs, or one it reads as runnable and `system()` cannot start.
+
+## D100 — M138 keeps 0.2.1's Windows reading of a remembered location and promises no stricter one (2026-10-10, from M138's descope at review return 3; corrects D099's falsifier and leaves D099's rule, D098's `~` rule and D083, D084 and D046 standing)
+
+D099's second falsifier, "one it reads as runnable and `system()` cannot
+start", is met by its own rule: `expandcmd()` takes any name with an extension
+as it is, so `notes.txt` reads as runnable and `system()` cannot start it. The
+rule is right for its purpose and the falsifier was wrong. The rule's purpose
+is that Windows reads a location exactly as `Sys.which()` read it at 0.2.1.
+
+**The decision.** At review return 3 the maintainer chose to descope rather
+than retry. M138 promises no Windows reading beyond 0.2.1's: AC4's execute
+test and AC6's diagnosis are POSIX promises, and on Windows a present file
+that cannot be run reads as a program, as it did before. A stricter Windows
+rule (a non-empty file with one of the four executable extensions) is a
+candidate row, not part of M138. The predicate still refuses a directory
+there, which D084 requires.
+
+**Falsified by** a Windows location this rule reads as absent that
+`Sys.which()` at 0.2.1 found, or the reverse, outside a directory. The
+Windows CI leg runs a test that compares the two on the platform itself.
+
+## D101 — `file.access()` does document mode 1 on Windows, and it still is not asked there (2026-10-10, from M138's claim audit after the descope; corrects the reason D097 gives and leaves D097's rule, as D099 and D100 now state it, standing)
+
+D097 said `?file.access` "says nothing about Windows either way". That was read
+from the help page as macOS renders it, which drops the Windows section. R's
+source, `src/library/base/man/file.access.Rd`, has one: Windows has no
+executable-file concept, so mode 1 counts directories and files ending in
+`.exe`, `.bat`, `.cmd` or `.com` as executable, the assumption `system()` and
+`Sys.which()` share.
+
+**The rule stands, for a different reason.** That answer counts a directory,
+which D084 refuses, and it does not try the four extensions on a bare name,
+which `expandcmd()` does. So it is not the question the Windows branch asks.
+
+**Falsified by** a Windows `file.access(path, 1L)` reading that matches
+`expandcmd()` on a bare name, which would make it usable there.

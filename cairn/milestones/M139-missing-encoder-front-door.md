@@ -224,3 +224,8 @@ Review pass 1, 2026-10-10.
 - prior-review #5: the listing read muffles every warning, not only the program lookup's — fix now, in the return (muffle by class).
 - prior-review #6: the parallel cell can skip under `load_all()` — reject, false: the evidence run above ran it on an installed copy, not skipped.
 
+Review pass 2, 2026-10-10, after return 1. Evidence run at branch head `74301c44`, master unmoved at `db99245a`, with `NOT_CRAN=true` and the branch installed in a scratch library on `R_LIBS`. `test-encoder-diagnosis.R`: 23 tests, 0 failed, 0 skipped. `test-separate-av-multitrack.R`: 58 tests, 0 failed. `test-timeout-silence.R`: 38 tests, 0 failed. `test-has-encoder.R`: 8 tests, 0 failed.
+- AC1 evidence, pass 2: the AC1 cells of pass 1 pass unchanged at this head, the hardware-abort cell and both wrapper cells included.
+- AC3 evidence, pass 2: the sweep passes, and it now also fails `separate_audio_video()`'s video half alone (audio copied), whose condition names `separate_audio_video`.
+- AC4 evidence, pass 2: the batch cells of pass 1 pass, the parallel wrapper cell ran in two PSOCK workers on the installed branch, and "a batch whose listing read hangs warns once and reads once" shows 3 failing rows give one `tidymedia_probe_timeout` warning and one listing read.
+

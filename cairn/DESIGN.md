@@ -181,6 +181,7 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
   and its own separation warning. Fifth, `normalize_audio_batch(two_pass = TRUE)`
   gives it only the rows that are not silent. So after the first silent row, the
   warning's row numbers are smaller than the caller's. Sixth,
-  `separate_audio_video()` on an input with several audio tracks and no
-  `audio_stream` keeps its own error about several tracks, which replaces the
-  diagnosed condition, so that error carries no `tm_encoder` (M139 claim audit).
+  `separate_audio_video()` on an input with several audio tracks, no
+  `audio_stream`, and an `audiofile` whose container holds one audio stream
+  keeps its own error about several tracks. That error replaces the diagnosed
+  condition, so it carries no `tm_encoder` (M139 claim audit).

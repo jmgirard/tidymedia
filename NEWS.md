@@ -13,7 +13,8 @@ CRAN uses.
   `"audio"`. A codec name such as `"h264"` counts when the build can encode
   it. The error names the function you called, such as `standardize_video()`.
   One case keeps its old error: `separate_audio_video()` on an input with
-  several audio tracks and no `audio_stream` still gives its error about
+  several audio tracks, with no `audio_stream` and an audio file type that
+  holds only one track (such as `.mp3` or `.aac`), still gives its error about
   several audio tracks.
   A batch gives one warning of the same class after its jobs run, naming each
   encoder and the job rows. A run that succeeds, and a call with

@@ -167,11 +167,18 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
     # documented logical column, and an attribute on it would not survive
     # unlist() off the parallel workers or the preallocated assignment in
     # run_with_progress().
+    #
+    # A row ffm_run() diagnosed as naming an encoder this build lacks (M139)
+    # also carries the names back, as plain fields, so they survive the trip
+    # from a parallel worker the way `timed_out` does.
     run_one <- function(pipeline) {
       res <- tryCatch(ffm_run(pipeline), error = function(e) e)
+      diagnosed <- inherits(res, "tidymedia_encoder_unavailable")
       list(
         success = !inherits(res, "error") && is.null(attr(res, "status")),
-        timed_out = inherits(res, "tidymedia_timeout")
+        timed_out = inherits(res, "tidymedia_timeout"),
+        encoder = if (diagnosed) res$tm_encoder else character(),
+        stream = if (diagnosed) res$tm_stream else character()
       )
     }
     results <- if (parallel) {
@@ -225,6 +232,40 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
                  {.code 0} means no limit."
         ),
         class = "tidymedia_batch_timeout"
+      )
+    }
+
+    # The batch form of ffm_run()'s missing-encoder diagnosis (M139): the rows
+    # still ran and still read `success = FALSE`, as they do without this, and
+    # one warning names each encoder this build lacks with the rows that named
+    # it. Row numbers are those of the jobs table this function received. The
+    # fields hold one element per (row, codec) pair. Encoder names reach the
+    # message only through {.val} (M44).
+    encoders <- lapply(results, `[[`, "encoder")
+    hit <- which(lengths(encoders) > 0L)
+    if (length(hit)) {
+      tm_row <- rep(hit, lengths(encoders[hit]))
+      tm_encoder <- unlist(encoders[hit], use.names = FALSE)
+      tm_stream <- unlist(lapply(results[hit], `[[`, "stream"), use.names = FALSE)
+      keys <- unique(data.frame(encoder = tm_encoder, stream = tm_stream))
+      lacks <- vapply(seq_len(nrow(keys)), function(i) {
+        rows <- tm_row[tm_encoder == keys$encoder[[i]] &
+                         tm_stream == keys$stream[[i]]]
+        sprintf("No %s encoder {.val {keys$encoder[[%d]]}}: row%s %s.",
+                keys$stream[[i]], i, if (length(rows) > 1L) "s" else "",
+                paste(rows, collapse = ", "))
+      }, character(1))
+      cli::cli_warn(
+        c(
+          "{length(hit)} job{?s} failed while naming an encoder this FFmpeg \\
+           build does not list.",
+          rlang::set_names(lacks, rep("x", length(lacks))),
+          "i" = "{.fn ffmpeg_encoders} lists the encoders this build has."
+        ),
+        class = "tidymedia_encoder_unavailable",
+        tm_encoder = tm_encoder,
+        tm_stream = tm_stream,
+        tm_row = tm_row
       )
     }
 

@@ -40,6 +40,19 @@ baseline_pair <- function(infile, audiofile, videofile) {
   )
 }
 
+# The batch tests below make a row fail by naming `"notanencoder"`. Since M139
+# ffm_batch() also warns once about a row that named an encoder this build does
+# not list, and that warning comes first. These tests are about the separation
+# warning, so they set the encoder warning aside. That one row can draw both is
+# disclosed in cairn/DESIGN.md's Known issues, and the first batch test below
+# asserts that both arrive.
+without_encoder_warning <- function(expr) {
+  withCallingHandlers(
+    expr,
+    tidymedia_encoder_unavailable = function(w) invokeRestart("muffleWarning")
+  )
+}
+
 test_that("the default compiles the pre-change every-track pair", {
   infile <- make_input("mkv")
   expect_identical(
@@ -426,8 +439,10 @@ test_that("the batch gate reads the extension without regard to case", {
                                         "-v.mp4"))
     )
     tryCatch(
-      separate_audio_video_batch(jobs, audio_codec = "notanencoder",
-                                 video_codec = "notanencoder"),
+      without_encoder_warning(
+        separate_audio_video_batch(jobs, audio_codec = "notanencoder",
+                                   video_codec = "notanencoder")
+      ),
       warning = function(w) w
     )
   }
@@ -1281,7 +1296,8 @@ test_that("a failed batch row on a listed container contributes no bullet", {
     videofile = file.path(dir, c("v1.mkv", "v2.mkv")),
     audio_codec = c("notanencoder", "notanencoder")
   )
-  w <- tryCatch(separate_audio_video_batch(jobs), warning = function(w) w)
+  w <- tryCatch(without_encoder_warning(separate_audio_video_batch(jobs)),
+                warning = function(w) w)
   expect_s3_class(w, "tidymedia_multitrack_separation")
   msg <- cli::ansi_strip(conditionMessage(w))
   expect_match(msg, "1 audio output failed")
@@ -1294,6 +1310,25 @@ test_that("a failed batch row on a listed container contributes no bullet", {
   res <- suppressWarnings(separate_audio_video_batch(jobs))
   expect_false(res$success[[1]])
   expect_false(res$success[[3]])
+
+  # Both warnings arrive for the one batch, the M139 encoder warning first. Its
+  # row numbers are those of ffm_batch()'s jobs table, which has two rows per
+  # caller row here, so the audio runs are rows 1 and 3.
+  classes <- character()
+  withCallingHandlers(
+    separate_audio_video_batch(jobs),
+    warning = function(w) {
+      classes <<- c(classes, class(w)[[1]])
+      if (inherits(w, "tidymedia_encoder_unavailable")) {
+        expect_identical(w$tm_row, c(1L, 3L))
+      }
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_identical(
+    classes,
+    c("tidymedia_encoder_unavailable", "tidymedia_multitrack_separation")
+  )
 })
 
 test_that("a batch whose failed rows are all listed containers warns not at all", {
@@ -1308,7 +1343,7 @@ test_that("a batch whose failed rows are all listed containers warns not at all"
     videofile = file.path(dir, c("v1.mkv", "v2.mkv")),
     audio_codec = c("notanencoder", "notanencoder")
   )
-  expect_no_warning(res <- separate_audio_video_batch(jobs))
+  expect_no_warning(res <- without_encoder_warning(separate_audio_video_batch(jobs)))
   expect_false(res$success[[1]])
   expect_false(res$success[[3]])
 })
@@ -1331,7 +1366,8 @@ test_that("every unlisted container keeps the batch warning's per-row bullet", {
       videofile   = file.path(dir, paste0("v-", ext, ".mkv")),
       audio_codec = "notanencoder"
     )
-    w <- tryCatch(separate_audio_video_batch(jobs), warning = function(w) w)
+    w <- tryCatch(without_encoder_warning(separate_audio_video_batch(jobs)),
+                  warning = function(w) w)
     expect_s3_class(w, "tidymedia_multitrack_separation")
     msg <- cli::ansi_strip(conditionMessage(w))
     expect_match(msg, "1 audio output failed on a multi-track input",

@@ -348,6 +348,112 @@ test_that("a condition the diagnosis does not touch keeps naming ffm_run()", {
   expect_identical(rlang::call_name(conditionCall(cnd)), "ffm_run")
 })
 
+# The batch warning (AC4) ------------------------------------------------------
+
+# A jobs table whose `vc`/`ac` columns are the codecs, and a mocked run that
+# fails exactly where a row names one of `failing`.
+local_batch_run <- function(failing, env = parent.frame()) {
+  testthat::local_mocked_bindings(
+    run_program = function(location, args, ...) {
+      if (any(args %in% failing)) structure(character(), status = 8L) else character()
+    },
+    cached_encoder_names = function() c("libx264", "aac"),
+    cached_encodable_codecs = function() c("h264", "aac"),
+    .env = env
+  )
+}
+
+batch_jobs <- function(vc, ac, env = parent.frame()) {
+  n <- length(vc)
+  tibble::tibble(
+    input = vapply(seq_len(n), function(i) make_input(env = env), character(1)),
+    output = vapply(seq_len(n), function(i) {
+      withr::local_tempfile(fileext = ".mp4", .local_envir = env)
+    }, character(1)),
+    vc = vc,
+    ac = ac
+  )
+}
+
+build_row <- function(input, output, vc, ac) {
+  ffm_codec(ffm_files(input, output), video = vc, audio = ac)
+}
+
+test_that("a batch runs every row and warns once with the diagnosed rows", {
+  # Row 2 lacks its video encoder, row 3 its audio encoder, row 4 fails for
+  # another reason with every codec listed, and rows 1 and 5 succeed.
+  local_batch_run(c("nosuch_v", "nosuch_a", "boom"))
+  rows <- batch_jobs(
+    vc = c("libx264", "nosuch_v", "libx264", "h264", "libx264"),
+    ac = c("aac", "aac", "nosuch_a", "aac", "aac")
+  )
+  # Row 4 fails on an output option, outside the pipeline's codecs.
+  f <- function(input, output, vc, ac) {
+    p <- build_row(input, output, vc, ac)
+    if (identical(vc, "h264")) p <- ffm_output_options(p, "-boom boom")
+    p
+  }
+  for (progress in c(FALSE, TRUE)) {
+    w <- NULL
+    res <- withCallingHandlers(
+      ffm_batch(rows, f, progress = progress),
+      tidymedia_encoder_unavailable = function(cnd) {
+        expect_null(w)
+        w <<- cnd
+        invokeRestart("muffleWarning")
+      }
+    )
+    info <- paste("progress =", progress)
+    expect_identical(res$success, c(TRUE, FALSE, FALSE, FALSE, TRUE), info = info)
+    expect_s3_class(w, "warning")
+    expect_identical(w$tm_row, c(2L, 3L), info = info)
+    expect_identical(w$tm_encoder, c("nosuch_v", "nosuch_a"), info = info)
+    expect_identical(w$tm_stream, c("video", "audio"), info = info)
+    msg <- cli::ansi_strip(conditionMessage(w))
+    expect_match(msg, "2 jobs failed while naming an encoder", fixed = TRUE)
+    expect_match(msg, 'No video encoder "nosuch_v": row 2.', fixed = TRUE)
+    expect_match(msg, 'No audio encoder "nosuch_a": row 3.', fixed = TRUE)
+  }
+})
+
+test_that("one encoder missing on several rows is one bullet naming them all", {
+  local_batch_run("nosuch_v")
+  jobs <- batch_jobs(vc = c("nosuch_v", "libx264", "nosuch_v"),
+                     ac = c("aac", "aac", "aac"))
+  w <- tryCatch(ffm_batch(jobs, build_row),
+                tidymedia_encoder_unavailable = function(cnd) cnd)
+  expect_identical(w$tm_row, c(1L, 3L))
+  expect_match(cli::ansi_strip(conditionMessage(w)),
+               'No video encoder "nosuch_v": rows 1, 3.', fixed = TRUE)
+})
+
+test_that("a batch with no diagnosed row, and a dry-run batch, do not warn", {
+  local_batch_run("boom")
+  jobs <- batch_jobs(vc = c("libx264", "libx264"), ac = c("aac", "aac"))
+  expect_no_warning(res <- ffm_batch(jobs, build_row))
+  expect_identical(res$success, c(TRUE, TRUE))
+
+  local_batch_run("nosuch_v")
+  bad <- batch_jobs(vc = c("nosuch_v", "nosuch_v"), ac = c("aac", "aac"))
+  expect_no_warning(dry <- ffm_batch(bad, build_row, run = FALSE))
+  expect_false("success" %in% names(dry))
+})
+
+test_that("a batch verb's codec column reaches the warning by its row", {
+  # The column overrides the argument on row 2 only; the diagnosis reads the
+  # codec off the pipeline, so the override is what it sees.
+  local_batch_run("nosuch_v")
+  jobs <- batch_jobs(vc = c("libx264", "libx264"), ac = c("aac", "aac"))
+  jobs <- tibble::tibble(input = jobs$input, output = jobs$output,
+                         video_codec = c(NA, "nosuch_v"))
+  w <- tryCatch(
+    standardize_video_batch(jobs, video_codec = "libx264", audio_codec = "aac"),
+    tidymedia_encoder_unavailable = function(cnd) cnd
+  )
+  expect_identical(w$tm_row, 2L)
+  expect_identical(w$tm_encoder, "nosuch_v")
+})
+
 # Wrapper cells ---------------------------------------------------------------
 
 local_build_model <- function(hide, env = parent.frame()) {
@@ -388,6 +494,53 @@ test_that("a real run naming a hidden encoder is diagnosed (wrapper)", {
   out2 <- withr::local_tempfile(fileext = ".mp4")
   p2 <- ffm_codec(ffm_files(infile, out2), video = "libx264", audio = "aac")
   expect_no_error(ffm_run(p2))
+})
+
+test_that("parallel workers carry the diagnosed rows back (wrapper)", {
+  # Mocks do not reach a worker, so this cell runs real FFmpeg through the
+  # wrapper in two fresh PSOCK workers. The workers load an INSTALLED tidymedia
+  # (M53), so the cell skips unless their diagnosis is this source's.
+  skip_if_not_installed("furrr")
+  skip_if_not_installed("future")
+  infile <- make_test_video()
+  local_build_model("libx264")
+  cl <- parallel::makePSOCKcluster(2L)
+  withr::defer(parallel::stopCluster(cl))
+  old_plan <- future::plan(future::cluster, workers = cl)
+  withr::defer(future::plan(old_plan))
+  fingerprint <- function() {
+    ns <- tryCatch(asNamespace("tidymedia"), error = function(e) NULL)
+    if (is.null(ns) || !exists("diagnose_missing_encoders", envir = ns)) {
+      return(NA_character_)
+    }
+    paste(deparse(body(get("diagnose_missing_encoders", envir = ns))),
+          collapse = "")
+  }
+  seen <- unlist(furrr::future_map_chr(1:4, function(i) fingerprint(),
+                                       .options = furrr::furrr_options(chunk_size = 1)))
+  if (!isTRUE(all(seen == fingerprint()))) {
+    skip("workers load an installed tidymedia whose diagnosis differs from the source")
+  }
+
+  jobs <- tibble::tibble(
+    input = c(infile, infile),
+    output = c(withr::local_tempfile(fileext = ".mp4"),
+               withr::local_tempfile(fileext = ".mp4")),
+    vc = c("libx264", "mpeg4"),
+    ac = c("aac", "aac")
+  )
+  w <- NULL
+  res <- withCallingHandlers(
+    ffm_batch(jobs, build_row, parallel = TRUE),
+    tidymedia_encoder_unavailable = function(cnd) {
+      w <<- cnd
+      invokeRestart("muffleWarning")
+    },
+    warning = function(cnd) invokeRestart("muffleWarning")
+  )
+  expect_identical(res$success, c(FALSE, TRUE))
+  expect_identical(w$tm_row, 1L)
+  expect_identical(w$tm_encoder, "libx264")
 })
 
 test_that("a real codec-name run is not diagnosed while its encoder is hidden (wrapper)", {

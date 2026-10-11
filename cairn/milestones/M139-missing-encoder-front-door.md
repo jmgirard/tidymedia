@@ -123,7 +123,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
       the call-graph sweep. It lists each export whose pipeline carries no codec but
       `"copy"`, with its reason. If the tested and listed exports differ from the
       computed domain, it fails.
-- [ ] T4: Carry the diagnosed encoder back from each row in `ffm_batch()`, workers
+- [x] T4: Carry the diagnosed encoder back from each row in `ffm_batch()`, workers
       included, and raise the one warning. The parallel cells are wrapper cells under a
       multisession plan, because mocks do not reach workers.
 - [ ] T5: Run the purity tests, the timeout sweeps and the recorded spawn baselines
@@ -159,6 +159,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - 2026-10-10: implementation choice: the frame a diagnosis names rides on the pipeline as attribute `tm_call`, set by the site that calls `ffm_run()`. This keeps every existing `ffm_run()` condition's frame as it is at the merge base, which an internal implementation function would change. No export gains a `call` formal (D087). T3's wording "through an internal implementation" is refined to this mechanism.
 - 2026-10-10: T2 done. `check_hardware_available()`'s availability abort carries class `tidymedia_encoder_unavailable`, `tm_encoder` and `tm_stream = "video"`, tested through the option seam at `standardize_video()` and `standardize_video_batch()`, with a control where the machine has the encoder. Full suite: 1803 tests, 0 failed.
 - 2026-10-10: T3 done. `ffm_finish()` takes `call` with no default and sets it as the pipeline's `tm_call`. The 13 verbs that call it pass their own frame, and `run_separation_audio()` and `separate_audio_video()` set it on their own runs. The sweep computes the 15-export domain from the call graph. It calls 11 of them, and it lists 4 with the reason that no call of theirs sets a codec other than `"copy"`, which a second test reads off their compiled commands. A planted `ffm_finish()` that drops the frame reddens the sweep for the 9 verbs that run through it. Full suite: 1806 tests, 0 failed.
+- 2026-10-10: T4 done. `ffm_batch()`'s `run_one()` returns the diagnosed encoders and streams, and one warning after the rows carries `tm_encoder`, `tm_stream` and `tm_row`, one element per row and codec. Cells cover `progress = FALSE` and `TRUE`, a row failing for another reason, one encoder over several rows, `run = FALSE`, and a `standardize_video_batch()` column override. The parallel cell runs real FFmpeg through the wrapper in two PSOCK workers. It ran green with the branch installed in a scratch library on `R_LIBS`, and it skips when workers load an older installed copy (M53). Four `test-separate-av-multitrack.R` tests forced a failure with `"notanencoder"` and caught the first warning, which is now the encoder warning. They set it aside through one helper, and one of them asserts that both warnings arrive, encoder first, with rows 1 and 3 of the two-rows-per-caller-row table. Full suite: 1811 tests, 0 failed.
 
 ## Decisions
 

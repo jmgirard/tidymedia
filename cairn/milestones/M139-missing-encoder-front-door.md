@@ -53,7 +53,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
       passed through `ffm_output_options()`. `check_hardware_available()`'s
       availability abort carries the same class, with `tm_encoder` and
       `tm_stream = "video"` (D062, D063).
-- [ ] AC2: A run that FFmpeg completes, and every `run = FALSE` call, compiles the same
+- [x] AC2: A run that FFmpeg completes, and every `run = FALSE` call, compiles the same
       command as at the merge base and, from the same remembered encoder listing (D044),
       starts the same programs as many times, because the diagnosis is reached only after
       a non-zero exit inside `ffm_run()`. The remembered codec reader has one caller in `tm_call_graph()`, the
@@ -86,7 +86,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
       `parallel = TRUE` and `progress = TRUE`. `segment_video()` and the `_batch` exports
       run their codec-carrying rows through `ffm_batch()`. A `run = FALSE` batch is
       unchanged.
-- [ ] AC5: The profile's `verify` and consistency-gate slots in `cairn/PROFILE.md` are
+- [x] AC5: The profile's `verify` and consistency-gate slots in `cairn/PROFILE.md` are
       clean, the universal cairn-file checks included. `NEWS.md` carries an entry for the
       class and the batch warning. `?ffm_run` states that the diagnosis can silently not
       run (D024). `?refresh_ffmpeg_capabilities` states that a failed run can fill the
@@ -251,4 +251,7 @@ Review pass 2, 2026-10-10, after return 1. Evidence run at branch head `74301c44
 - prior-review #4: the class-only muffle — same fix as blame-history #1.
 - prior-review #5: the read-count cell has no control proving the counter moves — fix now.
 - fixed: the pass-1 fix-now findings landed in `3f50a1ce` (T7) with their claim-audit corrections in `ff4a1995`. The pass-2 fix-now findings landed in `97eb0488`. After it, the affected files ran with the branch installed for workers: `test-encoder-diagnosis.R` 25 tests, `test-separate-av-multitrack.R` 58, `test-timeout-silence.R` 38, `test-has-encoder.R` 8, `test-nvenc-memo.R` 7, all with 0 failed and 0 skipped.
+- Full suite at `27848a0f`: 1816 tests, 0 failed, 7 skipped. `devtools::check()` at `27848a0f`: 0 errors, 0 warnings, 0 notes.
+- AC2 evidence (amended wording): "successful runs and dry runs read neither listing" shows zero reads for a successful batch, a successful `separate_audio_video()` and a `run = FALSE` verb, with a control in the same block where a failed run moves both counters to 1. "a run FFmpeg completes never reads either listing" holds for `ffm_run()`. Every `ffm_run()` call site sits on a run path (R/ffm.R `ffm_finish()`, R/ffm_batch.R `if (run)`, the separation run block), and the diagnosis is reached only in `ffm_run()`'s non-zero-exit branch. The purity tests, the recorded spawn baselines and `test-timeout-refusal-blame.R` pass unchanged in the `check()` run above, at their fixed memo states. "the codec listing has one reader, the diagnosis" and "the codec listing is remembered once read, and only once read" cover the memo clauses and D089's routes. "a listing that cannot be read leaves the merge-base condition" covers fail-open. The reached-limit cells show one `tidymedia_probe_timeout` warning for a single `ffm_run()`, for `separate_audio_video()`'s two runs, and for a 3-row batch under `progress = FALSE` and `TRUE`.
+- AC5 evidence: the verify slot is clean (full suite above, `devtools::document()` gives no diff). The consistency gate is clean: `cairn_validate.py` passes every check, `devtools::check()` gives 0/0/0, `pkgdown::check_pkgdown()` finds no problems, README is untouched, and no new top-level file exists. `NEWS.md` carries the entry naming `tidymedia_encoder_unavailable` and the batch warning. `man/ffm_run.Rd:80` has the section "When the build lacks an encoder", which states the check says nothing when it cannot read a list (`:104`). `man/refresh_ffmpeg_capabilities.Rd:23` states a refused run can fill the record. `man/tidymedia-package.Rd:59` lists the class. `cairn/DESIGN.md:170` states the limits: the dry-run preview, the two hardware-name routes, the stale or per-worker listing, the two-rows-per-input numbering with both warnings on one row, the two-pass silent-row numbering, and a sixth on the separation track diagnostic.
 

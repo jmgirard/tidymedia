@@ -1,6 +1,6 @@
 # M139: A failed FFmpeg run names the encoder this build lacks
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M138
 - **Driving RR:** —
@@ -185,6 +185,7 @@ expectations about a file. Muxers, filters and decoders. Layer 0 `ffmpeg()`
 - 2026-10-10: T7 checkpoint, not yet checked off, full suite running. One probe-timeout warning per call: `ffm_batch()`'s `run_one()` holds the row's warning, skips the diagnosis for its later rows (`tm_no_diagnosis`), and the batch warns once with `tm_limit`. `separate_audio_video()` sets that attribute on the video run when the audio half's warning passes. Fix-now findings taken: `-hide_banner` in both listing reads, the location warnings muffled by class only, a video-half sweep cell, the reached-limit test rewritten to one run, a batch and a separation reached-limit cell, a read-count cell for a successful batch, a successful separation and a `run = FALSE` verb, the separation tests renamed with the all-listed case asserting the encoder warning, and help and NEWS corrections (`?ffm_run`, `?ffm_batch`, the `tidymedia.timeout` page). The four affected test files pass: 23, 58, 38 and 8 tests, 0 failed, 0 skipped, with the branch installed for the workers.
 - 2026-10-10: T7 done. Full suite: 1814 tests, 0 failed, 7 skipped.
 - 2026-10-10: claim audit: 54 claims read, 6 corrected — R/ffm_batch.R (two), NEWS.md (two), R/ffmpeg.R (two comments), R/ffm.R. Scope: every line the return added since `d8a2d1b3`, plus the full NEWS entry and both "When the build lacks an encoder" sections. The corrections: one listing read per worker under `parallel = TRUE`, two-pass rows that differ only when an input is silent, "compile the same command" in NEWS in place of "start what they did before", one encoder-check warning per call beside the track-count probe's own, and the muffled classes named. The same reader's re-read is pending.
+- 2026-10-10: claim audit re-read: all 8 corrected sites true. Full suite over them: 1814 tests, 0 failed, 7 skipped, and `document()` gives no diff. Return 1 complete, status set to review.
 
 ## Decisions
 

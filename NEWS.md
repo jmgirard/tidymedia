@@ -1,8 +1,12 @@
-# tidymedia (development version)
+# tidymedia 0.2.2
 
 The package no longer assumes things about the machine it runs on that are not
-true everywhere. Both fixes answer check failures on the two Fedora flavors
-CRAN uses.
+true everywhere. The fixes answer check failures on the two Fedora flavors CRAN
+uses, whose FFmpeg has no `libx264` and whose `which` does not answer for a
+path. A failed run also says now when your FFmpeg build lacks an encoder the
+run used.
+
+## New features
 
 * **A failed run now says when your FFmpeg build lacks an encoder it used.**
   After FFmpeg exits non-zero, `ffm_run()` and the task functions that use it
@@ -38,6 +42,8 @@ CRAN uses.
   because x264 is not free software. The answer comes from the same list
   `ffmpeg_encoders()` returns, asked once per session and then remembered.
   `refresh_ffmpeg_capabilities()` makes the next call ask again.
+
+## Bug fixes
 
 * **Examples and vignette chunks that re-encode now run only where your build
   has the encoder they name.** On a build without `libx264`, the example on

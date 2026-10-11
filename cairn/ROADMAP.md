@@ -3,7 +3,7 @@
 _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
 _Released 0.2.0 2026-09-18 (first CRAN submission; the CRAN-readiness candidate row is now stale and is `/cairn-triage`'s to close). 0.2.1 released 2026-09-29._
-_0.2.2 window declared by the maintainer 2026-10-10, against CRAN's 2026-10-31 correction deadline: it ships M138 alone, and M139 waits for a later one._
+_0.2.2 window declared by the maintainer 2026-10-10, against CRAN's 2026-10-31 correction deadline. It ships M138 and M139 (corrected 2026-10-11: M139 merged before the cut, at the maintainer's choice). Release prep committed 2026-10-11; CRAN submission pending._
 _Last hygiene check: 2026-10-11 (M139 done and archived, PR #143 squash-merged with all eleven checks green after one defect return and one amendment return. It merged before 0.2.2 was cut, at the user's choice, so the 0.2.2 line above is the user's to revise. Three review follow-ups absorbed into candidate rows, M136 pruned. No lesson added: `LESSONS.md` is at 19,992 of its 20,000 bytes. `ROADMAP.md` is about 53,000 bytes against its 24,000-byte budget, and `/cairn-triage` is the remedy.)_
 
 ## Milestones

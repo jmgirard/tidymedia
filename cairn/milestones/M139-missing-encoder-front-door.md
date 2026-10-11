@@ -250,4 +250,5 @@ Review pass 2, 2026-10-10, after return 1. Evidence run at branch head `74301c44
 - prior-review #3: "once per call" over-generalizes — reject, false: the sentence is about reading FFmpeg's lists, and D049's grain is per check.
 - prior-review #4: the class-only muffle — same fix as blame-history #1.
 - prior-review #5: the read-count cell has no control proving the counter moves — fix now.
+- fixed: the pass-1 fix-now findings landed in `3f50a1ce` (T7) with their claim-audit corrections in `ff4a1995`. The pass-2 fix-now findings landed in `97eb0488`. After it, the affected files ran with the branch installed for workers: `test-encoder-diagnosis.R` 25 tests, `test-separate-av-multitrack.R` 58, `test-timeout-silence.R` 38, `test-has-encoder.R` 8, `test-nvenc-memo.R` 7, all with 0 failed and 0 skipped.
 

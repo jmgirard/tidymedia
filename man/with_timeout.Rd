@@ -98,7 +98,10 @@ and the session has no stored answer. The glossary in
 \item The dropped-track check of \code{\link[=extract_audio]{extract_audio()}}, \code{\link[=convert_audio]{convert_audio()}},
 \code{\link[=normalize_audio]{normalize_audio()}} and their \verb{_batch} forms warns that it could not check.
 The track count that \code{\link[=separate_audio_video]{separate_audio_video()}} reads after a failed run
-warns the same way. A batch manifest, see \code{\link[=ffm_manifest]{ffm_manifest()}}, and
+warns the same way. So does the check of FFmpeg's encoder lists that
+\code{\link[=ffm_run]{ffm_run()}}, the task functions and \code{\link[=ffm_batch]{ffm_batch()}} make after a failed run,
+once per call (see "When the build lacks an encoder" on \code{\link[=ffm_run]{ffm_run()}}). A
+batch manifest, see \code{\link[=ffm_manifest]{ffm_manifest()}}, and
 \code{\link[=program_status]{program_status()}} warn when they cannot read a program version. These
 warnings have the class \code{tidymedia_probe_timeout}, and the call goes on as
 it would for an unreadable input.

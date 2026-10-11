@@ -81,7 +81,8 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL,
   resolve_timeout()
   if (rlang::is_null(timestamp)) timestamp <- frame / get_frame_rate(infile)
 
-  ffm_finish(frame_pipeline(infile, outfile, timestamp), run)
+  ffm_finish(frame_pipeline(infile, outfile, timestamp), run,
+             call = rlang::current_env())
 }
 
 
@@ -160,7 +161,7 @@ sample_frames <- function(infile, outdir, fps = NULL, interval = NULL,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -571,7 +572,7 @@ extract_audio <- function(infile, outfile, audio_codec = "copy",
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -750,6 +751,9 @@ holds_multiple_audio <- function(path) {
 # diagnostic alike (M090's contract, measured on this branch 2026-08-30).
 run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
                                  call = rlang::caller_env()) {
+  # The verb the caller typed, for ffm_run()'s missing-encoder diagnosis (M139;
+  # ffm_finish() says why an attribute).
+  attr(pipeline, "tm_call") <- call
   if (!is.null(audio_stream)) return(invisible(ffm_run(pipeline)))
   tryCatch(
     ffm_run(pipeline),
@@ -1187,10 +1191,27 @@ separate_audio_video <- function(infile, audiofile, videofile,
     # is the limit's documented per-spawned-program scope (D066 supersedes the
     # claim D065 made here). Layer 1 removes what a failed run WROTE, on either
     # half, and leaves a file it never wrote to as it found it (D046).
-    held <- tryCatch({
-      run_separation_audio(audio, infile, audiofile, audio_stream)
-      NULL
-    }, error = function(cnd) cnd)
+    #
+    # The video run names this verb if its encoder is missing (M139; ffm_finish()
+    # says why an attribute). The audio half's helper sets its own.
+    attr(video, "tm_call") <- rlang::current_env()
+    # One call, one encoder-check timeout warning (D049): when the audio half's
+    # encoder-check warning (`tm_check = "encoders"`) passes by, the video run
+    # skips the missing-encoder diagnosis rather than wait on the listing a
+    # second time (M139 review return 1). The track-count probe's own timeout
+    # warning is another check: it passes by untouched and sets nothing (M139
+    # review pass 2).
+    held <- withCallingHandlers(
+      tryCatch({
+        run_separation_audio(audio, infile, audiofile, audio_stream)
+        NULL
+      }, error = function(cnd) cnd),
+      tidymedia_probe_timeout = function(w) {
+        if (identical(w$tm_check, "encoders")) {
+          attr(video, "tm_no_diagnosis") <<- TRUE
+        }
+      }
+    )
     if (is.null(held)) {
       ffm_run(video)
     } else {
@@ -1354,7 +1375,7 @@ convert_audio <- function(infile, outfile, audio_codec = NULL,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 # crop_video() ------------------------------------------------------------
@@ -1469,7 +1490,7 @@ crop_video <- function(infile, outfile, width, height,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -1564,7 +1585,7 @@ format_for_web <- function(infile, outfile,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -1639,7 +1660,7 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -1769,7 +1790,7 @@ standardize_video <- function(infile, outfile,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -1947,7 +1968,7 @@ anonymize_video <- function(infile, outfile, regions,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -2647,7 +2668,7 @@ normalize_audio <- function(infile, outfile,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 # check_audio_codec_not_copy(): refuse audio_codec = "copy" on the loudness
@@ -2792,7 +2813,12 @@ ffmpeg_codecs <- function(sort_by_type = TRUE) {
 
   # D074: the verb the caller typed names a bad limit, not the hatch below.
   resolve_timeout()
-  output <- ffmpeg("-codecs")
+  # -hide_banner: FFmpeg writes its version banner to stderr, which ffmpeg()
+  # does not capture, so without it the banner reached the console on every
+  # read -- after a failed run's own error output, when the missing-encoder
+  # diagnosis reads this list (M139 review). The parse below starts after the
+  # dashes line either way.
+  output <- ffmpeg("-hide_banner -codecs")
   output2 <- output[-(1:which(output == " -------"))]
   key <- regmatches(
     output2, 
@@ -2877,7 +2903,8 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
 
   # D074: the verb the caller typed names a bad limit, not the hatch below.
   resolve_timeout()
-  output <- ffmpeg("-encoders")
+  # -hide_banner for the reason ffmpeg_codecs() gives (M139 review).
+  output <- ffmpeg("-hide_banner -encoders")
   output2 <- output[-(1:which(output == " ------"))]
   key <- regmatches(
     output2, 
@@ -3211,6 +3238,87 @@ tm_encoder_available <- function(name, call) {
   name %in% cached_encoder_names()
 }
 
+# hardware_encoder_names(): every name tm_hardware_encoder() can return, read off
+# the backend table. The diagnosis below leaves these alone: whether a backend
+# encoder is usable is check_hardware_available()'s question, answered through
+# the `tidymedia.hardware_encoders` seam, and has_encoder()'s pool deliberately
+# does not read that seam.
+hardware_encoder_names <- function() {
+  table <- hardware_backend_families()
+  unlist(lapply(names(table), function(hw) paste(table[[hw]], hw, sep = "_")),
+         use.names = FALSE)
+}
+
+# diagnose_missing_encoders(): after FFmpeg has ALREADY exited non-zero in
+# ffm_run(), name the pipeline's codecs this build does not list as encodable
+# (M139). D024's diagnostic licence, in the shape run_separation_audio() uses:
+# the call aborts under every outcome, and this decides only WHICH abort is
+# signalled -- never whether execution proceeds, what was compiled, a default,
+# or a pipeline.
+#
+# Why after the failure and never before the start: FFmpeg looks up an encoder
+# only for a stream kind the output has, so `-c:v libx264` on an audio-only
+# input runs on a build without libx264. A check before the start would refuse
+# that call, which runs today (M139 plan gate, second round).
+#
+# Returns a character vector of the missing names, named by stream ("video",
+# "audio"), possibly empty; or NULL when the listing could not be read, which
+# is the fail-open answer: ffm_run() then raises the merge-base condition
+# unchanged. A reached limit is the one failure that also speaks, as a
+# `tidymedia_probe_timeout` warning carrying `tm_limit` and
+# `tm_check = "encoders"`, because a limit reached on a spawn is never silent
+# (D049). D049's grain is one warning per check per call, so a caller that
+# runs several pipelines -- ffm_batch(), separate_audio_video() -- takes that
+# warning from the first run whose read reaches the limit and sets
+# `tm_no_diagnosis` on the later runs (in ffm_batch(), the later runs on the
+# same worker), which ffm_run() reads to skip this function (M139 review
+# return 1). Those callers match `tm_check`, so another check's probe-timeout
+# warning neither sets the flag nor is held by them (M139 review pass 2).
+#
+# Every warning raised while the listings are read is muffled, the way
+# program_status() and has_encoder() keep a warning silent until it is decided
+# about (D088): the failed run already resolved the same program and said what
+# there was to say about its location. The probe-timeout warning below is
+# raised outside that handler.
+diagnose_missing_encoders <- function(object, call) {
+  wanted <- c(
+    stats::setNames(object$codec_video, rep("video", length(object$codec_video))),
+    stats::setNames(object$codec_audio, rep("audio", length(object$codec_audio)))
+  )
+  wanted <- wanted[!is.na(wanted) & nzchar(wanted) &
+                     !wanted %in% c("copy", hardware_encoder_names())]
+  if (length(wanted) == 0L) return(character())
+  rlang::try_fetch(
+    withCallingHandlers(
+      {
+        unlisted <- wanted[!wanted %in% cached_encoder_names()]
+        if (length(unlisted)) {
+          unlisted <- unlisted[!unlisted %in% cached_encodable_codecs()]
+        }
+        unlisted
+      },
+      warning = function(w) invokeRestart("muffleWarning")
+    ),
+    tidymedia_timeout = function(cnd) {
+      limit <- cnd$tm_limit
+      cli::cli_warn(
+        c(
+          "The encoder check timed out after {limit} second{?s}.",
+          "i" = "FFmpeg failed, and the package cannot say whether this \\
+                 FFmpeg build lacks an encoder the run named. Raise or remove \\
+                 {.code options(tidymedia.timeout = )}."
+        ),
+        class = "tidymedia_probe_timeout",
+        tm_limit = limit,
+        tm_check = "encoders",
+        call = call
+      )
+      NULL
+    },
+    error = function(cnd) NULL
+  )
+}
+
 # codec_family(): infer the codec family from a software codec name, so a user
 # can turn `hardware` on while keeping a familiar video_codec (e.g. "libx264"
 # -> "h264"). Backend-free by design (D079): "libx264" is the h264 family under
@@ -3507,14 +3615,23 @@ check_hardware_available <- function(video_codec, hardware = "none",
   }
   for (family in families) {
     if (!hardware_encoder_available(family, hardware, call = call)) {
+      encoder <- tm_hardware_encoder(family, hardware, call = call)
+      # The same event as ffm_run()'s diagnosis, a build lacking an encoder,
+      # classed the same so one event is not classed at one site and unclassed
+      # at the other (M139, D062). It carries that site's `tm_encoder` and
+      # `tm_stream`. With no exit established here, it carries neither
+      # `tidymedia_ffmpeg_exit` nor `tm_status` (D063).
       cli::cli_abort(
         c(
-          "{hardware} encoder {.val {tm_hardware_encoder(family, hardware, call = call)}} is
+          "{hardware} encoder {.val {encoder}} is
            not available.",
           "x" = "This FFmpeg build does not list it (see {.fn ffmpeg_encoders}).",
           "i" = "Use a machine whose FFmpeg build has it, or set
                  {.code fallback = TRUE} to encode in software instead."
         ),
+        class = "tidymedia_encoder_unavailable",
+        tm_encoder = encoder,
+        tm_stream = "video",
         call = call
       )
     }
@@ -7140,7 +7257,7 @@ concatenate_videos <- function(infiles, outfile, run = TRUE) {
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -7270,7 +7387,7 @@ compare_videos <- function(infiles, outfile,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -7404,7 +7521,7 @@ picture_in_picture <- function(main, overlay, outfile,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 

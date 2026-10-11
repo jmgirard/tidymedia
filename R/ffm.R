@@ -1601,6 +1601,35 @@ n_files <- function(x) {
 #' }
 #' So \code{tidymedia_loudnorm_no_measurement} is the one class that covers
 #' the analysis pass in both forms.
+#' @section When the build lacks an encoder:
+#' After FFmpeg exits non-zero, \code{ffm_run()} looks at the video and audio
+#' codecs that \code{\link{ffm_codec}} set on the pipeline. A name is
+#' encodable if \code{\link{ffmpeg_encoders}} lists it, or if
+#' \code{\link{ffmpeg_codecs}} lists it as a codec this build can encode, such
+#' as \code{"h264"}. If a codec is not encodable, the error also has the class
+#' \code{tidymedia_encoder_unavailable}, before \code{tidymedia_ffmpeg_exit}.
+#' It carries \code{tm_encoder}, the names, and \code{tm_stream}, which is
+#' \code{"video"} or \code{"audio"} for each name.
+#'
+#' The message says that this build lists no such encoder. It does not say
+#' that the missing encoder made the run fail. FFmpeg uses no video encoder for
+#' an input that has no video, so a run can fail for another reason. When a
+#' task function such as \code{\link{standardize_video}} runs its command, the
+#' error names that function.
+#'
+#' The check runs only after a failed run. A successful run, and a call with
+#' \code{run = FALSE}, never start it. It skips \code{"copy"}, a codec the
+#' pipeline does not set, the hardware encoders that
+#' \code{\link{hardware_encoder}} names, and encoders given through
+#' \code{\link{ffm_output_options}}. It asks FFmpeg for the two lists, and the
+#' package remembers each list for the session once it reads it (see
+#' \code{\link{refresh_ffmpeg_capabilities}}). If the package cannot read a
+#' list, the check says nothing, and the error is the
+#' \code{tidymedia_ffmpeg_exit} error alone. If reading a list reaches the
+#' \code{tidymedia.timeout} limit, a warning of class
+#' \code{tidymedia_probe_timeout} also says so, once per call.
+#' \code{\link{ffm_batch}} gives one \code{tidymedia_encoder_unavailable}
+#' warning for all its rows instead of an error for each.
 #' @seealso [ffm_compile()] to get the command without running it, [ffm_batch()]
 #'   to run many files, and [verify_media()] for the \code{verify} list.
 #' @family pipeline functions
@@ -1659,6 +1688,45 @@ ffm_run <- function(object, verify = NULL) {
   status <- attr(out, "status")
   if (!is.null(status)) {
     disposition <- remove_failed_output(output, object$overwrite, before)
+    # M139: name a codec this build does not list as encodable, only now that
+    # FFmpeg has failed (diagnose_missing_encoders() says why not before). The
+    # frame named is the verb the caller typed where one set `tm_call` on the
+    # pipeline (ffm_finish() and the separation runs), else this one. NULL from
+    # the diagnosis is its fail-open answer, and the abort below is unchanged.
+    call <- attr(object, "tm_call", exact = TRUE)
+    if (is.null(call)) call <- rlang::current_env()
+    # `tm_no_diagnosis` is set by a caller whose earlier run's listing read
+    # reached the limit, so one call warns once about the listing (D049;
+    # R/ffmpeg.R says how).
+    missing <- if (isTRUE(attr(object, "tm_no_diagnosis", exact = TRUE))) {
+      character()
+    } else {
+      diagnose_missing_encoders(object, call = call)
+    }
+    if (length(missing)) {
+      # One bullet per missing codec. The stream word is one of two constants and
+      # the name reaches cli only through {.val}, so a brace in a codec name is
+      # printed, never evaluated (M44).
+      lacks <- vapply(seq_along(missing), function(i) {
+        sprintf("This FFmpeg build lists no %s encoder {.val {missing[[%d]]}}.",
+                names(missing)[[i]], i)
+      }, character(1))
+      cli::cli_abort(
+        c(
+          "FFmpeg exited with status {status}.",
+          rlang::set_names(lacks, rep("x", length(lacks))),
+          "i" = "{.fn ffmpeg_encoders} lists the encoders this build has.",
+          "i" = "FFmpeg's error output is printed above.",
+          disposition,
+          "i" = "The failing command was: {.code ffmpeg {ffm_compile(object)}}"
+        ),
+        class = c("tidymedia_encoder_unavailable", "tidymedia_ffmpeg_exit"),
+        tm_status = as.integer(status),
+        tm_encoder = unname(missing),
+        tm_stream = names(missing),
+        call = call
+      )
+    }
     cli::cli_abort(
       c(
         "FFmpeg exited with status {status}.",
@@ -1702,10 +1770,18 @@ verify_output <- function(file, verify, call = rlang::caller_env()) {
 # Shared tail of the Layer 2 task verbs: compile the pipeline and, when
 # run = TRUE, execute it. Returns the compiled command (invisibly after
 # running) so every verb yields its reproducible command (M03 D-M03-6).
-ffm_finish <- function(object, run) {
+#
+# `call` is the verb the caller typed, and it carries no default for the reason
+# tm_hardware_encoder()'s does not: a site that forgot it would name this
+# helper. It reaches ffm_run() as the pipeline's `tm_call` attribute, which only
+# the missing-encoder diagnosis reads (M139). An attribute rather than an
+# internal ffm_run() body taking `call`, so every condition ffm_run() already
+# raises keeps the frame it names today.
+ffm_finish <- function(object, run, call) {
   rlang::check_bool(run)
   command <- ffm_compile(object)
   if (run) {
+    attr(object, "tm_call") <- call
     ffm_run(object)
     invisible(command)
   } else {

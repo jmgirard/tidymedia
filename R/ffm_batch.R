@@ -64,6 +64,31 @@
 #'   When \code{verify} is supplied, it also has a \code{verified} column.
 #'   When \code{manifest = TRUE}, a provenance manifest is attached as an
 #'   attribute; read it with \code{\link{ffm_manifest}}.
+#' @section When the build lacks an encoder:
+#' A job can fail while its pipeline names a codec this FFmpeg build does not
+#' list as encodable. The section of the same name on \code{\link{ffm_run}}
+#' says how that is decided. Such a job still runs, and it still gets
+#' \code{success = FALSE}. After all the jobs run, \code{ffm_batch()} gives one
+#' warning of class \code{tidymedia_encoder_unavailable} for all such jobs. It
+#' names each encoder and the jobs that used it. Its fields hold one element for
+#' each job and codec: \code{tm_encoder}, \code{tm_stream} and \code{tm_row},
+#' the job's row number in \code{jobs}. A task function's \code{_batch} form
+#' can pass \code{ffm_batch()} a table of its own, so these can differ from the
+#' rows of the table you gave: \code{\link{separate_audio_video_batch}} gives
+#' \code{ffm_batch()} two rows for each input, and
+#' \code{normalize_audio_batch(two_pass = TRUE)} leaves out silent inputs.
+#'
+#' The same class is also an error, for example when a hardware encoder is
+#' missing and \code{fallback = FALSE}. A \code{tryCatch()} handler for the
+#' class therefore also catches this warning and loses the batch's result. Use
+#' \code{withCallingHandlers()} to act on the warning and keep the result.
+#'
+#' If reading FFmpeg's encoder lists reaches the \code{tidymedia.timeout}
+#' limit, the batch gives one warning of class \code{tidymedia_probe_timeout}.
+#' The later jobs do not read the lists again. With \code{parallel = TRUE},
+#' each worker reads them up to once. That warning comes before the
+#' \code{tidymedia_encoder_unavailable} one, so a \code{tryCatch()} handler for
+#' it also loses the result; use \code{withCallingHandlers()} for it too.
 #' @seealso [segment_video()], which is built on \code{ffm_batch()};
 #'   [verify_media()] for the verification spec and [ffm_manifest()] for the
 #'   provenance manifest.
@@ -167,11 +192,40 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
     # documented logical column, and an attribute on it would not survive
     # unlist() off the parallel workers or the preallocated assignment in
     # run_with_progress().
+    #
+    # A row ffm_run() diagnosed as naming an encoder this build lacks (M139)
+    # also carries the names back, as plain fields, so they survive the trip
+    # from a parallel worker the way `timed_out` does.
+    #
+    # A limit reached while that diagnosis reads FFmpeg's listings warns once
+    # per call, never once per row (D049). So the row's warning is held here
+    # and returned as a field, and once one row's read reached the limit, the
+    # later rows this closure runs skip the diagnosis (`tm_no_diagnosis`), so
+    # they do not wait on the listing again. Under `parallel = TRUE` each
+    # worker's copy keeps its own flag; the one warning below is still one.
+    listing_timed_out <- FALSE
     run_one <- function(pipeline) {
-      res <- tryCatch(ffm_run(pipeline), error = function(e) e)
+      if (listing_timed_out) attr(pipeline, "tm_no_diagnosis") <- TRUE
+      probe_limit <- NULL
+      res <- withCallingHandlers(
+        tryCatch(ffm_run(pipeline), error = function(e) e),
+        # Only the encoder check's warning is held; another check's passes by
+        # (M139 review pass 2).
+        tidymedia_probe_timeout = function(w) {
+          if (identical(w$tm_check, "encoders")) {
+            probe_limit <<- w$tm_limit
+            invokeRestart("muffleWarning")
+          }
+        }
+      )
+      if (!is.null(probe_limit)) listing_timed_out <<- TRUE
+      diagnosed <- inherits(res, "tidymedia_encoder_unavailable")
       list(
         success = !inherits(res, "error") && is.null(attr(res, "status")),
-        timed_out = inherits(res, "tidymedia_timeout")
+        timed_out = inherits(res, "tidymedia_timeout"),
+        encoder = if (diagnosed) res$tm_encoder else character(),
+        stream = if (diagnosed) res$tm_stream else character(),
+        probe_limit = if (is.null(probe_limit)) NA_real_ else as.numeric(probe_limit)
       )
     }
     results <- if (parallel) {
@@ -225,6 +279,58 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
                  {.code 0} means no limit."
         ),
         class = "tidymedia_batch_timeout"
+      )
+    }
+
+    # The one warning for a limit reached while the missing-encoder diagnosis
+    # read FFmpeg's listings (M139 review return 1; D049's per-call grain).
+    probe_limits <- vapply(results, `[[`, numeric(1), "probe_limit")
+    if (any(!is.na(probe_limits))) {
+      limit <- probe_limits[!is.na(probe_limits)][[1]]
+      cli::cli_warn(
+        c(
+          "The encoder check timed out after {limit} second{?s} during this \\
+           batch.",
+          "i" = "Some jobs failed, and the package cannot say whether this \\
+                 FFmpeg build lacks an encoder they named. Raise or remove \\
+                 {.code options(tidymedia.timeout = )}."
+        ),
+        class = "tidymedia_probe_timeout",
+        tm_limit = limit
+      )
+    }
+
+    # The batch form of ffm_run()'s missing-encoder diagnosis (M139): the rows
+    # still ran and still read `success = FALSE`, as they do without this, and
+    # one warning names each encoder this build lacks with the rows that named
+    # it. Row numbers are those of the jobs table this function received. The
+    # fields hold one element per (row, codec) pair. Encoder names reach the
+    # message only through {.val} (M44).
+    encoders <- lapply(results, `[[`, "encoder")
+    hit <- which(lengths(encoders) > 0L)
+    if (length(hit)) {
+      tm_row <- rep(hit, lengths(encoders[hit]))
+      tm_encoder <- unlist(encoders[hit], use.names = FALSE)
+      tm_stream <- unlist(lapply(results[hit], `[[`, "stream"), use.names = FALSE)
+      keys <- unique(data.frame(encoder = tm_encoder, stream = tm_stream))
+      lacks <- vapply(seq_len(nrow(keys)), function(i) {
+        rows <- tm_row[tm_encoder == keys$encoder[[i]] &
+                         tm_stream == keys$stream[[i]]]
+        sprintf("No %s encoder {.val {keys$encoder[[%d]]}}: row%s %s.",
+                keys$stream[[i]], i, if (length(rows) > 1L) "s" else "",
+                paste(rows, collapse = ", "))
+      }, character(1))
+      cli::cli_warn(
+        c(
+          "{length(hit)} job{?s} failed while naming an encoder this FFmpeg \\
+           build does not list.",
+          rlang::set_names(lacks, rep("x", length(lacks))),
+          "i" = "{.fn ffmpeg_encoders} lists the encoders this build has."
+        ),
+        class = "tidymedia_encoder_unavailable",
+        tm_encoder = tm_encoder,
+        tm_stream = tm_stream,
+        tm_row = tm_row
       )
     }
 

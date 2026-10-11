@@ -217,7 +217,10 @@ resolve_check_tracks <- function(call = rlang::caller_env()) {
 #' * The dropped-track check of [extract_audio()], [convert_audio()],
 #'   [normalize_audio()] and their `_batch` forms warns that it could not check.
 #'   The track count that [separate_audio_video()] reads after a failed run
-#'   warns the same way. A batch manifest, see [ffm_manifest()], and
+#'   warns the same way. So does the check of FFmpeg's encoder lists that
+#'   [ffm_run()], the task functions and [ffm_batch()] make after a failed run,
+#'   once per call (see "When the build lacks an encoder" on [ffm_run()]). A
+#'   batch manifest, see [ffm_manifest()], and
 #'   [program_status()] warn when they cannot read a program version. These
 #'   warnings have the class `tidymedia_probe_timeout`, and the call goes on as
 #'   it would for an unreadable input.

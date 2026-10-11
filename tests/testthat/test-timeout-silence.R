@@ -64,11 +64,17 @@ test_that("the absorber partition is the reaching functions that can swallow", {
   # test-timeout-refusal-blame.R that derives it, by forcing a limit at the
   # spawn and requiring `has_encoder()` to abort or warn like every other domain
   # member (D049). A handler that swallowed it would redden there.
+  #
+  # diagnose_missing_encoders() joined at M139. It reads the encoder and codec
+  # listings only after FFmpeg has already failed in ffm_run(), and its handler
+  # turns a limit reached on that read into a `tidymedia_probe_timeout` warning
+  # rather than swallowing it. The guard is test-encoder-diagnosis.R's
+  # reached-limit cell, which requires that warning.
   expect_identical(
     tm_timeout_absorbers(),
-    c("capture_version", "count_audio_streams", "ffm_batch", "ffm_run",
-      "program_status", "run_separation_audio", "separate_audio_video",
-      "tm_encoder_available", "verify_media")
+    c("capture_version", "count_audio_streams", "diagnose_missing_encoders",
+      "ffm_batch", "ffm_run", "program_status", "run_separation_audio",
+      "separate_audio_video", "tm_encoder_available", "verify_media")
   )
 })
 

@@ -30,16 +30,39 @@ cached_encoder_names <- function() {
   .tm_capabilities$encoder_names
 }
 
+# cached_encodable_codecs(): the codec names this build can encode, the rows of
+# `ffmpeg -codecs` marked with E, remembered for the session once read, beside
+# the encoder pool. A codec name is not an encoder name: `-c:v h264` and `-c:a mp3`
+# run on a build whose `-encoders` lists neither, because FFmpeg maps a codec
+# name to one of its encoders. Read by one caller, diagnose_missing_encoders(),
+# and only after FFmpeg has already failed (M139). A failed read stores nothing,
+# so the next diagnosis asks again. ffmpeg_codecs() itself stays uncached
+# (D044): it is the exported view of the build as it is now.
+cached_encodable_codecs <- function() {
+  if (is.null(.tm_capabilities$encodable_codecs)) {
+    codecs <- ffmpeg_codecs()
+    .tm_capabilities$encodable_codecs <- codecs$name[codecs$encoding]
+  }
+  .tm_capabilities$encodable_codecs
+}
+
 #' Forget what tidymedia remembers about your FFmpeg build
 #'
-#' Discard the package's record of which encoders your FFmpeg build has. The
-#' next query then asks FFmpeg again.
+#' Discard the package's record of which encoders and codecs your FFmpeg build
+#' has. The next query then asks FFmpeg again.
 #'
 #' The first call in an R session to \code{\link{has_encoder}}, or one that
 #' uses \code{hardware = "nvenc"} or \code{hardware = "videotoolbox"}, asks
 #' FFmpeg which encoders it has. The package remembers that answer for the rest
 #' of the session. Later calls reuse
 #' it and do not start FFmpeg again each time, so a large batch stays fast.
+#'
+#' A run that FFmpeg refuses can also fill the record. After such a run,
+#' \code{\link{ffm_run}} can ask FFmpeg for its encoders and for the codecs it
+#' can encode, to name a missing encoder in the error. The package remembers
+#' both lists in the same way. A list that FFmpeg did not give is not
+#' remembered. The section "When the build lacks an encoder" on
+#' \code{\link{ffm_run}} says when the lists are asked for.
 #'
 #' So the package does not see a change to your FFmpeg build until you discard
 #' the record. Examples of a change are a new FFmpeg install, a new graphics

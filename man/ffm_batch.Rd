@@ -92,6 +92,34 @@ an output whose last \code{-f} option is \code{-f null}, as
 \code{\link[=with_timeout]{with_timeout()}} explains how to limit how long R waits for each program in
 a job, and what happens when a program reaches the limit.
 }
+\section{When the build lacks an encoder}{
+
+A job can fail while its pipeline names a codec this FFmpeg build does not
+list as encodable. The section of the same name on \code{\link{ffm_run}}
+says how that is decided. Such a job still runs, and it still gets
+\code{success = FALSE}. After all the jobs run, \code{ffm_batch()} gives one
+warning of class \code{tidymedia_encoder_unavailable} for all such jobs. It
+names each encoder and the jobs that used it. Its fields hold one element for
+each job and codec: \code{tm_encoder}, \code{tm_stream} and \code{tm_row},
+the job's row number in \code{jobs}. A task function's \code{_batch} form
+can pass \code{ffm_batch()} a table of its own, so these can differ from the
+rows of the table you gave: \code{\link{separate_audio_video_batch}} gives
+\code{ffm_batch()} two rows for each input, and
+\code{normalize_audio_batch(two_pass = TRUE)} leaves out silent inputs.
+
+The same class is also an error, for example when a hardware encoder is
+missing and \code{fallback = FALSE}. A \code{tryCatch()} handler for the
+class therefore also catches this warning and loses the batch's result. Use
+\code{withCallingHandlers()} to act on the warning and keep the result.
+
+If reading FFmpeg's encoder lists reaches the \code{tidymedia.timeout}
+limit, the batch gives one warning of class \code{tidymedia_probe_timeout}.
+The later jobs do not read the lists again. With \code{parallel = TRUE},
+each worker reads them up to once. That warning comes before the
+\code{tidymedia_encoder_unavailable} one, so a \code{tryCatch()} handler for
+it also loses the result; use \code{withCallingHandlers()} for it too.
+}
+
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 jobs <- tibble::tibble(

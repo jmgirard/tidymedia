@@ -1195,9 +1195,11 @@ separate_audio_video <- function(infile, audiofile, videofile,
     # The video run names this verb if its encoder is missing (M139; ffm_finish()
     # says why an attribute). The audio half's helper sets its own.
     attr(video, "tm_call") <- rlang::current_env()
-    # One call, one probe-timeout warning (D049): when the audio half's
-    # warning passes by, the video run skips the missing-encoder diagnosis
-    # rather than wait on the listing a second time (M139 review return 1).
+    # One call, one encoder-check timeout warning (D049): when the audio
+    # half's probe-timeout warning passes by, the video run skips the
+    # missing-encoder diagnosis rather than wait on the listing a second time
+    # (M139 review return 1). The track-count probe's own timeout warning is a
+    # different check and can arrive beside it.
     # The track-count probe's own timeout warning sets it too; that only
     # happens while the limit is being reached anyway.
     held <- withCallingHandlers(
@@ -3265,12 +3267,15 @@ hardware_encoder_names <- function() {
 # `tidymedia_probe_timeout` warning carrying `tm_limit`, because a limit reached
 # on a spawn is never silent (D049). D049's grain is one warning per call, so a
 # caller that runs several pipelines -- ffm_batch(), separate_audio_video() --
-# takes that warning from its first run and sets `tm_no_diagnosis` on the rest,
-# which ffm_run() reads to skip this function (M139 review return 1).
+# takes that warning from the first run whose read reaches the limit and sets
+# `tm_no_diagnosis` on the later runs (in ffm_batch(), the later runs on the
+# same worker), which ffm_run() reads to skip this function (M139 review
+# return 1).
 #
-# The location warnings the program lookup can raise are muffled, by class and
-# no wider: the failed run already resolved the same program and said anything
-# there was to say about its location. Any other warning passes through.
+# The three classed location warnings (tm_audible_location_classes()) are
+# muffled: the failed run already resolved the same program and said anything
+# there was to say about its location. Any other warning, the unclassed
+# "Failed to find" one included, passes through.
 diagnose_missing_encoders <- function(object, call) {
   wanted <- c(
     stats::setNames(object$codec_video, rep("video", length(object$codec_video))),

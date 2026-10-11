@@ -73,10 +73,10 @@
 #' names each encoder and the jobs that used it. Its fields hold one element for
 #' each job and codec: \code{tm_encoder}, \code{tm_stream} and \code{tm_row},
 #' the job's row number in \code{jobs}. A task function's \code{_batch} form
-#' can pass \code{ffm_batch()} a table of its own, so for
-#' \code{\link{separate_audio_video_batch}} and
-#' \code{normalize_audio_batch(two_pass = TRUE)} these are not the rows of the
-#' table you gave.
+#' can pass \code{ffm_batch()} a table of its own, so these can differ from the
+#' rows of the table you gave: \code{\link{separate_audio_video_batch}} gives
+#' \code{ffm_batch()} two rows for each input, and
+#' \code{normalize_audio_batch(two_pass = TRUE)} leaves out silent inputs.
 #'
 #' The same class is also an error, for example when a hardware encoder is
 #' missing and \code{fallback = FALSE}. A \code{tryCatch()} handler for the
@@ -84,8 +84,9 @@
 #' \code{withCallingHandlers()} to act on the warning and keep the result.
 #'
 #' If reading FFmpeg's encoder lists reaches the \code{tidymedia.timeout}
-#' limit, the batch gives one warning of class \code{tidymedia_probe_timeout},
-#' and the later jobs do not read the lists again.
+#' limit, the batch gives one warning of class \code{tidymedia_probe_timeout}.
+#' The later jobs do not read the lists again. With \code{parallel = TRUE},
+#' each worker reads them up to once.
 #' @seealso [segment_video()], which is built on \code{ffm_batch()};
 #'   [verify_media()] for the verification spec and [ffm_manifest()] for the
 #'   provenance manifest.

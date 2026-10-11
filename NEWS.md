@@ -20,13 +20,14 @@ CRAN uses.
   holds only one track (such as `.mp3` or `.aac`), still gives its error about
   several audio tracks.
   A batch gives one warning of the same class after its jobs run, naming each
-  encoder and the rows of the jobs table `ffm_batch()` ran. For
-  `separate_audio_video_batch()` and `normalize_audio_batch(two_pass = TRUE)`
-  that table is not the one you gave. If reading FFmpeg's lists reaches
-  `options(tidymedia.timeout = )`, one `tidymedia_probe_timeout` warning says
-  so, once per call. A run that succeeds, and a call with `run = FALSE`,
-  compile and start what they did before, so a dry run can still show a
-  command your build cannot run. The hardware-encoder error for
+  encoder and the rows of the jobs table `ffm_batch()` ran. That table can
+  differ from yours: `separate_audio_video_batch()` gives it two rows per
+  input, and `normalize_audio_batch(two_pass = TRUE)` leaves out silent
+  inputs. If reading FFmpeg's lists reaches `options(tidymedia.timeout = )`,
+  one `tidymedia_probe_timeout` warning says so, once per call. A run that
+  succeeds, and a call with `run = FALSE`, compile the same command as before,
+  and the check after a failed run never runs for them, so a dry run can
+  still show a command your build cannot run. The hardware-encoder error for
   `fallback = FALSE`, which a dry run can also give, now has the same class.
   `ffmpeg_encoders()` and `ffmpeg_codecs()` no longer print FFmpeg's version
   banner.

@@ -1734,10 +1734,18 @@ verify_output <- function(file, verify, call = rlang::caller_env()) {
 # Shared tail of the Layer 2 task verbs: compile the pipeline and, when
 # run = TRUE, execute it. Returns the compiled command (invisibly after
 # running) so every verb yields its reproducible command (M03 D-M03-6).
-ffm_finish <- function(object, run) {
+#
+# `call` is the verb the caller typed, and it carries no default for the reason
+# tm_hardware_encoder()'s does not: a site that forgot it would name this
+# helper. It reaches ffm_run() as the pipeline's `tm_call` attribute, which only
+# the missing-encoder diagnosis reads (M139). An attribute rather than an
+# internal ffm_run() body taking `call`, so every condition ffm_run() already
+# raises keeps the frame it names today.
+ffm_finish <- function(object, run, call) {
   rlang::check_bool(run)
   command <- ffm_compile(object)
   if (run) {
+    attr(object, "tm_call") <- call
     ffm_run(object)
     invisible(command)
   } else {

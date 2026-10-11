@@ -81,7 +81,8 @@ extract_frame <- function(infile, outfile, timestamp = NULL, frame = NULL,
   resolve_timeout()
   if (rlang::is_null(timestamp)) timestamp <- frame / get_frame_rate(infile)
 
-  ffm_finish(frame_pipeline(infile, outfile, timestamp), run)
+  ffm_finish(frame_pipeline(infile, outfile, timestamp), run,
+             call = rlang::current_env())
 }
 
 
@@ -160,7 +161,7 @@ sample_frames <- function(infile, outdir, fps = NULL, interval = NULL,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -571,7 +572,7 @@ extract_audio <- function(infile, outfile, audio_codec = "copy",
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -750,6 +751,9 @@ holds_multiple_audio <- function(path) {
 # diagnostic alike (M090's contract, measured on this branch 2026-08-30).
 run_separation_audio <- function(pipeline, infile, outfile, audio_stream,
                                  call = rlang::caller_env()) {
+  # The verb the caller typed, for ffm_run()'s missing-encoder diagnosis (M139;
+  # ffm_finish() says why an attribute).
+  attr(pipeline, "tm_call") <- call
   if (!is.null(audio_stream)) return(invisible(ffm_run(pipeline)))
   tryCatch(
     ffm_run(pipeline),
@@ -1187,6 +1191,10 @@ separate_audio_video <- function(infile, audiofile, videofile,
     # is the limit's documented per-spawned-program scope (D066 supersedes the
     # claim D065 made here). Layer 1 removes what a failed run WROTE, on either
     # half, and leaves a file it never wrote to as it found it (D046).
+    #
+    # The video run names this verb if its encoder is missing (M139; ffm_finish()
+    # says why an attribute). The audio half's helper sets its own.
+    attr(video, "tm_call") <- rlang::current_env()
     held <- tryCatch({
       run_separation_audio(audio, infile, audiofile, audio_stream)
       NULL
@@ -1354,7 +1362,7 @@ convert_audio <- function(infile, outfile, audio_codec = NULL,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 # crop_video() ------------------------------------------------------------
@@ -1469,7 +1477,7 @@ crop_video <- function(infile, outfile, width, height,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -1564,7 +1572,7 @@ format_for_web <- function(infile, outfile,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -1639,7 +1647,7 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -1769,7 +1777,7 @@ standardize_video <- function(infile, outfile,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -1947,7 +1955,7 @@ anonymize_video <- function(infile, outfile, regions,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -2647,7 +2655,7 @@ normalize_audio <- function(infile, outfile,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 # check_audio_codec_not_copy(): refuse audio_codec = "copy" on the loudness
@@ -7216,7 +7224,7 @@ concatenate_videos <- function(infiles, outfile, run = TRUE) {
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -7346,7 +7354,7 @@ compare_videos <- function(infiles, outfile,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 
@@ -7480,7 +7488,7 @@ picture_in_picture <- function(main, overlay, outfile,
   # Below the pipeline, so the builder's own argument checks keep reporting
   # first; above the `run` gate, so a dry-run compile is refused too.
   resolve_timeout()
-  ffm_finish(p, run)
+  ffm_finish(p, run, call = rlang::current_env())
 }
 
 

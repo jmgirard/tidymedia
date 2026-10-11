@@ -221,6 +221,133 @@ test_that("the hardware availability abort carries the same class and fields", {
   expect_no_error(standardize_video(f, out, hardware = "nvenc", run = FALSE))
 })
 
+# The single-file blame sweep (AC3) -------------------------------------------
+
+# The domain is computed, never listed: every export the namespace call graph
+# shows reaching ffm_run() and not ffm_batch(), less ffm_batch() itself, plus
+# ffm_run() by name (it does not reach itself in the graph).
+tm_single_run_domain <- function() {
+  graph <- tm_call_graph()
+  exports <- getNamespaceExports("tidymedia")
+  reach <- vapply(exports, function(e) {
+    isTRUE(tm_reaches(graph, e, "ffm_run")) &&
+      !isTRUE(tm_reaches(graph, e, "ffm_batch"))
+  }, logical(1))
+  sort(c(setdiff(exports[reach], "ffm_batch"), "ffm_run"))
+}
+
+# Exports in that domain whose pipeline carries no codec but "copy" under any
+# arguments, so no call of theirs can fail on a missing encoder. Read off their
+# compiled commands: two set `-codec:v copy -codec:a copy` and take no codec
+# argument, and two set no `-codec` at all.
+tm_single_run_no_codec <- c(
+  concatenate_videos = "copies both streams; no codec argument",
+  strip_metadata = "copies both streams; no codec argument",
+  extract_frame = "sets no codec; the image format follows the file name",
+  sample_frames = "sets no codec; the image format follows the file name"
+)
+
+# One call per export that sets a codec the mocked build lacks. `bad` is that
+# codec. format_for_web() has no codec argument and hardcodes libx264 and aac,
+# which the mocked build also lacks.
+tm_single_run_calls <- function(f, f2, dir, bad) {
+  out <- file.path(dir, "out.mp4")
+  regions <- data.frame(x = 0, y = 0, width = 8, height = 8)
+  list(
+    anonymize_video = list(f, out, regions, video_codec = bad),
+    compare_videos = list(c(f, f2), out, video_codec = bad),
+    convert_audio = list(f, file.path(dir, "out.m4a"), audio_codec = bad),
+    crop_video = list(f, out, width = 8, height = 8, video_codec = bad),
+    extract_audio = list(f, file.path(dir, "out.m4a"), audio_codec = bad),
+    ffm_run = list(ffm_codec(ffm_files(f, out), video = bad)),
+    format_for_web = list(f, out),
+    normalize_audio = list(f, file.path(dir, "out.m4a"), audio_codec = bad),
+    picture_in_picture = list(f, f2, out, video_codec = bad),
+    separate_audio_video = list(f, file.path(dir, "a.m4a"),
+                                file.path(dir, "v.mp4"),
+                                audio_codec = bad, video_codec = "copy"),
+    standardize_video = list(f, out, video_codec = bad)
+  )
+}
+
+test_that("a single-file call names the function the caller typed", {
+  bad <- "nosuchenc"
+  # A run fails only where its arguments name a codec the mocked build lacks,
+  # so the other half of separate_audio_video() succeeds, as the criterion
+  # requires for that verb.
+  local_mocked_bindings(
+    run_program = function(location, args, ...) {
+      if (any(args %in% c(bad, "libx264", "aac"))) {
+        structure(character(), status = 8L)
+      } else {
+        character()
+      }
+    },
+    cached_encoder_names = function() character(),
+    cached_encodable_codecs = function() character()
+  )
+  f <- make_input()
+  f2 <- make_input()
+  dir <- withr::local_tempdir()
+  calls <- tm_single_run_calls(f, f2, dir, bad)
+
+  domain <- tm_single_run_domain()
+  # The domain is not empty, and the calls and the listed exceptions together
+  # are exactly it: a new export reaching ffm_run() must be placed in one.
+  expect_gt(length(domain), 10L)
+  expect_setequal(c(names(calls), names(tm_single_run_no_codec)), domain)
+  expect_length(intersect(names(calls), names(tm_single_run_no_codec)), 0L)
+
+  for (name in names(calls)) {
+    cnd <- tryCatch(
+      # By name, so the call the condition records carries the function's
+      # name rather than the function object.
+      suppressWarnings(do.call(name, calls[[name]],
+                               envir = asNamespace("tidymedia"))),
+      error = function(e) e
+    )
+    expect_s3_class(cnd, "tidymedia_encoder_unavailable")
+    expect_identical(rlang::call_name(conditionCall(cnd)), name, info = name)
+  }
+})
+
+test_that("the listed exceptions compile no codec but copy", {
+  f <- make_input()
+  f2 <- make_input()
+  dir <- withr::local_tempdir()
+  commands <- list(
+    concatenate_videos = concatenate_videos(c(f, f2), file.path(dir, "o.mp4"),
+                                            run = FALSE),
+    strip_metadata = strip_metadata(f, file.path(dir, "o.mp4"), run = FALSE),
+    extract_frame = extract_frame(f, file.path(dir, "o.png"), timestamp = 0.1,
+                                  run = FALSE),
+    sample_frames = sample_frames(f, dir, fps = 1, run = FALSE)
+  )
+  expect_setequal(names(commands), names(tm_single_run_no_codec))
+  for (name in names(commands)) {
+    codecs <- regmatches(commands[[name]],
+                         gregexpr("-codec:[av] \\S+", commands[[name]]))[[1]]
+    expect_true(all(grepl(" copy$", codecs)), info = name)
+  }
+})
+
+test_that("a condition the diagnosis does not touch keeps naming ffm_run()", {
+  # A verb's run that fails with every codec listed: the merge-base exit
+  # condition, whose frame is still ffm_run()'s although the verb set
+  # `tm_call` on the pipeline.
+  local_mocked_bindings(
+    run_program = function(...) structure(character(), status = 8L),
+    cached_encoder_names = function() c("libx264", "aac"),
+    cached_encodable_codecs = function() character()
+  )
+  f <- make_input()
+  out <- withr::local_tempfile(fileext = ".mp4")
+  cnd <- tryCatch(standardize_video(f, out, audio_codec = "aac"),
+                  error = function(e) e)
+  expect_identical(class(cnd), exit_classes)
+  expect_identical(rlang::call_name(conditionCall(cnd)), "ffm_run")
+})
+
 # Wrapper cells ---------------------------------------------------------------
 
 local_build_model <- function(hide, env = parent.frame()) {

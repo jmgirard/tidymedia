@@ -4,16 +4,15 @@ _The only authority on milestone status. Grouped by status, not ID._
 _Migrated from `project/` on 2026-07-11 (adopt-in-place); pre-cairn history in git log._
 _Released 0.2.0 2026-09-18 (first CRAN submission; the CRAN-readiness candidate row is now stale and is `/cairn-triage`'s to close). 0.2.1 released 2026-09-29._
 _0.2.2 window declared by the maintainer 2026-10-10, against CRAN's 2026-10-31 correction deadline: it ships M138 alone, and M139 waits for a later one._
-_Last hygiene check: 2026-10-11 (M138 done and archived, PR #142 squash-merged with all eleven checks green after three returns and a descope. One candidate row added, one install row corrected, M135 pruned. Two lessons added, the `Sys.which` lesson trimmed. `ROADMAP.md` is about 52,000 bytes against its 24,000-byte budget, and `/cairn-triage` is the remedy.)_
+_Last hygiene check: 2026-10-11 (M139 done and archived, PR #143 squash-merged with all eleven checks green after one defect return and one amendment return. It merged before 0.2.2 was cut, at the user's choice, so the 0.2.2 line above is the user's to revise. Three review follow-ups absorbed into candidate rows, M136 pruned. No lesson added: `LESSONS.md` is at 19,992 of its 20,000 bytes. `ROADMAP.md` is about 53,000 bytes against its 24,000-byte budget, and `/cairn-triage` is the remedy.)_
 
 ## Milestones
 
 | ID | Title | Status | Depends on | Priority | File/Archive |
 |---|---|---|---|---|---|
-| M136 | The batch re-encoding functions take `quality` as an argument and as a jobs column | done | M135 | normal | milestones/archive/M136-quality-column-batch-verbs.md |
 | M137 | `ffm_jobs()` lists every container the package itself writes | done | — | normal | milestones/archive/M137-jobs-vocabulary-round-trip.md |
 | M138 | The shipped docs and the remembered-location checks stop assuming what the host's FFmpeg build and `which` provide | done | — | high | milestones/archive/M138-encoder-and-location-portability.md |
-| M139 | A failed FFmpeg run names the encoder this build lacks | review | M138 | normal | milestones/M139-missing-encoder-front-door.md |
+| M139 | A failed FFmpeg run names the encoder this build lacks | done | M138 | normal | milestones/archive/M139-missing-encoder-front-door.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

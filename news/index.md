@@ -2,6 +2,8 @@
 
 ## tidymedia 0.2.2
 
+CRAN release: 2026-10-11
+
 The package no longer assumes things about the machine it runs on that
 are not true everywhere. The fixes answer check failures on the two
 Fedora flavors CRAN uses, whose FFmpeg has no `libx264` and whose

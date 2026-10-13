@@ -8,16 +8,16 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/jmgirard/tidymedia/blob/v0.2.2/inst/CITATION)
+[`inst/CITATION`](https://github.com/jmgirard/tidymedia/blob/master/inst/CITATION)
 
 Girard J (2026). *tidymedia: Media File Preprocessing and Metadata for
-the 'tidyverse'*. R package version 0.2.2,
+the 'tidyverse'*. R package version 0.2.2.9000,
 <https://jmgirard.github.io/tidymedia/>.
 
     @Manual{,
       title = {{tidymedia}: Media File Preprocessing and Metadata for the 'tidyverse'},
       author = {Jeffrey Girard},
       year = {2026},
-      note = {R package version 0.2.2},
+      note = {R package version 0.2.2.9000},
       url = {https://jmgirard.github.io/tidymedia/},
     }

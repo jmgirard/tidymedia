@@ -1,3 +1,5 @@
+# tidymedia (development version)
+
 # tidymedia 0.2.2
 
 The package no longer assumes things about the machine it runs on that are not

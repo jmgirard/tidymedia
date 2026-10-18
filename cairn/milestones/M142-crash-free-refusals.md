@@ -135,6 +135,7 @@ pages of those five functions, and `NEWS.md`.
 Review pass 1, 2026-10-18, on branch head f1452a91 (master 2f023576 unmoved).
 
 - AC5 evidence: `man/ffmpeg.Rd`, `man/ffmpeg_codecs.Rd`, `man/ffmpeg_encoders.Rd`, `man/ffprobe.Rd` and `man/mediainfo.Rd` each hold "If tidymedia cannot find <program>, the call stops with the error "Could not locate <program>."" (grep over each regenerated Rd, line breaks joined).
+- No-binaries run on fe9014da: full `devtools::test()` with `PATH=/usr/local/bin:/usr/bin:/bin` and both config dirs redirected to an empty folder (FFmpeg, FFprobe and MediaInfo absent, checked by `Sys.which()` first): 0 failures. The pre-fix test-with-timeout.R run the same way errors in "each spawn site is handed the per-call limit" with `Error in ffmpeg("-version"): Could not locate FFmpeg.`; the fixed file passes.
 - spawned: diff-bug, blame-history, prior-review
 - diff-bug #1: `test-with-timeout.R` "each spawn site is handed the per-call limit" mocks only `guard_timeout()`, so with the lookup now ahead of it the test stops with "Could not locate" on a machine with no media binaries, CRAN included — fix now (locators pinned as helper-timeout-sweep.R pins them; confirmed by the no-binaries suite run below).
 - blame-history #1: the same test-with-timeout.R defect — fix now (same fix as diff-bug #1).

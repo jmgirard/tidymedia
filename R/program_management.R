@@ -1051,7 +1051,8 @@ tm_na_string <- function(x) {
 #' counts as empty only when it holds nothing, not even a hidden file or an
 #' empty folder. A folder the package cannot read never counts as empty. Both
 #' functions leave a folder that is not empty. [set_program()] gives a
-#' `tidymedia_location_folder` error for one. [unset_program()] removes the
+#' `tidymedia_location_folder` error for one in the current folder.
+#' [unset_program()] removes the
 #' location files and empty folders at the two paths, and gives a
 #' `tidymedia_location_folder_kept` warning for the folder it leaves. If each
 #' path that holds something holds a folder that is not empty,
@@ -1161,7 +1162,7 @@ find_ffplay <- function() {
 #' its folder has no write permission, or when that folder is missing and
 #' cannot be created. The error
 #' names the file in its message and in `tm_file`. The call does not replace a
-#' file that it cannot write, so the file keeps the location it held.
+#' file without write permission, so that file keeps the location it held.
 #'
 #' For locations saved by versions before 0.2.0, see the section "Locations
 #' saved by earlier versions" in [find_ffmpeg()].
@@ -1287,23 +1288,30 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   # place. A folder that cannot be created, or a folder or file without write
   # permission, made dir.create() warn and writeLines() warn "cannot open file
   # ... Permission denied" and then stop with "cannot open the connection"
-  # (measured 2026-10-18). Both are caught here and become one tidymedia error,
-  # and the warnings are muffled, because the error names the same failure
-  # (M143). A file the caller made read-only is refused, not replaced: there is
-  # no write-elsewhere-then-rename step. The capability memo stays, because
-  # the remembered location did not change.
-  written <- tryCatch(
+  # (measured 2026-10-18). The error is caught here and becomes one tidymedia
+  # error, with R's own error kept as its parent, so a cause other than
+  # permission (a full disk, a file where a folder belongs) still shows. The
+  # warnings are held back and dropped only when an error follows, because
+  # that error names the same failure. A write that R reports only by a
+  # warning, with no error, still warns (M143 review diff-bug #1 and #2). A
+  # file the caller made read-only is refused, not replaced: there is no
+  # write-elsewhere-then-rename step. The capability memo stays on the error,
+  # because the remembered location did not change.
+  held <- list()
+  failure <- tryCatch(
     withCallingHandlers(
       {
-        if (!dir.exists(config_dir)) dir.create(config_dir, recursive = TRUE)
-        writeLines(location, config_file)
-        TRUE
+        tm_save_location(location, config_dir, config_file)
+        NULL
       },
-      warning = function(w) invokeRestart("muffleWarning")
+      warning = function(w) {
+        held[[length(held) + 1L]] <<- w
+        invokeRestart("muffleWarning")
+      }
     ),
-    error = function(e) FALSE
+    error = function(e) e
   )
-  if (!written) {
+  if (!is.null(failure)) {
     cli::cli_abort(
       c(
         "Can't save the location of {program}.",
@@ -1314,9 +1322,11 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
       class = "tidymedia_location_not_written",
       tm_program = program,
       tm_file = config_file,
+      parent = failure,
       call = call
     )
   }
+  for (w in held) warning(w)
 
   # Pointing at a different binary invalidates everything remembered about the
   # old one, so the session memo goes with it (M67/D044). Unconditional across
@@ -1325,6 +1335,14 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   forget_ffmpeg_capabilities()
 
   invisible(TRUE)
+}
+
+# The two writes behind set_program(), in one seam so a test can stand in a
+# write that warns without failing (M143 review). Base R's own functions cannot
+# be mocked from the suite.
+tm_save_location <- function(location, config_dir, config_file) {
+  if (!dir.exists(config_dir)) dir.create(config_dir, recursive = TRUE)
+  writeLines(location, config_file)
 }
 
 # set_mediainfo() ---------------------------------------------------------

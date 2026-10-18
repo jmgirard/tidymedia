@@ -6,11 +6,15 @@
 # cannot change unless the binary does (D044).
 #
 # Lifetime is the R session. Four routes discard it, and D089 is the census:
-# the exported `refresh_ffmpeg_capabilities()`, `set_program()`, a successful
-# `unset_program()`, and an `unset_program()` that removed at least one of the
-# two remembered files before failing on the other -- the file it did delete
-# may be the one lookups were answering from. An `unset_program()` that removed
-# nothing does not discard: nothing about the resolved binary changed. The memo
+# the exported `refresh_ffmpeg_capabilities()`, a `set_program()` that wrote
+# its file, an `unset_program()` that removed a location file, and an
+# `unset_program()` that removed at least one of the two remembered files
+# before failing on the other -- the file it did delete may be the one lookups
+# were answering from. An `unset_program()` that removed nothing, or only an
+# empty folder, does not discard: nothing about the resolved binary changed
+# (D104). Nor does a `set_program()` that stops with
+# `tidymedia_location_not_written`, because the location did not change (M143,
+# D105). The memo
 # is per-process, so `parallel = TRUE` workers each keep their own (D044). The
 # caller's `tidymedia.hardware_encoders` override IS carried into a worker
 # (R/timeout.R, M071); this memo is not, which is why a worker with no override

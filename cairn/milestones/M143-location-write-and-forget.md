@@ -169,3 +169,26 @@ Pass 1, 2026-10-18, on head 35e85d2a; master unmoved at f80dd15b. The test run i
 - AC3 evidence: "unset_program() removes the rest and keeps a folder that holds anything" ran 108 expectations, which is 12 cases (3 shapes, 2 paths, file or empty folder), 0 failed. It asserts the invisible `TRUE`, one `tidymedia_location_folder_kept` warning with its fields, the other path gone, the full folder's tree unchanged, and the memo dropped only with a file. "unset_program() keeps a folder it cannot read beside a location file" ran 6 expectations, 0 failed, 0 skipped.
 - AC4 evidence: "unset_program() refuses when every path that holds anything holds a full folder" ran 48 expectations, which is 12 cases (3 shapes, 2 paths, nothing or a second full folder), 0 failed. It asserts the error class, its fields, and both trees unchanged.
 - AC5 evidence: `man/set_program.Rd:73-79` names `tidymedia_location_not_written` and its three cases. `man/unset_program.Rd:35-46` and `man/find_ffmpeg.Rd:69-76` describe the removal of files and empty folders, the `tidymedia_location_folder_kept` warning, and the `tidymedia_location_folder` error for the case where each path that holds something holds a full folder. In `NEWS.md`, the development-section bullet at :43 now says `unset_program()` removes the rest and warns (:50-55, "removes nothing" now only for the all-full case), and the new bullet at :57-63 covers the not-written error.
+
+spawned: diff-bug, blame-history, prior-review
+
+- diff-bug #1: the blanket warning muffle hides a write that R reports only by a warning, so the call returns `TRUE` over a partial file — fix now. Warnings are now held back and re-signalled when no error follows, through the new `tm_save_location()` seam, and a test covers it.
+- diff-bug #2: the real cause of a failed write is discarded — fix now. The abort now carries `parent =` R's own error, and the tests assert the parent's message for the permission case and for a planted "No space left on device".
+- diff-bug #3: the `tidymedia_location_not_removed` abort fires before the kept-folder warning, so a caller whose other removal failed is never told about the folder — follow-up to the new "Location edges after M143" row, item (a).
+- diff-bug #4: the `R/cache.R` memo census comment says every `set_program()` and every successful `unset_program()` discards the memo — fix now. The comment now names the two non-discarding cases.
+- diff-bug #5: `?find_ffmpeg` says `set_program()` refuses a folder with contents, without naming the current folder — fix now. It now says "in the current folder".
+- diff-bug #6: an empty folder inside an unwritable config folder gives `not_removed`, not `not_written` — reject (false). `?set_program` documents the `not_removed` error for an empty folder that stays.
+- diff-bug #7: the emptiness check and the recursive unlink race, which M143 makes reachable in one more layout — follow-up. It is already held as item (b) of "Location folder edges after M141", and "Location edges after M143" cross-references it.
+- diff-bug #8: the plural branches of the kept-folder warning cannot be reached, because at most one folder can be kept — reject (style). The wording is correct for the one reachable case.
+- diff-bug #9: test gaps — fix now in part. The AC1 test asserts the memo stays, and the AC2 loop's last assertion carries `info`. The other two items are not changed. No test asserts the `call` frame, because the `call` threading is unchanged from M141's sites. The root-skip gap is reject (planned change), because the criteria name those skips.
+- diff-bug #10: `dir.create(recursive = TRUE)` can leave ancestors it created when a deeper level fails — follow-up, "Location edges after M143" item (b).
+- blame-history #1: the same as diff-bug #3 — follow-up, item (a).
+- blame-history #2: `?set_program` says, without scope, that the file keeps its location — fix now. It now says "a file without write permission".
+- blame-history #3: `set_program()` removes an empty folder or creates the config folder before a write that can then fail — follow-up, "Location edges after M143" item (b).
+- blame-history #4: the pre-existing emptiness-check race in `unset_program()` — follow-up, already item (b) of "Location folder edges after M141".
+- blame-history #5: the ROADMAP rows that M143 resolves are still open — reject (planned change). Post-merge hygiene graduates them.
+- prior-review #1: the same as diff-bug #3 — follow-up, item (a).
+- prior-review #2: the same as diff-bug #2 — fix now, as above.
+- prior-review #3: the new AC3 loop has no Windows skip — reject (false). It has the same shape as the M141 loop that passed on windows-latest, and `tm_redirect_config()` mocks rappdirs, so the two paths differ. The Windows CI leg runs it before the merge.
+- prior-review #4: the new `set_program()` tests have no CRAN skip — reject (false). They never start the stub, so D090's execution-test gate does not apply, and the file's other stub tests match.
+- prior-review #5: the absorbed ROADMAP rows need graduating — reject (planned change), as blame-history #5.

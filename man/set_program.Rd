@@ -76,7 +76,7 @@ without write permission. It also happens when the file is not there and
 its folder has no write permission, or when that folder is missing and
 cannot be created. The error
 names the file in its message and in \code{tm_file}. The call does not replace a
-file that it cannot write, so the file keeps the location it held.
+file without write permission, so that file keeps the location it held.
 
 For locations saved by versions before 0.2.0, see the section "Locations
 saved by earlier versions" in \code{\link[=find_ffmpeg]{find_ffmpeg()}}.

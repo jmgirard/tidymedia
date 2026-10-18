@@ -68,7 +68,8 @@ folder, and \code{\link[=set_program]{set_program()}} removes one in the current
 counts as empty only when it holds nothing, not even a hidden file or an
 empty folder. A folder the package cannot read never counts as empty. Both
 functions leave a folder that is not empty. \code{\link[=set_program]{set_program()}} gives a
-\code{tidymedia_location_folder} error for one. \code{\link[=unset_program]{unset_program()}} removes the
+\code{tidymedia_location_folder} error for one in the current folder.
+\code{\link[=unset_program]{unset_program()}} removes the
 location files and empty folders at the two paths, and gives a
 \code{tidymedia_location_folder_kept} warning for the folder it leaves. If each
 path that holds something holds a folder that is not empty,

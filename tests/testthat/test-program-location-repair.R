@@ -762,6 +762,7 @@ test_that("set_program() refuses a location file it cannot write", {
   Sys.chmod(path, "0444")
   withr::defer(Sys.chmod(path, "0644"))
   skip_if(file.access(path, 2L) == 0L, "the process can write a mode-0444 file")
+  tm_seed_capability_memo()
 
   result <- tm_set_refusal(
     set_program("ffmpeg", tm_stub_executable(), confirm = FALSE)
@@ -771,6 +772,40 @@ test_that("set_program() refuses a location file it cannot write", {
   expect_identical(result$condition$tm_program, "ffmpeg")
   expect_identical(result$condition$tm_file, path)
   expect_identical(readLines(path), "/the/old/ffmpeg")
+  # The location did not change, so the memo stays (M143 review diff-bug #9).
+  expect_false(tm_memo_is_empty())
+  # R's own error is kept as the cause (M143 review diff-bug #2).
+  expect_match(conditionMessage(result$condition$parent), "cannot open",
+               fixed = TRUE)
+})
+
+test_that("set_program() names the cause of a failed write and passes on a warning-only write", {
+  # M143 review diff-bug #1 and #2, through the tm_save_location() seam. A
+  # failure that is not about permission keeps its own message as the parent.
+  # A write that warns and does not fail still warns the caller, and the call
+  # succeeds.
+  dirs <- tm_redirect_config()
+  stub <- tm_stub_executable()
+
+  local_mocked_bindings(tm_save_location = function(...) {
+    warning("a warning before the failure")
+    stop("No space left on device")
+  })
+  result <- tm_set_refusal(set_program("ffmpeg", stub, confirm = FALSE))
+  expect_length(result$warnings, 0L)
+  expect_s3_class(result$condition, "tidymedia_location_not_written")
+  expect_match(conditionMessage(result$condition$parent),
+               "No space left on device", fixed = TRUE)
+
+  local_mocked_bindings(tm_save_location = function(...) {
+    warning("Problem closing connection")
+    invisible(NULL)
+  })
+  expect_warning(
+    expect_true(set_program("ffmpeg", stub, confirm = FALSE)),
+    "Problem closing connection",
+    fixed = TRUE
+  )
 })
 
 test_that("set_program() refuses a location folder it cannot create or write in", {
@@ -800,7 +835,7 @@ test_that("set_program() refuses a location folder it cannot create or write in"
     expect_identical(result$condition$tm_program, "ffmpeg", info = case)
     expect_identical(result$condition$tm_file, path, info = case)
     expect_false(file.exists(path), info = case)
-    if (case == "parent") expect_false(dir.exists(dirs$new))
+    if (case == "parent") expect_false(dir.exists(dirs$new), info = case)
   }
 })
 

@@ -26,7 +26,9 @@ tibble or a value instead, use \code{\link[=mediainfo_template]{mediainfo_templa
 \code{\link[=mediainfo_parameter]{mediainfo_parameter()}}. These functions quote their arguments for you.
 
 If tidymedia cannot find MediaInfo, the call stops with the error "Could not
-locate MediaInfo."
+locate MediaInfo." The warning from \code{\link[=find_mediainfo]{find_mediainfo()}} comes first. A bad
+argument or a bad \code{tidymedia.timeout} option stops the call before the
+search.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}

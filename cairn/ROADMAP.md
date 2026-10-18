@@ -12,7 +12,7 @@ _Last hygiene check: 2026-10-18 (M141 post-merge: archived, the table keeps M139
 | M139 | A failed FFmpeg run names the encoder this build lacks | done | M138 | normal | milestones/archive/M139-missing-encoder-front-door.md |
 | M140 | A folder at a remembered-location path warns instead of stopping, and `ffmpeg()` quotes its program's location | done | — | normal | milestones/archive/M140-folder-config-and-spaced-ffmpeg.md |
 | M141 | `set_program()` and `unset_program()` clear an empty folder at a location path, and an unreadable location file warns | done | — | normal | milestones/archive/M141-location-folder-and-unreadable.md |
-| M142 | Two `ffm_batch()` refusals and the direct-command functions stop with their own message instead of an R error | in-progress | — | normal | milestones/M142-crash-free-refusals.md |
+| M142 | Two `ffm_batch()` refusals and the direct-command functions stop with their own message instead of an R error | review | — | normal | milestones/M142-crash-free-refusals.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

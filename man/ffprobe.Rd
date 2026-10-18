@@ -26,7 +26,9 @@ tibbles instead, use \code{\link[=probe_all]{probe_all()}} and the other \verb{p
 functions quote their arguments for you.
 
 If tidymedia cannot find FFprobe, the call stops with the error "Could not
-locate FFprobe."
+locate FFprobe." The warning from \code{\link[=find_ffprobe]{find_ffprobe()}} comes first. A bad
+argument or a bad \code{tidymedia.timeout} option stops the call before the
+search.
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("ffprobe"))) withAutoprint(\{ # examplesIf}

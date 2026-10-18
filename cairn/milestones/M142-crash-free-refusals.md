@@ -4,7 +4,7 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M142: Two `ffm_batch()` refusals and the direct-command functions stop with their own message instead of an R error
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate; RR<NN> whose Binding criteria bind this milestone's ACs (binding-criteria check), or — -->
@@ -102,7 +102,7 @@ pages of those five functions, and `NEWS.md`.
 - [x] T3: Add the AC5 sentence to the five roxygen blocks, run
       `devtools::document()`, and confirm the roxygen2 version line (M128
       lesson) is absent from its output.
-- [ ] T4: Add one `NEWS.md` bug-fix entry per crash under the development
+- [x] T4: Add one `NEWS.md` bug-fix entry per crash under the development
       version, each backed by the T1 or T2 tests. Run `devtools::test()` with
       no other R session working (M124 lesson) and `devtools::check()`.
 
@@ -124,6 +124,7 @@ pages of those five functions, and `NEWS.md`.
 - 2026-10-18: first full run after T2 failed 10 tests in test-normalize-audio*.R and test-nvenc.R with "Could not locate FFmpeg.": the new test file's helper mocked `find_program()` with `.env = topenv()`, and that mock was not undone when the helper returned (measured: `find_ffmpeg()` NULL after the file, `Sys.which()` still found FFmpeg). Switched to `.package = "tidymedia"`, the suite's own form; `find_ffmpeg()` resolves after the file. T3 roxygen text added and `devtools::document()` rewrote the five Rd pages with no roxygen2 version line.
 - 2026-10-18: T2 and T3 done: test-missing-program-refusal.R (5 tests) red on the base code with the R errors the plan names, green after; full devtools::test() 0 failures with the scoped mock. NEWS.md has the two T4 entries.
 - 2026-10-18: claim audit: 37 claims read, 6 corrected — R/ffm_batch.R, R/ffmpeg.R, R/ffprobe.R, R/mediainfo.R, tests/testthat/test-missing-program-refusal.R (the five help sentences now say the find_*() warning comes first and that argument and timeout checks stop the call before the search; two comments narrowed; the test comment now states the measurement, not a mechanism). The re-read found five corrections true; the measured test comment cannot be settled from the code.
+- 2026-10-18: T4 done: devtools::check() 0 errors, 0 warnings, 0 notes (the spelling test's output lists "encodable" and "filesystem", both in text already on master). After the claim fixes, devtools::document() rewrote the five Rd pages, tools::checkRd() was clean, and the seven Rd-reading and new test files passed with NOT_CRAN=true. Status set to review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

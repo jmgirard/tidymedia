@@ -126,6 +126,7 @@ unquoted by the double quotes and are not claimed.
 - 2026-10-17: T5 adds the two `NEWS.md` entries under "Bug fixes"; `devtools::test()` before the mock fix: 0 failed, 1 error (the mock above), 1819 tests.
 - 2026-10-17: claim audit: 30 claims read, 1 corrected — R/program_management.R, R/ffmpeg.R, man/find_ffmpeg.Rd, man/program_status.Rd, tests/testthat/test-ffmpeg.R, tests/testthat/test-program-location-repair.R, tests/testthat/test-runtime-timeout.R, NEWS.md. The corrected one is the guard comment's claim that `set_program()` cannot write over a folder, true only at the current path; narrowed, and the same reader re-read it as holding.
 - 2026-10-17: T5 verify: `devtools::check()` 0 errors, 0 warnings, 0 notes; `devtools::test()` 0 failed, 0 errors, 7 skipped, 1819 tests. Status set to review.
+- 2026-10-17: step-7 approval: m140-folder-config-and-spaced-ffmpeg approved for merge
 
 ## Decisions
 

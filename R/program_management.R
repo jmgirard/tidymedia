@@ -177,7 +177,7 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
     # and program_status() with it (measured 2026-10-17). So with no file at
     # either path, a folder takes the unreadable class and fields (M140,
     # D103). unset_program() removes an empty folder at either path and
-    # refuses one that holds anything (D104), so the advice names
+    # keeps one that holds anything (D104, D105), so the advice names
     # unset_program() only when every folder present is empty. set_program()
     # clears an empty folder at the current path only.
     if (!any(is_file) && any(is_dir)) {
@@ -208,7 +208,8 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
     # `readLines()` on it warns "cannot open file ... Permission denied" and
     # stops with "cannot open the connection" (M141). It takes the
     # same class and fields. set_program() is left out of the advice, because
-    # a mode-0000 file stops its write too ("Unwritable location file" row).
+    # it cannot write a mode-0000 file either, and stops with
+    # `tidymedia_location_not_written` there (M143).
     # Asked through unreadable_paths(), the package's one readability site.
     if (any(is_file) && length(unreadable_paths(config))) {
       cli::cli_warn(
@@ -1049,8 +1050,15 @@ tm_na_string <- function(x) {
 #' folder, and [set_program()] removes one in the current folder. A folder
 #' counts as empty only when it holds nothing, not even a hidden file or an
 #' empty folder. A folder the package cannot read never counts as empty. Both
-#' functions leave a folder that is not empty, and they give an error. The
-#' warning says which case you have: it advises
+#' functions leave a folder that is not empty. [set_program()] gives a
+#' `tidymedia_location_folder` error for one in the current folder.
+#' [unset_program()] removes the
+#' location files and empty folders at the two paths, and gives a
+#' `tidymedia_location_folder_kept` warning for the folder it leaves. If each
+#' path that holds something holds a folder that is not empty,
+#' [unset_program()] gives the `tidymedia_location_folder` error and removes
+#' nothing. The warning from the `find_*()` functions says which case you
+#' have: it advises
 #' [unset_program()] when every folder it found is empty, and otherwise it
 #' names each folder to delete by hand.
 #'
@@ -1147,6 +1155,14 @@ find_ffplay <- function() {
 #' `tidymedia_location_not_removed` error and writes nothing. The call looks
 #' only at the current folder. A folder in the place of a location file saved
 #' before 0.2.0 stays, and [unset_program()] removes it when it is empty.
+#'
+#' If the call cannot write the location file, it gives a
+#' `tidymedia_location_not_written` error. This happens when the file is there
+#' without write permission. It also happens when the file is not there and
+#' its folder has no write permission, or when that folder is missing and
+#' cannot be created. The error
+#' names the file in its message and in `tm_file`. The call does not replace a
+#' file without write permission, so that file keeps the location it held.
 #'
 #' For locations saved by versions before 0.2.0, see the section "Locations
 #' saved by earlier versions" in [find_ffmpeg()].
@@ -1268,11 +1284,49 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
     }
   }
 
-  # Create configuration directory if needed
-  if (!dir.exists(config_dir)) dir.create(config_dir, recursive = TRUE)
-  
-  # Save location to user configuration file
-  writeLines(location, config_file)
+  # Create the configuration directory if needed, then write the file in
+  # place. A folder that cannot be created, or a folder or file without write
+  # permission, made dir.create() warn and writeLines() warn "cannot open file
+  # ... Permission denied" and then stop with "cannot open the connection"
+  # (measured 2026-10-18). The error is caught here and becomes one tidymedia
+  # error, with R's own error kept as its parent, so a cause other than
+  # permission (a full disk, a file where a folder belongs) still shows. The
+  # warnings are held back and dropped only when an error follows, because
+  # that error names the same failure. A write that R reports only by a
+  # warning, with no error, still warns (M143 review diff-bug #1 and #2). A
+  # file the caller made read-only is refused, not replaced: there is no
+  # write-elsewhere-then-rename step. The capability memo stays on the error,
+  # because the remembered location did not change.
+  held <- list()
+  failure <- tryCatch(
+    withCallingHandlers(
+      {
+        tm_save_location(location, config_dir, config_file)
+        NULL
+      },
+      warning = function(w) {
+        held[[length(held) + 1L]] <<- w
+        invokeRestart("muffleWarning")
+      }
+    ),
+    error = function(e) e
+  )
+  if (!is.null(failure)) {
+    cli::cli_abort(
+      c(
+        "Can't save the location of {program}.",
+        "x" = "{.file {config_file}}",
+        "i" = "Check that you can write to that file and to the folder \\
+               holding it."
+      ),
+      class = "tidymedia_location_not_written",
+      tm_program = program,
+      tm_file = config_file,
+      parent = failure,
+      call = call
+    )
+  }
+  for (w in held) warning(w)
 
   # Pointing at a different binary invalidates everything remembered about the
   # old one, so the session memo goes with it (M67/D044). Unconditional across
@@ -1281,6 +1335,14 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   forget_ffmpeg_capabilities()
 
   invisible(TRUE)
+}
+
+# The two writes behind set_program(), in one seam so a test can stand in a
+# write that warns without failing (M143 review). Base R's own functions cannot
+# be mocked from the suite.
+tm_save_location <- function(location, config_dir, config_file) {
+  if (!dir.exists(config_dir)) dir.create(config_dir, recursive = TRUE)
+  writeLines(location, config_file)
 }
 
 # set_mediainfo() ---------------------------------------------------------
@@ -1340,10 +1402,14 @@ set_ffplay <- function(location, confirm = TRUE) {
 #' one before 0.2.0. If the folder is empty, the call removes it with the
 #' files. A folder counts as empty only when it holds nothing, not even a
 #' hidden file or an empty folder, and a folder the package cannot read never
-#' counts as empty. If a folder is not empty, the call gives a
-#' `tidymedia_location_folder` error and removes nothing, not even a file at
-#' the other path. The error lists each such folder in its message and in
-#' `tm_files`. Delete those folders by hand, then call again.
+#' counts as empty. A folder that is not empty stays. The call removes the
+#' file or the empty folder at the other path, and then gives a
+#' `tidymedia_location_folder_kept` warning. The warning names the folder that
+#' stays in its message and in `tm_files`. If each path that holds something
+#' holds a folder that is not empty, the call gives a
+#' `tidymedia_location_folder` error and removes nothing. The error lists each
+#' such folder in its message and in `tm_files`. Delete those folders by hand,
+#' then call again.
 #'
 #' @param program A string naming the program to forget. One of `"ffmpeg"`,
 #'   `"ffprobe"`, `"ffplay"` or `"mediainfo"`. There is no default, because the
@@ -1399,12 +1465,20 @@ tm_unset_program <- function(program, call) {
   }
 
   # A folder at either path is removed only when it is empty, hidden entries
-  # included. One that holds anything is the caller's, so the call refuses
-  # before it removes anything: a partial unset would change which location
-  # the lookup answers with (M141, D104).
+  # included. One that holds anything is the caller's, so it stays (M141,
+  # D104). Everything else at the two paths is removed: before M143 the call
+  # refused and removed nothing, so a location file beside such a folder could
+  # not be forgotten, and the lookup warnings' unset_program() advice failed
+  # there. Removing that file leaves the lookup with no location, which is
+  # what forgetting means (D105). With nothing else to remove, the call still
+  # refuses.
   folders <- present[dir.exists(present)]
   full <- folders[!tm_folder_empty(folders)]
-  if (length(full)) tm_abort_location_folder(program, full, call)
+  if (length(full) == length(present)) {
+    tm_abort_location_folder(program, full, call)
+  }
+  present <- setdiff(present, full)
+  folders <- setdiff(folders, full)
 
   # Through the tm_unlink() seam, and answered by a third look at the
   # filesystem rather than by the removal's own return value: `unlink()`
@@ -1441,6 +1515,30 @@ tm_unset_program <- function(program, call) {
       class = "tidymedia_location_not_removed",
       tm_program = program,
       tm_files = left,
+      call = call
+    )
+  }
+
+  # After the removal took, so a handler that unwinds on the warning still
+  # leaves the location forgotten. Its own class, because a handler written
+  # for the `tidymedia_location_folder` refusal would otherwise unwind here
+  # too (D105).
+  if (length(full)) {
+    cli::cli_warn(
+      c(
+        "{cli::qty(length(full))}Kept the {?folder/folders} at the \\
+         remembered-location {?path/paths} for {program}.",
+        "x" = "{.file {full}}",
+        "i" = "{cli::qty(length(full))}{?The folder holds/Each folder holds} \\
+               files or folders, or tidymedia cannot read it, so tidymedia \\
+               leaves {?it/them} alone. Until you delete \\
+               {?it/them} by hand, {.fn find_{program}} warns about \\
+               {cli::qty(length(full))}{?it/them} when {program} is not \\
+               on the {.envvar PATH} and no location file is saved."
+      ),
+      class = "tidymedia_location_folder_kept",
+      tm_program = program,
+      tm_files = full,
       call = call
     )
   }

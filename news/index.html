@@ -42,6 +42,11 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="tidymedia-development-version">tidymedia (development version)<a class="anchor" aria-label="anchor" href="#tidymedia-development-version"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
+<ul><li><p><strong>A folder where a program’s location is saved now gives a warning, not an error.</strong> Before, <code><a href="../reference/find_ffmpeg.html">find_ffmpeg()</a></code> and the other <code>find_*()</code> functions stopped on such a folder with “cannot open the connection”. <code><a href="../reference/program_status.html">program_status()</a></code> stopped too. They now give the <code>tidymedia_location_unreadable</code> warning, and <code><a href="../reference/program_status.html">program_status()</a></code> still returns its table. The warning names the folder and says to delete it, then to save the location again.</p></li>
+<li><p><strong><code><a href="../reference/ffmpeg.html">ffmpeg()</a></code> now runs a program whose location holds a space.</strong> It put the location into the command unquoted, so the shell split it at the space. <code><a href="../reference/ffmpeg.html">ffmpeg()</a></code> now quotes it, as <code><a href="../reference/ffprobe.html">ffprobe()</a></code> and <code><a href="../reference/mediainfo.html">mediainfo()</a></code> do. <code><a href="../reference/ffmpeg_codecs.html">ffmpeg_codecs()</a></code> and <code><a href="../reference/ffmpeg_encoders.html">ffmpeg_encoders()</a></code> call <code><a href="../reference/ffmpeg.html">ffmpeg()</a></code>, so the fix covers them too.</p></li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.2" id="tidymedia-022">tidymedia 0.2.2<a class="anchor" aria-label="anchor" href="#tidymedia-022"></a></h2><p class="text-muted">CRAN release: 2026-10-11</p>

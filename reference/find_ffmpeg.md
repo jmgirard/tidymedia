@@ -50,18 +50,21 @@ returns `NULL`. The warning has one of three classes that you can catch:
 
 - `tidymedia_location_unreadable`: the file does not hold exactly one
   location. It is empty, has more than one line, or has one empty line.
-  The condition holds the program name in `tm_program` and the file in
-  `tm_file`.
+  Or a folder is where that file belongs. The condition holds the
+  program name in `tm_program` and the file's path in `tm_file`.
 
 A line that holds only spaces counts as a location. So it gives
 `tidymedia_location_gone`, not `tidymedia_location_unreadable`.
 
-To fix any of the three, forget the location with
+To fix a location that is gone or cannot be run, or a file that does not
+hold one location, forget the location with
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md),
 or replace it with
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md).
 A file that cannot be run can also be fixed by giving it permission to
-execute.
+execute. Neither function can clear a folder where the file belongs.
+Delete the folder by hand, then use
+[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md).
 
 ## Locations saved by earlier versions
 

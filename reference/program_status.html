@@ -81,9 +81,12 @@ location or the file that holds it, so you can fix it. There are three cases:</p
 run. Give it permission to execute, or save another copy. This case does
 not arise on Windows, which has no execute bit.</p></li>
 <li><p><code>tidymedia_location_unreadable</code>: the file that stores the location does
-not hold exactly one location.</p></li>
-</ul><p>In all three cases, the row has <code>NA</code> in both columns. <code><a href="unset_program.html">unset_program()</a></code>
-forgets the location, and <code><a href="set_program.html">set_program()</a></code> replaces it.</p>
+not hold exactly one location, or a folder is where that file belongs.</p></li>
+</ul><p>In all three cases, the row has <code>NA</code> in both columns. For a location that is
+gone or cannot be run, or a file that does not hold one location,
+<code><a href="unset_program.html">unset_program()</a></code> forgets the location, and <code><a href="set_program.html">set_program()</a></code> replaces it.
+Neither can clear a folder. Delete the folder by hand, then use
+<code><a href="set_program.html">set_program()</a></code>.</p>
 <p>The version is what the program reports about itself. For <code>ffmpeg</code>,
 <code>ffprobe</code> and <code>ffplay</code>, it is the FFmpeg build number. For <code>mediainfo</code>, it is
 the MediaInfo library version.</p>

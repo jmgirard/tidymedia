@@ -47,13 +47,18 @@ three cases:
   does not arise on Windows, which has no execute bit.
 
 - `tidymedia_location_unreadable`: the file that stores the location
-  does not hold exactly one location.
+  does not hold exactly one location, or a folder is where that file
+  belongs.
 
-In all three cases, the row has `NA` in both columns.
+In all three cases, the row has `NA` in both columns. For a location
+that is gone or cannot be run, or a file that does not hold one
+location,
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
 forgets the location, and
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
-replaces it.
+replaces it. Neither can clear a folder. Delete the folder by hand, then
+use
+[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md).
 
 The version is what the program reports about itself. For `ffmpeg`,
 `ffprobe` and `ffplay`, it is the FFmpeg build number. For `mediainfo`,

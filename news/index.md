@@ -2,6 +2,36 @@
 
 ## tidymedia (development version)
 
+### Bug fixes
+
+- **A folder where a program’s location is saved now gives a warning,
+  not an error.** Before,
+  [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
+  and the other `find_*()` functions stopped on such a folder with
+  “cannot open the connection”.
+  [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)
+  stopped too. They now give the `tidymedia_location_unreadable`
+  warning, and
+  [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)
+  still returns its table. The warning names the folder and says to
+  delete it, then to save the location again.
+
+- **[`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
+  now runs a program whose location holds a space.** It put the location
+  into the command unquoted, so the shell split it at the space.
+  [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
+  now quotes it, as
+  [`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md)
+  and
+  [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)
+  do.
+  [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
+  and
+  [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md)
+  call
+  [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md),
+  so the fix covers them too.
+
 ## tidymedia 0.2.2
 
 CRAN release: 2026-10-11

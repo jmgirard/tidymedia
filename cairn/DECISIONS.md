@@ -4665,3 +4665,23 @@ which `expandcmd()` does. So it is not the question the Windows branch asks.
 
 **Falsified by** a Windows `file.access(path, 1L)` reading that matches
 `expandcmd()` on a bare name, which would make it usable there.
+
+## D102 — Four candidate rows of instrument findings are pruned under D072 (2026-10-17, from a `/cairn-triage` pass, which applies D072 and supersedes nothing)
+
+**Context:** A `/cairn-triage` pass weighed every ROADMAP candidate row and every
+DESIGN.md Known issues entry. Four rows held only findings about the package's own
+instruments: test sweeps, developer scripts and `data-raw/` generators.
+
+**Decision:** Each row is pruned under D072, because no gap it names lets a defect in
+shipped behavior reach a user. The rows are these. The timeout sweeps' cover of
+`program_status()`, which spawns only a program it resolved (M113 review 6, 8, 13).
+`tools/config_leak_check.R` reading no `~/.Renviron`, and
+`tools/pkgdown_duplicate_topics.R` dropping a `contents:` entry with a parenthesis
+(M117 review [O]5, M111 review [O]2). Five `data-raw/` guard generators that still
+spell `audio =` (M099 review F4). The parsing gaps in `tools/doc_prose_report.R` and
+`tools/roxygen_repeats.R`, and Codecov counting `R/task-doc.R` as untested (M129
+review O3, O4, O5, O8).
+
+**Consequences:** A new entry that supersedes this one can bring a row back. The
+evidence for that is a defect that reaches a user through the row's gap, which is
+D072's own falsifier.

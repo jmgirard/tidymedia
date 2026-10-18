@@ -127,20 +127,15 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
 
 - Ten arguments are refused below the verb the caller typed, and that position is
   accepted rather than pending a fix. `fallback` at the eight fan-out verbs is checked
-  where the encoder question is asked, which D075 records as an accepted cost;
+  where the encoder question is asked, an accepted cost (D075).
   `anonymize_video_batch()`'s `pixel_format` and `color`, and
-  `normalize_audio_batch()`'s `channels` and `sample_rate`, are validated inside the
-  per-row fan-out, so `purrr::pmap()` is blamed and a set `tidymedia.timeout` displaces
-  them; and six `verify_media()` arguments are refused by an assignment rather than a
-  guard. `has_hardware_encoder()`'s wrong-form `codec` and `hardware` were here until
-  D087: they were refused by the `arg_match()` inside `hardware_encoder()`, the mapper
-  they consult, and threading `call` through that mapper's internal implementation moved
-  both onto `has_hardware_encoder()` itself, which is where a pair no backend's table
-  holds was already refused. Measured
-  cell by cell by M096's member x formal x wrong-form census, each named with the frame
-  that refused it; accepted at M096's post-merge hygiene pass rather than carried as
-  planned work. `?tidymedia` discloses the fan-out members it names. The gate booleans
-  and `ffm_batch()`'s `output` column are NOT here — they stay a ROADMAP candidate row.
+  `normalize_audio_batch()`'s `channels` and `sample_rate`, are checked inside the
+  per-row fan-out. So `purrr::pmap()` is blamed, and a set `tidymedia.timeout`
+  displaces them. Six `verify_media()` arguments are refused by an assignment rather
+  than a guard. M096's member x formal x wrong-form census measured each one, and
+  M096's post-merge hygiene pass accepted them. `?tidymedia` discloses the fan-out
+  members it names. The gate booleans and `ffm_batch()`'s `output` column are not
+  here. They stay a ROADMAP candidate row.
 
 - `check_dim()` accepts any `x`/`y` expression string across all dim verbs
   (noted as future hardening in the M07 review) — not a regression.
@@ -185,3 +180,15 @@ over a jobs tibble; scalar verbs stay scalar and fan-out verbs (e.g.
   `audio_stream`, and an `audiofile` whose container holds one audio stream
   keeps its own error about several tracks. That error replaces the diagnosed
   condition, so it carries no `tm_encoder` (M139 claim audit).
+
+- Three guard-ordering divergences are accepted rather than pending a fix. A wrongly
+  typed `margin` reports the contradiction as an argument and the type error as a
+  `jobs` column. This follows from M61's boundary, because D039 promises one answer for
+  a wrong value, not for a wrong type. The normalize pair reports `audio_codec =
+  "copy"` and a fractional `audio_stream` before a bad loudness target on the batch
+  form and after it on the scalar (M65-D3). One order for both forms reopens the
+  fail-before-Phase-1 placement of M34 and M45. An output collision reports ahead of
+  `check_hardware_available()`'s machine-free half, `resolve_timeout()` and
+  `normalize_audio_batch()`'s two-pass checks (measured 2026-09-11). No test pins
+  either order. Routed from candidates 2026-10-17. Added 2026-09-10 from M61 review r3
+  H11, M65 review F1, M125 review O1, D036, D039 and D043.

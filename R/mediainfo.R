@@ -11,6 +11,9 @@
 #' tibble or a value instead, use [mediainfo_template()], [mediainfo_query()] or
 #' [mediainfo_parameter()]. These functions quote their arguments for you.
 #'
+#' If tidymedia cannot find MediaInfo, the call stops with the error "Could not
+#' locate MediaInfo."
+#'
 #' @param command A string with the arguments to give MediaInfo.
 #' @return A character vector with the text that MediaInfo writes to standard
 #'   output, one element for each line. Messages on standard error are not
@@ -29,9 +32,11 @@ mediainfo <- function(command) {
   rlang::check_string(command)
   # Look up mediainfo location and run it with command
   limit <- resolve_timeout()
+  # Refused here, as ffmpeg() refuses a missing FFmpeg (M142).
+  location <- tm_require_location(find_mediainfo(), "MediaInfo")
   guard_timeout(
     "MediaInfo", limit,
-    system(glue('"{find_mediainfo()}" {command}'), intern = TRUE,
+    system(glue('"{location}" {command}'), intern = TRUE,
            timeout = limit)
   )
 }

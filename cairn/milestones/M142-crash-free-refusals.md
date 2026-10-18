@@ -92,13 +92,13 @@ pages of those five functions, and `NEWS.md`.
       comment that avoids two invalid specs no longer holds: update it.
 - [ ] T2: Write the AC3 and AC4 tests first, mocking `find_program()` to
       return `NULL` and leaving `tidymedia.timeout` unset (an invalid limit
-      stops first). Add an internal `tm_ffmpeg(command, call)` (and the same
-      shape for `ffprobe()` and `mediainfo()` if they need one) that refuses a
-      `NULL` location with the `run_program()` message before it spawns
-      anything; the exported functions pass `rlang::current_env()`, and
-      `ffmpeg_codecs()` and `ffmpeg_encoders()` call the internal form with
-      their own frame (D087). The command string stays as the caller wrote
-      it (IP1).
+      stops first). Move `run_program()`'s refusal into a shared
+      `tm_require_location()` that `ffmpeg()`, `ffprobe()` and `mediainfo()`
+      call on their lookup before they spawn anything. `ffmpeg_codecs()` and
+      `ffmpeg_encoders()` keep calling `ffmpeg()`, the seam 33 test mocks
+      replace, and raise its missing-program refusal again under their own
+      frame through `tm_reblame_missing()` (D074). The command string stays
+      as the caller wrote it (IP1).
 - [ ] T3: Add the AC5 sentence to the five roxygen blocks, run
       `devtools::document()`, and confirm the roxygen2 version line (M128
       lesson) is absent from its output.
@@ -119,6 +119,8 @@ pages of those five functions, and `NEWS.md`.
 - 2026-10-18: plan gate chose threading the blame through an internal `tm_ffmpeg()` over a `find_ffmpeg()` check at the top of each capability function, because a second lookup gives a second "Failed to find" warning; falsified by a measured run where the internal form still warns twice.
 - 2026-10-18: implement started on branch m142-crash-free-refusals.
 - 2026-10-18: T1 done: four tests in test-ffm-batch.R (two-bad-job and one-bad-job-at-row-2 cases for both refusals) red on the base code with cli's error and "Jobs 2", green after `{cli::qty()}`; test-batch-output-collision.R comment updated; full devtools::test() 0 failures.
+- 2026-10-18: T2 approach changed from the plan's internal `tm_ffmpeg(command, call)`: 33 test mocks in 16 files replace `ffmpeg()` as the listings' seam, and an internal form would bypass them; so `ffmpeg()` refuses through a shared `tm_require_location()` (also `run_program()`'s, message unchanged) and the listings re-raise that refusal under their own frame with `tm_reblame_missing()`, which recognizes it by an internal `tm_missing_program` field, no class. Task text edited to match (minor amendment, criteria unchanged).
+- 2026-10-18: implementation choice: the three direct-command functions now look up the program outside `guard_timeout()`, so a lookup warning reaches the caller with its own class instead of being held and re-raised as a plain warning; rejected keeping the lookup inside, because the refusal must come before the spawn.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

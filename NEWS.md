@@ -2,6 +2,20 @@
 
 ## Bug fixes
 
+* **`ffm_batch()` now names every bad job when it refuses a batch.** This
+  covers two refusals: `.f` returned something other than a pipeline, or a
+  `verify` function gave an invalid spec. Before, with two or more bad jobs,
+  the call stopped with "length(object) == 1 is not TRUE" in place of its
+  own message. One bad job at a row other than 1 read "Jobs 2" in place of
+  "Job 2".
+
+* **If tidymedia cannot find the program, `ffmpeg()`, `ffprobe()` and
+  `mediainfo()` now stop with "Could not locate FFmpeg." (or FFprobe or
+  MediaInfo).** Before, `ffmpeg()` returned an empty result, and `ffprobe()`
+  and `mediainfo()` stopped with "non-empty character argument expected".
+  `ffmpeg_codecs()` and `ffmpeg_encoders()`, which stopped with "argument of
+  length 0", now give the same error under their own names.
+
 * **A folder where a program's location is saved now gives a warning, not an
   error.** Before, `find_ffmpeg()` and the other `find_*()` functions stopped
   on such a folder with "cannot open the connection". `program_status()`

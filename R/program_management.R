@@ -1185,24 +1185,54 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   # Find where to save user configuration data (tools::R_user_dir(), M097)
   config_dir <- tm_config_dir()
   config_file <- tm_config_file(program, config_dir)
-  
-  # Consent comes before anything is created or written, so a decline -- and a
-  # refusal for want of anyone to ask -- leaves the config directory exactly as
-  # it was found. The refusal names the same two items the prompt would have,
-  # and the escape hatch by the argument's own name (M38/M40: the seam carries
-  # no argument name of its own).
+
+  # A folder where the file goes would stop writeLines() with "cannot open the
+  # connection" (M140). An empty one is removed after consent. One that holds
+  # anything, hidden entries included, is the caller's, so the call refuses
+  # before it asks (M141, D104).
+  folder <- dir.exists(config_file)
+  if (folder && !tm_folder_empty(config_file)) {
+    tm_abort_location_folder(program, config_file, call)
+  }
+
+  # Consent comes before anything is created, removed or written, so a decline
+  # -- and a refusal for want of anyone to ask -- leaves the config directory
+  # exactly as it was found. The refusal names the same items the prompt would
+  # have, and the escape hatch by the argument's own name (M38/M40: the seam
+  # carries no argument name of its own).
   if (confirm) {
-    details <- tm_set_details(program, location, config_dir)
+    details <- tm_set_details(program, location, config_dir, folder = folder)
     approved <- tm_confirm(
-      tm_set_prompt(program, location, config_dir),
+      tm_set_prompt(program, location, config_dir, folder = folder),
       call = call,
       "i" = "Pass {.code confirm = FALSE} to set the location without being asked.",
-      "i" = tm_cli_escape(details[[1]]),
-      "i" = tm_cli_escape(details[[2]])
+      stats::setNames(tm_cli_escape(details), rep("i", length(details)))
     )
     if (!approved) return(invisible(FALSE))
   }
-  
+
+  if (folder) {
+    # Asked again, because the folder can gain an entry while the prompt
+    # waits, and the removal below is recursive.
+    if (!tm_folder_empty(config_file)) {
+      tm_abort_location_folder(program, config_file, call)
+    }
+    tm_unlink(config_file, recursive = TRUE)
+    if (dir.exists(config_file)) {
+      cli::cli_abort(
+        c(
+          "Can't remove the empty folder where the location of {program} goes.",
+          "x" = "{.file {config_file}}",
+          "i" = "Check that you can write to the directory holding it."
+        ),
+        class = "tidymedia_location_not_removed",
+        tm_program = program,
+        tm_files = config_file,
+        call = call
+      )
+    }
+  }
+
   # Create configuration directory if needed
   if (!dir.exists(config_dir)) dir.create(config_dir, recursive = TRUE)
   
@@ -2004,22 +2034,45 @@ tm_install_details <- function(download_url, install_dir, programs,
 # Both the prompt and the non-interactive refusal are built from this, so a
 # caller who is told to pass `confirm = FALSE` has been shown the same items
 # the prompt would have named.
-tm_set_details <- function(program, location, dir = tm_config_dir()) {
+tm_set_details <- function(program, location, dir = tm_config_dir(),
+                           folder = FALSE) {
   line <- function(...) cli::ansi_strip(cli::format_inline(..., .envir = parent.frame()))
+  file <- tm_config_file(program, dir)
   c(
+    if (folder) line("Remove the empty folder at: {.file {file}}"),
     line("Remember this location: {.file {location}}"),
-    line("By writing: {.file {tm_config_file(program, dir)}}")
+    line("By writing: {.file {file}}")
   )
 }
 
 # The consent prompt: the question, then the items, one per line.
-tm_set_prompt <- function(program, location, dir = tm_config_dir()) {
+tm_set_prompt <- function(program, location, dir = tm_config_dir(),
+                          folder = FALSE) {
   paste(
     c(
       paste0("tidymedia is about to remember where ", program, " is. Proceed?"),
-      paste0("* ", tm_set_details(program, location, dir))
+      paste0("* ", tm_set_details(program, location, dir, folder = folder))
     ),
     collapse = "\n"
+  )
+}
+
+# The refusal set_program() and unset_program() share for a folder at a
+# location path that holds anything (M141, D104). `paths` lists every such
+# folder, so the caller sees all of them at once.
+tm_abort_location_folder <- function(program, paths, call) {
+  cli::cli_abort(
+    c(
+      "Can't use the remembered-location path for {program}: a folder is \\
+       there, not a file.",
+      "x" = "{.file {paths}}",
+      "i" = "Each folder named holds files or folders, so tidymedia leaves it \\
+             alone. Delete it by hand, then try again."
+    ),
+    class = "tidymedia_location_folder",
+    tm_program = program,
+    tm_files = paths,
+    call = call
   )
 }
 

@@ -499,30 +499,140 @@ test_that("program_status() reports a folder at a remembered-location path", {
   )
 })
 
-test_that("neither unset_program() nor set_program() clears a folder at the current path", {
-  # What ?find_ffmpeg and ?program_status say, and why the folder warning
-  # advises deleting it by hand (M140, D103). unset_program() removes files
-  # only, so it refuses and the folder stays; set_program() cannot write its
-  # file where the folder is. The "Folder at a remembered-location path in set
-  # and unset" candidate row holds the better refusals; these assertions move
-  # with it.
-  dirs <- tm_redirect_config()
-  path <- tm_config_file("ffmpeg", dirs$new)
-  dir.create(path)
+# set_program(): a folder where the location file should be ------------------
 
-  expect_error(
-    unset_program("ffmpeg"),
+# The four shapes a folder at a location path can take (M141). Only the first
+# is empty: a hidden file or an empty subfolder is still something the caller
+# put there, so set_program() and unset_program() must leave it (D104).
+tm_folder_shapes <- list(
+  empty = function(path) dir.create(path),
+  file = function(path) {
+    dir.create(path)
+    file.create(file.path(path, "kept"))
+  },
+  hidden = function(path) {
+    dir.create(path)
+    file.create(file.path(path, ".DS_Store"))
+  },
+  subfolder = function(path) {
+    dir.create(path)
+    dir.create(file.path(path, "inner"))
+  }
+)
+
+test_that("set_program() replaces an empty folder at the current path", {
+  # M141 AC3. Before M141 writeLines() stopped on the folder with "cannot open
+  # the connection" (M140 measured it). Every program, through the exported
+  # set_program() with confirm = FALSE.
+  for (program in tm_program_vocabulary) {
+    dirs <- tm_redirect_config()
+    stub <- tm_stub_executable()
+    path <- tm_config_file(program, dirs$new)
+    tm_folder_shapes$empty(path)
+
+    expect_true(set_program(program, stub, confirm = FALSE), info = program)
+    expect_false(dir.exists(path), info = program)
+    expect_identical(readLines(path), stub, info = program)
+  }
+})
+
+test_that("set_program() refuses a folder that holds anything, before any prompt", {
+  # M141 AC3. With confirm = TRUE the session cannot be asked, so a refusal of
+  # the folder's class shows the folder check comes first: the consent
+  # refusal would carry `tidymedia_confirmation_unavailable` instead.
+  withr::local_options(rlang_interactive = FALSE, cli.width = 1000)
+  for (shape in setdiff(names(tm_folder_shapes), "empty")) {
+    for (confirm in c(FALSE, TRUE)) {
+      dirs <- tm_redirect_config()
+      stub <- tm_stub_executable()
+      path <- tm_config_file("ffmpeg", dirs$new)
+      tm_folder_shapes[[shape]](path)
+      before <- list.files(path, all.files = TRUE, no.. = TRUE)
+      info <- paste(shape, confirm)
+
+      condition <- expect_error(
+        set_program("ffmpeg", stub, confirm = confirm),
+        class = "tidymedia_location_folder"
+      )
+      expect_identical(condition$tm_program, "ffmpeg", info = info)
+      expect_identical(condition$tm_files, path, info = info)
+      message <- cli::ansi_strip(conditionMessage(condition))
+      expect_match(message, path, fixed = TRUE, info = info)
+      expect_match(message, "by hand", fixed = TRUE, info = info)
+
+      expect_true(dir.exists(path), info = info)
+      expect_identical(
+        list.files(path, all.files = TRUE, no.. = TRUE), before, info = info
+      )
+    }
+  }
+})
+
+test_that("set_program()'s consent covers removing an empty folder", {
+  # M141 AC3. The prompt and the refusal with no one to ask both name the
+  # folder. An approval removes it and writes the file, and a decline leaves
+  # it in place.
+  withr::local_options(cli.width = 1000)
+  for (answer in c(TRUE, FALSE)) {
+    dirs <- tm_redirect_config()
+    stub <- tm_stub_executable()
+    path <- tm_config_file("ffmpeg", dirs$new)
+    tm_folder_shapes$empty(path)
+    prompts <- character(0)
+    local_mocked_bindings(tm_confirm = function(prompt, ...) {
+      prompts <<- c(prompts, prompt)
+      answer
+    })
+
+    expect_identical(set_program("ffmpeg", stub), answer)
+    expect_length(prompts, 1L)
+    expect_match(prompts, path, fixed = TRUE)
+    expect_match(prompts, "empty folder", fixed = TRUE)
+    if (answer) {
+      expect_identical(readLines(path), stub)
+    } else {
+      expect_true(dir.exists(path))
+    }
+  }
+})
+
+test_that("set_program()'s refusal with no one to ask names the empty folder", {
+  # M141 AC3. Its own test, because the tm_confirm() mock above lasts until the
+  # end of the test that sets it.
+  withr::local_options(cli.width = 1000)
+  dirs <- tm_redirect_config()
+  stub <- tm_stub_executable()
+  path <- tm_config_file("ffmpeg", dirs$new)
+  tm_folder_shapes$empty(path)
+  withr::local_options(rlang_interactive = FALSE)
+  condition <- expect_error(
+    set_program("ffmpeg", stub),
+    class = "tidymedia_confirmation_unavailable"
+  )
+  message <- cli::ansi_strip(conditionMessage(condition))
+  expect_match(message, path, fixed = TRUE)
+  expect_match(message, "empty folder", fixed = TRUE)
+  expect_true(dir.exists(path))
+})
+
+test_that("set_program() stops when the empty folder will not go", {
+  # M141 AC3. The removal goes through the tm_unlink() seam, so a seam that
+  # removes nothing stands in for a folder the filesystem keeps. The call stops
+  # with the removal class and writes nothing.
+  dirs <- tm_redirect_config()
+  stub <- tm_stub_executable()
+  path <- tm_config_file("ffmpeg", dirs$new)
+  tm_folder_shapes$empty(path)
+  local_mocked_bindings(tm_unlink = function(path, recursive = FALSE) 1L)
+
+  condition <- expect_error(
+    set_program("ffmpeg", stub, confirm = FALSE),
     class = "tidymedia_location_not_removed"
   )
+  expect_identical(condition$tm_program, "ffmpeg")
+  expect_identical(condition$tm_files, path)
   expect_true(dir.exists(path))
-
-  stub <- tm_stub_executable()
-  expect_error(
-    suppressWarnings(set_program("ffmpeg", stub, confirm = FALSE)),
-    "cannot open the connection",
-    fixed = TRUE
-  )
-  expect_true(dir.exists(path))
+  expect_length(list.files(path, all.files = TRUE, no.. = TRUE), 0L)
 })
 
 test_that("program_status() stays silent when nothing is configured at all", {

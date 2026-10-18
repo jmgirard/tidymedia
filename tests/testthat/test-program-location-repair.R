@@ -393,6 +393,37 @@ test_that("program_status() reports a folder at a remembered-location path", {
   expect_identical(got$value$program, tm_program_vocabulary)
   expect_length(got$warnings, 1L)
   expect_s3_class(got$warnings[[1]], "tidymedia_location_unreadable")
+  # The advice reaches the report's caller too, not only find_ffmpeg()'s.
+  expect_match(
+    cli::ansi_strip(conditionMessage(got$warnings[[1]])), "Delete",
+    fixed = TRUE
+  )
+})
+
+test_that("neither unset_program() nor set_program() clears a folder at the current path", {
+  # What ?find_ffmpeg and ?program_status say, and why the folder warning
+  # advises deleting it by hand (M140, D103). unset_program() removes files
+  # only, so it refuses and the folder stays; set_program() cannot write its
+  # file where the folder is. The "Folder at a remembered-location path in set
+  # and unset" candidate row holds the better refusals; these assertions move
+  # with it.
+  dirs <- tm_redirect_config()
+  path <- tm_config_file("ffmpeg", dirs$new)
+  dir.create(path)
+
+  expect_error(
+    unset_program("ffmpeg"),
+    class = "tidymedia_location_not_removed"
+  )
+  expect_true(dir.exists(path))
+
+  stub <- tm_stub_executable()
+  expect_error(
+    suppressWarnings(set_program("ffmpeg", stub, confirm = FALSE)),
+    "cannot open the connection",
+    fixed = TRUE
+  )
+  expect_true(dir.exists(path))
 })
 
 test_that("program_status() stays silent when nothing is configured at all", {

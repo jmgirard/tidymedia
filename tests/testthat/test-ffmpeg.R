@@ -58,6 +58,9 @@ test_that("ffmpeg() runs a program whose location holds a space", {
   # `sh: .../my: No such file or directory` (measured 2026-10-17), where
   # ffprobe() and mediainfo() already quoted theirs. The stub is a POSIX shell
   # script that only echoes, a shell builtin, so it needs nothing on PATH.
+  # It starts a child process, so it skips on CRAN as the suite's other
+  # spawning tests do (D090).
+  skip_on_cran()
   if (.Platform$OS.type == "windows") {
     skip("the stub is a POSIX shell script, which Windows cannot run")
   }

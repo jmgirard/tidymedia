@@ -4692,7 +4692,9 @@ D088 makes `program_status()` raise the `tidymedia_location_unreadable` warning
 because the file it names is one that `unset_program()` or `set_program()`
 clears. A folder where that file belongs is also a repairable thing on the
 caller's machine, but neither function clears it: `unset_program()` removes
-files only, and `set_program()` cannot write over a folder.
+files only, and `set_program()` cannot write over a folder at the current path.
+At the pre-0.2.0 path the current file `set_program()` writes is read first, so
+there it hides the folder without clearing it.
 
 **The decision.** The folder case takes the same class and the same `tm_program`
 and `tm_file` fields, and it stays audible in `program_status()`, because D088's

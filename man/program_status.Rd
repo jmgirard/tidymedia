@@ -39,11 +39,14 @@ location or the file that holds it, so you can fix it. There are three cases:
 run. Give it permission to execute, or save another copy. This case does
 not arise on Windows, which has no execute bit.
 \item \code{tidymedia_location_unreadable}: the file that stores the location does
-not hold exactly one location.
+not hold exactly one location, or a folder is where that file belongs.
 }
 
-In all three cases, the row has \code{NA} in both columns. \code{\link[=unset_program]{unset_program()}}
-forgets the location, and \code{\link[=set_program]{set_program()}} replaces it.
+In all three cases, the row has \code{NA} in both columns. For a location that is
+gone or cannot be run, or a file that does not hold one location,
+\code{\link[=unset_program]{unset_program()}} forgets the location, and \code{\link[=set_program]{set_program()}} replaces it.
+Neither can clear a folder. Delete the folder by hand, then use
+\code{\link[=set_program]{set_program()}}.
 
 The version is what the program reports about itself. For \code{ffmpeg},
 \code{ffprobe} and \code{ffplay}, it is the FFmpeg build number. For \code{mediainfo}, it is

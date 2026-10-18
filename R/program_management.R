@@ -838,10 +838,13 @@ install_on_win <- function(download_url = NULL,
 #'   run. Give it permission to execute, or save another copy. This case does
 #'   not arise on Windows, which has no execute bit.
 #' * `tidymedia_location_unreadable`: the file that stores the location does
-#'   not hold exactly one location.
+#'   not hold exactly one location, or a folder is where that file belongs.
 #'
-#' In all three cases, the row has `NA` in both columns. [unset_program()]
-#' forgets the location, and [set_program()] replaces it.
+#' In all three cases, the row has `NA` in both columns. For a location that is
+#' gone or cannot be run, or a file that does not hold one location,
+#' [unset_program()] forgets the location, and [set_program()] replaces it.
+#' Neither can clear a folder. Delete the folder by hand, then use
+#' [set_program()].
 #'
 #' The version is what the program reports about itself. For `ffmpeg`,
 #' `ffprobe` and `ffplay`, it is the FFmpeg build number. For `mediainfo`, it is
@@ -962,16 +965,18 @@ tm_na_string <- function(x) {
 #'   own `Sys.which()` reads it, except that a folder never counts and a
 #'   leading `~` is expanded.
 #' * `tidymedia_location_unreadable`: the file does not hold exactly one
-#'   location. It is empty, has more than one line, or has one empty line. The
-#'   condition holds the program name in `tm_program` and the file in
-#'   `tm_file`.
+#'   location. It is empty, has more than one line, or has one empty line. Or
+#'   a folder is where that file belongs. The condition holds the program name
+#'   in `tm_program` and the file's path in `tm_file`.
 #'
 #' A line that holds only spaces counts as a location. So it gives
 #' `tidymedia_location_gone`, not `tidymedia_location_unreadable`.
 #'
-#' To fix any of the three, forget the location with [unset_program()], or
-#' replace it with [set_program()]. A file that cannot be run can also be fixed
-#' by giving it permission to execute.
+#' To fix a location that is gone or cannot be run, or a file that does not
+#' hold one location, forget the location with [unset_program()], or replace it
+#' with [set_program()]. A file that cannot be run can also be fixed by giving
+#' it permission to execute. Neither function can clear a folder where the file
+#' belongs. Delete the folder by hand, then use [set_program()].
 #'
 #' @section Locations saved by earlier versions:
 #' Versions of the package before 0.2.0 saved locations in a different folder,

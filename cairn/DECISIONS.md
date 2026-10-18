@@ -4685,3 +4685,23 @@ review O3, O4, O5, O8).
 **Consequences:** A new entry that supersedes this one can bring a row back. The
 evidence for that is a defect that reaches a user through the row's gap, which is
 D072's own falsifier.
+
+## D103 — A folder at a remembered-location path is reported as unreadable, though the repair D088 names cannot clear it (2026-10-17, from M140; annotates D088 and leaves its rule standing)
+
+D088 makes `program_status()` raise the `tidymedia_location_unreadable` warning
+because the file it names is one that `unset_program()` or `set_program()`
+clears. A folder where that file belongs is also a repairable thing on the
+caller's machine, but neither function clears it: `unset_program()` removes
+files only, and `set_program()` cannot write over a folder.
+
+**The decision.** The folder case takes the same class and the same `tm_program`
+and `tm_file` fields, and it stays audible in `program_status()`, because D088's
+test is whether the report's `NA` carries the whole fact, and for a folder it
+does not. Its message names the folder and says to delete it by hand, then to use
+the `set_*()` function. A class of its own was weighed and rejected: a caller
+who catches the unreadable class already handles a location file the package
+cannot read, and a folder is one more form of that.
+
+**Falsified by** a caller who needs to tell a folder from a malformed file in
+code, or `unset_program()` gaining a way to remove the folder, which would make
+the advice to delete it by hand wrong.

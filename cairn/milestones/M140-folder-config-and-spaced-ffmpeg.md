@@ -90,7 +90,7 @@ unquoted by the double quotes and are not claimed.
       `tidymedia_location_unreadable` warning with its own message: it names the
       folder, says to delete it, and then to use `set_{program}()`. Keep the class
       and the `tm_program` and `tm_file` fields. Update the comments above it.
-- [ ] T3: Rewrite the unreadable bullet on `?find_ffmpeg`
+- [x] T3: Rewrite the unreadable bullet on `?find_ffmpeg`
       (`R/program_management.R:944`) and the repair sentence on `?program_status`
       (`:820-823`) for the folder case, then `devtools::document()` (the M128
       lesson: an old roxygen2 writes nothing). Append a `cairn/DECISIONS.md` entry
@@ -120,6 +120,7 @@ unquoted by the double quotes and are not claimed.
 - 2026-10-17: plan gate chose a folder test before `readLines()` over catching any `readLines()` error, because a folder takes advice of its own (delete it by hand) that a generic read error cannot give; falsified by another read failure, such as a file with no read permission, stopping the lookup.
 - 2026-10-17: plan gate chose double quotes in `ffmpeg()` over `shQuote()`, because the two sibling direct commands already use double quotes and a matching form keeps the three alike; falsified by a location that the double-quoted form breaks and `shQuote()` would not.
 - 2026-10-17: T1 tests written in `test-program-location-repair.R` and seen red on master (`cannot open the connection`); T2 adds a `dir.exists()` guard above `readLines()` in `find_program()` with its own delete-the-folder message; full suite 0 failed, 1818 tests.
+- 2026-10-17: T3 rewrites the unreadable bullet and repair sentence on `?find_ffmpeg` and `?program_status` for the folder case, `devtools::document()` wrote both Rd files, and D103 annotates D088 (same class, audible, delete-by-hand advice; a class of its own rejected).
 
 ## Decisions
 

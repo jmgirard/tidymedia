@@ -114,6 +114,9 @@ bugs behind (j), (k), (l) and (m) → their own candidate rows in `cairn/ROADMAP
 - 2026-10-18: T4 done: the series `NEWS.md` Documentation bullet adds one sentence naming the twelve `?ffm_*` pages; no fenced phrase used.
 - 2026-10-18: T1 to T4 share one checkpoint commit, because the edits in `R/ffm.R` interleave across tasks.
 - 2026-10-18: checkpoint: the full `devtools::test()` rerun over T1 to T4 was still running at this commit; T5 records its result.
+- 2026-10-18: the `devtools::test()` rerun over T1 to T4 passed with no failures.
+- claim audit: 35 claims read, 2 corrected — R/ffm.R, man/ffm_*.Rd, NEWS.md (fresh Opus reader; `?ffm_map` now says `ffm_copy()` with `streams = TRUE` refuses a mapping other than "0" instead of replacing it; `?ffm_loudnorm` now says the audio filter is absent with a stack or overlay in either call order; the reader re-read both once: true).
+- 2026-10-18: claim audit side finding (a SIGTERM that also reaches the `sh` from `system2()` lets `ffm_run()` return with no error) recorded as candidate row "`ffm_run()` signal to the shell"; outside this milestone's scope.
 
 ## Decisions
 

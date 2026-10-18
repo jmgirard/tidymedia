@@ -64,10 +64,10 @@ a program can parse.}
 Add FFmpeg's \code{loudnorm} (EBU R128) audio filter. It normalizes the
 input's perceived loudness toward a target integrated loudness, true-peak
 ceiling and loudness range. The filter joins the audio filter chain in the
-order the filters were added, and the chain compiles to \code{-af}. After
-\code{\link{ffm_hstack}}, \code{\link{ffm_vstack}} or
-\code{\link{ffm_overlay}}, the compiled command has no audio filter, and no
-error says so. The glossary
+order the filters were added, and the chain compiles to \code{-af}. In a
+pipeline that also uses \code{\link{ffm_hstack}}, \code{\link{ffm_vstack}}
+or \code{\link{ffm_overlay}}, before or after this function, the compiled
+command has no audio filter, and no error says so. The glossary
 in \code{vignette("tidymedia")} explains media terms such as LUFS and true
 peak.
 }

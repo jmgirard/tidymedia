@@ -384,10 +384,10 @@ ffm_fps <- function(object, fps) {
 #' Add FFmpeg's \code{loudnorm} (EBU R128) audio filter. It normalizes the
 #' input's perceived loudness toward a target integrated loudness, true-peak
 #' ceiling and loudness range. The filter joins the audio filter chain in the
-#' order the filters were added, and the chain compiles to \code{-af}. After
-#' \code{\link{ffm_hstack}}, \code{\link{ffm_vstack}} or
-#' \code{\link{ffm_overlay}}, the compiled command has no audio filter, and no
-#' error says so. The glossary
+#' order the filters were added, and the chain compiles to \code{-af}. In a
+#' pipeline that also uses \code{\link{ffm_hstack}}, \code{\link{ffm_vstack}}
+#' or \code{\link{ffm_overlay}}, before or after this function, the compiled
+#' command has no audio filter, and no error says so. The glossary
 #' in \code{vignette("tidymedia")} explains media terms such as LUFS and true
 #' peak.
 #'
@@ -594,9 +594,10 @@ ffm_codec <- function(object,
 #' puts its options after the options already set. \code{\link{ffm_seek}},
 #' \code{\link{ffm_drop}}, \code{\link{ffm_codec}},
 #' \code{\link{ffm_pixel_format}} and \code{\link{ffm_copy}} replace the values
-#' they set. \code{ffm_map()} adds because its arguments are \emph{partial}
-#' choices that combine. For example, you keep the video, then name one audio
-#' track.
+#' they set. But with its default \code{streams = TRUE}, \code{ffm_copy()}
+#' gives an error rather than replace a mapping other than \code{"0"}.
+#' \code{ffm_map()} adds because its arguments are \emph{partial} choices that
+#' combine. For example, you keep the video, then name one audio track.
 #'
 #' When the pipeline uses \code{\link{ffm_hstack}}, \code{\link{ffm_vstack}}
 #' or \code{\link{ffm_overlay}}, your mapping is added \emph{beside} the

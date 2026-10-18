@@ -4707,3 +4707,28 @@ cannot read, and a folder is one more form of that.
 **Falsified by** a caller who needs to tell a folder from a malformed file in
 code, or `unset_program()` gaining a way to remove the folder, which would make
 the advice to delete it by hand wrong.
+
+## D104 — `set_program()` and `unset_program()` remove an empty folder at a remembered-location path and refuse one with contents (2026-10-17, from M141's plan gate; supersedes D103's delete-by-hand advice and its reason that neither function clears a folder, narrows D089's memo discard to a removed location file, and leaves D103's warning class and D088 standing)
+
+**Context:** D103 told the caller to delete a folder at a location path by hand,
+because neither `set_program()` nor `unset_program()` could clear it. Its falsifier
+was `unset_program()` gaining a way to remove the folder.
+
+**Decision:** At the M141 plan gate the user chose that both functions remove an
+empty folder at a location path. A folder is empty when it holds no entries, hidden
+entries and subfolders included. Neither function removes a folder that holds
+anything. For such a folder, both stop with the error class
+`tidymedia_location_folder` before they remove or write anything. The lookup
+warning keeps D103's class. It advises `unset_program()` when every folder at the
+two paths is empty, and it advises deletion by hand otherwise. The error takes a
+class of its own, unlike D103's warning, because it is a refusal to remove, not a
+location the package failed to read or a removal that failed. `unset_program()`
+drops the FFmpeg capability memo only when it removes a location file, because a
+folder never names the binary that the lookup resolves to.
+
+**Rejected:** Refusing every folder kept the manual step that D103 recorded.
+Removing a folder with its contents can delete files that the caller does not know
+are there.
+
+**Falsified by** a folder with contents at a location path that a caller wants the
+package to clear, or an empty folder that a caller needs to keep.

@@ -7,7 +7,10 @@
 # mock stands in for all of them. No binary is needed.
 
 missing_program_refusal <- function(expr) {
-  local_mocked_bindings(find_program = function(...) NULL, .env = topenv())
+  # `.package`, as the suite's other helpers write it: with `.env = topenv()`
+  # the mock outlived this helper and hid FFmpeg from every later test file.
+  testthat::local_mocked_bindings(find_program = function(...) NULL,
+                                  .package = "tidymedia")
   cnd <- tryCatch(expr, error = function(e) e)
   expect_s3_class(cnd, "rlang_error")
   cnd

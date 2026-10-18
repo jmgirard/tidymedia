@@ -24,6 +24,9 @@ returns its output. FFprobe reads information about media files.
 exactly as you wrote it, so you must add any quotes that it needs. To get
 tibbles instead, use \code{\link[=probe_all]{probe_all()}} and the other \verb{probe_*()} functions. These
 functions quote their arguments for you.
+
+If tidymedia cannot find FFprobe, the call stops with the error "Could not
+locate FFprobe."
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("ffprobe"))) withAutoprint(\{ # examplesIf}

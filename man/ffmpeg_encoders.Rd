@@ -29,6 +29,10 @@ Ask FFmpeg for its list of installed encoders, and return the list as a data
 frame with information about each encoder. The glossary in
 \code{vignette("tidymedia")} explains media terms such as codec and encoder.
 }
+\details{
+If tidymedia cannot find FFmpeg, the call stops with the error "Could not
+locate FFmpeg."
+}
 \examples{
 \dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
 head(ffmpeg_encoders())

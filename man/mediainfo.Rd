@@ -24,6 +24,9 @@ returns its output. MediaInfo reads information about media files.
 exactly as you wrote it, so you must add any quotes that it needs. To get a
 tibble or a value instead, use \code{\link[=mediainfo_template]{mediainfo_template()}}, \code{\link[=mediainfo_query]{mediainfo_query()}} or
 \code{\link[=mediainfo_parameter]{mediainfo_parameter()}}. These functions quote their arguments for you.
+
+If tidymedia cannot find MediaInfo, the call stops with the error "Could not
+locate MediaInfo."
 }
 \examples{
 \dontshow{if (nzchar(Sys.which("mediainfo"))) withAutoprint(\{ # examplesIf}

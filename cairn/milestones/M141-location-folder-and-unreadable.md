@@ -86,16 +86,16 @@ Findings (20) and dispositions:
 
 - diff-bug #1: the unreadable, malformed, not-executable and gone warnings advise `unset_program()`, which refuses when the other path holds a non-empty folder — follow-up ("Location folder edges after M141" row, item a). The refusal names the folder, so the caller still has a next step.
 - diff-bug #2: the emptiness check and the recursive removal leave a window in which a new entry is deleted, and `unset_program()` has no second check — follow-up (row item b). It needs a removal that fails on a non-empty folder on every OS.
-- diff-bug #3: if the folder vanishes during the prompt, the second check refuses with "a folder is there" — fix now.
-- diff-bug #4: no test reaches the second check after consent — fix now.
-- diff-bug #5: the folder error is singular when it lists two folders — fix now.
-- diff-bug #6: `?set_program` leaves out the `tidymedia_location_not_removed` stop for a folder that will not go — fix now.
-- diff-bug #7: NEWS says both functions remove an empty folder without saying `set_program()` clears the current path only, and one NEWS line runs past 100 characters — fix now.
+- diff-bug #3: if the folder vanishes during the prompt, the second check refuses with "a folder is there" — fix now, fixed 7406b857.
+- diff-bug #4: no test reaches the second check after consent — fix now, fixed 7406b857.
+- diff-bug #5: the folder error is singular when it lists two folders — fix now, fixed 7406b857.
+- diff-bug #6: `?set_program` leaves out the `tidymedia_location_not_removed` stop for a folder that will not go — fix now, fixed 7406b857.
+- diff-bug #7: NEWS says both functions remove an empty folder without saying `set_program()` clears the current path only, and one NEWS line runs past 100 characters — fix now, fixed 7406b857.
 - diff-bug #8: the read-permission tests skip under root — reject (false as a defect): no test can make a file unreadable to root, and the GitHub runners are not root.
-- diff-bug #9: the prompt test matches the path, which the "By writing:" line also holds — fix now.
+- diff-bug #9: the prompt test matches the path, which the "By writing:" line also holds — fix now, fixed 7406b857.
 - diff-bug #10: a link to a folder is handled as the folder, and the prompt says "Remove the empty folder" when only the link goes — follow-up (row item d). Both outcomes are safe.
 - diff-bug #11: a FIFO or socket at a location path counts as a file, and `readLines()` on a FIFO blocks — follow-up (row item e). This predates M141.
-- diff-bug #12: the empty-folder advice says `unset_program()` then `set_*()`, though `set_*()` alone works — fix now.
+- diff-bug #12: the empty-folder advice says `unset_program()` then `set_*()`, though `set_*()` alone works — fix now, fixed 7406b857.
 - blame-history #1: a non-empty folder at the current path no longer warns when a pre-0.2.0 file is read — reject (planned change): AC1 promises the fallback for any folder there, and `?find_ffmpeg` states it.
 - blame-history #2: `unset_program()` cannot forget a valid current file while the other path holds a non-empty folder — follow-up (row item a), the falsifier the plan recorded for refusing before any removal.
 - blame-history #3: `unset_program()` has no second emptiness check — follow-up (row item b), the same as diff-bug #2.

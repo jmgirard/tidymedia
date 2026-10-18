@@ -4,7 +4,7 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M143: `unset_program()` forgets a location file beside a folder with contents, and `set_program()` reports an unwritable location
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate; RR<NN> whose Binding criteria bind this milestone's ACs (binding-criteria check), or — -->
@@ -131,7 +131,7 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
       `?find_ffmpeg` in `R/program_management.R`, run
       `devtools::document()`, and edit `NEWS.md` as AC5 says. Derive each
       new claim from an executed call.
-- [ ] T4: Run the full `devtools::test()` with no other R session working,
+- [x] T4: Run the full `devtools::test()` with no other R session working,
       once more with `PATH=/usr/local/bin:/usr/bin:/bin` and both config
       folders empty (the M142 lesson), then `devtools::check()`.
 
@@ -154,6 +154,7 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
 - 2026-10-18: T3 done: `?set_program` gains the not-written paragraph, `?unset_program` and `?find_ffmpeg` describe the kept folder, its warning and the remaining error, the `find_program()` comment at the folder branch now says "keeps"; `devtools::document()` rewrote the three Rd files; NEWS edits the M141 bullet in place (unreleased, D091) and adds one bullet for the not-written error. The simple-english hook's remaining NEWS hits are in released sections, left as they are.
 - 2026-10-18: T4: the no-binaries full run (`PATH=/usr/local/bin:/usr/bin:/bin`, both config dirs empty) failed one guard, `test-timeout-silence.R:705`, which fences "no warning" out of NEWS.md; the new NEWS bullet now says "gives only the ... error", and the guard passes.
 - 2026-10-18: claim audit: 28 claims read, 3 corrected — R/program_management.R, NEWS.md, tests/testthat/test-program-location-repair.R (a folder without write permission stops the write only when the file is absent; the kept-folder warning now adds "and no location file is saved"; the 0444 test comment no longer says Windows lacks the mode); the same reader's single re-read found all four corrections true.
+- 2026-10-18: T4 done: `devtools::check()` 0 errors, 0 warnings, 0 notes (7m27s) on the tree before the claim-audit corrections; after them `devtools::document()` rewrote `set_program.Rd` and the full `devtools::test()` is clean. Review's consistency gate re-runs the check on the final head. Status set to review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

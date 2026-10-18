@@ -73,13 +73,15 @@
 * **Help pages that said something the code does not do now say what it
   does.** These pages changed: `?refresh_ffmpeg_capabilities`,
   `?install_on_win`, `?local_timeout`, `?mediainfo_parameter`,
-  `?audio_stream` and `?hardware_encoder`. The `hardware` argument of the task
-  functions changed too. So did the warning about dropped audio tracks in
-  `extract_audio()`, `convert_audio()`, `normalize_audio()` and their batch
-  forms. So did the return value of seven batch functions, such as
-  `extract_audio_batch()`. For example, a batch's provenance manifest is an
-  attribute, not a column. With `hardware`, a `.webm` output needs an
-  AV1-family `video_codec`, because WebM takes neither H.264 nor HEVC.
+  `?audio_stream` and `?hardware_encoder`. The help text also changed for the
+  `hardware` argument of the task functions. It changed for the warning about
+  dropped audio tracks in `extract_audio()`, `convert_audio()`,
+  `normalize_audio()` and their batch forms. It changed for the return value
+  of seven batch functions, such as `extract_audio_batch()`, too. For example,
+  a batch's provenance manifest is an attribute, not a column. With
+  `hardware`, a `.webm` output needs an AV1-family `video_codec`, because WebM
+  takes neither H.264 nor HEVC. AV1 works only under `hardware = "nvenc"`.
+  The error for `hardware` with `video_codec = "copy"` gives the same advice.
 
 # tidymedia 0.2.2
 

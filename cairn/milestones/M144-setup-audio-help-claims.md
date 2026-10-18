@@ -150,3 +150,23 @@ Pass 2, 2026-10-18, on head 5b643faa after the AC1 amendment; `git diff 53e8baf4
 - AC2: met (pass 1 evidence).
 - AC3: met (pass 1 evidence).
 - AC4: met (pass 1 evidence).
+- spawned: diff-bug, blame-history, prior-review
+- diff-bug #1: "The two-pass analysis measures each audio track" is false, since the analysis maps one track (`R/loudnorm_two_pass.R:45`), and the branch made the clause its own sentence — fix now: sentence deleted.
+- diff-bug #2: the NEWS bullet reads as changed behavior, omits the refusal message and AV1's `nvenc`-only limit — fix now: says "help text", names the message and the limit.
+- diff-bug #3: "a family it takes" omits the backend's own families, so `videotoolbox` has no `.webm` route — reject, false: both texts say AV1 works only under `"nvenc"`; prores is outside the claim.
+- diff-bug #4: the refusal message's "(AV1, under nvenc)" reads as applying to every non-H.264 container — fix now: the AV1 limit is its own sentence about `.webm`.
+- diff-bug #5: Details omits `has_hardware_encoder()` from the first askers — follow-up, predates the branch: added to the "Hardware probe sentence" row.
+- diff-bug #6: the `@param` head "The EBU R128 loudness targets" on `?normalize_audio_batch` still calls `loudness_range` an R 128 target — fix now: "The loudness targets".
+- diff-bug #7: three added roxygen lines over 80 columns — fix now: re-wrapped (`R/mediainfo.R`, `R/program_management.R`, `R/task-doc.R`).
+- diff-bug #8: the `?install_on_win` Value sentence is a long comma chain and does not say earlier programs stay saved when a later save fails — fix now for the wording (moved to an Errors bullet, prior-review #2); the partial-save half is follow-up, already item (c) of "Location folder edges after M141".
+- diff-bug #9: the page says `NA` for "more than one line" where the code gives `NA` for anything but one line — fix now: "does not print exactly one line".
+- diff-bug #10: Scope (j) says five task pages render `hardware_param()`; four do (`compare_videos`, `crop_video`, `picture_in_picture`, `segment_video`) plus `?hardware_encoder` — noted here as the correction; `?standardize_video`'s `.webm` advice with `hardware` is follow-up, added to the "Hardware probe sentence" row.
+- blame-history #1: the fork text contradicts D044 and D050, which say every worker loads fresh — fix now: D106 corrects both claims and leaves their rules.
+- blame-history #2: the `""` promise may depend on the MediaInfo version — reject, false as stated: no build was observed printing nothing; the page now says any output but one line is `NA` (diff-bug #9).
+- blame-history #3: "read `with_options()` in place of `with_timeout()`" is unclear — fix now: says when the third case happens for `local_options()`.
+- blame-history #4: the `NULL`-first-track sentence was removed — reject, planned change (claim (d)).
+- blame-history #5: dated measurement stamps in code comments — reject, planned change: the derived-figures rule asks a figure to be pinned to its date.
+- blame-history #6: two lines over 80 columns — fix now with diff-bug #7.
+- prior-review #1: the manifest sentence lost the `run = TRUE` condition that M133's review O1 restored, and the manifest is attached only inside `if (run)` (`R/ffm_batch.R:190`, `:343`) — fix now: "A run also attaches a provenance manifest".
+- prior-review #2: the `?install_on_win` Value sentence ran to 31 words and put an error class in Value, against the plain-docs rules — fix now: Value is back to its base sentence and the `set_program()` errors are a bullet in Errors.
+- The stale `devtools::check()` on 53e8baf4 was stopped before it finished; AC5 runs on the fixed head.

@@ -35,12 +35,8 @@ default source, the call checks nothing and says so.}
 \value{
 \code{TRUE} when the install finished. \code{FALSE} when you said no to the
 question, or when the call could not create the install folder. Other
-failures give an error. The section "Errors" lists the classes of the
-errors that the install itself gives. A wrong argument gives an error
-before any of these.
-At the end, the call saves the location of each program it unpacked and
-can use, with \code{\link[=set_program]{set_program()}}, and an error from that step, such as \code{tidymedia_location_not_written}, can
-also reach you.
+failures give an error. The section "Errors" lists the error classes the
+call gives. A wrong argument gives an error before any of these.
 }
 \description{
 \code{install_on_win()} downloads a Windows build of FFmpeg and unpacks it. Then
@@ -138,6 +134,9 @@ checksum.
 where the install would put it.
 \item \code{tidymedia_program_unusable}: the archive made \code{ffmpeg} or \code{ffprobe}, but
 the file cannot be used.
+\item An error of \code{\link[=set_program]{set_program()}}, such as \code{tidymedia_location_not_written}: at
+the end, the call saves the location of each program it unpacked and can
+use, and saving one location failed.
 }
 }
 

@@ -66,7 +66,8 @@ hardware_param <- function(null_default = TRUE, video_only = FALSE) {
         paste0("So a container that does not take H.264 needs an explicit ",
                "\\code{video_codec} of a family it takes. \\code{.webm} takes ",
                "neither H.264 nor HEVC, so it needs an AV1-family ",
-               "\\code{video_codec}, which works only under \\code{\"nvenc\"}."))
+               "\\code{video_codec}, which works only under ",
+               "\\code{\"nvenc\"}."))
     },
     "See \\code{\\link{has_hardware_encoder}} for availability and its caveats.",
     if (video_only) {
@@ -365,8 +366,8 @@ jobs_return <- function() {
     "The \\code{jobs} tibble with an added \\code{command} column.",
     paste0("When \\code{run = TRUE}, it also has a \\code{success} column, plus ",
            "a \\code{verified} column when requested through \\code{...}."),
-    paste0("A provenance manifest requested through \\code{...} is attached ",
-           "as an attribute, not a column. Read it with ",
+    paste0("A run also attaches a provenance manifest when requested through ",
+           "\\code{...}, as an attribute, not a column. Read it with ",
            "\\code{\\link{ffm_manifest}}."),
     "See \\code{\\link{ffm_batch}}."
   )

@@ -3808,9 +3808,9 @@ check_hardware_needs_encode <- function(video_codec, hardware = "none",
                encoder runs.",
         "i" = "Name an encoder (e.g. {.code video_codec = \"libx264\"}), or
                pass {.code video_codec = NULL} to assume the H.264 family.
-               For a container that does not take H.264, such as
-               {.file .webm}, name a codec it takes (AV1, under
-               {.code \"nvenc\"}).",
+               For a container that does not take H.264, name a codec it
+               takes. {.file .webm} takes AV1, which works only under
+               {.code hardware = \"nvenc\"}.",
         "i" = "Or drop {.arg hardware} to keep stream-copying the video."
       ),
       call = call
@@ -5383,7 +5383,7 @@ derive_normalized_names <- function(input) {
 #'   \code{audio_stream} column likewise overrides the \code{audio_stream}
 #'   argument per row. There, \code{NA} normalizes the first audio track of
 #'   that row. Any other columns are ignored.
-#' @param target_loudness,true_peak,loudness_range The EBU R128 loudness targets
+#' @param target_loudness,true_peak,loudness_range The loudness targets
 #'   applied to every row, unless \code{jobs} carries a column of the same name
 #'   (see \code{jobs}). The defaults \code{target_loudness = -23} LUFS and
 #'   \code{true_peak = -1} dBTP follow EBU Recommendation R 128 (2014). The

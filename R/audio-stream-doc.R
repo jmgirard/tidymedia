@@ -165,8 +165,7 @@ audio_stream_extras <- list(
   ),
   normalize_one_track = paste0(
     "The function normalizes only one track, because the correction uses one ",
-    "set of measurements. The two-pass analysis measures each audio track. ",
-    "Normalizing several tracks at once would apply one ",
+    "set of measurements. Normalizing several tracks at once would apply one ",
     "track's measurements to all of them. Under \\code{two_pass = TRUE}, the ",
     "analysis pass measures this same track. Only the named track reaches ",
     "the output, and no video does, whatever the container. So an output ",

@@ -4756,3 +4756,26 @@ lets a handler written for the error unwind the call.
 
 **Falsified by** a caller who needs `unset_program()` to remove nothing while a
 folder with contents is present.
+
+## D106 — A forked parallel worker starts with the capability memo; D044's and D050's "each worker asks its own binary" holds only for a worker that starts as a new R process (2026-10-18, from M144's review; corrects one claim in D044 and one in D050 and leaves every rule of both standing)
+
+**Context:** D044 says `parallel = TRUE` workers `loadNamespace()` fresh, so a
+W-worker batch asks FFmpeg W times. D050 says a worker with no override still
+asks its own binary once. M144 corrected `?refresh_ffmpeg_capabilities`, whose
+"Parallel workers" section said the same, after a run showed otherwise for a
+forked worker (the run and its versions are in M144's work log).
+
+**Decision:** The claim holds for a worker that starts as a new R process, as
+under `future::plan(multisession)`. A worker forked from the session, as under
+`future::plan(multicore)`, starts with a copy of the memo as it was when the
+worker started, and asks FFmpeg only if that copy is empty. The help page and
+the comment above `.tm_capabilities` in `R/cache.R` state this. D044's
+discard rule, its per-process rule and D050's choice not to carry the memo are
+unchanged: nothing copies the memo on purpose, and a discard in the session
+does not reach a worker that already started.
+
+**Rejected:** Leaving D044 and D050 as they were, which keeps two records that
+the code and the help page now contradict.
+
+**Falsified by** a forked worker that starts with an empty memo while the
+session's memo is filled.

@@ -342,8 +342,9 @@ with_timeout <- function(expr, seconds) {
 #'   the two.
 #'
 #' All three cases also apply to [withr::local_options()], because R's exit
-#' handlers work this way. For the third case, read [withr::with_options()] in
-#' place of [with_timeout()]. Setting an option with [withr::with_options()]
+#' handlers work this way. The third case happens when
+#' [withr::local_options()] is written directly inside the expression of
+#' [withr::with_options()]. Setting an option with [withr::with_options()]
 #' alone avoids all three cases, because it puts the option back when its
 #' expression ends.
 #'

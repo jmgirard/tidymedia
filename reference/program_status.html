@@ -81,12 +81,16 @@ location or the file that holds it, so you can fix it. There are three cases:</p
 run. Give it permission to execute, or save another copy. This case does
 not arise on Windows, which has no execute bit.</p></li>
 <li><p><code>tidymedia_location_unreadable</code>: the file that stores the location does
-not hold exactly one location, or a folder is where that file belongs.</p></li>
+not hold exactly one location, or the package cannot read it, or a folder
+is where that file belongs.</p></li>
 </ul><p>In all three cases, the row has <code>NA</code> in both columns. For a location that is
 gone or cannot be run, or a file that does not hold one location,
 <code><a href="unset_program.html">unset_program()</a></code> forgets the location, and <code><a href="set_program.html">set_program()</a></code> replaces it.
-Neither can clear a folder. Delete the folder by hand, then use
-<code><a href="set_program.html">set_program()</a></code>.</p>
+For a file the package cannot read, give the file read permission, or use
+<code><a href="unset_program.html">unset_program()</a></code> to remove it. <code><a href="unset_program.html">unset_program()</a></code> also removes an empty
+folder where the file belongs, and <code><a href="set_program.html">set_program()</a></code> removes one in the
+current folder. Neither removes a folder that holds anything or that the
+package cannot read, so delete that folder by hand.</p>
 <p>The version is what the program reports about itself. For <code>ffmpeg</code>,
 <code>ffprobe</code> and <code>ffplay</code>, it is the FFmpeg build number. For <code>mediainfo</code>, it is
 the MediaInfo library version.</p>

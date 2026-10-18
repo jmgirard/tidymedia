@@ -23,8 +23,8 @@ unset_program(program)
 
 ## Value
 
-Invisibly, `TRUE` when the call removed a saved location, and `FALSE`
-when there was none to remove.
+Invisibly, `TRUE` when the call removed a saved location or an empty
+folder, and `FALSE` when there was nothing to remove.
 
 ## Details
 
@@ -39,6 +39,15 @@ already forgotten.
 The call also clears a location saved by a version before 0.2.0. See the
 section "Locations saved by earlier versions" in
 [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md).
+
+A folder can be where a location file goes, in the current folder or the
+one before 0.2.0. If the folder is empty, the call removes it with the
+files. A folder counts as empty only when it holds nothing, not even a
+hidden file or an empty folder, and a folder the package cannot read
+never counts as empty. If a folder is not empty, the call gives a
+`tidymedia_location_folder` error and removes nothing, not even a file
+at the other path. The error lists each such folder in its message and
+in `tm_files`. Delete those folders by hand, then call again.
 
 ## See also
 

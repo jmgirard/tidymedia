@@ -68,8 +68,8 @@ call deletes a file. A call that names no program gives an error.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Invisibly, <code>TRUE</code> when the call removed a saved location, and <code>FALSE</code>
-when there was none to remove.</p>
+    <p>Invisibly, <code>TRUE</code> when the call removed a saved location or an empty
+folder, and <code>FALSE</code> when there was nothing to remove.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -81,6 +81,14 @@ returns <code>FALSE</code>. It does not give an error, because the program is al
 forgotten.</p>
 <p>The call also clears a location saved by a version before 0.2.0. See the
 section "Locations saved by earlier versions" in <code><a href="find_ffmpeg.html">find_ffmpeg()</a></code>.</p>
+<p>A folder can be where a location file goes, in the current folder or the
+one before 0.2.0. If the folder is empty, the call removes it with the
+files. A folder counts as empty only when it holds nothing, not even a
+hidden file or an empty folder, and a folder the package cannot read never
+counts as empty. If a folder is not empty, the call gives a
+<code>tidymedia_location_folder</code> error and removes nothing, not even a file at
+the other path. The error lists each such folder in its message and in
+<code>tm_files</code>. Delete those folders by hand, then call again.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

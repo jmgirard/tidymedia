@@ -63,6 +63,21 @@ In a session where no one can answer, the call gives an error. Pass
 `confirm = FALSE` to write without the question, for example in a script
 that runs on its own.
 
+A folder can be where the location file goes. If the folder is empty,
+the call removes it before it writes the file, and the question names
+the folder. A folder counts as empty only when it holds nothing, not
+even a hidden file or an empty folder, and a folder the package cannot
+read never counts as empty. If the folder is not empty, the call gives a
+`tidymedia_location_folder` error before it asks, and it changes
+nothing. The error names the folder in its message and in `tm_files`.
+Delete the folder by hand, then call again. If an empty folder is still
+there after the call tries to remove it, the call gives a
+`tidymedia_location_not_removed` error and writes nothing. The call
+looks only at the current folder. A folder in the place of a location
+file saved before 0.2.0 stays, and
+[`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
+removes it when it is empty.
+
 For locations saved by versions before 0.2.0, see the section "Locations
 saved by earlier versions" in
 [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md).

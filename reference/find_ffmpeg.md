@@ -50,8 +50,11 @@ returns `NULL`. The warning has one of three classes that you can catch:
 
 - `tidymedia_location_unreadable`: the file does not hold exactly one
   location. It is empty, has more than one line, or has one empty line.
-  Or a folder is where that file belongs. The condition holds the
-  program name in `tm_program` and the file's path in `tm_file`.
+  Or the package cannot read the file, because it has no read
+  permission. Or a folder is where that file belongs, and no file for
+  the program is in either place. The condition holds the program name
+  in `tm_program` and the path in `tm_file`. For folders, that is the
+  first folder the function looked in.
 
 A line that holds only spaces counts as a location. So it gives
 `tidymedia_location_gone`, not `tidymedia_location_unreadable`.
@@ -62,16 +65,29 @@ hold one location, forget the location with
 or replace it with
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md).
 A file that cannot be run can also be fixed by giving it permission to
-execute. Neither function can clear a folder where the file belongs.
-Delete the folder by hand, then use
-[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md).
+execute. A file the package cannot read can be fixed by giving it read
+permission, or removed with
+[`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md).
+
+[`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
+removes an empty folder where the file belongs, in either folder, and
+[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+removes one in the current folder. A folder counts as empty only when it
+holds nothing, not even a hidden file or an empty folder. A folder the
+package cannot read never counts as empty. Both functions leave a folder
+that is not empty, and they give an error. The warning says which case
+you have: it advises
+[`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
+when every folder it found is empty, and otherwise it names each folder
+to delete by hand.
 
 ## Locations saved by earlier versions
 
 Versions of the package before 0.2.0 saved locations in a different
 folder, `rappdirs::user_config_dir("tidymedia", "R")`. The functions
 still read a file in that folder. They read it only when the current
-folder has no file for the program.
+folder has no file for the program. A folder in the place of the current
+file does not count as a file, so the old file is still read.
 [`program_status()`](https://jmgirard.github.io/tidymedia/reference/program_status.md)
 looks in the same places, in the same order.
 

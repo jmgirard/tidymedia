@@ -45,9 +45,9 @@ much audio it selects depends on the function.
 must pick one track when you name none. A function that carries audio
 through can keep all the tracks its container holds.
 \item On the functions that pass video through, an input with no audio gives an
-output with no audio, not an error. On \code{\link[=separate_audio_video]{separate_audio_video()}} and
-\code{\link[=normalize_audio]{normalize_audio()}}, whose output \emph{is} audio, that input gives an
-FFmpeg error.
+output with no audio, not an error. On \code{\link[=separate_audio_video]{separate_audio_video()}},
+\code{\link[=extract_audio]{extract_audio()}}, \code{\link[=convert_audio]{convert_audio()}} and \code{\link[=normalize_audio]{normalize_audio()}}, whose output
+\emph{is} audio, that input gives an FFmpeg error.
 }
 
 \code{audio_input = NULL} is different: it selects no audio at all, so the output

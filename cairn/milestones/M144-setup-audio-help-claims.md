@@ -87,7 +87,7 @@ edit it.
 
 - [x] T1: Correct claims (a), (b), (f) and (g) in `R/cache.R`, `R/program_management.R` and
       `R/timeout.R`, with the cache comment at `R/cache.R:18-21`.
-- [ ] T2: Run `mediainfo_parameter()` on a file without the section, under `typed = TRUE` and
+- [x] T2: Run `mediainfo_parameter()` on a file without the section, under `typed = TRUE` and
       `typed = FALSE`. Record the results and the MediaInfo version in the work log, then
       correct claims (c), (d) and (e). If a result differs from what the code path promises,
       add a candidate row for that code bug.
@@ -119,6 +119,7 @@ edit it.
 - 2026-10-18: absorbs candidate rows "Nine help-text claims M127's round-4 review left open, most on text M129 and M130 rewrite." in full and the M132 and M133 parts of "Six help-text claims on the `ffm_*()` input, output and run pages that were false before M128, kept as they were.".
 - 2026-10-18: implement started on branch m144-setup-audio-help-claims, cut from master at 95495a4a.
 - 2026-10-18: T1 done. (a) a run showed a `plan(multicore)` worker sees a filled memo and a `plan(multisession)` worker does not (future 1.75.0, R 4.6.1); the page and the comment at `R/cache.R:18-21` now say so. (b) Details names the three skips: a filled record, the option for a `hardware` call, no FFmpeg for `has_encoder()` (`R/ffmpeg.R:3163-3176`, `:3254`). (f) Value says the closing `set_program()` step can give its own errors, naming `tidymedia_location_not_written` (`R/program_management.R:867`). (g) a run showed `withr::local_options()` inside `withr::with_options()` leaves the outer value (withr 3.0.3), so the page says all three cases apply.
+- 2026-10-18: T2 done. (e) MediaInfoLib v26.10 prints one empty line for `--Inform=Audio;%Format%` on a video with no audio; `mediainfo_parameter()` returned `NA` (logical) under `typed = TRUE` and `""` under `typed = FALSE`, the same as a missing parameter, so no code bug and no row. (c) `extract_audio()` and `convert_audio()` on that file each stopped with `tidymedia_ffmpeg_exit`, so `?audio_stream` now names all four audio-output functions. (d) the `normalize_one_track` extra no longer restates the `NULL` reading. The audio tests' 9 warnings come from multi-track fixtures in code this branch does not touch.
 
 ## Decisions
 

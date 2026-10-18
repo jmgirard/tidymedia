@@ -47,9 +47,10 @@ In all three cases, the row has \code{NA} in both columns. For a location that i
 gone or cannot be run, or a file that does not hold one location,
 \code{\link[=unset_program]{unset_program()}} forgets the location, and \code{\link[=set_program]{set_program()}} replaces it.
 For a file the package cannot read, give the file read permission, or use
-\code{\link[=unset_program]{unset_program()}} to remove it. \code{\link[=unset_program]{unset_program()}} and \code{\link[=set_program]{set_program()}} also
-remove an empty folder where the file belongs. They leave a folder that
-holds anything, so delete that folder by hand.
+\code{\link[=unset_program]{unset_program()}} to remove it. \code{\link[=unset_program]{unset_program()}} also removes an empty
+folder where the file belongs, and \code{\link[=set_program]{set_program()}} removes one in the
+current folder. Neither removes a folder that holds anything or that the
+package cannot read, so delete that folder by hand.
 
 The version is what the program reports about itself. For \code{ffmpeg},
 \code{ffprobe} and \code{ffplay}, it is the FFmpeg build number. For \code{mediainfo}, it is

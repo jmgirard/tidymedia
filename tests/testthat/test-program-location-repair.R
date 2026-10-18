@@ -128,7 +128,8 @@ test_that("a folder at a remembered-location path warns and returns NULL", {
     legacy_full = c(legacy = "full"),
     both_empty = c(new = "empty", legacy = "empty"),
     new_empty_legacy_full = c(new = "empty", legacy = "full"),
-    new_full_legacy_empty = c(new = "full", legacy = "empty")
+    new_full_legacy_empty = c(new = "full", legacy = "empty"),
+    both_full = c(new = "full", legacy = "full")
   )
   for (program in tm_program_vocabulary) {
     for (layout in names(layouts)) {
@@ -207,7 +208,8 @@ test_that("a folder at the current path does not hide a pre-0.2.0 file", {
 
 test_that("a location file without read permission warns and returns NULL", {
   # M141 AC2. `file.exists()` is TRUE for such a file, so before M141 the
-  # lookup reached `readLines()` and stopped with "cannot open file". A
+  # lookup reached `readLines()`, which warned "cannot open file ... Permission
+  # denied" and stopped with "cannot open the connection". A
   # mode-0000 file is unreadable on Unix to anyone but root, and Windows has no
   # such mode, so the cell skips where `file.access()` still reports it readable.
   skip_on_os("windows")
@@ -566,6 +568,37 @@ test_that("set_program() refuses a folder that holds anything, before any prompt
       )
     }
   }
+})
+
+test_that("a folder tidymedia cannot read never counts as empty", {
+  # M141 claim audit. An unreadable folder lists as empty, so tm_folder_empty()
+  # asks about read permission first, and set_program(), unset_program() and
+  # the lookup all treat such a folder as one that holds something. Mode 0333
+  # takes away read permission on Unix to anyone but root, and Windows has no
+  # such mode.
+  skip_on_os("windows")
+  withr::local_options(cli.width = 1000)
+  dirs <- tm_redirect_config()
+  path <- tm_config_file("ffmpeg", dirs$new)
+  dir.create(path)
+  Sys.chmod(path, "0333")
+  withr::defer(Sys.chmod(path, "0755"))
+  skip_if(file.access(path, 4L) == 0L, "the process can read a mode-0333 folder")
+
+  condition <- expect_error(
+    set_program("ffmpeg", tm_stub_executable(), confirm = FALSE),
+    class = "tidymedia_location_folder"
+  )
+  expect_match(
+    cli::ansi_strip(conditionMessage(condition)), "cannot read", fixed = TRUE
+  )
+  expect_error(unset_program("ffmpeg"), class = "tidymedia_location_folder")
+  expect_true(dir.exists(path))
+
+  warning <- tryCatch(find_ffmpeg(), warning = function(w) w)
+  message <- cli::ansi_strip(conditionMessage(warning))
+  expect_match(message, "by hand", fixed = TRUE)
+  expect_no_match(message, "unset_program", fixed = TRUE)
 })
 
 test_that("set_program()'s consent covers removing an empty folder", {

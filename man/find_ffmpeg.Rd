@@ -63,10 +63,12 @@ with \code{\link[=set_program]{set_program()}}. A file that cannot be run can al
 it permission to execute. A file the package cannot read can be fixed by
 giving it read permission, or removed with \code{\link[=unset_program]{unset_program()}}.
 
-\code{\link[=unset_program]{unset_program()}} and \code{\link[=set_program]{set_program()}} remove an empty folder where the file
-belongs. A folder counts as empty only when it holds nothing, not even a
-hidden file or an empty folder. They leave a folder that holds anything, and
-they give an error. The warning says which case you have: it advises
+\code{\link[=unset_program]{unset_program()}} removes an empty folder where the file belongs, in either
+folder, and \code{\link[=set_program]{set_program()}} removes one in the current folder. A folder
+counts as empty only when it holds nothing, not even a hidden file or an
+empty folder. A folder the package cannot read never counts as empty. Both
+functions leave a folder that is not empty, and they give an error. The
+warning says which case you have: it advises
 \code{\link[=unset_program]{unset_program()}} when every folder it found is empty, and otherwise it
 names each folder to delete by hand.
 }

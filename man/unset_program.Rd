@@ -35,7 +35,8 @@ section "Locations saved by earlier versions" in \code{\link[=find_ffmpeg]{find_
 A folder can be where a location file goes, in the current folder or the
 one before 0.2.0. If the folder is empty, the call removes it with the
 files. A folder counts as empty only when it holds nothing, not even a
-hidden file or an empty folder. If a folder holds anything, the call gives a
+hidden file or an empty folder, and a folder the package cannot read never
+counts as empty. If a folder is not empty, the call gives a
 \code{tidymedia_location_folder} error and removes nothing, not even a file at
 the other path. The error lists each such folder in its message and in
 \code{tm_files}. Delete those folders by hand, then call again.

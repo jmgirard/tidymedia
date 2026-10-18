@@ -176,9 +176,10 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
     # it stops with "cannot open the connection", which stopped every lookup
     # and program_status() with it (measured 2026-10-17). So with no file at
     # either path, a folder takes the unreadable class and fields (M140,
-    # D103). set_program() and unset_program() remove an empty folder and
-    # refuse one that holds anything (D104), so the advice names
-    # unset_program() only when every folder present is empty.
+    # D103). unset_program() removes an empty folder at either path and
+    # refuses one that holds anything (D104), so the advice names
+    # unset_program() only when every folder present is empty. set_program()
+    # clears an empty folder at the current path only.
     if (!any(is_file) && any(is_dir)) {
       folders <- paths[is_dir]
       full <- folders[!tm_folder_empty(folders)]
@@ -186,9 +187,10 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
         c("i" = "Delete {.file {full}} by hand, then use {.fn set_{program}} \\
                  to point tidymedia at the binary again.")
       } else {
-        c("i" = "Use {.code unset_program(\"{program}\")} to remove the \\
-                 empty folder, or {.fn set_{program}} to point tidymedia at \\
-                 the binary again.")
+        c("i" = "Use {.code unset_program(\"{program}\")} to remove \\
+                 {cli::qty(length(folders))}{?the empty folder/both empty \\
+                 folders}, then {.fn set_{program}} to point tidymedia at the \\
+                 binary again.")
       }
       cli::cli_warn(
         c(
@@ -203,7 +205,8 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
       return(NULL)
     }
     # A file the process cannot read passes `file.exists()` too, and
-    # `readLines()` on it stops with "cannot open file" (M141). It takes the
+    # `readLines()` on it warns "cannot open file ... Permission denied" and
+    # stops with "cannot open the connection" (M141). It takes the
     # same class and fields. set_program() is left out of the advice, because
     # a mode-0000 file stops its write too ("Unwritable location file" row).
     # Asked through unreadable_paths(), the package's one readability site.
@@ -902,9 +905,10 @@ install_on_win <- function(download_url = NULL,
 #' gone or cannot be run, or a file that does not hold one location,
 #' [unset_program()] forgets the location, and [set_program()] replaces it.
 #' For a file the package cannot read, give the file read permission, or use
-#' [unset_program()] to remove it. [unset_program()] and [set_program()] also
-#' remove an empty folder where the file belongs. They leave a folder that
-#' holds anything, so delete that folder by hand.
+#' [unset_program()] to remove it. [unset_program()] also removes an empty
+#' folder where the file belongs, and [set_program()] removes one in the
+#' current folder. Neither removes a folder that holds anything or that the
+#' package cannot read, so delete that folder by hand.
 #'
 #' The version is what the program reports about itself. For `ffmpeg`,
 #' `ffprobe` and `ffplay`, it is the FFmpeg build number. For `mediainfo`, it is
@@ -1041,10 +1045,12 @@ tm_na_string <- function(x) {
 #' it permission to execute. A file the package cannot read can be fixed by
 #' giving it read permission, or removed with [unset_program()].
 #'
-#' [unset_program()] and [set_program()] remove an empty folder where the file
-#' belongs. A folder counts as empty only when it holds nothing, not even a
-#' hidden file or an empty folder. They leave a folder that holds anything, and
-#' they give an error. The warning says which case you have: it advises
+#' [unset_program()] removes an empty folder where the file belongs, in either
+#' folder, and [set_program()] removes one in the current folder. A folder
+#' counts as empty only when it holds nothing, not even a hidden file or an
+#' empty folder. A folder the package cannot read never counts as empty. Both
+#' functions leave a folder that is not empty, and they give an error. The
+#' warning says which case you have: it advises
 #' [unset_program()] when every folder it found is empty, and otherwise it
 #' names each folder to delete by hand.
 #'
@@ -1132,7 +1138,8 @@ find_ffplay <- function() {
 #' A folder can be where the location file goes. If the folder is empty, the
 #' call removes it before it writes the file, and the question names the
 #' folder. A folder counts as empty only when it holds nothing, not even a
-#' hidden file or an empty folder. If the folder holds anything, the call gives
+#' hidden file or an empty folder, and a folder the package cannot read never
+#' counts as empty. If the folder is not empty, the call gives
 #' a `tidymedia_location_folder` error before it asks, and it changes nothing.
 #' The error names the folder in its message and in `tm_files`. Delete the
 #' folder by hand, then call again.
@@ -1326,7 +1333,8 @@ set_ffplay <- function(location, confirm = TRUE) {
 #' A folder can be where a location file goes, in the current folder or the
 #' one before 0.2.0. If the folder is empty, the call removes it with the
 #' files. A folder counts as empty only when it holds nothing, not even a
-#' hidden file or an empty folder. If a folder holds anything, the call gives a
+#' hidden file or an empty folder, and a folder the package cannot read never
+#' counts as empty. If a folder is not empty, the call gives a
 #' `tidymedia_location_folder` error and removes nothing, not even a file at
 #' the other path. The error lists each such folder in its message and in
 #' `tm_files`. Delete those folders by hand, then call again.
@@ -2106,8 +2114,8 @@ tm_abort_location_folder <- function(program, paths, call) {
       "Can't use the remembered-location path for {program}: a folder is \\
        there, not a file.",
       "x" = "{.file {paths}}",
-      "i" = "Each folder named holds files or folders, so tidymedia leaves it \\
-             alone. Delete it by hand, then try again."
+      "i" = "Each folder named holds files or folders, or tidymedia cannot \\
+             read it, so tidymedia leaves it alone. Delete it by hand, then try again."
     ),
     class = "tidymedia_location_folder",
     tm_program = program,

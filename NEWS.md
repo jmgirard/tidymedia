@@ -8,8 +8,8 @@
   stopped too. They now give the
   `tidymedia_location_unreadable` warning, and `program_status()` still
   returns its table. If every folder it found is empty, the warning advises
-  `unset_program()`. Otherwise it names each folder that holds anything and
-  says to delete it by hand.
+  `unset_program()`. Otherwise it names each folder that holds anything, or
+  that tidymedia cannot read, and says to delete it by hand.
 
 * **A folder in place of the current location file no longer hides a
   location saved before 0.2.0.** Before, a folder there counted as a saved

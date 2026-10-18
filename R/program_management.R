@@ -189,7 +189,7 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
       } else {
         c("i" = "Use {.code unset_program(\"{program}\")} to remove \\
                  {cli::qty(length(folders))}{?the empty folder/both empty \\
-                 folders}, then {.fn set_{program}} to point tidymedia at the \\
+                 folders}, or {.fn set_{program}} to point tidymedia at the \\
                  binary again.")
       }
       cli::cli_warn(
@@ -1142,7 +1142,11 @@ find_ffplay <- function() {
 #' counts as empty. If the folder is not empty, the call gives
 #' a `tidymedia_location_folder` error before it asks, and it changes nothing.
 #' The error names the folder in its message and in `tm_files`. Delete the
-#' folder by hand, then call again.
+#' folder by hand, then call again. If an empty folder is still there after
+#' the call tries to remove it, the call gives a
+#' `tidymedia_location_not_removed` error and writes nothing. The call looks
+#' only at the current folder. A folder in the place of a location file saved
+#' before 0.2.0 stays, and [unset_program()] removes it when it is empty.
 #'
 #' For locations saved by versions before 0.2.0, see the section "Locations
 #' saved by earlier versions" in [find_ffmpeg()].
@@ -1240,9 +1244,11 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
     if (!approved) return(invisible(FALSE))
   }
 
-  if (folder) {
-    # Asked again, because the folder can gain an entry while the prompt
-    # waits, and the removal below is recursive.
+  # Asked again, because the folder can gain an entry while the prompt waits,
+  # and the removal below is recursive. A folder that went away meanwhile
+  # leaves nothing to remove, and tm_folder_empty() answers FALSE for a path
+  # that is not there, so that case skips the block rather than refusing.
+  if (folder && dir.exists(config_file)) {
     if (!tm_folder_empty(config_file)) {
       tm_abort_location_folder(program, config_file, call)
     }
@@ -2111,11 +2117,15 @@ tm_set_prompt <- function(program, location, dir = tm_config_dir(),
 tm_abort_location_folder <- function(program, paths, call) {
   cli::cli_abort(
     c(
-      "Can't use the remembered-location path for {program}: a folder is \\
-       there, not a file.",
+      "{cli::qty(length(paths))}Can't use the remembered-location \\
+       path{?s} for {program}: {cli::qty(length(paths))}{?it is a \\
+       folder/they are folders}, not \\
+       {?a file/files}.",
       "x" = "{.file {paths}}",
-      "i" = "Each folder named holds files or folders, or tidymedia cannot \\
-             read it, so tidymedia leaves it alone. Delete it by hand, then try again."
+      "i" = "{cli::qty(length(paths))}{?The folder holds/Each folder holds} \\
+             files or folders, or tidymedia cannot read it, so \\
+             tidymedia leaves {?it/them} alone. Delete {?it/them} by hand, \\
+             then try again."
     ),
     class = "tidymedia_location_folder",
     tm_program = program,

@@ -619,8 +619,11 @@ test_that("set_program()'s consent covers removing an empty folder", {
 
     expect_identical(set_program("ffmpeg", stub), answer)
     expect_length(prompts, 1L)
-    expect_match(prompts, path, fixed = TRUE)
-    expect_match(prompts, "empty folder", fixed = TRUE)
+    # The folder's own line, not the "By writing:" line, which names the same
+    # path (M141 review diff-bug #9).
+    folder_line <- grep("empty folder", strsplit(prompts, "\n")[[1]], value = TRUE)
+    expect_length(folder_line, 1L)
+    expect_match(folder_line, path, fixed = TRUE)
     if (answer) {
       expect_identical(readLines(path), stub)
     } else {
@@ -643,9 +646,68 @@ test_that("set_program()'s refusal with no one to ask names the empty folder", {
     class = "tidymedia_confirmation_unavailable"
   )
   message <- cli::ansi_strip(conditionMessage(condition))
-  expect_match(message, path, fixed = TRUE)
-  expect_match(message, "empty folder", fixed = TRUE)
+  folder_line <- grep("empty folder", strsplit(message, "\n")[[1]], value = TRUE)
+  expect_length(folder_line, 1L)
+  expect_match(folder_line, path, fixed = TRUE)
   expect_true(dir.exists(path))
+})
+
+test_that("set_program() asks about the folder again after consent", {
+  # M141 review diff-bug #3 and #4. The removal is recursive, so the folder is
+  # checked again after the prompt. An entry added while the prompt waits makes
+  # the call refuse and keep it. A folder removed while the prompt waits leaves
+  # nothing to remove, and the call writes the file.
+  for (change in c("gains_entry", "vanishes")) {
+    dirs <- tm_redirect_config()
+    stub <- tm_stub_executable()
+    path <- tm_config_file("ffmpeg", dirs$new)
+    tm_folder_shapes$empty(path)
+    local_mocked_bindings(tm_confirm = function(prompt, ...) {
+      if (change == "gains_entry") {
+        file.create(file.path(path, "added"))
+      } else {
+        unlink(path, recursive = TRUE)
+      }
+      TRUE
+    })
+
+    if (change == "gains_entry") {
+      expect_error(
+        set_program("ffmpeg", stub),
+        class = "tidymedia_location_folder"
+      )
+      expect_true(file.exists(file.path(path, "added")))
+    } else {
+      expect_true(set_program("ffmpeg", stub))
+      expect_identical(readLines(path), stub)
+    }
+  }
+})
+
+test_that("the folder refusal counts the folders it names", {
+  # M141 review diff-bug #5. unset_program() can list two folders.
+  withr::local_options(cli.width = 1000)
+  dirs <- tm_redirect_config()
+  for (d in c(dirs$new, dirs$legacy)) {
+    tm_folder_shapes$file(tm_config_file("ffmpeg", d))
+  }
+  condition <- expect_error(
+    unset_program("ffmpeg"),
+    class = "tidymedia_location_folder"
+  )
+  message <- cli::ansi_strip(conditionMessage(condition))
+  expect_match(message, "paths for ffmpeg: they are folders", fixed = TRUE)
+  expect_match(message, "Delete them by hand", fixed = TRUE)
+
+  dirs <- tm_redirect_config()
+  tm_folder_shapes$file(tm_config_file("ffmpeg", dirs$new))
+  condition <- expect_error(
+    unset_program("ffmpeg"),
+    class = "tidymedia_location_folder"
+  )
+  message <- cli::ansi_strip(conditionMessage(condition))
+  expect_match(message, "path for ffmpeg: it is a folder", fixed = TRUE)
+  expect_match(message, "Delete it by hand", fixed = TRUE)
 })
 
 test_that("set_program() stops when the empty folder will not go", {

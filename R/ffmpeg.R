@@ -3807,9 +3807,10 @@ check_hardware_needs_encode <- function(video_codec, hardware = "none",
         "x" = "{.code video_codec = \"copy\"} stream-copies the video, so no
                encoder runs.",
         "i" = "Name an encoder (e.g. {.code video_codec = \"libx264\"}), or
-               pass {.code video_codec = NULL} to assume the H.264 family --
-               a container that does not take H.264 then needs a codec of a
-               family it takes, such as AV1 for {.file .webm}.",
+               pass {.code video_codec = NULL} to assume the H.264 family.
+               For a container that does not take H.264, such as
+               {.file .webm}, name a codec it takes (AV1, under
+               {.code \"nvenc\"}).",
         "i" = "Or drop {.arg hardware} to keep stream-copying the video."
       ),
       call = call

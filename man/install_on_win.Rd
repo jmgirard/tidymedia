@@ -37,8 +37,8 @@ default source, the call checks nothing and says so.}
 question, or when the call could not create the install folder. Other
 failures give an error. The section "Errors" lists the classes of the
 install's own errors. A wrong argument gives an error before any of these.
-At the end, the call saves each program's location with \code{\link[=set_program]{set_program()}},
-and an error from that step, such as \code{tidymedia_location_not_written}, can
+At the end, the call saves the location of each program it unpacked and
+can use, with \code{\link[=set_program]{set_program()}}, and an error from that step, such as \code{tidymedia_location_not_written}, can
 also reach you.
 }
 \description{

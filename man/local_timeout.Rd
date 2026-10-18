@@ -64,8 +64,9 @@ the two.
 
 All three cases also apply to \code{\link[withr:local_options]{withr::local_options()}}, because R's exit
 handlers work this way. For the third case, read \code{\link[withr:with_options]{withr::with_options()}} in
-place of \code{\link[=with_timeout]{with_timeout()}}. The cases do not apply to
-\code{\link[withr:with_options]{withr::with_options()}} itself, which puts the option back itself.
+place of \code{\link[=with_timeout]{with_timeout()}}. Setting an option with \code{\link[withr:with_options]{withr::with_options()}}
+alone avoids all three cases, because it puts the option back when its
+expression ends.
 }
 \examples{
 bounded <- function() {

@@ -17,7 +17,7 @@ has. The next query then asks FFmpeg again.
 The first call in an R session to \code{\link{has_encoder}}, or one that
 uses \code{hardware = "nvenc"} or \code{hardware = "videotoolbox"}, asks
 FFmpeg which encoders it has, unless something has already filled the record.
-A call with \code{hardware} does not ask when the
+A call with \code{hardware} does not ask while it picks the encoder when the
 \code{tidymedia.hardware_encoders} option is set. \code{has_encoder()} does
 not ask when tidymedia cannot find FFmpeg. The package remembers the answer
 for the rest of the session. Later calls reuse

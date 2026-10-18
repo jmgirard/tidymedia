@@ -74,11 +74,12 @@
   does.** These pages changed: `?refresh_ffmpeg_capabilities`,
   `?install_on_win`, `?local_timeout`, `?mediainfo_parameter`,
   `?audio_stream` and `?hardware_encoder`. The `hardware` argument of the task
-  functions changed too. So did the audio track check of `extract_audio()`,
-  `convert_audio()`, `normalize_audio()` and their batch forms. So did the
-  return value of the batch task functions. For example, a batch's provenance
-  manifest is an attribute, not a column. A `.webm` output needs an AV1-family
-  codec, because WebM does not take HEVC.
+  functions changed too. So did the warning about dropped audio tracks in
+  `extract_audio()`, `convert_audio()`, `normalize_audio()` and their batch
+  forms. So did the return value of seven batch functions, such as
+  `extract_audio_batch()`. For example, a batch's provenance manifest is an
+  attribute, not a column. With `hardware`, a `.webm` output needs an
+  AV1-family `video_codec`, because WebM takes neither H.264 nor HEVC.
 
 # tidymedia 0.2.2
 

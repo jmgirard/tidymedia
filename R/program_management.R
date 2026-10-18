@@ -435,8 +435,8 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
 #'   question, or when the call could not create the install folder. Other
 #'   failures give an error. The section "Errors" lists the classes of the
 #'   install's own errors. A wrong argument gives an error before any of these.
-#'   At the end, the call saves each program's location with [set_program()],
-#'   and an error from that step, such as `tidymedia_location_not_written`, can
+#'   At the end, the call saves the location of each program it unpacked and
+#'   can use, with [set_program()], and an error from that step, such as `tidymedia_location_not_written`, can
 #'   also reach you.
 #' @seealso [set_program()] to save the location of a program you already have,
 #'   and [find_ffmpeg()] to check where the package finds a program.

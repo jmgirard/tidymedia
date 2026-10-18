@@ -118,7 +118,9 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
       out[[i]] <- NA_character_
       next
     }
-    # A missing section/parameter prints nothing or a multi-line dump.
+    # A missing parameter, or a known section the file lacks, prints one empty
+    # line (MediaInfoLib v26.10, 2026-10-18); an unknown section prints a
+    # multi-line dump. Anything but one line becomes NA.
     out[[i]] <- if (length(res) == 1) res else NA_character_
   }
   warn_unreadable(failed, timed_out)

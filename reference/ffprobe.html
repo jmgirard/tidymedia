@@ -74,6 +74,7 @@ shell redirect such as <code>2&gt;&amp;1</code> in <code>command</code> returns 
 exactly as you wrote it, so you must add any quotes that it needs. To get
 tibbles instead, use <code><a href="probe_all.html">probe_all()</a></code> and the other <code>probe_*()</code> functions. These
 functions quote their arguments for you.</p>
+<p>If tidymedia cannot find FFprobe, the call stops with the error "Could not locate FFprobe." The warning from <code><a href="find_ffmpeg.html">find_ffprobe()</a></code> comes first. A bad argument or a bad <code>tidymedia.timeout</code> option stops the call before the search.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

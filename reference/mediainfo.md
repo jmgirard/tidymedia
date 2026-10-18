@@ -33,6 +33,12 @@ or
 [`mediainfo_parameter()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md).
 These functions quote their arguments for you.
 
+If tidymedia cannot find MediaInfo, the call stops with the error "Could
+not locate MediaInfo." The warning from
+[`find_mediainfo()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
+comes first. A bad argument or a bad `tidymedia.timeout` option stops
+the call before the search.
+
 ## See also
 
 [`mediainfo_template()`](https://jmgirard.github.io/tidymedia/reference/mediainfo_template.md),

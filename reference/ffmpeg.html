@@ -72,6 +72,10 @@ the order of the options.</p>
     <p>A character vector containing the text output by FFmpeg.</p>
     </div>
     <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>If tidymedia cannot find FFmpeg, the call stops with the error "Could not locate FFmpeg." The warning from <code><a href="find_ffmpeg.html">find_ffmpeg()</a></code> comes first. A bad argument or a bad <code>tidymedia.timeout</code> option stops the call before the search.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="ffmpeg_codecs.html">ffmpeg_codecs()</a></code> and <code><a href="ffmpeg_encoders.html">ffmpeg_encoders()</a></code> ask FFmpeg what it
 supports. The <code>ffm_*()</code> pipeline functions, such as

@@ -31,6 +31,12 @@ get tibbles instead, use
 and the other `probe_*()` functions. These functions quote their
 arguments for you.
 
+If tidymedia cannot find FFprobe, the call stops with the error "Could
+not locate FFprobe." The warning from
+[`find_ffprobe()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
+comes first. A bad argument or a bad `tidymedia.timeout` option stops
+the call before the search.
+
 ## See also
 
 [`probe_all()`](https://jmgirard.github.io/tidymedia/reference/probe_all.md)

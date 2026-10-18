@@ -74,6 +74,7 @@ returns them too.</p>
 exactly as you wrote it, so you must add any quotes that it needs. To get a
 tibble or a value instead, use <code><a href="mediainfo_template.html">mediainfo_template()</a></code>, <code><a href="mediainfo_query.html">mediainfo_query()</a></code> or
 <code><a href="mediainfo_parameter.html">mediainfo_parameter()</a></code>. These functions quote their arguments for you.</p>
+<p>If tidymedia cannot find MediaInfo, the call stops with the error "Could not locate MediaInfo." The warning from <code><a href="find_ffmpeg.html">find_mediainfo()</a></code> comes first. A bad argument or a bad <code>tidymedia.timeout</code> option stops the call before the search.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

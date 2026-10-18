@@ -21,6 +21,14 @@ ffmpeg(command)
 
 A character vector containing the text output by FFmpeg.
 
+## Details
+
+If tidymedia cannot find FFmpeg, the call stops with the error "Could
+not locate FFmpeg." The warning from
+[`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)
+comes first. A bad argument or a bad `tidymedia.timeout` option stops
+the call before the search.
+
 ## See also
 
 [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)

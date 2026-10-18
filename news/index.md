@@ -4,6 +4,41 @@
 
 ### Bug fixes
 
+- **[`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md)
+  now names the bad jobs when it refuses a batch.** This covers two
+  refusals: `.f` returned something other than a pipeline, or a `verify`
+  function gave an invalid spec. The message lists up to 20 job numbers
+  in full and shortens a longer list. Before, with two or more bad jobs,
+  the call stopped with “length(object) == 1 is not TRUE” in place of
+  its own message. One bad job at a row other than 1 read “Jobs 2” in
+  place of “Job 2”.
+
+- **If tidymedia cannot find the program,
+  [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md),
+  [`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md)
+  and
+  [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)
+  now stop with “Could not locate FFmpeg.” (or FFprobe or MediaInfo).**
+  Before,
+  [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
+  returned an empty result, and
+  [`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md)
+  and
+  [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)
+  stopped with “non-empty character argument expected”.
+  [`ffmpeg_codecs()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_codecs.md)
+  and
+  [`ffmpeg_encoders()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg_encoders.md),
+  which stopped with “argument of length 0”, now give the same error
+  under their own names. The warning that the program search gives first
+  now keeps its class, such as `tidymedia_location_gone`. Before,
+  [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)
+  gave it as a plain warning, and
+  [`ffprobe()`](https://jmgirard.github.io/tidymedia/reference/ffprobe.md)
+  and
+  [`mediainfo()`](https://jmgirard.github.io/tidymedia/reference/mediainfo.md)
+  lost it.
+
 - **A folder where a program’s location is saved now gives a warning,
   not an error.** Before,
   [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md)

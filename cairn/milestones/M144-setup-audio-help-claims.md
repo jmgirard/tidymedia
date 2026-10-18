@@ -1,13 +1,13 @@
 # M144: The setup, capability and audio help pages state what the code does
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — help pages that package users read
-- **Branch/PR:** —
+- **Branch/PR:** m144-setup-audio-help-claims
 
 ## Goal
 
@@ -85,7 +85,7 @@ edit it.
 
 ## Tasks
 
-- [ ] T1: Correct claims (a), (b), (f) and (g) in `R/cache.R`, `R/program_management.R` and
+- [x] T1: Correct claims (a), (b), (f) and (g) in `R/cache.R`, `R/program_management.R` and
       `R/timeout.R`, with the cache comment at `R/cache.R:18-21`.
 - [ ] T2: Run `mediainfo_parameter()` on a file without the section, under `typed = TRUE` and
       `typed = FALSE`. Record the results and the MediaInfo version in the work log, then
@@ -117,6 +117,8 @@ edit it.
 - 2026-10-18: criteria audit (full mode, fresh Opus reader) returned 10 findings across M144-M146, all fixed: AC3 now allows doc-helper string literals and re-wrapping; AC1 is bounded to the named source lines, and T4 rows any copy elsewhere (the `hardware_probe_sentences()` copy of (b), about 16 pages, which would break D093's size); AC1 states (d) as "once" and leaves (e) to AC2; AC2 runs both `typed` values; AC4 names functions or groups; M145 and M146 fixes are logged there.
 - 2026-10-18: decided no new tests: the deliverable is help text, as in M127 to M134, and AC5 runs the existing documentation guards.
 - 2026-10-18: absorbs candidate rows "Nine help-text claims M127's round-4 review left open, most on text M129 and M130 rewrite." in full and the M132 and M133 parts of "Six help-text claims on the `ffm_*()` input, output and run pages that were false before M128, kept as they were.".
+- 2026-10-18: implement started on branch m144-setup-audio-help-claims, cut from master at 95495a4a.
+- 2026-10-18: T1 done. (a) a run showed a `plan(multicore)` worker sees a filled memo and a `plan(multisession)` worker does not (future 1.75.0, R 4.6.1); the page and the comment at `R/cache.R:18-21` now say so. (b) Details names the three skips: a filled record, the option for a `hardware` call, no FFmpeg for `has_encoder()` (`R/ffmpeg.R:3163-3176`, `:3254`). (f) Value says the closing `set_program()` step can give its own errors, naming `tidymedia_location_not_written` (`R/program_management.R:867`). (g) a run showed `withr::local_options()` inside `withr::with_options()` leaves the outer value (withr 3.0.3), so the page says all three cases apply.
 
 ## Decisions
 

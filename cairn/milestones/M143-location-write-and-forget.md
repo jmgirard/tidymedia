@@ -155,6 +155,7 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
 - 2026-10-18: T4: the no-binaries full run (`PATH=/usr/local/bin:/usr/bin:/bin`, both config dirs empty) failed one guard, `test-timeout-silence.R:705`, which fences "no warning" out of NEWS.md; the new NEWS bullet now says "gives only the ... error", and the guard passes.
 - 2026-10-18: claim audit: 28 claims read, 3 corrected — R/program_management.R, NEWS.md, tests/testthat/test-program-location-repair.R (a folder without write permission stops the write only when the file is absent; the kept-folder warning now adds "and no location file is saved"; the 0444 test comment no longer says Windows lacks the mode); the same reader's single re-read found all four corrections true.
 - 2026-10-18: T4 done: `devtools::check()` 0 errors, 0 warnings, 0 notes (7m27s) on the tree before the claim-audit corrections; after them `devtools::document()` rewrote `set_program.Rd` and the full `devtools::test()` is clean. Review's consistency gate re-runs the check on the final head. Status set to review.
+- 2026-10-18: step-7 approval: m143-location-write-and-forget approved for merge
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

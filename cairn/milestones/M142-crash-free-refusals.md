@@ -67,7 +67,7 @@ pages of those five functions, and `NEWS.md`.
       stop with "Could not locate FFmpeg.", and the error's call is
       `ffmpeg_codecs()` or `ffmpeg_encoders()`. A test for each asserts the
       message and the call.
-- [ ] AC5: The help pages `?ffmpeg`, `?ffprobe`, `?mediainfo`,
+- [x] AC5: The help pages `?ffmpeg`, `?ffprobe`, `?mediainfo`,
       `?ffmpeg_codecs` and `?ffmpeg_encoders` each say that the call stops
       with an error when tidymedia cannot find the program.
 - [ ] AC6: `devtools::check()` reports 0 errors and 0 warnings.
@@ -131,3 +131,7 @@ pages of those five functions, and `NEWS.md`.
 
 ## Review
 <!-- owner: review · exclusive -->
+
+Review pass 1, 2026-10-18, on branch head f1452a91 (master 2f023576 unmoved).
+
+- AC5 evidence: `man/ffmpeg.Rd`, `man/ffmpeg_codecs.Rd`, `man/ffmpeg_encoders.Rd`, `man/ffprobe.Rd` and `man/mediainfo.Rd` each hold "If tidymedia cannot find <program>, the call stops with the error "Could not locate <program>."" (grep over each regenerated Rd, line breaks joined).

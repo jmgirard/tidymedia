@@ -156,7 +156,10 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
   if (any(not_ffm)) {
     cli::cli_abort(c(
       "{.arg .f} must return an ffm pipeline for every job.",
-      "x" = "Job{?s} {.val {which(not_ffm)}} returned something else."
+      # `{?s}` takes its count from the next value unless qty() sets one, and
+      # a vector there stopped cli itself with two bad jobs (M142).
+      "x" = "{cli::qty(sum(not_ffm))}Job{?s} {.val {which(not_ffm)}} returned
+             something else."
     ))
   }
 
@@ -452,7 +455,9 @@ resolve_batch_verify <- function(verify, jobs, ...) {
   if (!all(ok)) {
     cli::cli_abort(c(
       "Each {.arg verify} spec must be a non-empty named list of properties.",
-      "x" = "Job{?s} {.val {which(!ok)}} produced an invalid spec."
+      # qty() for the reason the not-a-pipeline refusal gives (M142).
+      "x" = "{cli::qty(sum(!ok))}Job{?s} {.val {which(!ok)}} produced an
+             invalid spec."
     ))
   }
   specs

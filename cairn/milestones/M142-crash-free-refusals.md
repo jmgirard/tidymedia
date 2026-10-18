@@ -4,14 +4,14 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M142: Two `ffm_batch()` refusals and the direct-command functions stop with their own message instead of an R error
 
-- **Status:** planned   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate; RR<NN> whose Binding criteria bind this milestone's ACs (binding-criteria check), or — -->
 - **Principles touched:** IP1   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
 - **Resolves:** —   <!-- owner: plan · create/amend-via-gate; comma-separated GitHub issues the scope absorbs, each `#N closes` (the PR closes it at merge) or `#N partial` (the remainder gets a candidate row), or — ; skill conduct only — no validate check parses it -->
 - **Surface tier:** user-facing — changes what exported functions report when they refuse   <!-- owner: plan · create/amend-via-gate; user-facing | internal — <one-clause reason>; skill conduct only — no validate check parses it -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create; a companion checkout the milestone also works in is one further entry per checkout, `companion: <abs-path> <branch>` (implement), its PR URL appended by review — /milestone-review merges companions first, in listed order -->
+- **Branch/PR:** m142-crash-free-refusals   <!-- owner: implement (branch) / review (PR URL) · create; a companion checkout the milestone also works in is one further entry per checkout, `companion: <abs-path> <branch>` (implement), its PR URL appended by review — /milestone-review merges companions first, in listed order -->
 
 ## Goal
 <!-- owner: plan · create; a wrong goal returns to plan, never edited in place -->
@@ -85,7 +85,7 @@ pages of those five functions, and `NEWS.md`.
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1: Write the AC1 and AC2 tests first and see them red on master (the
+- [x] T1: Write the AC1 and AC2 tests first and see them red on master (the
       two-bad-job case with cli's error, the one-bad-job case with "Jobs 2").
       Fix both messages with `{cli::qty(n)}` right before `{?s}` (M141
       lesson). In `tests/testthat/test-batch-output-collision.R:235`, the
@@ -117,6 +117,8 @@ pages of those five functions, and `NEWS.md`.
 - 2026-10-18: criteria audit (full mode, fresh Opus reader) returned 6 findings: cli shortens past 20 values (AC1 and AC2 narrowed to 20 or fewer); a singular test at row 1 passes on master (moved to a row other than 1); invalid specs reach the refusal only under `run = TRUE` with a `verify` function (AC2 narrowed); the verify refusal blames `resolve_batch_verify()` and the hardware path would blame `ffmpeg_encoders()` (both decided toward the narrower promise, sent to the "Argument classes refused below the verb" row); AC4 needs an internal form under D087 (T2 says so). AC3, AC5 and AC6 had no findings.
 - 2026-10-18: plan gate chose reusing `run_program()`'s unclassed `Could not locate {program}.` message over a new condition class, because a public class name belongs to the "Unclassed aborts" row's naming pass; falsified by a caller who needs to catch the missing-program refusal by class.
 - 2026-10-18: plan gate chose threading the blame through an internal `tm_ffmpeg()` over a `find_ffmpeg()` check at the top of each capability function, because a second lookup gives a second "Failed to find" warning; falsified by a measured run where the internal form still warns twice.
+- 2026-10-18: implement started on branch m142-crash-free-refusals.
+- 2026-10-18: T1 done: four tests in test-ffm-batch.R (two-bad-job and one-bad-job-at-row-2 cases for both refusals) red on the base code with cli's error and "Jobs 2", green after `{cli::qty()}`; test-batch-output-collision.R comment updated; full devtools::test() 0 failures.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

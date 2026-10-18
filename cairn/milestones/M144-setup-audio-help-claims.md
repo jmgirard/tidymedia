@@ -58,21 +58,21 @@ edit it.
 
 ## Acceptance criteria
 
-- [ ] AC1: For each claim (a) to (c) and (f) to (k) under Scope In, the source lines that
+- [x] AC1: For each claim (a) to (c) and (f) to (k) under Scope In, the source lines that
       claim names and every `man/*.Rd` page generated from those lines no longer make the
       claim, and the replacement text states what the code at head does, read against the
       code site that claim names. For (d), within the `audio_stream` item of
       `man/normalize_audio.Rd` and of `man/normalize_audio_batch.Rd`, of the sentences that a
       search for `NULL` in that item finds, the only ones that say which tracks `NULL`
       selects are the `\code{NULL} (default)` sentence and the shared family sentence.
-- [ ] AC2: Claim (e)'s replacement states the value that `mediainfo_parameter()` returns
+- [x] AC2: Claim (e)'s replacement states the value that `mediainfo_parameter()` returns
       for a section the file lacks under `typed = TRUE` and under `typed = FALSE`, each as
       the code at `R/mediainfo.R:120-124` gives it and as a run on this machine shows it.
-- [ ] AC3: Every hunk of `git diff <merge-base>..HEAD -- R/ man/` changes, or re-wraps within
+- [x] AC3: Every hunk of `git diff <merge-base>..HEAD -- R/ man/` changes, or re-wraps within
       an edited paragraph, a roxygen line, a code comment, a message string, a string literal
       in a documentation helper whose output feeds only roxygen, or a generated Rd line, each
       carrying one of claims (a) to (k) or its replacement. No other R line changes.
-- [ ] AC4: `NEWS.md` has one bullet under a `## Documentation` heading in the development
+- [x] AC4: `NEWS.md` has one bullet under a `## Documentation` heading in the development
       version section that names the corrected functions or groups of functions, and it
       names no milestone.
 - [ ] AC5: `devtools::document()` leaves no diff, `devtools::test()` passes, and
@@ -143,3 +143,10 @@ Pass 1, 2026-10-18, on branch head 53e8baf4 (master 95495a4a, not moved since th
 - AC3: met. Every hunk of `git diff master...HEAD -- R/` is a roxygen line, a comment, the one `cli_abort()` message string at `R/ffmpeg.R:3810-3813`, or a string literal in `R/task-doc.R` or `R/audio-stream-doc.R`, each carrying a listed claim or its replacement; the 21 changed `man/*.Rd` files are the pages generated from those sources.
 - AC4: met. `NEWS.md` line 71 opens `## Documentation` in the development version section with one bullet naming the corrected pages and function groups; no milestone id.
 - AC5: pending, a fresh `devtools::check()` is running.
+
+Pass 2, 2026-10-18, on head 5b643faa after the AC1 amendment; `git diff 53e8baf4 5b643faa -- R man NEWS.md` is empty, so pass 1's AC2-AC4 evidence and the running check cover this head.
+
+- AC1: met. Pass 1's reading of (a)-(c) and (f)-(k) stands. (d): splitting the `audio_stream` item into sentences and keeping those with `NULL` gives, in `man/normalize_audio.Rd`, the `\code{NULL} (default)` sentence, the first-track family sentence and "(default = \code{NULL})"; in `man/normalize_audio_batch.Rd` the same plus "An \code{NA} cell ... means \code{NULL} for that row". Only the first two name tracks.
+- AC2: met (pass 1 evidence).
+- AC3: met (pass 1 evidence).
+- AC4: met (pass 1 evidence).

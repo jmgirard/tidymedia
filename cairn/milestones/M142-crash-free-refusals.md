@@ -90,7 +90,7 @@ pages of those five functions, and `NEWS.md`.
       Fix both messages with `{cli::qty(n)}` right before `{?s}` (M141
       lesson). In `tests/testthat/test-batch-output-collision.R:235`, the
       comment that avoids two invalid specs no longer holds: update it.
-- [ ] T2: Write the AC3 and AC4 tests first, mocking `find_program()` to
+- [x] T2: Write the AC3 and AC4 tests first, mocking `find_program()` to
       return `NULL` and leaving `tidymedia.timeout` unset (an invalid limit
       stops first). Move `run_program()`'s refusal into a shared
       `tm_require_location()` that `ffmpeg()`, `ffprobe()` and `mediainfo()`
@@ -99,7 +99,7 @@ pages of those five functions, and `NEWS.md`.
       replace, and raise its missing-program refusal again under their own
       frame through `tm_reblame_missing()` (D074). The command string stays
       as the caller wrote it (IP1).
-- [ ] T3: Add the AC5 sentence to the five roxygen blocks, run
+- [x] T3: Add the AC5 sentence to the five roxygen blocks, run
       `devtools::document()`, and confirm the roxygen2 version line (M128
       lesson) is absent from its output.
 - [ ] T4: Add one `NEWS.md` bug-fix entry per crash under the development
@@ -122,6 +122,7 @@ pages of those five functions, and `NEWS.md`.
 - 2026-10-18: T2 approach changed from the plan's internal `tm_ffmpeg(command, call)`: 33 test mocks in 16 files replace `ffmpeg()` as the listings' seam, and an internal form would bypass them; so `ffmpeg()` refuses through a shared `tm_require_location()` (also `run_program()`'s, message unchanged) and the listings re-raise that refusal under their own frame with `tm_reblame_missing()`, which recognizes it by an internal `tm_missing_program` field, no class. Task text edited to match (minor amendment, criteria unchanged).
 - 2026-10-18: implementation choice: the three direct-command functions now look up the program outside `guard_timeout()`, so a lookup warning reaches the caller with its own class instead of being held and re-raised as a plain warning; rejected keeping the lookup inside, because the refusal must come before the spawn.
 - 2026-10-18: first full run after T2 failed 10 tests in test-normalize-audio*.R and test-nvenc.R with "Could not locate FFmpeg.": the new test file's helper mocked `find_program()` with `.env = topenv()`, and that mock was not undone when the helper returned (measured: `find_ffmpeg()` NULL after the file, `Sys.which()` still found FFmpeg). Switched to `.package = "tidymedia"`, the suite's own form; `find_ffmpeg()` resolves after the file. T3 roxygen text added and `devtools::document()` rewrote the five Rd pages with no roxygen2 version line.
+- 2026-10-18: T2 and T3 done: test-missing-program-refusal.R (5 tests) red on the base code with the R errors the plan names, green after; full devtools::test() 0 failures with the scoped mock. NEWS.md has the two T4 entries.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local -->

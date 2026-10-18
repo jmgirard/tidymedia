@@ -44,7 +44,7 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets. -->
 
-- [ ] AC1: On a system other than Windows, the current location file has
+- [x] AC1: On a system other than Windows, the current location file has
       mode 0444. Then `set_program("ffmpeg", <runnable stub>, confirm =
       FALSE)` signals no warning and stops with one error of the new class
       `tidymedia_location_not_written`. Its `tm_program` field is
@@ -52,7 +52,7 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
       still holds the line it held before the call. A test in
       `tests/testthat/test-program-location-repair.R` shows this. It skips on
       Windows, and it skips where `file.access(<file>, 2) == 0`.
-- [ ] AC2: On a system other than Windows, the same call signals no warning
+- [x] AC2: On a system other than Windows, the same call signals no warning
       and stops with one `tidymedia_location_not_written` error whose
       `tm_file` is the path of the location file, in two cases. In case (a)
       the folder for the current location file does not exist, and its
@@ -61,7 +61,7 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
       file. No location file exists after the call. A test runs each case.
       It skips on Windows, and it skips where `file.access(<that folder's
       parent or that folder>, 2) == 0`.
-- [ ] AC3: One location path holds a folder with contents. The other holds
+- [x] AC3: One location path holds a folder with contents. The other holds
       a location file or an empty folder, and its removal succeeds. Then
       `unset_program("ffmpeg")` removes that file or empty folder and leaves
       the folder with contents and its entries in place. It returns `TRUE`
@@ -77,13 +77,13 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
       location file. It asserts that the folder is still there and the
       warning names it. It skips on Windows, and it skips where
       `file.access(<folder>, 4) == 0`.
-- [ ] AC4: At least one location path holds something, and each path that
+- [x] AC4: At least one location path holds something, and each path that
       holds something holds a folder with contents. Then
       `unset_program("ffmpeg")` still stops with the
       `tidymedia_location_folder` error, and both paths stay as they were.
       A test runs each of the three shapes at each path, with nothing or a
       second folder with contents at the other path.
-- [ ] AC5: `?set_program` names `tidymedia_location_not_written` and the
+- [x] AC5: `?set_program` names `tidymedia_location_not_written` and the
       cases that give it. `?unset_program` and `?find_ffmpeg` say three
       things about `unset_program()`. It removes the location files and
       empty folders. It leaves each folder with contents and gives the
@@ -161,3 +161,11 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
 
 ## Review
 <!-- owner: review · exclusive. -->
+
+Pass 1, 2026-10-18, on head 35e85d2a; master unmoved at f80dd15b. The test run is `testthat::test_file("tests/testthat/test-program-location-repair.R")` under `load_all()` on macOS as uid 501. The file holds 32 tests, with 0 failed, 0 skipped and 0 errors.
+
+- AC1 evidence: "set_program() refuses a location file it cannot write" ran 6 expectations, 0 failed, 0 skipped. It asserts no warning, the class, `tm_program`, `tm_file`, and the old line kept.
+- AC2 evidence: "set_program() refuses a location folder it cannot create or write in" ran 11 expectations over both cases, 0 failed, 0 skipped. It asserts no warning, the class and fields, no file after the call, and no folder in the parent case.
+- AC3 evidence: "unset_program() removes the rest and keeps a folder that holds anything" ran 108 expectations, which is 12 cases (3 shapes, 2 paths, file or empty folder), 0 failed. It asserts the invisible `TRUE`, one `tidymedia_location_folder_kept` warning with its fields, the other path gone, the full folder's tree unchanged, and the memo dropped only with a file. "unset_program() keeps a folder it cannot read beside a location file" ran 6 expectations, 0 failed, 0 skipped.
+- AC4 evidence: "unset_program() refuses when every path that holds anything holds a full folder" ran 48 expectations, which is 12 cases (3 shapes, 2 paths, nothing or a second full folder), 0 failed. It asserts the error class, its fields, and both trees unchanged.
+- AC5 evidence: `man/set_program.Rd:73-79` names `tidymedia_location_not_written` and its three cases. `man/unset_program.Rd:35-46` and `man/find_ffmpeg.Rd:69-76` describe the removal of files and empty folders, the `tidymedia_location_folder_kept` warning, and the `tidymedia_location_folder` error for the case where each path that holds something holds a full folder. In `NEWS.md`, the development-section bullet at :43 now says `unset_program()` removes the rest and warns (:50-55, "removes nothing" now only for the all-full case), and the new bullet at :57-63 covers the not-written error.

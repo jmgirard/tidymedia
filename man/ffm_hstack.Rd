@@ -11,7 +11,9 @@ ffm_hstack(object, shortest = FALSE, resize = FALSE)
 \code{ffm_files()}.}
 
 \item{shortest}{A logical that says whether to trim the duration of all
-videos to that of the shortest video. The default is \code{FALSE}.}
+videos to that of the shortest video. The default is \code{FALSE}. With
+\code{resize = TRUE}, it does nothing: the resize graph has no
+\code{shortest} term, and no error says so.}
 
 \item{resize}{A logical that says whether to resize the input videos to the
 same height. Resizing takes longer, and for now it works only with two

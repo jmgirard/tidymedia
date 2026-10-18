@@ -19,10 +19,12 @@ default) skips the checks.}
 }
 \value{
 FFmpeg's standard output as a character vector, returned invisibly.
-On a non-zero exit it has a \code{status} attribute. You call
-\code{ffm_run()} to write the output file, not for its return value. The
-pipeline runs as a vector of arguments and never through a shell. So paths
-with spaces or special characters are safe.
+On a non-zero exit \code{ffm_run()} gives an error instead of returning
+(see the section below). You call \code{ffm_run()} to write the output
+file, not for its return value. Each argument of the command is quoted
+with \code{shQuote()} before \code{system2()} runs it, and on Unix
+\code{system2()} passes the command to a shell. The quoting makes paths
+with spaces or special characters reach FFmpeg as written.
 }
 \description{
 Compile the instructions in the pipeline and run them all through FFmpeg.
@@ -41,9 +43,11 @@ tryCatch(
 }
 
 The \code{tm_status} field is one integer, the exit status exactly as
-\code{system2()} reported it. If a signal stopped FFmpeg, the field holds
-the shell's number, 128 plus the signal number, unchanged. That number
-stands for the signal, not for a status FFmpeg chose to return.
+\code{system2()} reported it. If a signal stopped FFmpeg, the value depends
+on the signal and the platform. In runs with FFmpeg 9.0.2 on macOS
+(2026-10-18), \code{SIGTERM}, which FFmpeg catches, gave 255, the status
+FFmpeg chose when it stopped. \code{SIGKILL}, which no program can catch,
+gave 137, the shell's 128 plus the signal number 9.
 
 Two other paths give this class and carry this field, so one handler covers
 all three:

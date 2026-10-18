@@ -17,8 +17,8 @@ duration syntax. \code{NULL} keeps the section from the beginning.}
 syntax. \code{NULL} keeps the section to the end.}
 
 \item{reencode}{A logical. \code{TRUE} (the default) re-encodes for a
-frame-accurate cut. \code{FALSE} makes a fast seek that is safe to copy,
-and its cut points move to keyframes.}
+frame-accurate cut. \code{FALSE} makes a fast seek that is safe to copy.
+With \code{\link{ffm_copy}}, its start moves back to a keyframe.}
 }
 \value{
 \code{object} with an added instruction to cut the input by seeking.
@@ -37,15 +37,20 @@ The \code{reencode} argument trades accuracy against speed:
 \item \code{reencode = TRUE} (the default) is \strong{frame-accurate}. The
 section is re-encoded, so it starts and ends on the exact frames you ask
 for. This is the safe default.
-\item \code{reencode = FALSE} is a \strong{fast, lossless copy}. But the
-cut points move to the nearest keyframes. So the output duration can
-differ from the request by up to the gap between two keyframes. Use it
-with \code{\link{ffm_copy}} for the fastest path.
+\item \code{reencode = FALSE} puts \code{-ss} and \code{-to} before
+\code{-i}, so FFmpeg seeks in the input. With \code{\link{ffm_copy}},
+this is a \strong{fast, lossless copy}. But the start moves back to the
+keyframe at or before \code{start}. So the output can begin earlier and
+run longer than you asked, by less than the gap between two keyframes.
+In a run with FFmpeg 9.0.2 on macOS (2026-10-18), a copy cut from 3.8 to
+7 seconds of a file with a keyframe every 2 seconds started at the
+keyframe at 2 seconds and ended at 7 seconds. Without
+\code{ffm_copy()}, FFmpeg re-encodes the section.
 }
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-# Fast, lossless copy cut (snaps to keyframes)
+# Fast, lossless copy cut (the start moves back to a keyframe)
 ffm_files(video, "output.mp4") |>
   ffm_seek(start = 1, end = 5, reencode = FALSE) |>
   ffm_copy() |>

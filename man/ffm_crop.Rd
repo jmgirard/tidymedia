@@ -10,25 +10,30 @@ ffm_crop(object, width, height, x = "(in_w-out_w)/2", y = "(in_h-out_h)/2")
 \item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{width}{The width of the output video, in pixels. Give a positive real
-number or a string that contains an FFmpeg expression.}
+\item{width}{The width of the output video, in pixels. Give a positive
+double or a string, such as an FFmpeg expression.}
 
 \item{height}{The height of the output video, in pixels. Give a positive
-real number or a string that contains an FFmpeg expression.}
+double or a string, such as an FFmpeg expression.}
 
 \item{x}{The horizontal position of the left edge of the output video, in
-pixels of the input video. Give a positive real number or a string that
-contains an FFmpeg expression. The default is \code{"(in_w-out_w)/2"}.}
+pixels of the input video. Give a double of zero or more, or a string,
+such as an FFmpeg expression. The default is \code{"(in_w-out_w)/2"}.}
 
 \item{y}{The vertical position of the top edge of the output video, in pixels
-of the input video. Give a positive real number or a string that contains
-an FFmpeg expression. The default is \code{"(in_h-out_h)/2"}.}
+of the input video. Give a double of zero or more, or a string, such as an
+FFmpeg expression. The default is \code{"(in_h-out_h)/2"}.}
 }
 \value{
 \code{object} with an added instruction to crop the frames.
 }
 \description{
 Make the video's frames smaller by cropping them.
+}
+\details{
+Each size and position argument takes one double or one string. An integer
+such as \code{160L} is refused. A string is not checked, and it goes into
+the FFmpeg command as written, so it can hold an FFmpeg expression.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

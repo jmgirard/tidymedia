@@ -157,10 +157,15 @@ ffm_trim <- function(object,
 #'   \item \code{reencode = TRUE} (the default) is \strong{frame-accurate}. The
 #'     section is re-encoded, so it starts and ends on the exact frames you ask
 #'     for. This is the safe default.
-#'   \item \code{reencode = FALSE} is a \strong{fast, lossless copy}. But the
-#'     cut points move to the nearest keyframes. So the output duration can
-#'     differ from the request by up to the gap between two keyframes. Use it
-#'     with \code{\link{ffm_copy}} for the fastest path.
+#'   \item \code{reencode = FALSE} puts \code{-ss} and \code{-to} before
+#'     \code{-i}, so FFmpeg seeks in the input. With \code{\link{ffm_copy}},
+#'     this is a \strong{fast, lossless copy}. But the start moves back to the
+#'     keyframe at or before \code{start}. So the output can begin earlier and
+#'     run longer than you asked, by less than the gap between two keyframes.
+#'     In a run with FFmpeg 9.0.2 on macOS (2026-10-18), a copy cut from 3.8 to
+#'     7 seconds of a file with a keyframe every 2 seconds started at the
+#'     keyframe at 2 seconds and ended at 7 seconds. Without
+#'     \code{ffm_copy()}, FFmpeg re-encodes the section.
 #' }
 #'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
@@ -170,8 +175,8 @@ ffm_trim <- function(object,
 #' @param end The end of the kept section, in seconds or in FFmpeg time duration
 #'   syntax. \code{NULL} keeps the section to the end.
 #' @param reencode A logical. \code{TRUE} (the default) re-encodes for a
-#'   frame-accurate cut. \code{FALSE} makes a fast seek that is safe to copy,
-#'   and its cut points move to keyframes.
+#'   frame-accurate cut. \code{FALSE} makes a fast seek that is safe to copy.
+#'   With \code{\link{ffm_copy}}, its start moves back to a keyframe.
 #' @return \code{object} with an added instruction to cut the input by seeking.
 #' @seealso [ffm_trim()] for the filter that cuts, [ffm_copy()] for the fast
 #'   copy path, and [segment_video()], the task function built on it.
@@ -179,7 +184,7 @@ ffm_trim <- function(object,
 #' @family pipeline functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-#' # Fast, lossless copy cut (snaps to keyframes)
+#' # Fast, lossless copy cut (the start moves back to a keyframe)
 #' ffm_files(video, "output.mp4") |>
 #'   ffm_seek(start = 1, end = 5, reencode = FALSE) |>
 #'   ffm_copy() |>
@@ -210,8 +215,9 @@ ffm_seek <- function(object, start = NULL, end = NULL, reencode = TRUE) {
 
 #' Drop Streams from an FFmpeg Pipeline
 #'
-#' Remove one or more streams from the media file. For example, remove the
-#' video, audio, subtitles or data stream from a media file. The glossary in
+#' Leave one or more kinds of stream out of the output file. For example, leave
+#' out the video, audio, subtitles or data streams. The input file does not
+#' change. The glossary in
 #' \code{vignette("tidymedia")} explains media terms such as stream.
 #'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
@@ -249,18 +255,22 @@ ffm_drop <- function(object,
 #'
 #' Make the video's frames smaller by cropping them.
 #'
+#' Each size and position argument takes one double or one string. An integer
+#' such as \code{160L} is refused. A string is not checked, and it goes into
+#' the FFmpeg command as written, so it can hold an FFmpeg expression.
+#'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param width The width of the output video, in pixels. Give a positive real
-#'   number or a string that contains an FFmpeg expression.
+#' @param width The width of the output video, in pixels. Give a positive
+#'   double or a string, such as an FFmpeg expression.
 #' @param height The height of the output video, in pixels. Give a positive
-#'   real number or a string that contains an FFmpeg expression.
+#'   double or a string, such as an FFmpeg expression.
 #' @param x The horizontal position of the left edge of the output video, in
-#'   pixels of the input video. Give a positive real number or a string that
-#'   contains an FFmpeg expression. The default is \code{"(in_w-out_w)/2"}.
+#'   pixels of the input video. Give a double of zero or more, or a string,
+#'   such as an FFmpeg expression. The default is \code{"(in_w-out_w)/2"}.
 #' @param y The vertical position of the top edge of the output video, in pixels
-#'   of the input video. Give a positive real number or a string that contains
-#'   an FFmpeg expression. The default is \code{"(in_h-out_h)/2"}.
+#'   of the input video. Give a double of zero or more, or a string, such as an
+#'   FFmpeg expression. The default is \code{"(in_h-out_h)/2"}.
 #' @return \code{object} with an added instruction to crop the frames.
 #' @seealso [ffm_scale()] to resize instead of crop. [crop_video()] and
 #'   [format_for_web()] are the task functions built on \code{ffm_crop()}.
@@ -298,12 +308,16 @@ ffm_crop <- function(object,
 #' Scale (resize) the input video's frames to a width and height in pixels, or
 #' with an FFmpeg expression.
 #'
+#' Each size argument takes one double or one string. An integer such as
+#' \code{160L} is refused. A string is not checked, and it goes into the FFmpeg
+#' command as written, so it can hold an FFmpeg expression.
+#'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param width The width of the output video, in pixels. Give a positive real
-#'   number or a string that contains an FFmpeg expression.
+#' @param width The width of the output video, in pixels. Give a positive
+#'   double or a string, such as an FFmpeg expression.
 #' @param height The height of the output video, in pixels. Give a positive
-#'   real number or a string that contains an FFmpeg expression.
+#'   double or a string, such as an FFmpeg expression.
 #' @return \code{object} with an added instruction to resize the frames.
 #' @seealso [ffm_crop()] to crop instead of resize. [standardize_video()] is the
 #'   task function built on \code{ffm_scale()}.
@@ -337,9 +351,11 @@ ffm_scale <- function(object, width, height) {
 #'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param fps The target frame rate. Give a positive real number of frames per
-#'   second, or a string that contains an FFmpeg frame rate expression. For
-#'   example, \code{"30000/1001"} is the NTSC rate.
+#' @param fps The target frame rate. Give a positive double of frames per
+#'   second, or a string, such as an FFmpeg frame rate expression. For
+#'   example, \code{"30000/1001"} is the NTSC rate. An integer such as
+#'   \code{30L} is refused. A string is not checked, and it goes into the
+#'   FFmpeg command as written.
 #' @return \code{object} with an added instruction to resample the frame rate.
 #' @seealso [standardize_video()], the task function that uses \code{ffm_fps()}
 #'   to set the frame rate.
@@ -367,8 +383,11 @@ ffm_fps <- function(object, fps) {
 #'
 #' Add FFmpeg's \code{loudnorm} (EBU R128) audio filter. It normalizes the
 #' input's perceived loudness toward a target integrated loudness, true-peak
-#' ceiling and loudness range. The filter compiles to \code{-af}, or joins an
-#' existing audio filter chain in the order the filters were added. The glossary
+#' ceiling and loudness range. The filter joins the audio filter chain in the
+#' order the filters were added, and the chain compiles to \code{-af}. After
+#' \code{\link{ffm_hstack}}, \code{\link{ffm_vstack}} or
+#' \code{\link{ffm_overlay}}, the compiled command has no audio filter, and no
+#' error says so. The glossary
 #' in \code{vignette("tidymedia")} explains media terms such as LUFS and true
 #' peak.
 #'
@@ -410,8 +429,10 @@ ffm_fps <- function(object, fps) {
 #'   default is \code{NULL}.
 #' @param linear A logical. \code{TRUE} requests linear normalization
 #'   (\code{linear=true}), which needs the measured values to hit the target
-#'   precisely. \code{FALSE} (the default) leaves out the option, so the
-#'   single-pass dynamic behavior does not change.
+#'   precisely. \code{FALSE} (the default) leaves out the option. FFmpeg's own
+#'   default for \code{linear} is true (FFmpeg 9.0.2,
+#'   \code{ffmpeg -h filter=loudnorm}, 2026-10-18). So with the measured values
+#'   given, FFmpeg still normalizes linearly where it can.
 #' @param print_format The format of the measurement report for an analysis
 #'   pass: \code{"json"}, \code{"summary"} or \code{"none"}. \code{NULL} (the
 #'   default) leaves out the option. Use \code{"json"} for an analysis pass that
@@ -567,15 +588,19 @@ ffm_codec <- function(object,
 #' how you narrow the all-streams map that \code{\link{ffm_copy}} sets. Adding
 #' to that map puts the stream in the output twice, and does not select it.
 #'
-#' \code{ffm_map()} is the only pipeline function that adds to earlier calls.
-#' Every other \code{ffm_*} function that sets a value, \code{\link{ffm_copy}}
-#' included, replaces it. \code{ffm_map()} is different because its arguments
-#' are \emph{partial} choices that combine. For example, you keep the video,
-#' then name one audio track.
+#' Other pipeline functions also add to earlier calls. Each function that adds
+#' a filter, such as \code{\link{ffm_crop}} or \code{\link{ffm_loudnorm}}, puts
+#' its filter after the filters already set. \code{\link{ffm_output_options}}
+#' puts its options after the options already set. \code{\link{ffm_seek}},
+#' \code{\link{ffm_drop}}, \code{\link{ffm_codec}},
+#' \code{\link{ffm_pixel_format}} and \code{\link{ffm_copy}} replace the values
+#' they set. \code{ffm_map()} adds because its arguments are \emph{partial}
+#' choices that combine. For example, you keep the video, then name one audio
+#' track.
 #'
-#' When the pipeline uses a function with several inputs, such as
-#' \code{\link{ffm_hstack}}, your mapping is added \emph{beside} the automatic
-#' \code{-map "[vout]"} of the filtered stream. For example,
+#' When the pipeline uses \code{\link{ffm_hstack}}, \code{\link{ffm_vstack}}
+#' or \code{\link{ffm_overlay}}, your mapping is added \emph{beside} the
+#' automatic \code{-map "[vout]"} of the filtered stream. For example,
 #' \code{ffm_map(object, "0:a")} keeps the audio of the first input next to the
 #' stacked video.
 #'
@@ -776,7 +801,9 @@ ffm_pixel_format <- function(object, format) {
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
 #' @param shortest A logical that says whether to trim the duration of all
-#'   videos to that of the shortest video. The default is \code{FALSE}.
+#'   videos to that of the shortest video. The default is \code{FALSE}. With
+#'   \code{resize = TRUE}, it does nothing: the resize graph has no
+#'   \code{shortest} term, and no error says so.
 #' @param resize A logical that says whether to resize the input videos to the
 #'   same height. Resizing takes longer, and for now it works only with two
 #'   inputs. It fits both inputs to the same aspect ratio, so it assumes the
@@ -846,7 +873,9 @@ ffm_hstack <- function(object,
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
 #' @param shortest A logical that says whether to trim the duration of all
-#'   videos to that of the shortest video. The default is \code{FALSE}.
+#'   videos to that of the shortest video. The default is \code{FALSE}. With
+#'   \code{resize = TRUE}, it does nothing: the resize graph has no
+#'   \code{shortest} term, and no error says so.
 #' @param resize A logical that says whether to resize the input videos to the
 #'   same width. Resizing takes longer, and for now it works only with two
 #'   inputs. It fits both inputs to the same aspect ratio, so it assumes the
@@ -912,8 +941,10 @@ ffm_vstack <- function(object,
 #' drawn over it. The glossary in \code{vignette("tidymedia")} explains media
 #' terms such as stream.
 #'
-#' \code{x} and \code{y} accept plain numbers or FFmpeg overlay expressions. A
-#' plain number counts pixels from the top-left of the main video. In an
+#' \code{x} and \code{y} each take one double of zero or more, or one string,
+#' such as an FFmpeg overlay expression. An integer such as \code{16L} is
+#' refused. A string is not checked, and it goes into the FFmpeg command as
+#' written. A number counts pixels from the top-left of the main video. In an
 #' expression, \code{main_w} and \code{main_h} are the main video's dimensions.
 #' \code{overlay_w} and \code{overlay_h} are the overlay's dimensions. For
 #' example, \code{x = "main_w-overlay_w-16"} puts the overlay 16 pixels from the
@@ -926,10 +957,12 @@ ffm_vstack <- function(object,
 #'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()} with exactly two input files.
-#' @param x The horizontal position of the overlay's left edge, as a number of
-#'   pixels or an FFmpeg expression. The default is \code{0}.
-#' @param y The vertical position of the overlay's top edge, as a number of
-#'   pixels or an FFmpeg expression. The default is \code{0}.
+#' @param x The horizontal position of the overlay's left edge, as a double of
+#'   pixels or a string, such as an FFmpeg expression. The default is
+#'   \code{0}.
+#' @param y The vertical position of the overlay's top edge, as a double of
+#'   pixels or a string, such as an FFmpeg expression. The default is
+#'   \code{0}.
 #' @param shortest A logical that says whether to end the output when the
 #'   shorter input ends. The default is \code{FALSE}.
 #' @param scale An optional fraction (\code{0 < scale <= 1}). Before the overlay
@@ -1055,19 +1088,22 @@ ffm_concat <- function(object) {
 #'
 #' Add a video filter that draws a colored rectangle on the input video.
 #'
+#' Each size and position argument takes one double or one string. An integer
+#' such as \code{160L} is refused. A string is not checked, and it goes into
+#' the FFmpeg command as written, so it can hold an FFmpeg expression.
+#'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
 #' @param x The horizontal position of the left edge of the box, in pixels of
-#'   the input video. Give a nonnegative real number or a string that contains
-#'   an FFmpeg expression. The default is \code{0}.
-#' @param y The vertical position of the top edge of the box, in pixels of the
-#'   input video. Give a nonnegative real number or a string that contains an
+#'   the input video. Give a double of zero or more, or a string, such as an
 #'   FFmpeg expression. The default is \code{0}.
-#' @param width The width of the box, in pixels. Give a positive real number or
-#'   a string that contains an FFmpeg expression. The default is \code{"in_w"}.
-#' @param height The height of the box, in pixels. Give a positive real number
-#'   or a string that contains an FFmpeg expression. The default is
-#'   \code{"in_h"}.
+#' @param y The vertical position of the top edge of the box, in pixels of the
+#'   input video. Give a double of zero or more, or a string, such as an FFmpeg
+#'   expression. The default is \code{0}.
+#' @param width The width of the box, in pixels. Give a positive double or a
+#'   string, such as an FFmpeg expression. The default is \code{"in_w"}.
+#' @param height The height of the box, in pixels. Give a positive double or a
+#'   string, such as an FFmpeg expression. The default is \code{"in_h"}.
 #' @param color A string with the color of the box, in FFmpeg color syntax. The
 #'   reference link below explains that syntax. With the special value
 #'   \code{"invert"}, the box has the color of the video with inverted luma. The
@@ -1550,10 +1586,12 @@ n_files <- function(x) {
 #'   checks. It also gives an error when FFmpeg exits non-zero. \code{NULL} (the
 #'   default) skips the checks.
 #' @return FFmpeg's standard output as a character vector, returned invisibly.
-#'   On a non-zero exit it has a \code{status} attribute. You call
-#'   \code{ffm_run()} to write the output file, not for its return value. The
-#'   pipeline runs as a vector of arguments and never through a shell. So paths
-#'   with spaces or special characters are safe.
+#'   On a non-zero exit \code{ffm_run()} gives an error instead of returning
+#'   (see the section below). You call \code{ffm_run()} to write the output
+#'   file, not for its return value. Each argument of the command is quoted
+#'   with \code{shQuote()} before \code{system2()} runs it, and on Unix
+#'   \code{system2()} passes the command to a shell. The quoting makes paths
+#'   with spaces or special characters reach FFmpeg as written.
 #' @section When FFmpeg exits non-zero:
 #' If FFmpeg refuses a run, \code{ffm_run()} gives an error of class
 #' \code{tidymedia_ffmpeg_exit}. A caller can catch a failed run without
@@ -1567,9 +1605,11 @@ n_files <- function(x) {
 #' }
 #'
 #' The \code{tm_status} field is one integer, the exit status exactly as
-#' \code{system2()} reported it. If a signal stopped FFmpeg, the field holds
-#' the shell's number, 128 plus the signal number, unchanged. That number
-#' stands for the signal, not for a status FFmpeg chose to return.
+#' \code{system2()} reported it. If a signal stopped FFmpeg, the value depends
+#' on the signal and the platform. In runs with FFmpeg 9.0.2 on macOS
+#' (2026-10-18), \code{SIGTERM}, which FFmpeg catches, gave 255, the status
+#' FFmpeg chose when it stopped. \code{SIGKILL}, which no program can catch,
+#' gave 137, the shell's 128 plus the signal number 9.
 #'
 #' Two other paths give this class and carry this field, so one handler covers
 #' all three:
@@ -1652,9 +1692,10 @@ ffm_run <- function(object, verify = NULL) {
   # PATH's rather than the option's. A machine-independent refusal reports before
   # a machine-dependent one (D036), so it is read at the front door.
   resolve_timeout()
-  # Execute the argument vector directly (one shell-free token per argument),
-  # so paths containing spaces, quotes, `$`, or backticks reach FFmpeg
-  # verbatim (M06). stdin is redirected from an empty input so FFmpeg cannot
+  # Execute the argument vector through run_program(), which shQuote()s each
+  # token before system2() hands the command to `sh` on Unix, so paths
+  # containing spaces, quotes, `$`, or backticks reach FFmpeg verbatim (M06).
+  # stdin is redirected from an empty input so FFmpeg cannot
   # drain the parent process's stdin (see ffmpeg()); stderr streams to the
   # console as before.
   # Snapshot the output BEFORE running: remove_failed_output() removes what this

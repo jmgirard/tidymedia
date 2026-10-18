@@ -34,15 +34,19 @@ not replace them. Pass \code{replace = TRUE} to discard them instead. That is
 how you narrow the all-streams map that \code{\link{ffm_copy}} sets. Adding
 to that map puts the stream in the output twice, and does not select it.
 
-\code{ffm_map()} is the only pipeline function that adds to earlier calls.
-Every other \code{ffm_*} function that sets a value, \code{\link{ffm_copy}}
-included, replaces it. \code{ffm_map()} is different because its arguments
-are \emph{partial} choices that combine. For example, you keep the video,
-then name one audio track.
+Other pipeline functions also add to earlier calls. Each function that adds
+a filter, such as \code{\link{ffm_crop}} or \code{\link{ffm_loudnorm}}, puts
+its filter after the filters already set. \code{\link{ffm_output_options}}
+puts its options after the options already set. \code{\link{ffm_seek}},
+\code{\link{ffm_drop}}, \code{\link{ffm_codec}},
+\code{\link{ffm_pixel_format}} and \code{\link{ffm_copy}} replace the values
+they set. \code{ffm_map()} adds because its arguments are \emph{partial}
+choices that combine. For example, you keep the video, then name one audio
+track.
 
-When the pipeline uses a function with several inputs, such as
-\code{\link{ffm_hstack}}, your mapping is added \emph{beside} the automatic
-\code{-map "[vout]"} of the filtered stream. For example,
+When the pipeline uses \code{\link{ffm_hstack}}, \code{\link{ffm_vstack}}
+or \code{\link{ffm_overlay}}, your mapping is added \emph{beside} the
+automatic \code{-map "[vout]"} of the filtered stream. For example,
 \code{ffm_map(object, "0:a")} keeps the audio of the first input next to the
 stacked video.
 }

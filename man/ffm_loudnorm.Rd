@@ -47,8 +47,10 @@ default is \code{NULL}.}
 
 \item{linear}{A logical. \code{TRUE} requests linear normalization
 (\code{linear=true}), which needs the measured values to hit the target
-precisely. \code{FALSE} (the default) leaves out the option, so the
-single-pass dynamic behavior does not change.}
+precisely. \code{FALSE} (the default) leaves out the option. FFmpeg's own
+default for \code{linear} is true (FFmpeg 9.0.2,
+\code{ffmpeg -h filter=loudnorm}, 2026-10-18). So with the measured values
+given, FFmpeg still normalizes linearly where it can.}
 
 \item{print_format}{The format of the measurement report for an analysis
 pass: \code{"json"}, \code{"summary"} or \code{"none"}. \code{NULL} (the
@@ -61,8 +63,11 @@ a program can parse.}
 \description{
 Add FFmpeg's \code{loudnorm} (EBU R128) audio filter. It normalizes the
 input's perceived loudness toward a target integrated loudness, true-peak
-ceiling and loudness range. The filter compiles to \code{-af}, or joins an
-existing audio filter chain in the order the filters were added. The glossary
+ceiling and loudness range. The filter joins the audio filter chain in the
+order the filters were added, and the chain compiles to \code{-af}. After
+\code{\link{ffm_hstack}}, \code{\link{ffm_vstack}} or
+\code{\link{ffm_overlay}}, the compiled command has no audio filter, and no
+error says so. The glossary
 in \code{vignette("tidymedia")} explains media terms such as LUFS and true
 peak.
 }

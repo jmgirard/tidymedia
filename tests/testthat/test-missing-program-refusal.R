@@ -7,8 +7,9 @@
 # mock stands in for all of them. No binary is needed.
 
 missing_program_refusal <- function(expr) {
-  # `.package`, as the suite's other helpers write it: with `.env = topenv()`
-  # the mock outlived this helper and hid FFmpeg from every later test file.
+  # `.package`, as the suite's other helpers write it. With `.env = topenv()`
+  # the mock was still in place after this helper returned (measured
+  # 2026-10-18), and the later test files could not find FFmpeg.
   testthat::local_mocked_bindings(find_program = function(...) NULL,
                                   .package = "tidymedia")
   cnd <- tryCatch(expr, error = function(e) e)

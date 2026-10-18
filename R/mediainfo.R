@@ -12,7 +12,9 @@
 #' [mediainfo_parameter()]. These functions quote their arguments for you.
 #'
 #' If tidymedia cannot find MediaInfo, the call stops with the error "Could not
-#' locate MediaInfo."
+#' locate MediaInfo." The warning from [find_mediainfo()] comes first. A bad
+#' argument or a bad `tidymedia.timeout` option stops the call before the
+#' search.
 #'
 #' @param command A string with the arguments to give MediaInfo.
 #' @return A character vector with the text that MediaInfo writes to standard

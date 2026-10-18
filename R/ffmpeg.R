@@ -9,7 +9,8 @@
 #' the order of the options.
 #'
 #' If tidymedia cannot find FFmpeg, the call stops with the error "Could not
-#' locate FFmpeg."
+#' locate FFmpeg." The warning from [find_ffmpeg()] comes first. A bad argument
+#' or a bad `tidymedia.timeout` option stops the call before the search.
 #'
 #' @param command A string containing the arguments to pass to FFmpeg.
 #' @return A character vector containing the text output by FFmpeg.
@@ -34,8 +35,9 @@ ffmpeg <- function(command) {
   # The location is quoted, as ffprobe() and mediainfo() quote theirs, so a
   # location holding a space reaches the shell as one word (M140).
   limit <- resolve_timeout()
-  # A missing FFmpeg is refused here. Before M142 the empty location went to
-  # the shell, and the call returned character(0).
+  # A missing FFmpeg is refused here. Before M142 a NULL location emptied the
+  # whole command, only system()'s `< input` redirect reached the shell, and
+  # the call returned character(0).
   location <- tm_require_location(find_ffmpeg(), "FFmpeg")
   out <- guard_timeout(
     "FFmpeg", limit,
@@ -2792,7 +2794,8 @@ normalize_audio_pipeline <- function(input, output,
 #' \code{vignette("tidymedia")} explains media terms such as codec and encoder.
 #'
 #' If tidymedia cannot find FFmpeg, the call stops with the error "Could not
-#' locate FFmpeg."
+#' locate FFmpeg." The warning from [find_ffmpeg()] comes first. A bad argument
+#' or a bad `tidymedia.timeout` option stops the call before the search.
 #'
 #' @param sort_by_type A logical. \code{TRUE} sorts the tibble by type and then
 #'   by name. \code{FALSE} sorts it by name only. (default = \code{TRUE})
@@ -2890,7 +2893,8 @@ ffmpeg_codecs <- function(sort_by_type = TRUE) {
 #' \code{vignette("tidymedia")} explains media terms such as codec and encoder.
 #'
 #' If tidymedia cannot find FFmpeg, the call stops with the error "Could not
-#' locate FFmpeg."
+#' locate FFmpeg." The warning from [find_ffmpeg()] comes first. A bad argument
+#' or a bad `tidymedia.timeout` option stops the call before the search.
 #'
 #' @inheritParams ffmpeg_codecs
 #' @return A [tibble][tibble::tibble-package] with the following variables:

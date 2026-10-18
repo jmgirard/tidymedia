@@ -156,8 +156,9 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
   if (any(not_ffm)) {
     cli::cli_abort(c(
       "{.arg .f} must return an ffm pipeline for every job.",
-      # `{?s}` takes its count from the next value unless qty() sets one, and
-      # a vector there stopped cli itself with two bad jobs (M142).
+      # `{?s}` with no value before it takes its count from the next value,
+      # unless qty() sets one, and a vector there stopped cli itself with two
+      # bad jobs (M142).
       "x" = "{cli::qty(sum(not_ffm))}Job{?s} {.val {which(not_ffm)}} returned
              something else."
     ))

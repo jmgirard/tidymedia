@@ -12,7 +12,9 @@
 #' functions quote their arguments for you.
 #'
 #' If tidymedia cannot find FFprobe, the call stops with the error "Could not
-#' locate FFprobe."
+#' locate FFprobe." The warning from [find_ffprobe()] comes first. A bad
+#' argument or a bad `tidymedia.timeout` option stops the call before the
+#' search.
 #'
 #' @param command A string with the arguments to give FFprobe.
 #' @return A character vector with the text that FFprobe writes to standard

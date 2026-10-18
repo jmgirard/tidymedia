@@ -45,32 +45,32 @@ pages of those five functions, and `NEWS.md`.
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets. -->
 
-- [ ] AC1: With two or more jobs whose `.f` returns something other than an
+- [x] AC1: With two or more jobs whose `.f` returns something other than an
       ffm pipeline, `ffm_batch()` stops with its own refusal, "`.f` must
       return an ffm pipeline for every job.", and, where 20 or fewer jobs are
       bad, the message names the row number of each such job. A test runs a
       three-job batch whose jobs 1 and 3 are bad and asserts that the message
       names jobs 1 and 3 and not job 2. A second test with one bad job, at a
       row other than 1, asserts the singular wording "Job N".
-- [ ] AC2: With `run = TRUE` and a `verify` function whose result is not a
+- [x] AC2: With `run = TRUE` and a `verify` function whose result is not a
       non-empty named list for two or more jobs, `ffm_batch()` stops with its
       own refusal, "Each `verify` spec must be a non-empty named list of
       properties.", and, where 20 or fewer specs are invalid, the message
       names the row number of each such job. Tests as in AC1.
-- [ ] AC3: When the program lookup returns `NULL`, `ffmpeg()`, `ffprobe()`
+- [x] AC3: When the program lookup returns `NULL`, `ffmpeg()`, `ffprobe()`
       and `mediainfo()` stop with "Could not locate FFmpeg.", "Could not
       locate FFprobe." and "Could not locate MediaInfo." respectively, and
       the error's call is the function the caller typed. A test for each of
       the three mocks the lookup to return `NULL` and asserts the message and
       the call.
-- [ ] AC4: Under the same lookup, `ffmpeg_codecs()` and `ffmpeg_encoders()`
+- [x] AC4: Under the same lookup, `ffmpeg_codecs()` and `ffmpeg_encoders()`
       stop with "Could not locate FFmpeg.", and the error's call is
       `ffmpeg_codecs()` or `ffmpeg_encoders()`. A test for each asserts the
       message and the call.
 - [x] AC5: The help pages `?ffmpeg`, `?ffprobe`, `?mediainfo`,
       `?ffmpeg_codecs` and `?ffmpeg_encoders` each say that the call stops
       with an error when tidymedia cannot find the program.
-- [ ] AC6: `devtools::check()` reports 0 errors and 0 warnings.
+- [x] AC6: `devtools::check()` reports 0 errors and 0 warnings.
 
 ## Coverage
 <!-- owner: plan · create/amend-via-gate -->
@@ -135,17 +135,23 @@ pages of those five functions, and `NEWS.md`.
 Review pass 1, 2026-10-18, on branch head f1452a91 (master 2f023576 unmoved).
 
 - AC5 evidence: `man/ffmpeg.Rd`, `man/ffmpeg_codecs.Rd`, `man/ffmpeg_encoders.Rd`, `man/ffprobe.Rd` and `man/mediainfo.Rd` each hold "If tidymedia cannot find <program>, the call stops with the error "Could not locate <program>."" (grep over each regenerated Rd, line breaks joined).
+- AC1 evidence (head 4b4d2d7d, `NOT_CRAN=true`, test-ffm-batch.R): "ffm_batch() names every job whose .f returned no pipeline (M142)" passes on jobs 1 and 3 of three ("Jobs 1 and 3 returned something else."), "names one job …" passes on job 2 ("Job 2 returned something else."), and the 20-and-25 test passes; 5 M142 tests, 16 expectations, 0 failed, 0 skipped. On the base code the two-job case failed with cli's "length(object) == 1 is not TRUE" and the one-job case read "Jobs 2" (T1 work log).
+- AC2 evidence (same run): the two verify-spec tests pass with `run = TRUE` and a `verify` function, naming jobs 1 and 3 ("Jobs 1 and 3 produced an invalid spec.") and job 2 ("Job 2 produced an invalid spec."); red on the base code the same way as AC1.
+- AC3 evidence (same head, test-missing-program-refusal.R): with `find_program()` mocked to `NULL`, `ffmpeg()`, `ffprobe()` and `mediainfo()` give exactly "Could not locate FFmpeg.", "Could not locate FFprobe." and "Could not locate MediaInfo." and `cnd$call[[1]]` is `ffmpeg`, `ffprobe` and `mediainfo`; 6 M142 tests, 21 expectations, 0 failed. Red on the base code (implement work log).
+- AC4 evidence (same run): `ffmpeg_codecs()` and `ffmpeg_encoders()` give exactly "Could not locate FFmpeg." with `cnd$call[[1]]` `ffmpeg_codecs` and `ffmpeg_encoders`; a real run with FFmpeg hidden printed "Error in `ffmpeg_encoders()`: ! Could not locate FFmpeg." (implement, 2026-10-18).
+- AC6 evidence: `devtools::check()` on 4b4d2d7d: 0 errors, 0 warnings, 0 notes (7m 13s). The log's one NOTE is the spelling test's output against its saved copy, listing "encodable" (ffm_batch.Rd, ffm_run.Rd) and "filesystem" (NEWS.md), both in text already on master.
+- Consistency gate: `cairn_validate.py` all checks passed; no principle changed, so `cairn_impact` skipped; `devtools::document()` left no diff; `pkgdown::check_pkgdown()` found no problems; README.Rmd untouched; no new top-level file (NEWS.md only); NEWS.md has the two bug-fix entries with no milestone numbers.
 - No-binaries run on fe9014da: full `devtools::test()` with `PATH=/usr/local/bin:/usr/bin:/bin` and both config dirs redirected to an empty folder (FFmpeg, FFprobe and MediaInfo absent, checked by `Sys.which()` first): 0 failures. The pre-fix test-with-timeout.R run the same way errors in "each spawn site is handed the per-call limit" with `Error in ffmpeg("-version"): Could not locate FFmpeg.`; the fixed file passes.
 - spawned: diff-bug, blame-history, prior-review
-- diff-bug #1: `test-with-timeout.R` "each spawn site is handed the per-call limit" mocks only `guard_timeout()`, so with the lookup now ahead of it the test stops with "Could not locate" on a machine with no media binaries, CRAN included — fix now (locators pinned as helper-timeout-sweep.R pins them; confirmed by the no-binaries suite run below).
-- blame-history #1: the same test-with-timeout.R defect — fix now (same fix as diff-bug #1).
-- diff-bug #2: NEWS does not say that the lookup's warning now keeps its class in the three functions — fix now (NEWS sentence plus a test that a classed lookup warning reaches each caller before the refusal).
-- blame-history #2: the same warning-class change — fix now (same fix as diff-bug #2).
-- prior-review #1: NEWS says "names every bad job", but cli shortens a list past 20 values — fix now (NEWS narrowed to "lists up to 20 job numbers in full and shortens a longer list", with a test at 20 and 25 bad jobs).
-- diff-bug #3: `cnd$tm_missing_program` matches partially — fix now (`[[`).
-- blame-history #4: D087 says an internal function taking `call` has no default, and both new helpers had one — fix now (defaults removed, each site passes `rlang::current_env()`).
-- prior-review #3: the help paragraph was repeated in three blocks of R/ffmpeg.R, and `tools/roxygen_repeats.R R/ffmpeg.R` exits 1 on the branch where master's file exits 0 — fix now (one `missing_program_sentences()` in R/task-doc.R, called from all five blocks; the tool exits 0 on R/ffmpeg.R).
-- diff-bug #4: no test for "the warning from find_*() comes first" — fix now (covered by the warning-class test of diff-bug #2).
+- diff-bug #1: `test-with-timeout.R` "each spawn site is handed the per-call limit" mocks only `guard_timeout()`, so with the lookup now ahead of it the test stops with "Could not locate" on a machine with no media binaries, CRAN included — fix now, fixed fe9014da (locators pinned as helper-timeout-sweep.R pins them; confirmed by the no-binaries suite run below).
+- blame-history #1: the same test-with-timeout.R defect — fix now, fixed fe9014da (same fix as diff-bug #1).
+- diff-bug #2: NEWS does not say that the lookup's warning now keeps its class in the three functions — fix now, fixed fe9014da (NEWS sentence plus a test that a classed lookup warning reaches each caller before the refusal).
+- blame-history #2: the same warning-class change — fix now, fixed fe9014da (same fix as diff-bug #2).
+- prior-review #1: NEWS says "names every bad job", but cli shortens a list past 20 values — fix now, fixed fe9014da (NEWS narrowed to "lists up to 20 job numbers in full and shortens a longer list", with a test at 20 and 25 bad jobs).
+- diff-bug #3: `cnd$tm_missing_program` matches partially — fix now, fixed fe9014da (`[[`).
+- blame-history #4: D087 says an internal function taking `call` has no default, and both new helpers had one — fix now, fixed fe9014da (defaults removed, each site passes `rlang::current_env()`).
+- prior-review #3: the help paragraph was repeated in three blocks of R/ffmpeg.R, and `tools/roxygen_repeats.R R/ffmpeg.R` exits 1 on the branch where master's file exits 0 — fix now, fixed fe9014da (one `missing_program_sentences()` in R/task-doc.R, called from all five blocks; the tool exits 0 on R/ffmpeg.R).
+- diff-bug #4: no test for "the warning from find_*() comes first" — fix now, fixed fe9014da (covered by the warning-class test of diff-bug #2).
 - prior-review #2: "the warning from find_ffmpeg() comes first" is false when nothing is configured — reject, false: `find_program()`'s no-config branch warns "Failed to find {program}." (R/program_management.R, the final `else`), seen in this session's no-FFmpeg run, and every NULL path warns.
 - prior-review #4: on the hardware path, a missing FFmpeg is blamed on `ffmpeg_encoders()`, not the typed verb — follow-up, already the "Argument classes refused below the verb" row's item (d), filed at plan time; master blamed `ffmpeg_encoders()` there too.
 - blame-history #3: `ffmpeg()` now stops where it returned `character(0)` — reject, planned change (AC3).

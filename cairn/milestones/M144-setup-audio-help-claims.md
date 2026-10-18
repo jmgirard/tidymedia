@@ -1,6 +1,6 @@
 # M144: The setup, capability and audio help pages state what the code does
 
-- **Status:** review
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -124,7 +124,16 @@ edit it.
 - 2026-10-18: full `devtools::test()` before the audit fixes: FAIL 0, WARN 12, SKIP 7, PASS 18801.
 - claim audit: 44 claims read, 9 corrected — R/cache.R, R/timeout.R, R/program_management.R, R/audio-stream-doc.R, R/ffmpeg.R, R/mediainfo.R, NEWS.md. None false; fixed: the NEWS `.webm` line (now scoped to `hardware`), "batch task functions" (now seven, as `jobs_return()` serves), "audio track check" (now the dropped-track warning), install saves only usable programs, the option skip scoped to picking the encoder, the refusal message's NULL advice, "for this reason" order, the `with_options()` sentence, and the stale MediaInfo comment at `R/mediainfo.R:121`. Not changed: the glossary pointer for "family", which the pages already carry; 6 external-behavior claims rest on the recorded runs above.
 - 2026-10-18: T6 done. `devtools::check()` after the audit fixes: 0 errors, 0 warnings; R CMD check's one NOTE is the `spelling.Rout` mismatch. It flagged `install's` (this branch, reworded, and the install tests then passed 931/931), and `encodable` (from 59375e76) and `filesystem` in `NEWS.md`, both on master before this branch. `devtools::document()` leaves no diff. Status set to review.
+- 2026-10-18: amendment routed: AC1 — "For (d), those pages state the `NULL` reading once" cannot hold: every `audio_stream` page states the reading in its opening sentence and in the shared family sentence by design, and claim (d) named only the third, restating sentence.
 
 ## Decisions
 
 ## Review
+
+Pass 1, 2026-10-18, on branch head 53e8baf4 (master 95495a4a, not moved since the cut).
+
+- AC1: fails as written for (d), the other ten claims pass. `git diff master...HEAD -- R/` read claim by claim: (a), (b), (c), (f), (g), (h), (i), (j) (all three copies), (k) no longer make their claims and the replacements match the code sites the plan names; a grep of `man/*.Rd` for the eight old phrases finds none. (d): the `normalize_one_track` text no longer restates the `NULL` reading, but `?normalize_audio` still states it in the item's opening sentence and in the shared family sentence, so "state the `NULL` reading once" is not met. Those two statements are on every `audio_stream` page by design, so the criterion promises more than the finding asked: amendment routed.
+- AC2: met. `mediainfo_parameter()` on a video with no audio, section `"Audio"`: `NA` under `typed = TRUE`, `""` under `typed = FALSE` (rerun at review, MediaInfoLib v26.10); the page states both, matching `R/mediainfo.R:120-126`.
+- AC3: met. Every hunk of `git diff master...HEAD -- R/` is a roxygen line, a comment, the one `cli_abort()` message string at `R/ffmpeg.R:3810-3813`, or a string literal in `R/task-doc.R` or `R/audio-stream-doc.R`, each carrying a listed claim or its replacement; the 21 changed `man/*.Rd` files are the pages generated from those sources.
+- AC4: met. `NEWS.md` line 71 opens `## Documentation` in the development version section with one bullet naming the corrected pages and function groups; no milestone id.
+- AC5: pending, a fresh `devtools::check()` is running.

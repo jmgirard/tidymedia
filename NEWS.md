@@ -7,8 +7,27 @@
   on such a folder with "cannot open the connection". `program_status()`
   stopped too. They now give the
   `tidymedia_location_unreadable` warning, and `program_status()` still
-  returns its table. The warning names the folder and says to delete it, then
-  to save the location again.
+  returns its table. If every folder it found is empty, the warning advises
+  `unset_program()`. Otherwise it names each folder that holds anything and
+  says to delete it by hand.
+
+* **A folder in place of the current location file no longer hides a
+  location saved before 0.2.0.** Before, a folder there counted as a saved
+  location, so the `find_*()` functions did not read the older file. Now only a
+  file counts.
+
+* **A location file that tidymedia cannot read now gives a warning, not an
+  error.** Before, the `find_*()` functions and `program_status()` stopped
+  inside `readLines()` on a file without read permission. They now give the `tidymedia_location_unreadable` warning, which
+  says to give the file read permission or to use `unset_program()`.
+
+* **`set_program()` and `unset_program()` now remove an empty folder where a
+  location file goes.** Before, `set_program()` stopped with "cannot open the
+  connection", and `unset_program()` refused with advice about write access.
+  A folder that holds anything, hidden files included, is left in place. Both
+  functions then stop with the new `tidymedia_location_folder` error, which
+  names the folder in `tm_files`. `set_program()` stops before it asks, and
+  `unset_program()` removes nothing.
 
 * **`ffmpeg()` now runs a program whose location holds a space.** It put the
   location into the command unquoted, so the shell split it at the space.

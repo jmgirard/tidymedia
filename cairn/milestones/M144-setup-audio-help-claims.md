@@ -1,6 +1,6 @@
 # M144: The setup, capability and audio help pages state what the code does
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -61,7 +61,10 @@ edit it.
 - [ ] AC1: For each claim (a) to (c) and (f) to (k) under Scope In, the source lines that
       claim names and every `man/*.Rd` page generated from those lines no longer make the
       claim, and the replacement text states what the code at head does, read against the
-      code site that claim names. For (d), those pages state the `NULL` reading once.
+      code site that claim names. For (d), within the `audio_stream` item of
+      `man/normalize_audio.Rd` and of `man/normalize_audio_batch.Rd`, of the sentences that a
+      search for `NULL` in that item finds, the only ones that say which tracks `NULL`
+      selects are the `\code{NULL} (default)` sentence and the shared family sentence.
 - [ ] AC2: Claim (e)'s replacement states the value that `mediainfo_parameter()` returns
       for a section the file lacks under `typed = TRUE` and under `typed = FALSE`, each as
       the code at `R/mediainfo.R:120-124` gives it and as a run on this machine shows it.
@@ -125,6 +128,9 @@ edit it.
 - claim audit: 44 claims read, 9 corrected — R/cache.R, R/timeout.R, R/program_management.R, R/audio-stream-doc.R, R/ffmpeg.R, R/mediainfo.R, NEWS.md. None false; fixed: the NEWS `.webm` line (now scoped to `hardware`), "batch task functions" (now seven, as `jobs_return()` serves), "audio track check" (now the dropped-track warning), install saves only usable programs, the option skip scoped to picking the encoder, the refusal message's NULL advice, "for this reason" order, the `with_options()` sentence, and the stale MediaInfo comment at `R/mediainfo.R:121`. Not changed: the glossary pointer for "family", which the pages already carry; 6 external-behavior claims rest on the recorded runs above.
 - 2026-10-18: T6 done. `devtools::check()` after the audit fixes: 0 errors, 0 warnings; R CMD check's one NOTE is the `spelling.Rout` mismatch. It flagged `install's` (this branch, reworded, and the install tests then passed 931/931), and `encodable` (from 59375e76) and `filesystem` in `NEWS.md`, both on master before this branch. `devtools::document()` leaves no diff. Status set to review.
 - 2026-10-18: amendment routed: AC1 — "For (d), those pages state the `NULL` reading once" cannot hold: every `audio_stream` page states the reading in its opening sentence and in the shared family sentence by design, and claim (d) named only the third, restating sentence.
+- re-audit: AC1 (full) — 3 findings, all fixed in the wording: the draft named the item's opening sentence, which does not state the reading (the `\code{NULL} (default)` sentence does); "no third statement" named no procedure, now a search for `NULL` in each item; "no longer states the reading" was reader-dependent.
+- re-audit: AC1 (full) — no blocking finding; HEAD meets it (`normalize_audio.Rd:82` and `normalize_audio_batch.Rd:106`: the default sentence and the first-track family sentence; the other `NULL` hits name no tracks). Two minor points answered without change, since a further rewording would need a third reader: "the shared family sentence" is singular where the helper gives two sentences (the first-track one is the one that names `normalize_audio()`), and "the only ones" would still hold with the default sentence deleted (a narrower promise, kept).
+- 2026-10-18: amendment return: AC1 — "For (d), within the `audio_stream` item of `man/normalize_audio.Rd` and of `man/normalize_audio_batch.Rd`, of the sentences that a search for `NULL` in that item finds, the only ones that say which tracks `NULL` selects are the `\code{NULL} (default)` sentence and the shared family sentence."
 
 ## Decisions
 

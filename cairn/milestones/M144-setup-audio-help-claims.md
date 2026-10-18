@@ -1,6 +1,6 @@
 # M144: The setup, capability and audio help pages state what the code does
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -99,7 +99,7 @@ edit it.
       `hardware_probe_sentences()` that repeats claim (b) on about 16 pages.
 - [x] T5: Add the series' `## Documentation` bullet to `NEWS.md`. Avoid the phrases that
       `test-timeout-silence.R` fences out of `NEWS.md`.
-- [ ] T6: Run `devtools::document()`, then the full `devtools::test()` and `devtools::check()`.
+- [x] T6: Run `devtools::document()`, then the full `devtools::test()` and `devtools::check()`.
       Read each changed sentence against its code site and record one line per claim in the
       work log.
 
@@ -123,6 +123,7 @@ edit it.
 - 2026-10-18: checkpoint, T3 to T5 edits made and not yet ticked: the related test run is still going. (j) FFmpeg 9.0.2 refused `libx265` into `.webm` (exit 234, "Only VP8 or VP9 or AV1 video") and wrote `libsvtav1` there. T4's grep found one copy elsewhere, `hardware_probe_sentences()` repeating claim (b), now the "Hardware probe sentence" candidate row.
 - 2026-10-18: full `devtools::test()` before the audit fixes: FAIL 0, WARN 12, SKIP 7, PASS 18801.
 - claim audit: 44 claims read, 9 corrected — R/cache.R, R/timeout.R, R/program_management.R, R/audio-stream-doc.R, R/ffmpeg.R, R/mediainfo.R, NEWS.md. None false; fixed: the NEWS `.webm` line (now scoped to `hardware`), "batch task functions" (now seven, as `jobs_return()` serves), "audio track check" (now the dropped-track warning), install saves only usable programs, the option skip scoped to picking the encoder, the refusal message's NULL advice, "for this reason" order, the `with_options()` sentence, and the stale MediaInfo comment at `R/mediainfo.R:121`. Not changed: the glossary pointer for "family", which the pages already carry; 6 external-behavior claims rest on the recorded runs above.
+- 2026-10-18: T6 done. `devtools::check()` after the audit fixes: 0 errors, 0 warnings; R CMD check's one NOTE is the `spelling.Rout` mismatch. It flagged `install's` (this branch, reworded, and the install tests then passed 931/931), and `encodable` (from 59375e76) and `filesystem` in `NEWS.md`, both on master before this branch. `devtools::document()` leaves no diff. Status set to review.
 
 ## Decisions
 

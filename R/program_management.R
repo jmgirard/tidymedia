@@ -434,7 +434,8 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
 #' @return `TRUE` when the install finished. `FALSE` when you said no to the
 #'   question, or when the call could not create the install folder. Other
 #'   failures give an error. The section "Errors" lists the classes of the
-#'   install's own errors. A wrong argument gives an error before any of these.
+#'   errors that the install itself gives. A wrong argument gives an error
+#'   before any of these.
 #'   At the end, the call saves the location of each program it unpacked and
 #'   can use, with [set_program()], and an error from that step, such as `tidymedia_location_not_written`, can
 #'   also reach you.

@@ -148,7 +148,9 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
     # it stops with "cannot open the connection", which stopped every lookup
     # and program_status() with it (measured 2026-10-17). Neither repair the
     # unreadable warning below names can clear a folder: unset_program()
-    # removes files only, and set_program() cannot write over one. So this
+    # removes files only, and set_program() cannot write over one at the
+    # current path. At the pre-0.2.0 path the current file set_program()
+    # writes is read first, so there it hides the folder. So this
     # case takes the same class and fields with advice of its own (M140).
     if (dir.exists(config)) {
       cli::cli_warn(

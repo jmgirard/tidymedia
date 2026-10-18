@@ -1,0 +1,13 @@
+# M144: The setup, capability and audio help pages state what the code does
+
+**Status:** done (2026-10-18, PR #148 https://github.com/jmgirard/tidymedia/pull/148)
+
+**Goal:** Eleven help-page claims that the M127 to M133 claim audits found false now say what the code does.
+
+feature series: M144 -> M145 -> M146
+
+**Outcome:** Roxygen, documentation-helper strings and one message string corrected, no code behavior changed. `?refresh_ffmpeg_capabilities`: a `plan(multicore)` worker starts with the session's encoder record, a `multisession` one does not (run, future 1.75.0), and the first call skips asking FFmpeg when the record is filled, the option is set for a `hardware` call, or `has_encoder()` finds no FFmpeg. `?install_on_win` Errors gains a `set_program()` bullet. `?local_timeout`: all three cases apply to `withr::local_options()` (run, withr 3.0.3). `?mediainfo_parameter`: a known section the file lacks gives the empty value, any output but one line gives `NA` (run, MediaInfoLib v26.10). `?audio_stream` names all four audio-output functions as failing on no audio. The normalize pages lost the repeated `NULL` sentence and a false "the two-pass analysis measures each audio track" sentence. `?normalize_audio_batch` no longer calls `loudness_range = 7` an R 128 target. The `hardware_param()` text, `?hardware_encoder` and the copy-codec refusal say `.webm` takes AV1, under `nvenc` only, not HEVC (run, FFmpeg 9.0.2). `dropped_audio_cost_sentences()` names the `tidymedia_probe_timeout` warning. `jobs_return()` says a run attaches the manifest as an attribute. `NEWS.md` gains the series' `## Documentation` bullet, which M145 and M146 edit.
+
+**Decisions:** D106 corrects D044's and D050's claim that every parallel worker asks its own binary.
+
+**Review:** Two passes with the three-lens fan-out. Pass 1 found AC1's (d) clause unsatisfiable (every `audio_stream` page states the `NULL` reading twice by design); one amendment return narrowed it after two fresh re-audits. Pass 2 settled 18 findings: 12 fixed (among them the false two-pass sentence, the manifest's lost `run = TRUE` condition that M133's review had restored, a 31-word Value sentence moved to an Errors bullet, the R 128 `@param` head, and the D044 contradiction), 2 to the "Hardware probe sentence" candidate row, 4 rejected. Claim audit: 44 claims read, 9 corrected. CI: 9 R check jobs and pkgdown green; `codecov/patch` and `codecov/project` failed on 12 uncovered lines in `R/task-doc.R`, merged at the user's re-approval. Hygiene graduated the "Nine help-text claims M127's round-4 review left open" row, narrowed the `ffm_*()` help-text row to its M128, M130 and M131 parts, and added one lesson.

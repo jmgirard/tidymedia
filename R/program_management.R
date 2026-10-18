@@ -1448,6 +1448,41 @@ tm_unset_program <- function(program, call) {
   invisible(TRUE)
 }
 
+# tm_require_location() ---------------------------------------------------
+
+# Refuse a `find_*()` answer that names no program, before anything spawns.
+# run_program() and the three direct-command functions share this one message
+# (M142). The `tm_missing_program` field is internal: tm_reblame_missing()
+# reads it to tell this refusal from any other error, and it is no class, so
+# the refusal stays as unclassed as run_program()'s always was.
+tm_require_location <- function(location, program, call) {
+  if (is.null(location) || is.na(location) || !nzchar(location)) {
+    cli::cli_abort("Could not locate {program}.", call = call,
+                   tm_missing_program = program)
+  }
+  invisible(location)
+}
+
+# tm_reblame_missing() ----------------------------------------------------
+
+# Evaluate `expr`, a call to a direct-command function, and raise its
+# missing-program refusal again under `call`, so a capability listing names
+# itself rather than the ffmpeg() it calls (D074). The listings keep calling
+# ffmpeg() because the tests stand in a mock of ffmpeg() for FFmpeg, and an
+# internal form beside it would bypass those mocks (M142). Every other
+# condition passes through untouched.
+tm_reblame_missing <- function(expr, call) {
+  rlang::try_fetch(
+    expr,
+    error = function(cnd) {
+      # `[[` and not `$`, which would match a longer field name partially.
+      program <- cnd[["tm_missing_program"]]
+      if (is.null(program)) return(rlang::zap())
+      tm_require_location(NULL, program, call = call)
+    }
+  )
+}
+
 # run_program() -----------------------------------------------------------
 
 # Run a resolved program with an argument vector and return its stdout as a
@@ -1469,9 +1504,7 @@ tm_unset_program <- function(program, call) {
 run_program <- function(location, args, program = "the program",
                         input = NULL, stderr = FALSE,
                         call = rlang::caller_env()) {
-  if (is.null(location) || is.na(location) || !nzchar(location)) {
-    cli::cli_abort("Could not locate {program}.", call = call)
-  }
+  tm_require_location(location, program, call = call)
   # shQuote()'s default is sh-style quoting on every OS; on Windows the child
   # process parses its command line with cmd-style (double-quote) rules, so
   # the type must follow the platform or spaced paths break there.

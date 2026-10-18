@@ -232,8 +232,8 @@ test_that("ffm_batch()'s verify-spec refusal still reports before the collision 
   a <- make_input()
   jobs <- tibble::tibble(input = c(a, a), output = c("o.mp4", "o.mp4"),
                          bad = c(TRUE, FALSE))
-  # One invalid spec rather than two: with two, resolve_batch_verify()'s message
-  # fails inside cli on its own `{?s}` and never says what it refuses.
+  # One invalid spec is enough here. Before M142 two would also have stopped
+  # inside cli on the message's own `{?s}`; test-ffm-batch.R covers that.
   res <- collision_batch_run(
     jobs, run = TRUE,
     verify = function(bad, ...) if (bad) list() else list(width = 1)

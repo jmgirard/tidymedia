@@ -236,8 +236,8 @@ test_that("seconds is required, and NULL is not a limit", {
 # each recorded site is driven and asked what limit it was handed.
 #
 # `guard_timeout()` is mocked rather than a binary run: its `expr` argument is
-# lazy, so the mock never forces the `system()`/`system2()` call underneath and
-# the cell measures the value, not the runner's PATH.
+# lazy, so the mock never forces the `system()`/`system2()` call underneath and,
+# with the locators pinned, the cell measures the value, not the runner's PATH.
 
 tm_spawn_call_specs <- list(
   ffmpeg = function() ffmpeg("-version"),
@@ -260,6 +260,13 @@ test_that("each spawn site is handed the per-call limit", {
       seen <<- limit
       character(0)
     },
+    # Since M142 the three direct-command functions look up their program
+    # before guard_timeout() and refuse a missing one, so the locators are
+    # pinned too: without them a runner with no media binaries stops at
+    # "Could not locate FFmpeg." (helper-timeout-sweep.R pins them the same way).
+    find_ffmpeg = function() "/nonexistent/ffmpeg",
+    find_ffprobe = function() "/nonexistent/ffprobe",
+    find_mediainfo = function() "/nonexistent/mediainfo",
     .package = "tidymedia"
   )
   for (nm in names(tm_spawn_call_specs)) {

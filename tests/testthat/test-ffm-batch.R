@@ -107,6 +107,85 @@ test_that("ffm_batch() errors when .f does not return an ffm pipeline", {
   )
 })
 
+# Before M142 both per-job refusals wrote `Job{?s} {.val {which(...)}}`: with
+# two bad jobs cli stopped with "length(object) == 1 is not TRUE" in place of
+# the refusal, and one bad job at a row other than 1 read "Jobs 2". Job 1 alone
+# read correctly, so the one-job cases sit at row 2.
+batch_refusal <- function(jobs, ...) {
+  cnd <- tryCatch(ffm_batch(jobs, ...), error = function(e) e)
+  expect_s3_class(cnd, "rlang_error")
+  cli::ansi_strip(conditionMessage(cnd))
+}
+
+test_that("ffm_batch() names every job whose .f returned no pipeline (M142)", {
+  jobs <- tibble::tibble(input = c("a.mp4", "b.mp4", "c.mp4"),
+                         output = c("x.mp4", "y.mp4", "z.mp4"),
+                         bad = c(TRUE, FALSE, TRUE))
+  f <- function(input, output, bad, ...) {
+    if (bad) "not a pipeline" else ffm_dry(input, output)
+  }
+  msg <- batch_refusal(jobs, f, run = FALSE)
+  expect_match(msg, "must return an ffm pipeline for every job", fixed = TRUE)
+  expect_match(msg, "Jobs 1 and 3 returned something else.", fixed = TRUE)
+})
+
+test_that("ffm_batch() names one job whose .f returned no pipeline (M142)", {
+  jobs <- tibble::tibble(input = c("a.mp4", "b.mp4", "c.mp4"),
+                         output = c("x.mp4", "y.mp4", "z.mp4"),
+                         bad = c(FALSE, TRUE, FALSE))
+  f <- function(input, output, bad, ...) {
+    if (bad) "not a pipeline" else ffm_dry(input, output)
+  }
+  msg <- batch_refusal(jobs, f, run = FALSE)
+  expect_match(msg, "Job 2 returned something else.", fixed = TRUE)
+})
+
+test_that("ffm_batch() lists 20 bad jobs in full and shortens 25 (M142)", {
+  # NEWS.md states this limit; cli sets it. Line breaks are joined, because
+  # cli wraps a long bullet, and the ellipsis is cli's, which is `...` in a
+  # locale without UTF-8.
+  refusal_for <- function(n) {
+    jobs <- tibble::tibble(input = paste0("in", seq_len(n), ".mp4"),
+                           output = paste0("out", seq_len(n), ".mp4"))
+    msg <- batch_refusal(jobs, function(...) "not a pipeline", run = FALSE)
+    gsub("\\s+", " ", msg)
+  }
+  ellipsis <- cli::symbol$ellipsis
+  msg20 <- refusal_for(20)
+  expect_match(msg20, paste0("Jobs ", paste(1:19, collapse = ", "),
+                             ", and 20 returned something else."),
+               fixed = TRUE)
+  expect_no_match(msg20, ellipsis, fixed = TRUE)
+  msg25 <- refusal_for(25)
+  expect_match(msg25, ellipsis, fixed = TRUE)
+  expect_match(msg25, "and 25 returned something else.", fixed = TRUE)
+})
+
+test_that("ffm_batch() names every job with an invalid verify spec (M142)", {
+  # Resolved before any encode, so this aborts without needing FFmpeg.
+  jobs <- tibble::tibble(input = c("a.mp4", "b.mp4", "c.mp4"),
+                         output = c("x.mp4", "y.mp4", "z.mp4"),
+                         bad = c(TRUE, FALSE, TRUE))
+  msg <- batch_refusal(
+    jobs, function(input, output, ...) ffm_dry(input, output),
+    verify = function(bad, ...) if (bad) list() else list(width = 1)
+  )
+  expect_match(msg, "Each `verify` spec must be a non-empty named list",
+               fixed = TRUE)
+  expect_match(msg, "Jobs 1 and 3 produced an invalid spec.", fixed = TRUE)
+})
+
+test_that("ffm_batch() names one job with an invalid verify spec (M142)", {
+  jobs <- tibble::tibble(input = c("a.mp4", "b.mp4", "c.mp4"),
+                         output = c("x.mp4", "y.mp4", "z.mp4"),
+                         bad = c(FALSE, TRUE, FALSE))
+  msg <- batch_refusal(
+    jobs, function(input, output, ...) ffm_dry(input, output),
+    verify = function(bad, ...) if (bad) list(1) else list(width = 1)
+  )
+  expect_match(msg, "Job 2 produced an invalid spec.", fixed = TRUE)
+})
+
 test_that("ffm_batch(parallel = TRUE) warns when the future plan is sequential", {
   skip_if_not_installed("furrr")
   old <- future::plan(future::sequential)

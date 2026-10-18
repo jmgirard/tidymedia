@@ -18,6 +18,9 @@ direct command. The function passes the string to FFmpeg unchanged, after
 the path of the FFmpeg program. So you are responsible for the quoting and
 the order of the options.
 }
+\details{
+If tidymedia cannot find FFmpeg, the call stops with the error "Could not locate FFmpeg." The warning from \code{\link[=find_ffmpeg]{find_ffmpeg()}} comes first. A bad argument or a bad \code{tidymedia.timeout} option stops the call before the search.
+}
 \examples{
 \dontshow{if (nzchar(Sys.which("ffmpeg"))) withAutoprint(\{ # examplesIf}
 # A direct command: the function passes the string to FFmpeg unchanged

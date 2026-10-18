@@ -67,6 +67,7 @@ The milestone changes four things. The lookup falls back past a folder at the cu
 - 2026-10-17: the six corrections: `readLines()` warns and then stops with "cannot open the connection"; a folder tidymedia cannot read never counts as empty, now in the docs, the error text, NEWS and a new test; `set_program()` clears an empty folder at the current path only; the empty-folder advice counts two folders; the lookup test gained the `both_full` layout.
 - 2026-10-17: `devtools::check()` on 217abdfc gave 0 errors, 0 warnings, 0 notes. The spelling comparison lists "encodable" and "filesystem" from text released in 0.2.2, not from this branch.
 - 2026-10-17: T4 done. `devtools::check()` on a78913b8, after the claim-audit fixes, gave 0 errors, 0 warnings, 0 notes, with the test suite inside it. Status set to review.
+- 2026-10-17: step-7 approval: m141-location-folder-and-unreadable approved for merge
 
 ## Decisions
 

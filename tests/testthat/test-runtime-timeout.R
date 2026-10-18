@@ -496,7 +496,9 @@ test_that("a timed-out ffmpeg() leaves what the killed run wrote", {
     fake
   )
   Sys.chmod(fake, "0755")
-  local_mocked_bindings(find_ffmpeg = function(...) shQuote(fake))
+  # Unquoted, as find_ffmpeg() itself returns it: ffmpeg() quotes the location
+  # since M140, so a pre-quoted one would be quoted twice.
+  local_mocked_bindings(find_ffmpeg = function(...) fake)
   withr::local_options(tidymedia.timeout = 2)
   start <- Sys.time()
   expect_error(ffmpeg(shQuote(out)), class = "tidymedia_timeout")

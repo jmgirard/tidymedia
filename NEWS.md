@@ -1,5 +1,21 @@
 # tidymedia (development version)
 
+## Bug fixes
+
+* **A folder where a program's location is saved now gives a warning, not an
+  error.** Before, `find_ffmpeg()` and the other `find_*()` functions stopped
+  on such a folder with "cannot open the connection". `program_status()`
+  stopped too. They now give the
+  `tidymedia_location_unreadable` warning, and `program_status()` still
+  returns its table. The warning names the folder and says to delete it, then
+  to save the location again.
+
+* **`ffmpeg()` now runs a program whose location holds a space.** It put the
+  location into the command unquoted, so the shell split it at the space.
+  `ffmpeg()` now quotes it, as `ffprobe()` and `mediainfo()` do.
+  `ffmpeg_codecs()` and `ffmpeg_encoders()` call `ffmpeg()`, so the fix covers
+  them too.
+
 # tidymedia 0.2.2
 
 The package no longer assumes things about the machine it runs on that are not

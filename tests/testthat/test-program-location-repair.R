@@ -109,6 +109,48 @@ test_that("a malformed legacy file is read, and a readable current file wins", {
 })
 
 
+# find_program(): a folder where the location file should be ----------------
+
+test_that("a folder at a remembered-location path warns and returns NULL", {
+  # M140 AC1 and AC2. `file.exists()` is TRUE for a folder, so before M140 the
+  # lookup reached `readLines()` on it and stopped with "cannot open the
+  # connection" (measured 2026-10-17). Every program, at the current path and
+  # at the pre-0.2.0 path while no current file exists, since both reach the
+  # same read.
+  withr::local_options(cli.width = 1000)
+  for (program in tm_program_vocabulary) {
+    for (where in c("new", "legacy")) {
+      dirs <- tm_redirect_config()
+      path <- tm_config_file(program, dirs[[where]])
+      dir.create(path)
+      info <- paste(program, where)
+
+      condition <- tryCatch(
+        tm_find_export[[program]](),
+        warning = function(w) w,
+        error = function(e) e
+      )
+      expect_s3_class(condition, "tidymedia_location_unreadable")
+      expect_identical(condition$tm_program, program, info = info)
+      expect_identical(condition$tm_file, path, info = info)
+
+      # The repair the warning names. Neither unset_program() nor
+      # set_program() can clear a folder (unlink() without `recursive`, and
+      # writeLines() into a directory), so the advice is to delete it by hand.
+      message <- cli::ansi_strip(conditionMessage(condition))
+      expect_match(message, path, fixed = TRUE, info = info)
+      expect_match(message, "Delete", fixed = TRUE, info = info)
+      expect_no_match(message, "unset_program", fixed = TRUE, info = info)
+
+      expect_null(
+        expect_no_error(suppressWarnings(tm_find_export[[program]]())),
+        info = info
+      )
+    }
+  }
+})
+
+
 # find_program(): a remembered location whose binary is gone ------------------
 
 # A path Sys.which() cannot resolve under the emptied PATH, absolute so no
@@ -337,6 +379,51 @@ test_that("program_status() surfaces an unreadable config file and reports the o
     expect_true(is.na(got$value$version[is_broken]), info = broken)
     expect_identical(got$value[!is_broken, ], baseline[!is_broken, ], info = broken)
   }
+})
+
+test_that("program_status() reports a folder at a remembered-location path", {
+  # M140 AC3. Before M140 the folder stopped the whole report with "cannot open
+  # the connection". The other three programs are not configured, so their
+  # not-found warnings stay muffled and the folder's is the one heard.
+  dirs <- tm_redirect_config()
+  dir.create(tm_config_file("ffmpeg", dirs$new))
+
+  got <- tm_collect_warnings(program_status())
+
+  expect_identical(got$value$program, tm_program_vocabulary)
+  expect_length(got$warnings, 1L)
+  expect_s3_class(got$warnings[[1]], "tidymedia_location_unreadable")
+  # The advice reaches the report's caller too, not only find_ffmpeg()'s.
+  expect_match(
+    cli::ansi_strip(conditionMessage(got$warnings[[1]])), "Delete",
+    fixed = TRUE
+  )
+})
+
+test_that("neither unset_program() nor set_program() clears a folder at the current path", {
+  # What ?find_ffmpeg and ?program_status say, and why the folder warning
+  # advises deleting it by hand (M140, D103). unset_program() removes files
+  # only, so it refuses and the folder stays; set_program() cannot write its
+  # file where the folder is. The "Folder at a remembered-location path in set
+  # and unset" candidate row holds the better refusals; these assertions move
+  # with it.
+  dirs <- tm_redirect_config()
+  path <- tm_config_file("ffmpeg", dirs$new)
+  dir.create(path)
+
+  expect_error(
+    unset_program("ffmpeg"),
+    class = "tidymedia_location_not_removed"
+  )
+  expect_true(dir.exists(path))
+
+  stub <- tm_stub_executable()
+  expect_error(
+    suppressWarnings(set_program("ffmpeg", stub, confirm = FALSE)),
+    "cannot open the connection",
+    fixed = TRUE
+  )
+  expect_true(dir.exists(path))
 })
 
 test_that("program_status() stays silent when nothing is configured at all", {

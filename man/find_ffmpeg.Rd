@@ -46,17 +46,19 @@ on Windows, which has no execute bit. There a location is read the way R's
 own \code{Sys.which()} reads it, except that a folder never counts and a
 leading \code{~} is expanded.
 \item \code{tidymedia_location_unreadable}: the file does not hold exactly one
-location. It is empty, has more than one line, or has one empty line. The
-condition holds the program name in \code{tm_program} and the file in
-\code{tm_file}.
+location. It is empty, has more than one line, or has one empty line. Or
+a folder is where that file belongs. The condition holds the program name
+in \code{tm_program} and the file's path in \code{tm_file}.
 }
 
 A line that holds only spaces counts as a location. So it gives
 \code{tidymedia_location_gone}, not \code{tidymedia_location_unreadable}.
 
-To fix any of the three, forget the location with \code{\link[=unset_program]{unset_program()}}, or
-replace it with \code{\link[=set_program]{set_program()}}. A file that cannot be run can also be fixed
-by giving it permission to execute.
+To fix a location that is gone or cannot be run, or a file that does not
+hold one location, forget the location with \code{\link[=unset_program]{unset_program()}}, or replace it
+with \code{\link[=set_program]{set_program()}}. A file that cannot be run can also be fixed by giving
+it permission to execute. Neither function can clear a folder where the file
+belongs. Delete the folder by hand, then use \code{\link[=set_program]{set_program()}}.
 }
 
 \section{Locations saved by earlier versions}{

@@ -122,6 +122,8 @@ unquoted by the double quotes and are not claimed.
 - 2026-10-17: T1 tests written in `test-program-location-repair.R` and seen red on master (`cannot open the connection`); T2 adds a `dir.exists()` guard above `readLines()` in `find_program()` with its own delete-the-folder message; full suite 0 failed, 1818 tests.
 - 2026-10-17: T3 rewrites the unreadable bullet and repair sentence on `?find_ffmpeg` and `?program_status` for the folder case, `devtools::document()` wrote both Rd files, and D103 annotates D088 (same class, audible, delete-by-hand advice; a class of its own rejected).
 - 2026-10-17: T4's test in `test-ffmpeg.R` mocks `find_ffmpeg()` to a stub under `my bin/` rather than going through `tm_redirect_config()`, so `PATH` stays as it is; seen red on master (`error in running command`), green after quoting the location at `R/ffmpeg.R`; `test-ffmpeg.R` 0 failed under `NOT_CRAN=true`. The Windows skip is a `skip()` with its reason, since `skip_on_os()` prints only the platform.
+- 2026-10-17: minor amendment, a sub-task found at T5: the full suite errored once, in `test-runtime-timeout.R`'s timed-out `ffmpeg()` test, whose mock returned `shQuote(fake)` and so relied on the unquoted form; the mock now returns the path unquoted, as `find_ffmpeg()` does, and the file passes (37 tests). A sweep of the `find_ffmpeg = function` mocks in `tests/` found no other pre-quoted one.
+- 2026-10-17: T5 adds the two `NEWS.md` entries under "Bug fixes"; `devtools::test()` before the mock fix: 0 failed, 1 error (the mock above), 1819 tests.
 
 ## Decisions
 

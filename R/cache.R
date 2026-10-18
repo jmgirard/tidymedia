@@ -17,8 +17,10 @@
 # D105). The memo
 # is per-process, so `parallel = TRUE` workers each keep their own (D044). The
 # caller's `tidymedia.hardware_encoders` override IS carried into a worker
-# (R/timeout.R, M071); this memo is not, which is why a worker with no override
-# still asks its own binary.
+# (R/timeout.R, M071); this memo is not, which is why a fresh worker with no
+# override still asks its own binary. A forked worker (`plan(multicore)`) starts
+# with a copy of the memo as it was at the fork (measured 2026-10-18, future
+# 1.75.0).
 .tm_capabilities <- new.env(parent = emptyenv())
 
 # cached_encoder_names(): the encoder-name pool, asked of FFmpeg at most once per
@@ -57,8 +59,11 @@ cached_encodable_codecs <- function() {
 #'
 #' The first call in an R session to \code{\link{has_encoder}}, or one that
 #' uses \code{hardware = "nvenc"} or \code{hardware = "videotoolbox"}, asks
-#' FFmpeg which encoders it has. The package remembers that answer for the rest
-#' of the session. Later calls reuse
+#' FFmpeg which encoders it has, unless something has already filled the record.
+#' A call with \code{hardware} does not ask while it picks the encoder when the
+#' \code{tidymedia.hardware_encoders} option is set. \code{has_encoder()} does
+#' not ask when tidymedia cannot find FFmpeg. The package remembers the answer
+#' for the rest of the session. Later calls reuse
 #' it and do not start FFmpeg again each time, so a large batch stays fast.
 #'
 #' A run that FFmpeg refuses can also fill the record. After such a run,
@@ -90,10 +95,14 @@ cached_encodable_codecs <- function() {
 #' encoder and hardware encoder.
 #'
 #' @section Parallel workers:
-#' Each R process keeps its own record, and a worker does not get the record of
-#' your session. So in a batch on \code{W} workers, each worker asks FFmpeg
-#' once. Your session can also ask once, before the jobs start. Discarding the
-#' record in your session does not reach the workers.
+#' Each R process keeps its own record. A worker that starts as a new R
+#' process, as under \code{future::plan(multisession)}, does not get the record
+#' of your session. So in a batch on \code{W} such workers, each worker asks
+#' FFmpeg once. Your session can also ask once, before the jobs start. A worker
+#' forked from your session, as under \code{future::plan(multicore)}, starts
+#' with a copy of your session's record as it was when the worker started.
+#' Discarding the record in your session does not reach a worker that has
+#' already started.
 #'
 #' The \code{tidymedia.hardware_encoders} option works in a different way. The
 #' package copies your value into each worker for the duration of the call, and

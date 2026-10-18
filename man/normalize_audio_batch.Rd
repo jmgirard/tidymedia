@@ -42,11 +42,11 @@ it fall back to the \code{audio_codec} argument. An optional numeric
 argument per row. There, \code{NA} normalizes the first audio track of
 that row. Any other columns are ignored.}
 
-\item{target_loudness, true_peak, loudness_range}{The EBU R128 loudness targets
+\item{target_loudness, true_peak, loudness_range}{The loudness targets
 applied to every row, unless \code{jobs} carries a column of the same name
-(see \code{jobs}). Defaults follow EBU Recommendation R 128 (2014):
-\code{target_loudness = -23} LUFS, \code{true_peak = -1} dBTP,
-\code{loudness_range = 7} LU.}
+(see \code{jobs}). The defaults \code{target_loudness = -23} LUFS and
+\code{true_peak = -1} dBTP follow EBU Recommendation R 128 (2014). The
+default \code{loudness_range} is \code{7} LU.}
 
 \item{channels}{The output channel count applied to every row, unless
 \code{jobs} carries a \code{channels} column, e.g. \code{1} to downmix to
@@ -103,7 +103,7 @@ This is where the batch form and the one-file form differ.
 input is the whole call. Here, the other rows still have work to do. The
 single-pass default touches no binary under \code{run = FALSE}.}
 
-\item{audio_stream}{The audio track to normalize, as a number that counts from \code{0} among the \emph{audio tracks} of each row's input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) normalizes the \strong{first} audio track. Without an \code{audio_stream} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row. It does not fall back to the argument. The first-track family reads \code{NULL} as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The every-track family reads it as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. This function reads \code{NULL} as the first track only. The two-pass analysis measures each audio track, but the correction uses one set of measurements. Normalizing several tracks at once would apply one track's measurements to all of them. Under \code{two_pass = TRUE}, the analysis pass measures this same track. Only the named track reaches the output, and no video does, whatever the container. So an output name with a video extension gives a video file that holds only audio. An input with no audio at all is an FFmpeg error. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
+\item{audio_stream}{The audio track to normalize, as a number that counts from \code{0} among the \emph{audio tracks} of each row's input. \code{0} is the first audio track and \code{1} is the second. Other streams in the file, such as video, do not count. \code{NULL} (default) normalizes the \strong{first} audio track. Without an \code{audio_stream} column, the argument applies to every row. An \code{NA} cell in that column means \code{NULL} for that row. It does not fall back to the argument. The first-track family reads \code{NULL} as the first audio track only: \code{\link{extract_audio}}, \code{\link{convert_audio}} and \code{\link{normalize_audio}}, and their \code{_batch} forms. The every-track family reads it as every audio track: \code{\link{separate_audio_video}}, \code{\link{standardize_video}}, \code{\link{anonymize_video}}, \code{\link{crop_video}}, \code{\link{segment_video}} and \code{\link{format_for_web}}, and their \code{_batch} forms. The function normalizes only one track, because the correction uses one set of measurements. Normalizing several tracks at once would apply one track's measurements to all of them. Under \code{two_pass = TRUE}, the analysis pass measures this same track. Only the named track reaches the output, and no video does, whatever the container. So an output name with a video extension gives a video file that holds only audio. An input with no audio at all is an FFmpeg error. A track the input does not have gives an FFmpeg error, not an R one. See \code{\link{audio_stream}} for how this differs from \code{audio_input}, the input index on \code{\link{compare_videos}} and \code{\link{picture_in_picture}}. (default = \code{NULL})}
 
 \item{run}{A logical: run each input's command through FFmpeg (\code{TRUE},
 default) or only compile them for inspection (\code{FALSE}). Under
@@ -152,7 +152,7 @@ The warning names every affected row. Naming a track silences it. Use the
 \code{audio_stream} argument, or an \code{audio_stream} cell on every row.
 \code{suppressWarnings(classes = "tidymedia_dropped_audio")} silences it
 too.
-The check costs \strong{one FFprobe call per distinct input} it has to probe. A repeated input is probed once, and a row that names a track is not probed at all. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. Those probes run \strong{one at a time, before any row starts}, so \code{parallel} does not reach them. A sweep long enough to look like a hang reports its progress. The check never runs under
+The check costs \strong{one FFprobe call per distinct input} it has to probe. A repeated input is probed once, and a row that names a track is not probed at all. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently, except that a probe that reaches the time limit gives a \code{tidymedia_probe_timeout} warning. Those probes run \strong{one at a time, before any row starts}, so \code{parallel} does not reach them. A sweep long enough to look like a hang reports its progress. The check never runs under
 \code{run = FALSE} and never changes any compiled command. It is skipped
 entirely when every row names a track. Under \code{two_pass = TRUE}, the
 warning comes \emph{before} the analysis pass. So it arrives while adding

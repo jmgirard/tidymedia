@@ -3038,9 +3038,10 @@ hardware_codec_families <- function() {
 #' \code{\link{picture_in_picture}}, and \code{\link{separate_audio_video}}
 #' (and their \code{_batch} forms). Some of these functions have a
 #' \code{video_codec} that defaults to \code{NULL} (no codec named), and they
-#' assume the H.264 family. So a container that does not take H.264 (e.g.
-#' \code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}.
-#' AV1 works only under \code{"nvenc"}. Hardware \emph{decoding}
+#' assume the H.264 family. So a container that does not take H.264 needs an
+#' explicit \code{video_codec} of a family it takes. \code{.webm} takes neither
+#' H.264 nor HEVC, so it needs an AV1-family \code{video_codec}. AV1 works only
+#' under \code{"nvenc"}. Hardware \emph{decoding}
 #' (\code{-hwaccel}) and GPU filter pipelines are out of scope. Use the
 #' \code{\link{ffmpeg}} direct command for those.
 #'
@@ -3806,9 +3807,10 @@ check_hardware_needs_encode <- function(video_codec, hardware = "none",
         "x" = "{.code video_codec = \"copy\"} stream-copies the video, so no
                encoder runs.",
         "i" = "Name an encoder (e.g. {.code video_codec = \"libx264\"}), or
-               pass {.code video_codec = NULL} to assume the H.264 family --
-               a non-H.264 container then needs an explicit HEVC- or
-               AV1-family codec.",
+               pass {.code video_codec = NULL} to assume the H.264 family.
+               For a container that does not take H.264, name a codec it
+               takes. {.file .webm} takes AV1, which works only under
+               {.code hardware = \"nvenc\"}.",
         "i" = "Or drop {.arg hardware} to keep stream-copying the video."
       ),
       call = call
@@ -5381,11 +5383,11 @@ derive_normalized_names <- function(input) {
 #'   \code{audio_stream} column likewise overrides the \code{audio_stream}
 #'   argument per row. There, \code{NA} normalizes the first audio track of
 #'   that row. Any other columns are ignored.
-#' @param target_loudness,true_peak,loudness_range The EBU R128 loudness targets
+#' @param target_loudness,true_peak,loudness_range The loudness targets
 #'   applied to every row, unless \code{jobs} carries a column of the same name
-#'   (see \code{jobs}). Defaults follow EBU Recommendation R 128 (2014):
-#'   \code{target_loudness = -23} LUFS, \code{true_peak = -1} dBTP,
-#'   \code{loudness_range = 7} LU.
+#'   (see \code{jobs}). The defaults \code{target_loudness = -23} LUFS and
+#'   \code{true_peak = -1} dBTP follow EBU Recommendation R 128 (2014). The
+#'   default \code{loudness_range} is \code{7} LU.
 #' @param channels The output channel count applied to every row, unless
 #'   \code{jobs} carries a \code{channels} column, e.g. \code{1} to downmix to
 #'   mono. \code{NULL} (default) keeps each source's channel layout.

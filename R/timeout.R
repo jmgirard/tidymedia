@@ -341,9 +341,12 @@ with_timeout <- function(expr, seconds) {
 #'   force. Put the inner limit in a function of its own, or use only one of
 #'   the two.
 #'
-#' The first two cases also apply to [withr::local_options()], because R's exit
-#' handlers work this way. They do not apply to [withr::with_options()], which
-#' puts the option back itself.
+#' All three cases also apply to [withr::local_options()], because R's exit
+#' handlers work this way. The third case happens when
+#' [withr::local_options()] is written directly inside the expression of
+#' [withr::with_options()]. Setting an option with [withr::with_options()]
+#' alone avoids all three cases, because it puts the option back when its
+#' expression ends.
 #'
 #' @seealso [with_timeout()] to set a limit for one expression.
 #'   [tidymedia-package] describes the session options.

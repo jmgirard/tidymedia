@@ -164,9 +164,8 @@ audio_stream_extras <- list(
     "\\code{videofile} is never affected."
   ),
   normalize_one_track = paste0(
-    "This function reads \\code{NULL} as the first track only. The two-pass ",
-    "analysis measures each audio track, but the correction uses one set of ",
-    "measurements. Normalizing several tracks at once would apply one ",
+    "The function normalizes only one track, because the correction uses one ",
+    "set of measurements. Normalizing several tracks at once would apply one ",
     "track's measurements to all of them. Under \\code{two_pass = TRUE}, the ",
     "analysis pass measures this same track. Only the named track reaches ",
     "the output, and no video does, whatever the container. So an output ",
@@ -214,9 +213,9 @@ audio_stream_extras <- list(
 #'   must pick one track when you name none. A function that carries audio
 #'   through can keep all the tracks its container holds.
 #' * On the functions that pass video through, an input with no audio gives an
-#'   output with no audio, not an error. On [separate_audio_video()] and
-#'   [normalize_audio()], whose output \emph{is} audio, that input gives an
-#'   FFmpeg error.
+#'   output with no audio, not an error. On [separate_audio_video()],
+#'   [extract_audio()], [convert_audio()] and [normalize_audio()], whose output
+#'   \emph{is} audio, that input gives an FFmpeg error.
 #'
 #' `audio_input = NULL` is different: it selects no audio at all, so the output
 #' has \strong{no audio}. A silent output is the default for [compare_videos()]

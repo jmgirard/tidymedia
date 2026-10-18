@@ -63,9 +63,11 @@ hardware_param <- function(null_default = TRUE, video_only = FALSE) {
            "\\code{\"h264_videotoolbox\"}."),
     if (null_default) {
       c("With the default \\code{video_codec = NULL}, the H.264 family is assumed.",
-        paste0("So a non-H.264 container, such as \\code{.webm}, needs an ",
-               "explicit HEVC- or AV1-family \\code{video_codec} (AV1 only ",
-               "under \\code{\"nvenc\"})."))
+        paste0("So a container that does not take H.264 needs an explicit ",
+               "\\code{video_codec} of a family it takes. \\code{.webm} takes ",
+               "neither H.264 nor HEVC, so it needs an AV1-family ",
+               "\\code{video_codec}, which works only under ",
+               "\\code{\"nvenc\"}."))
     },
     "See \\code{\\link{has_hardware_encoder}} for availability and its caveats.",
     if (video_only) {
@@ -312,7 +314,9 @@ dropped_audio_cost_sentences <- function(batch = FALSE) {
     },
     paste0("The warning is given when FFprobe is available and the input can ",
            "be probed."),
-    "Otherwise the check is skipped silently.",
+    paste0("Otherwise the check is skipped silently, except that a probe that ",
+           "reaches the time limit gives a \\code{tidymedia_probe_timeout} ",
+           "warning."),
     if (batch) {
       c(paste0("Those probes run \\strong{one at a time, before any row starts}, ",
                "so \\code{parallel} does not reach them."),
@@ -361,8 +365,10 @@ jobs_return <- function() {
   rd_sentences(
     "The \\code{jobs} tibble with an added \\code{command} column.",
     paste0("When \\code{run = TRUE}, it also has a \\code{success} column, plus ",
-           "\\code{verified} or a provenance manifest, each when requested ",
-           "through \\code{...}."),
+           "a \\code{verified} column when requested through \\code{...}."),
+    paste0("A run also attaches a provenance manifest when requested through ",
+           "\\code{...}, as an attribute, not a column. Read it with ",
+           "\\code{\\link{ffm_manifest}}."),
     "See \\code{\\link{ffm_batch}}."
   )
 }

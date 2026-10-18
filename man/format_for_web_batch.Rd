@@ -59,7 +59,7 @@ or only compile them for inspection (\code{FALSE}).}
 \code{verify}, \code{manifest}, \code{progress}).}
 }
 \value{
-The \code{jobs} tibble with an added \code{command} column. When \code{run = TRUE}, it also has a \code{success} column, plus \code{verified} or a provenance manifest, each when requested through \code{...}. See \code{\link{ffm_batch}}.
+The \code{jobs} tibble with an added \code{command} column. When \code{run = TRUE}, it also has a \code{success} column, plus a \code{verified} column when requested through \code{...}. A run also attaches a provenance manifest when requested through \code{...}, as an attribute, not a column. Read it with \code{\link{ffm_manifest}}. See \code{\link{ffm_batch}}.
 }
 \description{
 Re-encode many videos into a widely compatible, web-friendly form, using one

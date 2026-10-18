@@ -134,6 +134,9 @@ checksum.
 where the install would put it.
 \item \code{tidymedia_program_unusable}: the archive made \code{ffmpeg} or \code{ffprobe}, but
 the file cannot be used.
+\item An error of \code{\link[=set_program]{set_program()}}, such as \code{tidymedia_location_not_written}: at
+the end, the call saves the location of each program it unpacked and can
+use, and saving one location failed.
 }
 }
 

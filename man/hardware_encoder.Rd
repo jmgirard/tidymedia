@@ -61,9 +61,10 @@ names and the same check. These task functions have that argument:
 \code{\link{picture_in_picture}}, and \code{\link{separate_audio_video}}
 (and their \code{_batch} forms). Some of these functions have a
 \code{video_codec} that defaults to \code{NULL} (no codec named), and they
-assume the H.264 family. So a container that does not take H.264 (e.g.
-\code{.webm}) needs an explicit HEVC- or AV1-family \code{video_codec}.
-AV1 works only under \code{"nvenc"}. Hardware \emph{decoding}
+assume the H.264 family. So a container that does not take H.264 needs an
+explicit \code{video_codec} of a family it takes. \code{.webm} takes neither
+H.264 nor HEVC, so it needs an AV1-family \code{video_codec}. AV1 works only
+under \code{"nvenc"}. Hardware \emph{decoding}
 (\code{-hwaccel}) and GPU filter pipelines are out of scope. Use the
 \code{\link{ffmpeg}} direct command for those.
 }

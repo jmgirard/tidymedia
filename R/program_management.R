@@ -414,6 +414,9 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
 #'   where the install would put it.
 #' * `tidymedia_program_unusable`: the archive made `ffmpeg` or `ffprobe`, but
 #'   the file cannot be used.
+#' * An error of [set_program()], such as `tidymedia_location_not_written`: at
+#'   the end, the call saves the location of each program it unpacked and can
+#'   use, and saving one location failed.
 #'
 #' @param download_url A string with the address of the FFmpeg archive. If
 #'   `NULL`, the call uses the latest "essentials" build from gyan.dev, a `.7z`

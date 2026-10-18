@@ -63,11 +63,12 @@ mediainfo <- function(command) {
 #'   values to their natural type, for example to numbers. If `FALSE`, it
 #'   returns strings.
 #' @return A vector with one value for each element of `file`. A value is `NA`
-#'   when MediaInfo prints more than one line, for example for a `section` it
-#'   does not know. A parameter that `section` does not have gives an empty
-#'   value. That value is `NA` when `typed = TRUE` and `""` when
-#'   `typed = FALSE`. A value is also `NA` for a file that does not exist or
-#'   that reaches the time limit.
+#'   when MediaInfo does not print exactly one line, for example for a
+#'   `section` it does not know. A parameter that `section` does not have gives
+#'   an empty value, and so does a known `section` that the file does not have,
+#'   such as `"Audio"` for a video with no sound. That value is `NA` when
+#'   `typed = TRUE` and `""` when `typed = FALSE`. A value is also `NA` for a
+#'   file that does not exist or that reaches the time limit.
 #'
 #'   The function does not stop at those files. It reads the other files, and
 #'   then gives one warning that names the files that do not exist or reached
@@ -117,7 +118,9 @@ mediainfo_parameter <- function(file, section, parameter, typed = TRUE) {
       out[[i]] <- NA_character_
       next
     }
-    # A missing section/parameter prints nothing or a multi-line dump.
+    # A missing parameter, or a known section the file lacks, prints one empty
+    # line (MediaInfoLib v26.10, 2026-10-18); an unknown section prints a
+    # multi-line dump. Anything but one line becomes NA.
     out[[i]] <- if (length(res) == 1) res else NA_character_
   }
   warn_unreadable(failed, timed_out)

@@ -67,8 +67,14 @@ giving it read permission, or removed with \code{\link[=unset_program]{unset_pro
 folder, and \code{\link[=set_program]{set_program()}} removes one in the current folder. A folder
 counts as empty only when it holds nothing, not even a hidden file or an
 empty folder. A folder the package cannot read never counts as empty. Both
-functions leave a folder that is not empty, and they give an error. The
-warning says which case you have: it advises
+functions leave a folder that is not empty. \code{\link[=set_program]{set_program()}} gives a
+\code{tidymedia_location_folder} error for one. \code{\link[=unset_program]{unset_program()}} removes the
+location files and empty folders at the two paths, and gives a
+\code{tidymedia_location_folder_kept} warning for the folder it leaves. If each
+path that holds something holds a folder that is not empty,
+\code{\link[=unset_program]{unset_program()}} gives the \code{tidymedia_location_folder} error and removes
+nothing. The warning from the \verb{find_*()} functions says which case you
+have: it advises
 \code{\link[=unset_program]{unset_program()}} when every folder it found is empty, and otherwise it
 names each folder to delete by hand.
 }

@@ -70,6 +70,13 @@ the call tries to remove it, the call gives a
 only at the current folder. A folder in the place of a location file saved
 before 0.2.0 stays, and \code{\link[=unset_program]{unset_program()}} removes it when it is empty.
 
+If the call cannot write the location file, it gives a
+\code{tidymedia_location_not_written} error. This happens when the file is there
+without write permission, when the folder that holds it has no write
+permission, or when that folder is missing and cannot be created. The error
+names the file in its message and in \code{tm_file}. The call does not replace a
+file that it cannot write, so the file keeps the location it held.
+
 For locations saved by versions before 0.2.0, see the section "Locations
 saved by earlier versions" in \code{\link[=find_ffmpeg]{find_ffmpeg()}}.
 }

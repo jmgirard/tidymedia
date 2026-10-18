@@ -177,7 +177,7 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
     # and program_status() with it (measured 2026-10-17). So with no file at
     # either path, a folder takes the unreadable class and fields (M140,
     # D103). unset_program() removes an empty folder at either path and
-    # refuses one that holds anything (D104), so the advice names
+    # keeps one that holds anything (D104, D105), so the advice names
     # unset_program() only when every folder present is empty. set_program()
     # clears an empty folder at the current path only.
     if (!any(is_file) && any(is_dir)) {
@@ -1050,8 +1050,14 @@ tm_na_string <- function(x) {
 #' folder, and [set_program()] removes one in the current folder. A folder
 #' counts as empty only when it holds nothing, not even a hidden file or an
 #' empty folder. A folder the package cannot read never counts as empty. Both
-#' functions leave a folder that is not empty, and they give an error. The
-#' warning says which case you have: it advises
+#' functions leave a folder that is not empty. [set_program()] gives a
+#' `tidymedia_location_folder` error for one. [unset_program()] removes the
+#' location files and empty folders at the two paths, and gives a
+#' `tidymedia_location_folder_kept` warning for the folder it leaves. If each
+#' path that holds something holds a folder that is not empty,
+#' [unset_program()] gives the `tidymedia_location_folder` error and removes
+#' nothing. The warning from the `find_*()` functions says which case you
+#' have: it advises
 #' [unset_program()] when every folder it found is empty, and otherwise it
 #' names each folder to delete by hand.
 #'
@@ -1148,6 +1154,13 @@ find_ffplay <- function() {
 #' `tidymedia_location_not_removed` error and writes nothing. The call looks
 #' only at the current folder. A folder in the place of a location file saved
 #' before 0.2.0 stays, and [unset_program()] removes it when it is empty.
+#'
+#' If the call cannot write the location file, it gives a
+#' `tidymedia_location_not_written` error. This happens when the file is there
+#' without write permission, when the folder that holds it has no write
+#' permission, or when that folder is missing and cannot be created. The error
+#' names the file in its message and in `tm_file`. The call does not replace a
+#' file that it cannot write, so the file keeps the location it held.
 #'
 #' For locations saved by versions before 0.2.0, see the section "Locations
 #' saved by earlier versions" in [find_ffmpeg()].
@@ -1370,10 +1383,14 @@ set_ffplay <- function(location, confirm = TRUE) {
 #' one before 0.2.0. If the folder is empty, the call removes it with the
 #' files. A folder counts as empty only when it holds nothing, not even a
 #' hidden file or an empty folder, and a folder the package cannot read never
-#' counts as empty. If a folder is not empty, the call gives a
-#' `tidymedia_location_folder` error and removes nothing, not even a file at
-#' the other path. The error lists each such folder in its message and in
-#' `tm_files`. Delete those folders by hand, then call again.
+#' counts as empty. A folder that is not empty stays. The call removes the
+#' file or the empty folder at the other path, and then gives a
+#' `tidymedia_location_folder_kept` warning. The warning names the folder that
+#' stays in its message and in `tm_files`. If each path that holds something
+#' holds a folder that is not empty, the call gives a
+#' `tidymedia_location_folder` error and removes nothing. The error lists each
+#' such folder in its message and in `tm_files`. Delete those folders by hand,
+#' then call again.
 #'
 #' @param program A string naming the program to forget. One of `"ffmpeg"`,
 #'   `"ffprobe"`, `"ffplay"` or `"mediainfo"`. There is no default, because the

@@ -45,10 +45,22 @@
   path, and `unset_program()` removes one at either path. Before,
   `set_program()` stopped with "cannot open the connection", and
   `unset_program()` refused with advice about write access. A folder that
-  holds anything, hidden files included, is left in place. Both functions
-  then stop with the new `tidymedia_location_folder` error, which names the
-  folder in `tm_files`. `set_program()` stops before it asks, and
-  `unset_program()` removes nothing.
+  holds anything, hidden files included, is left in place. `set_program()`
+  then stops before it asks, with the new `tidymedia_location_folder` error,
+  which names the folder in `tm_files`. `unset_program()` still removes the
+  location file or the empty folder at the other path, so a location beside
+  such a folder can be forgotten. It then gives the new
+  `tidymedia_location_folder_kept` warning, which names the folder it left.
+  If it has nothing else to remove, it gives the `tidymedia_location_folder`
+  error and removes nothing.
+
+* **`set_program()` now reports a location file it cannot write with a
+  tidymedia error.** The file can lack write permission, or its folder can
+  lack write permission or be impossible to create. Before, the call stopped
+  with a "Permission denied" warning and R's "cannot open the connection"
+  error. It now gives the `tidymedia_location_not_written` error, which names
+  the file in `tm_file`, and no warning. A file without write permission
+  keeps the location it held.
 
 * **`ffmpeg()` now runs a program whose location holds a space.** It put the
   location into the command unquoted, so the shell split it at the space.

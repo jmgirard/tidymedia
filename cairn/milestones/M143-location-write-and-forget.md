@@ -127,7 +127,7 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
       error, and give the folder-kept warning after a removal that took.
       Keep the `tidymedia_location_folder` error for the AC4 case. Update
       the comment at `R/program_management.R:179-183`.
-- [ ] T3: Update the roxygen for `?set_program`, `?unset_program` and
+- [x] T3: Update the roxygen for `?set_program`, `?unset_program` and
       `?find_ffmpeg` in `R/program_management.R`, run
       `devtools::document()`, and edit `NEWS.md` as AC5 says. Derive each
       new claim from an executed call.
@@ -151,6 +151,7 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
 - 2026-10-18: T1 done: AC1 and AC2 tests failed first (base `simpleError` plus one base warning), then `tm_set_program()` catches the `dir.create()`/`writeLines()` failure as `tidymedia_location_not_written` with the warnings muffled; the `find_program()` comment citing the row now names the class; full `devtools::test()` clean.
 - 2026-10-18: T2 done: M141's refuse-before-removing test rewritten into the AC3 test (3 shapes x 2 paths x file or empty folder, memo asserted), a mode-0333 case, and the AC4 test (nothing or a second full folder); both new tests failed first; `tm_unset_program()` now refuses only when every present path is a full folder, removes the rest, and warns `tidymedia_location_folder_kept` after the removal; full `devtools::test()` clean.
 - 2026-10-18: the folder-kept warning says `find_<program>()` warns about the folder while the program is not on the `PATH`, read from an executed `unset_program()` then `find_ffmpeg()` with `PATH` empty.
+- 2026-10-18: T3 done: `?set_program` gains the not-written paragraph, `?unset_program` and `?find_ffmpeg` describe the kept folder, its warning and the remaining error, the `find_program()` comment at the folder branch now says "keeps"; `devtools::document()` rewrote the three Rd files; NEWS edits the M141 bullet in place (unreleased, D091) and adds one bullet for the not-written error. The simple-english hook's remaining NEWS hits are in released sections, left as they are.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

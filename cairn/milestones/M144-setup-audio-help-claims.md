@@ -91,13 +91,13 @@ edit it.
       `typed = FALSE`. Record the results and the MediaInfo version in the work log, then
       correct claims (c), (d) and (e). If a result differs from what the code path promises,
       add a candidate row for that code bug.
-- [ ] T3: Correct claims (h) to (k) in `R/task-doc.R` and `R/ffmpeg.R`, with the refusal message
+- [x] T3: Correct claims (h) to (k) in `R/task-doc.R` and `R/ffmpeg.R`, with the refusal message
       and the `hardware_param()` copy of (j). Grep `tests/` for each changed phrase and keep
       any test that pins it passing.
-- [ ] T4: Grep `R/` for a distinctive phrase of each claim. Add one candidate row listing any
+- [x] T4: Grep `R/` for a distinctive phrase of each claim. Add one candidate row listing any
       copy outside the source lines Scope In names, such as the "first such call" sentence in
       `hardware_probe_sentences()` that repeats claim (b) on about 16 pages.
-- [ ] T5: Add the series' `## Documentation` bullet to `NEWS.md`. Avoid the phrases that
+- [x] T5: Add the series' `## Documentation` bullet to `NEWS.md`. Avoid the phrases that
       `test-timeout-silence.R` fences out of `NEWS.md`.
 - [ ] T6: Run `devtools::document()`, then the full `devtools::test()` and `devtools::check()`.
       Read each changed sentence against its code site and record one line per claim in the

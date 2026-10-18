@@ -4732,3 +4732,27 @@ are there.
 
 **Falsified by** a folder with contents at a location path that a caller wants the
 package to clear, or an empty folder that a caller needs to keep.
+
+## D105 — `unset_program()` removes what it can and leaves a folder with contents with a warning (2026-10-18, from M143's plan; supersedes D104's rule that `unset_program()` stops before it removes anything, and leaves D104's empty-folder rule, its `set_program()` rule, its error class and its memo rule standing)
+
+**Context:** Under D104, `unset_program()` stops with the
+`tidymedia_location_folder` error before it removes anything if either location
+path holds a folder with contents. The lookup warnings tell the caller to use
+`unset_program()` to forget a location file. Beside such a folder that advice
+fails, and the caller cannot forget the file until they delete the folder by hand.
+
+**Decision:** `unset_program()` removes each location file and each empty folder,
+and it leaves each folder with contents in place. After a removal that took, it
+gives a warning of the new class `tidymedia_location_folder_kept`, with the
+fields `tm_program` and `tm_files`. If each path that holds something holds a
+folder with contents, it still stops with D104's `tidymedia_location_folder`
+error and removes nothing. Removing the file beside the folder leaves the lookup
+with no location, which is what forgetting means, so it does not make the lookup
+answer with a different location.
+
+**Rejected:** Keeping the refusal and changing the advice left the caller unable
+to forget a file. Reusing the `tidymedia_location_folder` class for the warning
+lets a handler written for the error unwind the call.
+
+**Falsified by** a caller who needs `unset_program()` to remove nothing while a
+folder with contents is present.

@@ -1,13 +1,13 @@
 # M140: A folder at a remembered-location path warns instead of stopping, and `ffmpeg()` quotes its program's location
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — it changes what the exported program lookups, `program_status()` and `ffmpeg()` do
-- **Branch/PR:** —
+- **Branch/PR:** m140-folder-config-and-spaced-ffmpeg
 
 ## Goal
 
@@ -77,7 +77,7 @@ unquoted by the double quotes and are not claimed.
 
 ## Tasks
 
-- [ ] T1: Write the folder tests first, beside the existing unreadable tests in
+- [x] T1: Write the folder tests first, beside the existing unreadable tests in
       `tests/testthat/test-program-location-repair.R` (near :315). Under
       `tm_redirect_config()`, loop over `tm_program_vocabulary` with a folder at
       `tm_config_file(program)`, and again with a folder at the legacy path and no
@@ -85,7 +85,7 @@ unquoted by the double quotes and are not claimed.
       "Delete", no `unset_program`) under `cli.width = 1000`. Assert
       `program_status()`'s `program` column and exactly one warning with
       `tm_collect_warnings()`. See each red against `master`.
-- [ ] T2: In `find_program()` (`R/program_management.R:148-171`), test the
+- [x] T2: In `find_program()` (`R/program_management.R:148-171`), test the
       config path for a folder before `readLines()`. A folder gives the
       `tidymedia_location_unreadable` warning with its own message: it names the
       folder, says to delete it, and then to use `set_{program}()`. Keep the class
@@ -119,6 +119,7 @@ unquoted by the double quotes and are not claimed.
 - 2026-10-17: question set: Windows item (a) — leave it for later; set and unset over a folder — candidate row; route — one milestone.
 - 2026-10-17: plan gate chose a folder test before `readLines()` over catching any `readLines()` error, because a folder takes advice of its own (delete it by hand) that a generic read error cannot give; falsified by another read failure, such as a file with no read permission, stopping the lookup.
 - 2026-10-17: plan gate chose double quotes in `ffmpeg()` over `shQuote()`, because the two sibling direct commands already use double quotes and a matching form keeps the three alike; falsified by a location that the double-quoted form breaks and `shQuote()` would not.
+- 2026-10-17: T1 tests written in `test-program-location-repair.R` and seen red on master (`cannot open the connection`); T2 adds a `dir.exists()` guard above `readLines()` in `find_program()` with its own delete-the-folder message; full suite 0 failed, 1818 tests.
 
 ## Decisions
 

@@ -144,6 +144,26 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
     if (!file.exists(config)) {
       config <- tm_config_file(program, tm_legacy_config_dir())
     }
+    # A folder at the config path passes `file.exists()`, and `readLines()` on
+    # it stops with "cannot open the connection", which stopped every lookup
+    # and program_status() with it (measured 2026-10-17). Neither repair the
+    # unreadable warning below names can clear a folder: unset_program()
+    # removes files only, and set_program() cannot write over one. So this
+    # case takes the same class and fields with advice of its own (M140).
+    if (dir.exists(config)) {
+      cli::cli_warn(
+        c(
+          "{program} is configured in {.file {config}}, but that path is a \\
+           folder, not a file.",
+          "i" = "Delete the folder, then use {.fn set_{program}} to point \\
+                 tidymedia at the binary again."
+        ),
+        class = "tidymedia_location_unreadable",
+        tm_program = program,
+        tm_file = config
+      )
+      return(NULL)
+    }
     # If a user config file exists, read it in
     if (file.exists(config)) {
       location <- readLines(config)

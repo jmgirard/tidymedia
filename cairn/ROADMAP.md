@@ -12,7 +12,7 @@ _Last hygiene check: 2026-10-17 (`/cairn-triage` pass: dropped on principle unde
 | M137 | `ffm_jobs()` lists every container the package itself writes | done | — | normal | milestones/archive/M137-jobs-vocabulary-round-trip.md |
 | M138 | The shipped docs and the remembered-location checks stop assuming what the host's FFmpeg build and `which` provide | done | — | high | milestones/archive/M138-encoder-and-location-portability.md |
 | M139 | A failed FFmpeg run names the encoder this build lacks | done | M138 | normal | milestones/archive/M139-missing-encoder-front-door.md |
-| M140 | A folder at a remembered-location path warns instead of stopping, and `ffmpeg()` quotes its program's location | planned | — | normal | milestones/M140-folder-config-and-spaced-ffmpeg.md |
+| M140 | A folder at a remembered-location path warns instead of stopping, and `ffmpeg()` quotes its program's location | in-progress | — | normal | milestones/M140-folder-config-and-spaced-ffmpeg.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

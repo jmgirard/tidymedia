@@ -68,6 +68,18 @@
   `ffmpeg_codecs()` and `ffmpeg_encoders()` call `ffmpeg()`, so the fix covers
   them too.
 
+## Documentation
+
+* **Help pages that said something the code does not do now say what it
+  does.** These pages changed: `?refresh_ffmpeg_capabilities`,
+  `?install_on_win`, `?local_timeout`, `?mediainfo_parameter`,
+  `?audio_stream` and `?hardware_encoder`. The `hardware` argument of the task
+  functions changed too. So did the audio track check of `extract_audio()`,
+  `convert_audio()`, `normalize_audio()` and their batch forms. So did the
+  return value of the batch task functions. For example, a batch's provenance
+  manifest is an attribute, not a column. A `.webm` output needs an AV1-family
+  codec, because WebM does not take HEVC.
+
 # tidymedia 0.2.2
 
 The package no longer assumes things about the machine it runs on that are not

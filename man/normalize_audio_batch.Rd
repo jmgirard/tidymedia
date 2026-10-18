@@ -44,9 +44,9 @@ that row. Any other columns are ignored.}
 
 \item{target_loudness, true_peak, loudness_range}{The EBU R128 loudness targets
 applied to every row, unless \code{jobs} carries a column of the same name
-(see \code{jobs}). Defaults follow EBU Recommendation R 128 (2014):
-\code{target_loudness = -23} LUFS, \code{true_peak = -1} dBTP,
-\code{loudness_range = 7} LU.}
+(see \code{jobs}). The defaults \code{target_loudness = -23} LUFS and
+\code{true_peak = -1} dBTP follow EBU Recommendation R 128 (2014). The
+default \code{loudness_range} is \code{7} LU.}
 
 \item{channels}{The output channel count applied to every row, unless
 \code{jobs} carries a \code{channels} column, e.g. \code{1} to downmix to
@@ -152,7 +152,7 @@ The warning names every affected row. Naming a track silences it. Use the
 \code{audio_stream} argument, or an \code{audio_stream} cell on every row.
 \code{suppressWarnings(classes = "tidymedia_dropped_audio")} silences it
 too.
-The check costs \strong{one FFprobe call per distinct input} it has to probe. A repeated input is probed once, and a row that names a track is not probed at all. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. Those probes run \strong{one at a time, before any row starts}, so \code{parallel} does not reach them. A sweep long enough to look like a hang reports its progress. The check never runs under
+The check costs \strong{one FFprobe call per distinct input} it has to probe. A repeated input is probed once, and a row that names a track is not probed at all. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently, except that a probe that reaches the time limit gives a \code{tidymedia_probe_timeout} warning. Those probes run \strong{one at a time, before any row starts}, so \code{parallel} does not reach them. A sweep long enough to look like a hang reports its progress. The check never runs under
 \code{run = FALSE} and never changes any compiled command. It is skipped
 entirely when every row names a track. Under \code{two_pass = TRUE}, the
 warning comes \emph{before} the analysis pass. So it arrives while adding

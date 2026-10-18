@@ -124,7 +124,7 @@ carries tracks that the output will not. \code{\link{extract_audio}} and
 \code{\link{convert_audio}} emit the same warning. Naming a track with
 \code{audio_stream} silences it, as does
 \code{suppressWarnings(classes = "tidymedia_dropped_audio")}.
-The check costs \strong{one FFprobe call per distinct input}, which is one call here, because this function takes a single \code{infile}. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently. It never runs under \code{run = FALSE},
+The check costs \strong{one FFprobe call per distinct input}, which is one call here, because this function takes a single \code{infile}. The warning is given when FFprobe is available and the input can be probed. Otherwise the check is skipped silently, except that a probe that reaches the time limit gives a \code{tidymedia_probe_timeout} warning. It never runs under \code{run = FALSE},
 and never changes the compiled command. Under \code{two_pass = TRUE}, the
 warning comes \emph{before} the analysis pass. So it arrives while adding
 \code{audio_stream} can still save that pass.

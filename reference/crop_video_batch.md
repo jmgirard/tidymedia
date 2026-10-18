@@ -166,8 +166,11 @@ crop_video_batch(
 ## Value
 
 The `jobs` tibble with an added `command` column. When `run = TRUE`, it
-also has a `success` column, plus `verified` or a provenance manifest,
-each when requested through `...`. See
+also has a `success` column, plus a `verified` column when requested
+through `...`. A run also attaches a provenance manifest when requested
+through `...`, as an attribute, not a column. Read it with
+[`ffm_manifest`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md).
+See
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
 
 ## See also

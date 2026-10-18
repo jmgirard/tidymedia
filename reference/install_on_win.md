@@ -158,6 +158,12 @@ The call gives an error of its own class in these cases:
 - `tidymedia_program_unusable`: the archive made `ffmpeg` or `ffprobe`,
   but the file cannot be used.
 
+- An error of
+  [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md),
+  such as `tidymedia_location_not_written`: at the end, the call saves
+  the location of each program it unpacked and can use, and saving one
+  location failed.
+
 ## See also
 
 [`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)

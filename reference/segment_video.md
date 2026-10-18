@@ -94,8 +94,10 @@ segment_video(
   backend uses its own encoder for the family of `video_codec`. For
   example, `"libx264"` becomes `"h264_nvenc"` or `"h264_videotoolbox"`.
   With the default `video_codec = NULL`, the H.264 family is assumed. So
-  a non-H.264 container, such as `.webm`, needs an explicit HEVC- or
-  AV1-family `video_codec` (AV1 only under `"nvenc"`). See
+  a container that does not take H.264 needs an explicit `video_codec`
+  of a family it takes. `.webm` takes neither H.264 nor HEVC, so it
+  needs an AV1-family `video_codec`, which works only under `"nvenc"`.
+  See
   [`has_hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
   for availability and its caveats. Resolving a hardware backend asks
   this FFmpeg build which encoders it has. So the first such call that

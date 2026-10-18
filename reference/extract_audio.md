@@ -80,9 +80,11 @@ When no `audio_stream` is named and the input has tracks that the output
 will not carry, the function warns. The check costs **one FFprobe call
 per distinct input**, which is one call here, because this function
 takes a single `infile`. The warning is given when FFprobe is available
-and the input can be probed. Otherwise the check is skipped silently. It
-never runs under `run = FALSE`, and never changes the compiled command.
-Suppress it by naming a track with `audio_stream`, or by class with
+and the input can be probed. Otherwise the check is skipped silently,
+except that a probe that reaches the time limit gives a
+`tidymedia_probe_timeout` warning. It never runs under `run = FALSE`,
+and never changes the compiled command. Suppress it by naming a track
+with `audio_stream`, or by class with
 `suppressWarnings(classes = "tidymedia_dropped_audio")`.
 
 To switch the check off and skip its FFprobe call, use

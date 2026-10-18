@@ -88,9 +88,9 @@ much audio it selects depends on the function.</p><ul><li><p>The first-track fam
 must pick one track when you name none. A function that carries audio
 through can keep all the tracks its container holds.</p></li>
 <li><p>On the functions that pass video through, an input with no audio gives an
-output with no audio, not an error. On <code><a href="separate_audio_video.html">separate_audio_video()</a></code> and
-<code><a href="normalize_audio.html">normalize_audio()</a></code>, whose output <em>is</em> audio, that input gives an
-FFmpeg error.</p></li>
+output with no audio, not an error. On <code><a href="separate_audio_video.html">separate_audio_video()</a></code>,
+<code><a href="extract_audio.html">extract_audio()</a></code>, <code><a href="convert_audio.html">convert_audio()</a></code> and <code><a href="normalize_audio.html">normalize_audio()</a></code>, whose output
+<em>is</em> audio, that input gives an FFmpeg error.</p></li>
 </ul><p><code>audio_input = NULL</code> is different: it selects no audio at all, so the output
 has <strong>no audio</strong>. A silent output is the default for <code><a href="compare_videos.html">compare_videos()</a></code>
 and <code><a href="picture_in_picture.html">picture_in_picture()</a></code>. With several inputs, no choice of which one to

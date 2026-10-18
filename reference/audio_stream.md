@@ -63,7 +63,9 @@ How much audio it selects depends on the function.
 
 - On the functions that pass video through, an input with no audio gives
   an output with no audio, not an error. On
-  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
+  [`separate_audio_video()`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md),
+  [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
+  [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md)
   and
   [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md),
   whose output *is* audio, that input gives an FFmpeg error.

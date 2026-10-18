@@ -116,9 +116,12 @@ environment such as <code><a href="https://rdrr.io/r/base/environment.html" clas
 it. So when that function ends, the limit that <code><a href="with_timeout.html">with_timeout()</a></code> set is in
 force. Put the inner limit in a function of its own, or use only one of
 the two.</p></li>
-</ul><p>The first two cases also apply to <code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::local_options()</a></code>, because R's exit
-handlers work this way. They do not apply to <code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::with_options()</a></code>, which
-puts the option back itself.</p>
+</ul><p>All three cases also apply to <code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::local_options()</a></code>, because R's exit
+handlers work this way. The third case happens when
+<code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::local_options()</a></code> is written directly inside the expression of
+<code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::with_options()</a></code>. Setting an option with <code><a href="https://withr.r-lib.org/reference/with_options.html" class="external-link">withr::with_options()</a></code>
+alone avoids all three cases, because it puts the option back when its
+expression ends.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

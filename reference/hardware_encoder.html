@@ -125,9 +125,10 @@ names and the same check. These task functions have that argument:
 <code><a href="picture_in_picture.html">picture_in_picture</a></code>, and <code><a href="separate_audio_video.html">separate_audio_video</a></code>
 (and their <code>_batch</code> forms). Some of these functions have a
 <code>video_codec</code> that defaults to <code>NULL</code> (no codec named), and they
-assume the H.264 family. So a container that does not take H.264 (e.g.
-<code>.webm</code>) needs an explicit HEVC- or AV1-family <code>video_codec</code>.
-AV1 works only under <code>"nvenc"</code>. Hardware <em>decoding</em>
+assume the H.264 family. So a container that does not take H.264 needs an
+explicit <code>video_codec</code> of a family it takes. <code>.webm</code> takes neither
+H.264 nor HEVC, so it needs an AV1-family <code>video_codec</code>. AV1 works only
+under <code>"nvenc"</code>. Hardware <em>decoding</em>
 (<code>-hwaccel</code>) and GPU filter pipelines are out of scope. Use the
 <code><a href="ffmpeg.html">ffmpeg</a></code> direct command for those.</p>
     </div>

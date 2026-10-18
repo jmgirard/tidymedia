@@ -116,6 +116,31 @@
   [`ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md),
   so the fix covers them too.
 
+### Documentation
+
+- **Help pages that said something the code does not do now say what it
+  does.** These pages changed:
+  [`?refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md),
+  [`?install_on_win`](https://jmgirard.github.io/tidymedia/reference/install_on_win.md),
+  [`?local_timeout`](https://jmgirard.github.io/tidymedia/reference/local_timeout.md),
+  [`?mediainfo_parameter`](https://jmgirard.github.io/tidymedia/reference/mediainfo_parameter.md),
+  [`?audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
+  and
+  [`?hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md).
+  The help text also changed for the `hardware` argument of the task
+  functions. It changed for the warning about dropped audio tracks in
+  [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),
+  [`convert_audio()`](https://jmgirard.github.io/tidymedia/reference/convert_audio.md),
+  [`normalize_audio()`](https://jmgirard.github.io/tidymedia/reference/normalize_audio.md)
+  and their batch forms. It changed for the return value of seven batch
+  functions, such as
+  [`extract_audio_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_audio_batch.md),
+  too. For example, a batch’s provenance manifest is an attribute, not a
+  column. With `hardware`, a `.webm` output needs an AV1-family
+  `video_codec`, because WebM takes neither H.264 nor HEVC. AV1 works
+  only under `hardware = "nvenc"`. The error for `hardware` with
+  `video_codec = "copy"` gives the same advice.
+
 ## tidymedia 0.2.2
 
 CRAN release: 2026-10-11

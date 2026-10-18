@@ -72,8 +72,9 @@ and
 [`separate_audio_video`](https://jmgirard.github.io/tidymedia/reference/separate_audio_video.md)
 (and their `_batch` forms). Some of these functions have a `video_codec`
 that defaults to `NULL` (no codec named), and they assume the H.264
-family. So a container that does not take H.264 (e.g. `.webm`) needs an
-explicit HEVC- or AV1-family `video_codec`. AV1 works only under
+family. So a container that does not take H.264 needs an explicit
+`video_codec` of a family it takes. `.webm` takes neither H.264 nor
+HEVC, so it needs an AV1-family `video_codec`. AV1 works only under
 `"nvenc"`. Hardware *decoding* (`-hwaccel`) and GPU filter pipelines are
 out of scope. Use the
 [`ffmpeg`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md)

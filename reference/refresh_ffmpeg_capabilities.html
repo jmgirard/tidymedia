@@ -61,8 +61,11 @@ has. The next query then asks FFmpeg again.</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The first call in an R session to <code><a href="has_encoder.html">has_encoder</a></code>, or one that
 uses <code>hardware = "nvenc"</code> or <code>hardware = "videotoolbox"</code>, asks
-FFmpeg which encoders it has. The package remembers that answer for the rest
-of the session. Later calls reuse
+FFmpeg which encoders it has, unless something has already filled the record.
+A call with <code>hardware</code> does not ask while it picks the encoder when the
+<code>tidymedia.hardware_encoders</code> option is set. <code><a href="has_encoder.html">has_encoder()</a></code> does
+not ask when tidymedia cannot find FFmpeg. The package remembers the answer
+for the rest of the session. Later calls reuse
 it and do not start FFmpeg again each time, so a large batch stays fast.</p>
 <p>A run that FFmpeg refuses can also fill the record. After such a run,
 <code><a href="ffm_run.html">ffm_run</a></code> can ask FFmpeg for its encoders and for the codecs it
@@ -91,10 +94,14 @@ encoder and hardware encoder.</p>
     <h2 id="parallel-workers">Parallel workers<a class="anchor" aria-label="anchor" href="#parallel-workers"></a></h2>
 
 
-<p>Each R process keeps its own record, and a worker does not get the record of
-your session. So in a batch on <code>W</code> workers, each worker asks FFmpeg
-once. Your session can also ask once, before the jobs start. Discarding the
-record in your session does not reach the workers.</p>
+<p>Each R process keeps its own record. A worker that starts as a new R
+process, as under <code>future::plan(multisession)</code>, does not get the record
+of your session. So in a batch on <code>W</code> such workers, each worker asks
+FFmpeg once. Your session can also ask once, before the jobs start. A worker
+forked from your session, as under <code>future::plan(multicore)</code>, starts
+with a copy of your session's record as it was when the worker started.
+Discarding the record in your session does not reach a worker that has
+already started.</p>
 <p>The <code>tidymedia.hardware_encoders</code> option works in a different way. The
 package copies your value into each worker for the duration of the call, and
 then puts back the worker's own value. So a batch under your setting does not

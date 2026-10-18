@@ -106,8 +106,11 @@ extract_audio_batch(
 ## Value
 
 The `jobs` tibble with an added `command` column. When `run = TRUE`, it
-also has a `success` column, plus `verified` or a provenance manifest,
-each when requested through `...`. See
+also has a `success` column, plus a `verified` column when requested
+through `...`. A run also attaches a provenance manifest when requested
+through `...`, as an attribute, not a column. Read it with
+[`ffm_manifest`](https://jmgirard.github.io/tidymedia/reference/ffm_manifest.md).
+See
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
 
 ## Details
@@ -118,12 +121,13 @@ The warning names every affected row. The check costs **one FFprobe call
 per distinct input** it has to probe. A repeated input is probed once,
 and a row that names a track is not probed at all. The warning is given
 when FFprobe is available and the input can be probed. Otherwise the
-check is skipped silently. Those probes run **one at a time, before any
-row starts**, so `parallel` does not reach them. A sweep long enough to
-look like a hang reports its progress. The check never runs under
-`run = FALSE`, never changes any compiled command, and is skipped
-entirely when every row names a track. Suppress it by class with
-`suppressWarnings(classes = "tidymedia_dropped_audio")`.
+check is skipped silently, except that a probe that reaches the time
+limit gives a `tidymedia_probe_timeout` warning. Those probes run **one
+at a time, before any row starts**, so `parallel` does not reach them. A
+sweep long enough to look like a hang reports its progress. The check
+never runs under `run = FALSE`, never changes any compiled command, and
+is skipped entirely when every row names a track. Suppress it by class
+with `suppressWarnings(classes = "tidymedia_dropped_audio")`.
 
 To switch the check off and skip the whole sweep, use
 `options(tidymedia.check_tracks = FALSE)` for the session. Use

@@ -129,16 +129,15 @@ normalize_audio(
   [`segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md)
   and
   [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
-  and their `_batch` forms. This function reads `NULL` as the first
-  track only. The two-pass analysis measures each audio track, but the
-  correction uses one set of measurements. Normalizing several tracks at
-  once would apply one track's measurements to all of them. Under
-  `two_pass = TRUE`, the analysis pass measures this same track. Only
-  the named track reaches the output, and no video does, whatever the
-  container. So an output name with a video extension gives a video file
-  that holds only audio. An input with no audio at all is an FFmpeg
-  error. A track the input does not have gives an FFmpeg error, not an R
-  one. See
+  and their `_batch` forms. The function normalizes only one track,
+  because the correction uses one set of measurements. Normalizing
+  several tracks at once would apply one track's measurements to all of
+  them. Under `two_pass = TRUE`, the analysis pass measures this same
+  track. Only the named track reaches the output, and no video does,
+  whatever the container. So an output name with a video extension gives
+  a video file that holds only audio. An input with no audio at all is
+  an FFmpeg error. A track the input does not have gives an FFmpeg
+  error, not an R one. See
   [`audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
   for how this differs from `audio_input`, the input index on
   [`compare_videos`](https://jmgirard.github.io/tidymedia/reference/compare_videos.md)
@@ -183,10 +182,11 @@ as does `suppressWarnings(classes = "tidymedia_dropped_audio")`. The
 check costs **one FFprobe call per distinct input**, which is one call
 here, because this function takes a single `infile`. The warning is
 given when FFprobe is available and the input can be probed. Otherwise
-the check is skipped silently. It never runs under `run = FALSE`, and
-never changes the compiled command. Under `two_pass = TRUE`, the warning
-comes *before* the analysis pass. So it arrives while adding
-`audio_stream` can still save that pass.
+the check is skipped silently, except that a probe that reaches the time
+limit gives a `tidymedia_probe_timeout` warning. It never runs under
+`run = FALSE`, and never changes the compiled command. Under
+`two_pass = TRUE`, the warning comes *before* the analysis pass. So it
+arrives while adding `audio_stream` can still save that pass.
 
 To switch the check off and skip its FFprobe call, use
 `options(tidymedia.check_tracks = FALSE)` for the session. Use

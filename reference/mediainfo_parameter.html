@@ -86,11 +86,12 @@ returns strings.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A vector with one value for each element of <code>file</code>. A value is <code>NA</code>
-when MediaInfo prints more than one line, for example for a <code>section</code> it
-does not know. A parameter that <code>section</code> does not have gives an empty
-value. That value is <code>NA</code> when <code>typed = TRUE</code> and <code>""</code> when
-<code>typed = FALSE</code>. A value is also <code>NA</code> for a file that does not exist or
-that reaches the time limit.</p>
+when MediaInfo does not print exactly one line, for example for a
+<code>section</code> it does not know. A parameter that <code>section</code> does not have gives
+an empty value, and so does a known <code>section</code> that the file does not have,
+such as <code>"Audio"</code> for a video with no sound. That value is <code>NA</code> when
+<code>typed = TRUE</code> and <code>""</code> when <code>typed = FALSE</code>. A value is also <code>NA</code> for a
+file that does not exist or that reaches the time limit.</p>
 <p>The function does not stop at those files. It reads the other files, and
 then gives one warning that names the files that do not exist or reached
 the limit. See <code><a href="with_timeout.html">with_timeout()</a></code> for the time limit.</p>

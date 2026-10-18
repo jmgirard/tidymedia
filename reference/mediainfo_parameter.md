@@ -34,11 +34,12 @@ mediainfo_parameter(file, section, parameter, typed = TRUE)
 ## Value
 
 A vector with one value for each element of `file`. A value is `NA` when
-MediaInfo prints more than one line, for example for a `section` it does
-not know. A parameter that `section` does not have gives an empty value.
-That value is `NA` when `typed = TRUE` and `""` when `typed = FALSE`. A
-value is also `NA` for a file that does not exist or that reaches the
-time limit.
+MediaInfo does not print exactly one line, for example for a `section`
+it does not know. A parameter that `section` does not have gives an
+empty value, and so does a known `section` that the file does not have,
+such as `"Audio"` for a video with no sound. That value is `NA` when
+`typed = TRUE` and `""` when `typed = FALSE`. A value is also `NA` for a
+file that does not exist or that reaches the time limit.
 
 The function does not stop at those files. It reads the other files, and
 then gives one warning that names the files that do not exist or reached

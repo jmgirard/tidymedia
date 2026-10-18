@@ -83,11 +83,16 @@ and there is no error.
   set is in force. Put the inner limit in a function of its own, or use
   only one of the two.
 
-The first two cases also apply to
+All three cases also apply to
 [`withr::local_options()`](https://withr.r-lib.org/reference/with_options.html),
-because R's exit handlers work this way. They do not apply to
-[`withr::with_options()`](https://withr.r-lib.org/reference/with_options.html),
-which puts the option back itself.
+because R's exit handlers work this way. The third case happens when
+[`withr::local_options()`](https://withr.r-lib.org/reference/with_options.html)
+is written directly inside the expression of
+[`withr::with_options()`](https://withr.r-lib.org/reference/with_options.html).
+Setting an option with
+[`withr::with_options()`](https://withr.r-lib.org/reference/with_options.html)
+alone avoids all three cases, because it puts the option back when its
+expression ends.
 
 ## See also
 

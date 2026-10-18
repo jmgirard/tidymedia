@@ -38,6 +38,40 @@ test_that("mediainfo() refuses a missing MediaInfo and names itself (M142)", {
   expect_identical(cnd$call[[1]], quote(mediainfo))
 })
 
+test_that("the lookup's warning reaches the caller with its class (M142)", {
+  # Every find_program() path that returns NULL warns first. Before M142 the
+  # lookup ran inside guard_timeout(), which held its warnings: ffmpeg() gave
+  # them again as plain warnings, and ffprobe() and mediainfo() lost them when
+  # system() then stopped.
+  testthat::local_mocked_bindings(
+    find_program = function(program, ...) {
+      cli::cli_warn("M142 stub: {program} is gone.",
+                    class = "tidymedia_location_gone")
+      NULL
+    },
+    .package = "tidymedia"
+  )
+  calls <- list(ffmpeg = quote(ffmpeg("-version")),
+                ffprobe = quote(ffprobe("-version")),
+                mediainfo = quote(mediainfo("--Version")))
+  for (nm in names(calls)) {
+    seen <- character()
+    cnd <- tryCatch(
+      withCallingHandlers(
+        eval(calls[[nm]]),
+        warning = function(w) {
+          seen <<- c(seen, class(w))
+          invokeRestart("muffleWarning")
+        }
+      ),
+      error = function(e) e
+    )
+    expect_true("tidymedia_location_gone" %in% seen, info = nm)
+    expect_match(conditionMessage(cnd), "Could not locate", fixed = TRUE,
+                 info = nm)
+  }
+})
+
 test_that("ffmpeg_codecs() refuses a missing FFmpeg and names itself (M142)", {
   cnd <- missing_program_refusal(ffmpeg_codecs())
   expect_identical(cli::ansi_strip(conditionMessage(cnd)),

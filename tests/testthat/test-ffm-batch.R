@@ -140,6 +140,27 @@ test_that("ffm_batch() names one job whose .f returned no pipeline (M142)", {
   expect_match(msg, "Job 2 returned something else.", fixed = TRUE)
 })
 
+test_that("ffm_batch() lists 20 bad jobs in full and shortens 25 (M142)", {
+  # NEWS.md states this limit; cli sets it. Line breaks are joined, because
+  # cli wraps a long bullet, and the ellipsis is cli's, which is `...` in a
+  # locale without UTF-8.
+  refusal_for <- function(n) {
+    jobs <- tibble::tibble(input = paste0("in", seq_len(n), ".mp4"),
+                           output = paste0("out", seq_len(n), ".mp4"))
+    msg <- batch_refusal(jobs, function(...) "not a pipeline", run = FALSE)
+    gsub("\\s+", " ", msg)
+  }
+  ellipsis <- cli::symbol$ellipsis
+  msg20 <- refusal_for(20)
+  expect_match(msg20, paste0("Jobs ", paste(1:19, collapse = ", "),
+                             ", and 20 returned something else."),
+               fixed = TRUE)
+  expect_no_match(msg20, ellipsis, fixed = TRUE)
+  msg25 <- refusal_for(25)
+  expect_match(msg25, ellipsis, fixed = TRUE)
+  expect_match(msg25, "and 25 returned something else.", fixed = TRUE)
+})
+
 test_that("ffm_batch() names every job with an invalid verify spec (M142)", {
   # Resolved before any encode, so this aborts without needing FFmpeg.
   jobs <- tibble::tibble(input = c("a.mp4", "b.mp4", "c.mp4"),

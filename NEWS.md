@@ -2,9 +2,10 @@
 
 ## Bug fixes
 
-* **`ffm_batch()` now names every bad job when it refuses a batch.** This
+* **`ffm_batch()` now names the bad jobs when it refuses a batch.** This
   covers two refusals: `.f` returned something other than a pipeline, or a
-  `verify` function gave an invalid spec. Before, with two or more bad jobs,
+  `verify` function gave an invalid spec. The message lists up to 20 job
+  numbers in full and shortens a longer list. Before, with two or more bad jobs,
   the call stopped with "length(object) == 1 is not TRUE" in place of its
   own message. One bad job at a row other than 1 read "Jobs 2" in place of
   "Job 2".
@@ -14,7 +15,10 @@
   MediaInfo).** Before, `ffmpeg()` returned an empty result, and `ffprobe()`
   and `mediainfo()` stopped with "non-empty character argument expected".
   `ffmpeg_codecs()` and `ffmpeg_encoders()`, which stopped with "argument of
-  length 0", now give the same error under their own names.
+  length 0", now give the same error under their own names. The warning
+  that the program search gives first now keeps its class, such as
+  `tidymedia_location_gone`. Before, `ffmpeg()` gave it as a plain warning,
+  and `ffprobe()` and `mediainfo()` lost it.
 
 * **A folder where a program's location is saved now gives a warning, not an
   error.** Before, `find_ffmpeg()` and the other `find_*()` functions stopped

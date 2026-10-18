@@ -11,10 +11,7 @@
 #' tibbles instead, use [probe_all()] and the other `probe_*()` functions. These
 #' functions quote their arguments for you.
 #'
-#' If tidymedia cannot find FFprobe, the call stops with the error "Could not
-#' locate FFprobe." The warning from [find_ffprobe()] comes first. A bad
-#' argument or a bad `tidymedia.timeout` option stops the call before the
-#' search.
+#' `r missing_program_sentences("FFprobe", "find_ffprobe")`
 #'
 #' @param command A string with the arguments to give FFprobe.
 #' @return A character vector with the text that FFprobe writes to standard
@@ -31,7 +28,8 @@ ffprobe <- function(command) {
   rlang::check_string(command)
   limit <- resolve_timeout()
   # Refused here, as ffmpeg() refuses a missing FFmpeg (M142).
-  location <- tm_require_location(find_ffprobe(), "FFprobe")
+  location <- tm_require_location(find_ffprobe(), "FFprobe",
+                                  call = rlang::current_env())
   out <- guard_timeout(
     "FFprobe", limit,
     system(glue('"{location}" {command}'), intern = TRUE,

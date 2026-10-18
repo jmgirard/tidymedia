@@ -333,6 +333,22 @@ check_tracks_off_paragraph <- function(batch = FALSE) {
   )
 }
 
+# A missing program ------------------------------------------------------------
+
+# What the direct-command functions and the capability listings do when the
+# lookup finds no program (M142). `program` is the name the error gives, and
+# `finder` the find_*() function whose warning comes first.
+missing_program_sentences <- function(program, finder) {
+  rd_sentences(
+    sprintf(paste0("If tidymedia cannot find %s, the call stops with the ",
+                   "error \"Could not locate %s.\""), program, program),
+    sprintf("The warning from \\code{\\link[=%s]{%s()}} comes first.",
+            finder, finder),
+    paste0("A bad argument or a bad \\code{tidymedia.timeout} option stops ",
+           "the call before the search.")
+  )
+}
+
 # Return values ----------------------------------------------------------------
 
 # A scalar task function that returns its one compiled command.

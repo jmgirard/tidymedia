@@ -8,9 +8,7 @@
 #' the path of the FFmpeg program. So you are responsible for the quoting and
 #' the order of the options.
 #'
-#' If tidymedia cannot find FFmpeg, the call stops with the error "Could not
-#' locate FFmpeg." The warning from [find_ffmpeg()] comes first. A bad argument
-#' or a bad `tidymedia.timeout` option stops the call before the search.
+#' `r missing_program_sentences("FFmpeg", "find_ffmpeg")`
 #'
 #' @param command A string containing the arguments to pass to FFmpeg.
 #' @return A character vector containing the text output by FFmpeg.
@@ -38,7 +36,8 @@ ffmpeg <- function(command) {
   # A missing FFmpeg is refused here. Before M142 a NULL location emptied the
   # whole command, only system()'s `< input` redirect reached the shell, and
   # the call returned character(0).
-  location <- tm_require_location(find_ffmpeg(), "FFmpeg")
+  location <- tm_require_location(find_ffmpeg(), "FFmpeg",
+                                  call = rlang::current_env())
   out <- guard_timeout(
     "FFmpeg", limit,
     system(glue('"{location}" {command}'), intern = TRUE, input = "",
@@ -2793,9 +2792,7 @@ normalize_audio_pipeline <- function(input, output,
 #' frame with information about each codec. The glossary in
 #' \code{vignette("tidymedia")} explains media terms such as codec and encoder.
 #'
-#' If tidymedia cannot find FFmpeg, the call stops with the error "Could not
-#' locate FFmpeg." The warning from [find_ffmpeg()] comes first. A bad argument
-#' or a bad `tidymedia.timeout` option stops the call before the search.
+#' `r missing_program_sentences("FFmpeg", "find_ffmpeg")`
 #'
 #' @param sort_by_type A logical. \code{TRUE} sorts the tibble by type and then
 #'   by name. \code{FALSE} sorts it by name only. (default = \code{TRUE})
@@ -2833,7 +2830,8 @@ ffmpeg_codecs <- function(sort_by_type = TRUE) {
   # diagnosis reads this list (M139 review). The parse below starts after the
   # dashes line either way.
   # A missing FFmpeg is refused in ffmpeg() and named here (M142).
-  output <- tm_reblame_missing(ffmpeg("-hide_banner -codecs"))
+  output <- tm_reblame_missing(ffmpeg("-hide_banner -codecs"),
+                               call = rlang::current_env())
   output2 <- output[-(1:which(output == " -------"))]
   key <- regmatches(
     output2, 
@@ -2892,9 +2890,7 @@ ffmpeg_codecs <- function(sort_by_type = TRUE) {
 #' frame with information about each encoder. The glossary in
 #' \code{vignette("tidymedia")} explains media terms such as codec and encoder.
 #'
-#' If tidymedia cannot find FFmpeg, the call stops with the error "Could not
-#' locate FFmpeg." The warning from [find_ffmpeg()] comes first. A bad argument
-#' or a bad `tidymedia.timeout` option stops the call before the search.
+#' `r missing_program_sentences("FFmpeg", "find_ffmpeg")`
 #'
 #' @inheritParams ffmpeg_codecs
 #' @return A [tibble][tibble::tibble-package] with the following variables:
@@ -2924,7 +2920,8 @@ ffmpeg_encoders <- function(sort_by_type = TRUE) {
   resolve_timeout()
   # -hide_banner for the reason ffmpeg_codecs() gives (M139 review).
   # A missing FFmpeg is refused in ffmpeg() and named here (M142).
-  output <- tm_reblame_missing(ffmpeg("-hide_banner -encoders"))
+  output <- tm_reblame_missing(ffmpeg("-hide_banner -encoders"),
+                               call = rlang::current_env())
   output2 <- output[-(1:which(output == " ------"))]
   key <- regmatches(
     output2, 

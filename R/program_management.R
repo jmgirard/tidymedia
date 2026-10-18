@@ -1455,8 +1455,7 @@ tm_unset_program <- function(program, call) {
 # (M142). The `tm_missing_program` field is internal: tm_reblame_missing()
 # reads it to tell this refusal from any other error, and it is no class, so
 # the refusal stays as unclassed as run_program()'s always was.
-tm_require_location <- function(location, program,
-                                call = rlang::caller_env()) {
+tm_require_location <- function(location, program, call) {
   if (is.null(location) || is.na(location) || !nzchar(location)) {
     cli::cli_abort("Could not locate {program}.", call = call,
                    tm_missing_program = program)
@@ -1472,12 +1471,14 @@ tm_require_location <- function(location, program,
 # ffmpeg() because the tests stand in a mock of ffmpeg() for FFmpeg, and an
 # internal form beside it would bypass those mocks (M142). Every other
 # condition passes through untouched.
-tm_reblame_missing <- function(expr, call = rlang::caller_env()) {
+tm_reblame_missing <- function(expr, call) {
   rlang::try_fetch(
     expr,
     error = function(cnd) {
-      if (is.null(cnd$tm_missing_program)) return(rlang::zap())
-      tm_require_location(NULL, cnd$tm_missing_program, call = call)
+      # `[[` and not `$`, which would match a longer field name partially.
+      program <- cnd[["tm_missing_program"]]
+      if (is.null(program)) return(rlang::zap())
+      tm_require_location(NULL, program, call = call)
     }
   )
 }

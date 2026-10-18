@@ -135,3 +135,23 @@ pages of those five functions, and `NEWS.md`.
 Review pass 1, 2026-10-18, on branch head f1452a91 (master 2f023576 unmoved).
 
 - AC5 evidence: `man/ffmpeg.Rd`, `man/ffmpeg_codecs.Rd`, `man/ffmpeg_encoders.Rd`, `man/ffprobe.Rd` and `man/mediainfo.Rd` each hold "If tidymedia cannot find <program>, the call stops with the error "Could not locate <program>."" (grep over each regenerated Rd, line breaks joined).
+- spawned: diff-bug, blame-history, prior-review
+- diff-bug #1: `test-with-timeout.R` "each spawn site is handed the per-call limit" mocks only `guard_timeout()`, so with the lookup now ahead of it the test stops with "Could not locate" on a machine with no media binaries, CRAN included — fix now (locators pinned as helper-timeout-sweep.R pins them; confirmed by the no-binaries suite run below).
+- blame-history #1: the same test-with-timeout.R defect — fix now (same fix as diff-bug #1).
+- diff-bug #2: NEWS does not say that the lookup's warning now keeps its class in the three functions — fix now (NEWS sentence plus a test that a classed lookup warning reaches each caller before the refusal).
+- blame-history #2: the same warning-class change — fix now (same fix as diff-bug #2).
+- prior-review #1: NEWS says "names every bad job", but cli shortens a list past 20 values — fix now (NEWS narrowed to "lists up to 20 job numbers in full and shortens a longer list", with a test at 20 and 25 bad jobs).
+- diff-bug #3: `cnd$tm_missing_program` matches partially — fix now (`[[`).
+- blame-history #4: D087 says an internal function taking `call` has no default, and both new helpers had one — fix now (defaults removed, each site passes `rlang::current_env()`).
+- prior-review #3: the help paragraph was repeated in three blocks of R/ffmpeg.R, and `tools/roxygen_repeats.R R/ffmpeg.R` exits 1 on the branch where master's file exits 0 — fix now (one `missing_program_sentences()` in R/task-doc.R, called from all five blocks; the tool exits 0 on R/ffmpeg.R).
+- diff-bug #4: no test for "the warning from find_*() comes first" — fix now (covered by the warning-class test of diff-bug #2).
+- prior-review #2: "the warning from find_ffmpeg() comes first" is false when nothing is configured — reject, false: `find_program()`'s no-config branch warns "Failed to find {program}." (R/program_management.R, the final `else`), seen in this session's no-FFmpeg run, and every NULL path warns.
+- prior-review #4: on the hardware path, a missing FFmpeg is blamed on `ffmpeg_encoders()`, not the typed verb — follow-up, already the "Argument classes refused below the verb" row's item (d), filed at plan time; master blamed `ffmpeg_encoders()` there too.
+- blame-history #3: `ffmpeg()` now stops where it returned `character(0)` — reject, planned change (AC3).
+- blame-history #5: the lookup warning now survives a timeout, which D047's held-warning drop covered for R's own timeout warning — reject, false as a defect: D047 drops the timeout warning because it carries the command line, and the lookup warning carries none.
+- blame-history #6: confirms the M140 quoting, D074 order, `-hide_banner` and the M96 check are kept, and the encoder diagnosis fails open as before — reject, no defect reported.
+- blame-history #7: the removed test-batch-output-collision.R comment described the bug this fixes — reject, planned change (T1).
+- diff-bug #5: the timeout sweep's absorber census in helper-timeout-sweep.R does not list `tm_reblame_missing()`'s handler — reject, false as a defect: the handler re-raises only an error carrying `tm_missing_program` and passes every other condition on with `zap()`, so it cannot absorb a timeout; the reviewer says so too.
+- diff-bug #6: the re-raised refusal drops the original as `parent` — reject, planned change: the refusal is re-raised under the typed verb with the same message, as T2 states.
+- diff-bug #7: the new paragraph lands in `\details` on three pages and `\description` on two — reject, style.
+- diff-bug #8: the two verify tests use `run = TRUE` with relative outputs and depend on the refusal coming before dispatch — reject, false as a defect: the refusal comes before dispatch by design (the test at test-ffm-batch.R:75 relies on the same order), and a regression there fails these tests.

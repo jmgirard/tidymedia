@@ -112,17 +112,115 @@ test_that("a malformed legacy file is read, and a readable current file wins", {
 # find_program(): a folder where the location file should be ----------------
 
 test_that("a folder at a remembered-location path warns and returns NULL", {
-  # M140 AC1 and AC2. `file.exists()` is TRUE for a folder, so before M140 the
-  # lookup reached `readLines()` on it and stopped with "cannot open the
-  # connection" (measured 2026-10-17). Every program, at the current path and
-  # at the pre-0.2.0 path while no current file exists, since both reach the
-  # same read.
+  # M140 AC1 and AC2, and M141 AC1 and AC5. `file.exists()` is TRUE for a
+  # folder, so before M140 the lookup reached `readLines()` on it and stopped
+  # with "cannot open the connection" (measured 2026-10-17). Every program,
+  # and every layout of folders with no file at either path: the current path
+  # only, the pre-0.2.0 path only, and both, each folder empty or not. The
+  # warning names the first folder in read order. Its advice is
+  # unset_program() only when every folder is empty, since unset_program()
+  # refuses a folder that holds anything (M141, D104).
+  withr::local_options(cli.width = 1000)
+  layouts <- list(
+    new_empty = c(new = "empty"),
+    new_full = c(new = "full"),
+    legacy_empty = c(legacy = "empty"),
+    legacy_full = c(legacy = "full"),
+    both_empty = c(new = "empty", legacy = "empty"),
+    new_empty_legacy_full = c(new = "empty", legacy = "full"),
+    new_full_legacy_empty = c(new = "full", legacy = "empty")
+  )
+  for (program in tm_program_vocabulary) {
+    for (layout in names(layouts)) {
+      dirs <- tm_redirect_config()
+      shape <- layouts[[layout]]
+      paths <- vapply(
+        names(shape), function(w) tm_config_file(program, dirs[[w]]),
+        character(1)
+      )
+      for (w in names(shape)) {
+        dir.create(paths[[w]])
+        if (shape[[w]] == "full") file.create(file.path(paths[[w]], "kept"))
+      }
+      info <- paste(program, layout)
+
+      condition <- tryCatch(
+        tm_find_export[[program]](),
+        warning = function(w) w,
+        error = function(e) e
+      )
+      expect_s3_class(condition, "tidymedia_location_unreadable")
+      expect_identical(condition$tm_program, program, info = info)
+      expect_identical(condition$tm_file, unname(paths[[1]]), info = info)
+
+      message <- cli::ansi_strip(conditionMessage(condition))
+      expect_match(message, paths[[1]], fixed = TRUE, info = info)
+      full <- unname(paths[shape == "full"])
+      if (length(full)) {
+        expect_match(message, "by hand", fixed = TRUE, info = info)
+        for (f in full) expect_match(message, f, fixed = TRUE, info = info)
+        expect_no_match(message, "unset_program", fixed = TRUE, info = info)
+      } else {
+        expect_match(
+          message, paste0("unset_program(\"", program, "\")"),
+          fixed = TRUE, info = info
+        )
+        expect_no_match(message, "by hand", fixed = TRUE, info = info)
+      }
+
+      expect_null(
+        expect_no_error(suppressWarnings(tm_find_export[[program]]())),
+        info = info
+      )
+    }
+  }
+})
+
+test_that("a folder at the current path does not hide a pre-0.2.0 file", {
+  # M141 AC1. Before M141 the lookup fell back to the pre-0.2.0 path only when
+  # nothing existed at the current path, so a folder there stopped it from
+  # reading a usable older file. The folder's own contents do not matter.
+  for (program in tm_program_vocabulary) {
+    for (contents in c("empty", "full")) {
+      dirs <- tm_redirect_config()
+      stub <- tm_stub_executable()
+      folder <- tm_config_file(program, dirs$new)
+      dir.create(folder)
+      if (contents == "full") file.create(file.path(folder, "kept"))
+      tm_write_location(dirs$legacy, program, stub)
+      info <- paste(program, contents)
+
+      expect_identical(
+        expect_no_warning(tm_find_export[[program]]()), stub, info = info
+      )
+      got <- tm_collect_warnings(program_status())
+      expect_length(got$warnings, 0L)
+      expect_identical(
+        got$value$location[got$value$program == program], stub, info = info
+      )
+    }
+  }
+})
+
+
+# find_program(): a location file the lookup cannot read --------------------
+
+test_that("a location file without read permission warns and returns NULL", {
+  # M141 AC2. `file.exists()` is TRUE for such a file, so before M141 the
+  # lookup reached `readLines()` and stopped with "cannot open file". A
+  # mode-0000 file is unreadable on Unix to anyone but root, and Windows has no
+  # such mode, so the cell skips where `file.access()` still reports it readable.
+  skip_on_os("windows")
   withr::local_options(cli.width = 1000)
   for (program in tm_program_vocabulary) {
     for (where in c("new", "legacy")) {
       dirs <- tm_redirect_config()
+      stub <- tm_stub_executable()
       path <- tm_config_file(program, dirs[[where]])
-      dir.create(path)
+      tm_write_location(dirs[[where]], program, stub)
+      Sys.chmod(path, "0000")
+      withr::defer(Sys.chmod(path, "0644"))
+      skip_if(file.access(path, 4L) == 0L, "the process can read a mode-0000 file")
       info <- paste(program, where)
 
       condition <- tryCatch(
@@ -133,19 +231,18 @@ test_that("a folder at a remembered-location path warns and returns NULL", {
       expect_s3_class(condition, "tidymedia_location_unreadable")
       expect_identical(condition$tm_program, program, info = info)
       expect_identical(condition$tm_file, path, info = info)
-
-      # The repair the warning names. Neither unset_program() nor
-      # set_program() can clear a folder (unlink() without `recursive`, and
-      # writeLines() into a directory), so the advice is to delete it by hand.
       message <- cli::ansi_strip(conditionMessage(condition))
-      expect_match(message, path, fixed = TRUE, info = info)
-      expect_match(message, "Delete", fixed = TRUE, info = info)
-      expect_no_match(message, "unset_program", fixed = TRUE, info = info)
-
-      expect_null(
-        expect_no_error(suppressWarnings(tm_find_export[[program]]())),
-        info = info
+      expect_match(message, "read permission", fixed = TRUE, info = info)
+      expect_match(
+        message, paste0("unset_program(\"", program, "\")"),
+        fixed = TRUE, info = info
       )
+
+      got <- tm_collect_warnings(program_status())
+      expect_identical(got$value$program, tm_program_vocabulary, info = info)
+      expect_length(got$warnings, 1L)
+      expect_s3_class(got$warnings[[1]], "tidymedia_location_unreadable")
+      expect_identical(got$warnings[[1]]$tm_file, path, info = info)
     }
   }
 })
@@ -393,9 +490,11 @@ test_that("program_status() reports a folder at a remembered-location path", {
   expect_identical(got$value$program, tm_program_vocabulary)
   expect_length(got$warnings, 1L)
   expect_s3_class(got$warnings[[1]], "tidymedia_location_unreadable")
-  # The advice reaches the report's caller too, not only find_ffmpeg()'s.
+  # The advice reaches the report's caller too, not only find_ffmpeg()'s. The
+  # folder is empty, so the advice is unset_program() (M141 AC5).
   expect_match(
-    cli::ansi_strip(conditionMessage(got$warnings[[1]])), "Delete",
+    cli::ansi_strip(conditionMessage(got$warnings[[1]])),
+    "unset_program(\"ffmpeg\")",
     fixed = TRUE
   )
 })

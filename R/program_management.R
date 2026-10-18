@@ -21,6 +21,31 @@ tm_config_file <- function(program, dir = tm_config_dir()) {
   file.path(dir, glue("{program}_location.txt"))
 }
 
+# Both remembered-location paths, in the order find_program() reads them: the
+# current one, then the pre-0.2.0 one. unset_program() clears both.
+tm_config_paths <- function(program) {
+  c(
+    tm_config_file(program),
+    tm_config_file(program, tm_legacy_config_dir())
+  )
+}
+
+# Is each folder empty? Hidden entries and subfolders count, so a folder
+# holding only `.DS_Store` or an empty subfolder is not empty. A folder the
+# process cannot read cannot be listed, so it never counts as empty: an empty
+# listing there says nothing about what it holds (M141, D104).
+tm_folder_empty <- function(path) {
+  vapply(
+    path,
+    function(p) {
+      !length(unreadable_paths(p)) &&
+        !length(list.files(p, all.files = TRUE, no.. = TRUE))
+    },
+    logical(1),
+    USE.NAMES = FALSE
+  )
+}
+
 # Data directory -----------------------------------------------------------
 
 # Where `install_on_win()` puts a downloaded FFmpeg build when the caller names
@@ -140,25 +165,55 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
     # If program not found, look for a user config file: the R_user_dir()
     # location first, then the pre-M097 one, so a location set before
     # the move is still found. The read falls back; nothing is migrated.
-    config <- tm_config_file(program)
-    if (!file.exists(config)) {
-      config <- tm_config_file(program, tm_legacy_config_dir())
-    }
-    # A folder at the config path passes `file.exists()`, and `readLines()` on
+    paths <- tm_config_paths(program)
+    is_dir <- dir.exists(paths)
+    is_file <- file.exists(paths) & !is_dir
+    # The first of the two that is a file is read, so a folder at the current
+    # path no longer hides a usable pre-0.2.0 file (M141). Before M141 the
+    # fallback ran only when nothing existed at the current path.
+    config <- if (any(is_file)) paths[is_file][[1]] else paths[[1]]
+    # A folder at a config path passes `file.exists()`, and `readLines()` on
     # it stops with "cannot open the connection", which stopped every lookup
-    # and program_status() with it (measured 2026-10-17). Neither repair the
-    # unreadable warning below names can clear a folder: unset_program()
-    # removes files only, and set_program() cannot write over one at the
-    # current path. At the pre-0.2.0 path the current file set_program()
-    # writes is read first, so there it hides the folder. So this
-    # case takes the same class and fields with advice of its own (M140).
-    if (dir.exists(config)) {
+    # and program_status() with it (measured 2026-10-17). So with no file at
+    # either path, a folder takes the unreadable class and fields (M140,
+    # D103). set_program() and unset_program() remove an empty folder and
+    # refuse one that holds anything (D104), so the advice names
+    # unset_program() only when every folder present is empty.
+    if (!any(is_file) && any(is_dir)) {
+      folders <- paths[is_dir]
+      full <- folders[!tm_folder_empty(folders)]
+      advice <- if (length(full)) {
+        c("i" = "Delete {.file {full}} by hand, then use {.fn set_{program}} \\
+                 to point tidymedia at the binary again.")
+      } else {
+        c("i" = "Use {.code unset_program(\"{program}\")} to remove the \\
+                 empty folder, or {.fn set_{program}} to point tidymedia at \\
+                 the binary again.")
+      }
       cli::cli_warn(
         c(
-          "{program} is configured in {.file {config}}, but that path is a \\
-           folder, not a file.",
-          "i" = "Delete the folder, then use {.fn set_{program}} to point \\
-                 tidymedia at the binary again."
+          "{program} is configured in {.file {folders[[1]]}}, but that path \\
+           is a folder, not a file.",
+          advice
+        ),
+        class = "tidymedia_location_unreadable",
+        tm_program = program,
+        tm_file = folders[[1]]
+      )
+      return(NULL)
+    }
+    # A file the process cannot read passes `file.exists()` too, and
+    # `readLines()` on it stops with "cannot open file" (M141). It takes the
+    # same class and fields. set_program() is left out of the advice, because
+    # a mode-0000 file stops its write too ("Unwritable location file" row).
+    # Asked through unreadable_paths(), the package's one readability site.
+    if (any(is_file) && length(unreadable_paths(config))) {
+      cli::cli_warn(
+        c(
+          "{program} is configured in {.file {config}}, but tidymedia cannot \\
+           read that file.",
+          "i" = "Give the file read permission, or use \\
+                 {.code unset_program(\"{program}\")} to forget it."
         ),
         class = "tidymedia_location_unreadable",
         tm_program = program,
@@ -167,7 +222,7 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
       return(NULL)
     }
     # If a user config file exists, read it in
-    if (file.exists(config)) {
+    if (any(is_file)) {
       location <- readLines(config)
       # What was read back must be ONE line before anything tests it. A file
       # holding nothing gives `if (logical(0))` and one holding two or more

@@ -12,7 +12,7 @@ _Last hygiene check: 2026-10-18 (M140 post-merge: archived, the table keeps M138
 | M138 | The shipped docs and the remembered-location checks stop assuming what the host's FFmpeg build and `which` provide | done | — | high | milestones/archive/M138-encoder-and-location-portability.md |
 | M139 | A failed FFmpeg run names the encoder this build lacks | done | M138 | normal | milestones/archive/M139-missing-encoder-front-door.md |
 | M140 | A folder at a remembered-location path warns instead of stopping, and `ffmpeg()` quotes its program's location | done | — | normal | milestones/archive/M140-folder-config-and-spaced-ffmpeg.md |
-| M141 | `set_program()` and `unset_program()` clear an empty folder at a location path, and an unreadable location file warns | planned | — | normal | milestones/M141-location-folder-and-unreadable.md |
+| M141 | `set_program()` and `unset_program()` clear an empty folder at a location path, and an unreadable location file warns | in-progress | — | normal | milestones/M141-location-folder-and-unreadable.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

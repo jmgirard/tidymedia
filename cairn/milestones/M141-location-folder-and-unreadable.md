@@ -1,13 +1,13 @@
 # M141: `set_program()` and `unset_program()` clear an empty folder at a location path, and an unreadable location file warns
 
-- **Status:** planned
+- **Status:** in-progress
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
 - **Principles touched:** —
 - **Resolves:** —
 - **Surface tier:** user-facing — it changes exported `set_program()`, `unset_program()`, the `find_*()` lookups and `program_status()`
-- **Branch/PR:** —
+- **Branch/PR:** m141-location-folder-and-unreadable
 
 ## Goal
 
@@ -41,7 +41,7 @@ The milestone changes four things. The lookup falls back past a folder at the cu
 
 ## Tasks
 
-- [ ] T1: Change the lookup in `find_program()` (`R/program_management.R:136-171`). Read the first of the two paths that is a regular file. If neither path is a regular file, warn about the first folder. Base the advice on the emptiness of every folder at the two paths, with `list.files(all.files = TRUE, no.. = TRUE)`. Ask `file.access(config, 4)` before `readLines()`. Update the folder comment at `:147-155`. Write the tests first, in `test-program-location-repair.R`. Cover a folder at the current path only, at the pre-0.2.0 path only, at both, and beside a file at the other path, plus an empty and a non-empty folder in the mixed case. The unreadable-file tests use `Sys.chmod(path, "0000")`. They skip on Windows, and where `file.access()` still reports the file readable, as it does for root.
+- [x] T1: Change the lookup in `find_program()` (`R/program_management.R:136-171`). Read the first of the two paths that is a regular file. If neither path is a regular file, warn about the first folder. Base the advice on the emptiness of every folder at the two paths, with `list.files(all.files = TRUE, no.. = TRUE)`. Ask `file.access(config, 4)` before `readLines()`. Update the folder comment at `:147-155`. Write the tests first, in `test-program-location-repair.R`. Cover a folder at the current path only, at the pre-0.2.0 path only, at both, and beside a file at the other path, plus an empty and a non-empty folder in the mixed case. The unreadable-file tests use `Sys.chmod(path, "0000")`. They skip on Windows, and where `file.access()` still reports the file readable, as it does for root.
 - [ ] T2: Change `tm_set_program()` (`R/program_management.R:1109-1163`). Refuse a folder with contents at the current path before the consent prompt, with the new `tidymedia_location_folder` class. Name an empty folder in `tm_set_details()` and `tm_set_prompt()` (`:1952-1975`). After consent, remove the folder through `tm_unlink(recursive = TRUE)`. Check that it is gone before the write. Write the tests first. Test the four folder shapes: empty, holding a file, holding only a hidden file, and holding only an empty subfolder. Test approve and decline through a `tm_confirm` mock, and the refusal with no one to ask. Test a removal that does not take through a `tm_unlink` mock. Replace the test "neither unset_program() nor set_program() clears a folder at the current path" (`test-program-location-repair.R:403`).
 - [ ] T3: Change `tm_unset_program()` (`R/program_management.R:1245-1310`). If a present path is a folder with contents, refuse before any removal. Remove empty folders with the files. Key the memo discard on a removed location file. Write the tests first, in `test-program-status-and-unset.R`. Cover both orientations of a folder and a file, two empty folders, two non-empty folders, the four folder shapes, and the memo in each case.
 - [ ] T4: Update the roxygen for `?set_program`, `?unset_program`, `?find_ffmpeg` (`:976-981`) and `?program_status` (`:840-848`). Fold the M140 folder entry in NEWS.md into the new entries. Run `devtools::document()` and `devtools::check()`.
@@ -59,6 +59,8 @@ The milestone changes four things. The lookup falls back past a folder at the cu
 - 2026-10-17: plan gate chose a new `tidymedia_location_folder` error class over reusing `tidymedia_location_not_removed`, because a folder with contents is a refusal and not a failed removal; falsified by a caller who handles both the same way and needs one class.
 - 2026-10-17: plan gate chose that `unset_program()` refuses before any removal over removing what it can and then refusing, because a partial unset changes which location the lookup answers with; falsified by a caller who needs the file at the other path gone while the folder stays.
 - 2026-10-17: ROADMAP.md is over its 24,000-byte budget, and this plan adds two rows. The two absorbed rows graduate at merge.
+- 2026-10-17: implement started on branch m141-location-folder-and-unreadable.
+- 2026-10-17: T1 done. `find_program()` reads the first regular file of `tm_config_paths()`, warns on folders with advice from `tm_folder_empty()`, and warns on an unreadable file. Both read checks go through `unreadable_paths()`, because `test-input-path-front-door.R`'s census keeps readability at one site. The M140 folder test now covers seven layouts. `devtools::test()` clean.
 
 ## Decisions
 

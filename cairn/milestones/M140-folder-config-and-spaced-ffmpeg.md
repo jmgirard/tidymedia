@@ -1,6 +1,6 @@
 # M140: A folder at a remembered-location path warns instead of stopping, and `ffmpeg()` quotes its program's location
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** —
 - **Driving RR:** —
@@ -102,7 +102,7 @@ unquoted by the double quotes and are not claimed.
       name holds a space, with `find_ffmpeg` mocked to that path and
       `skip_on_os("windows")` naming the POSIX stub as the reason. See it red,
       then quote the location at `R/ffmpeg.R:33` as `R/ffprobe.R:30` does.
-- [ ] T5: Add the two `NEWS.md` entries under "tidymedia (development version)".
+- [x] T5: Add the two `NEWS.md` entries under "tidymedia (development version)".
       Run `devtools::test()` with no other R session working (the M124 lesson),
       then `devtools::check()`. At review, quote a CI log from the macOS and
       Linux legs showing AC4's test passed rather than skipped.
@@ -125,6 +125,7 @@ unquoted by the double quotes and are not claimed.
 - 2026-10-17: minor amendment, a sub-task found at T5: the full suite errored once, in `test-runtime-timeout.R`'s timed-out `ffmpeg()` test, whose mock returned `shQuote(fake)` and so relied on the unquoted form; the mock now returns the path unquoted, as `find_ffmpeg()` does, and the file passes (37 tests). A sweep of the `find_ffmpeg = function` mocks in `tests/` found no other pre-quoted one.
 - 2026-10-17: T5 adds the two `NEWS.md` entries under "Bug fixes"; `devtools::test()` before the mock fix: 0 failed, 1 error (the mock above), 1819 tests.
 - 2026-10-17: claim audit: 30 claims read, 1 corrected — R/program_management.R, R/ffmpeg.R, man/find_ffmpeg.Rd, man/program_status.Rd, tests/testthat/test-ffmpeg.R, tests/testthat/test-program-location-repair.R, tests/testthat/test-runtime-timeout.R, NEWS.md. The corrected one is the guard comment's claim that `set_program()` cannot write over a folder, true only at the current path; narrowed, and the same reader re-read it as holding.
+- 2026-10-17: T5 verify: `devtools::check()` 0 errors, 0 warnings, 0 notes; `devtools::test()` 0 failed, 0 errors, 7 skipped, 1819 tests. Status set to review.
 
 ## Decisions
 

@@ -52,6 +52,25 @@ test_that("ffmpeg() rejects a command that is not a single string", {
   expect_error(ffmpeg(NULL), "single string")
 })
 
+test_that("ffmpeg() runs a program whose location holds a space", {
+  # M140 AC4. Before M140 ffmpeg() put the location into the command unquoted,
+  # so the shell split it at the space and failed with
+  # `sh: .../my: No such file or directory` (measured 2026-10-17), where
+  # ffprobe() and mediainfo() already quoted theirs. The stub is a POSIX shell
+  # script that only echoes, a shell builtin, so it needs nothing on PATH.
+  if (.Platform$OS.type == "windows") {
+    skip("the stub is a POSIX shell script, which Windows cannot run")
+  }
+  dir <- file.path(withr::local_tempdir(), "my bin")
+  dir.create(dir)
+  stub <- file.path(dir, "ffmpeg")
+  writeLines(c("#!/bin/sh", "echo stub-ffmpeg \"$@\""), stub)
+  Sys.chmod(stub, "0755")
+  local_mocked_bindings(find_ffmpeg = function() stub)
+
+  expect_identical(ffmpeg("-version"), "stub-ffmpeg -version")
+})
+
 test_that("ffmpeg_codecs() returns a tidy tibble", {
   skip_if_no_ffmpeg()
   cc <- ffmpeg_codecs()

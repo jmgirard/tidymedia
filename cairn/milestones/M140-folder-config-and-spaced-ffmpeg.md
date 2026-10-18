@@ -97,7 +97,7 @@ unquoted by the double quotes and are not claimed.
       noting that D088's audible unreadable warning still applies to a folder,
       though neither `unset_program()` nor `set_program()` clears one, so the
       repair it names is deleting the folder by hand.
-- [ ] T4: Write the `ffmpeg()` test first: a stub script that only `echo`es,
+- [x] T4: Write the `ffmpeg()` test first: a stub script that only `echo`es,
       because `tm_redirect_config()` sets `PATH=""`, under a temp folder whose
       name holds a space, with `find_ffmpeg` mocked to that path and
       `skip_on_os("windows")` naming the POSIX stub as the reason. See it red,
@@ -121,6 +121,7 @@ unquoted by the double quotes and are not claimed.
 - 2026-10-17: plan gate chose double quotes in `ffmpeg()` over `shQuote()`, because the two sibling direct commands already use double quotes and a matching form keeps the three alike; falsified by a location that the double-quoted form breaks and `shQuote()` would not.
 - 2026-10-17: T1 tests written in `test-program-location-repair.R` and seen red on master (`cannot open the connection`); T2 adds a `dir.exists()` guard above `readLines()` in `find_program()` with its own delete-the-folder message; full suite 0 failed, 1818 tests.
 - 2026-10-17: T3 rewrites the unreadable bullet and repair sentence on `?find_ffmpeg` and `?program_status` for the folder case, `devtools::document()` wrote both Rd files, and D103 annotates D088 (same class, audible, delete-by-hand advice; a class of its own rejected).
+- 2026-10-17: T4's test in `test-ffmpeg.R` mocks `find_ffmpeg()` to a stub under `my bin/` rather than going through `tm_redirect_config()`, so `PATH` stays as it is; seen red on master (`error in running command`), green after quoting the location at `R/ffmpeg.R`; `test-ffmpeg.R` 0 failed under `NOT_CRAN=true`. The Windows skip is a `skip()` with its reason, since `skip_on_os()` prints only the platform.
 
 ## Decisions
 

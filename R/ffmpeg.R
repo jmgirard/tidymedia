@@ -28,10 +28,12 @@ ffmpeg <- function(command) {
   # verbatim `command` string.
   # A hung FFmpeg would otherwise block the session forever; the limit is off
   # (0) unless the caller sets `tidymedia.timeout` (M69/D047).
+  # The location is quoted, as ffprobe() and mediainfo() quote theirs, so a
+  # location holding a space reaches the shell as one word (M140).
   limit <- resolve_timeout()
   out <- guard_timeout(
     "FFmpeg", limit,
-    system(glue('{find_ffmpeg()} {command}'), intern = TRUE, input = "",
+    system(glue('"{find_ffmpeg()}" {command}'), intern = TRUE, input = "",
            timeout = limit)
   )
   out

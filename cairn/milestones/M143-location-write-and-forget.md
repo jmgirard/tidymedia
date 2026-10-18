@@ -4,14 +4,14 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M143: `unset_program()` forgets a location file beside a folder with contents, and `set_program()` reports an unwritable location
 
-- **Status:** planned   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate; RR<NN> whose Binding criteria bind this milestone's ACs (binding-criteria check), or — -->
 - **Principles touched:** —   <!-- owner: plan · create/amend-via-gate; comma-separated IPn/GPn ids this milestone touches, or — -->
 - **Resolves:** —   <!-- owner: plan · create/amend-via-gate; comma-separated GitHub issues the scope absorbs, each `#N closes` (the PR closes it at merge) or `#N partial` (the remainder gets a candidate row), or — ; skill conduct only — no validate check parses it -->
 - **Surface tier:** user-facing — changes what two exported functions do and report   <!-- owner: plan · create/amend-via-gate; user-facing | internal — <one-clause reason>; skill conduct only — no validate check parses it -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create; a companion checkout the milestone also works in is one further entry per checkout, `companion: <abs-path> <branch>` (implement), its PR URL appended by review — /milestone-review merges companions first, in listed order -->
+- **Branch/PR:** m143-location-write-and-forget   <!-- owner: implement (branch) / review (PR URL) · create; a companion checkout the milestone also works in is one further entry per checkout, `companion: <abs-path> <branch>` (implement), its PR URL appended by review — /milestone-review merges companions first, in listed order -->
 
 ## Goal
 <!-- owner: plan · create; a wrong goal returns to plan, never edited in place -->
@@ -111,7 +111,7 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
 <!-- owner: plan (create) / implement (check-off, minor edits); substantive
      change is amend-via-gate. -->
 
-- [ ] T1: Write the AC1 and AC2 tests first and see them fail. Then wrap
+- [x] T1: Write the AC1 and AC2 tests first and see them fail. Then wrap
       the `dir.create()` and `writeLines()` calls in `tm_set_program()` so
       that a failure gives `tidymedia_location_not_written` (fields
       `tm_program`, `tm_file`, `call` threaded) and base R's warning does
@@ -147,6 +147,8 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
 - 2026-10-18: plan gate chose a new warning class `tidymedia_location_folder_kept` over reusing `tidymedia_location_folder` because a caller's handler for the error class would unwind on the warning; falsified by a caller who needs one class for both outcomes.
 - 2026-10-18: plan gate chose catching the failed write over a writability check before the prompt, because the check needs a new `file.access()` caller and cannot foresee every failure; falsified by a caller who answers the prompt and then gets this error and needed to know first.
 - 2026-10-18: plan gate chose refusing an unwritable file over removing it and writing a new one, because the caller set the permission; falsified by a caller who expects `set_program()` to replace a read-only location file.
+- 2026-10-18: implement started on branch m143-location-write-and-forget, cut from master at f80dd15b.
+- 2026-10-18: T1 done: AC1 and AC2 tests failed first (base `simpleError` plus one base warning), then `tm_set_program()` catches the `dir.create()`/`writeLines()` failure as `tidymedia_location_not_written` with the warnings muffled; the `find_program()` comment citing the row now names the class; full `devtools::test()` clean.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

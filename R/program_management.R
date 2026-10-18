@@ -208,7 +208,8 @@ find_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo")
     # `readLines()` on it warns "cannot open file ... Permission denied" and
     # stops with "cannot open the connection" (M141). It takes the
     # same class and fields. set_program() is left out of the advice, because
-    # a mode-0000 file stops its write too ("Unwritable location file" row).
+    # it cannot write a mode-0000 file either, and stops with
+    # `tidymedia_location_not_written` there (M143).
     # Asked through unreadable_paths(), the package's one readability site.
     if (any(is_file) && length(unreadable_paths(config))) {
       cli::cli_warn(
@@ -1268,11 +1269,40 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
     }
   }
 
-  # Create configuration directory if needed
-  if (!dir.exists(config_dir)) dir.create(config_dir, recursive = TRUE)
-  
-  # Save location to user configuration file
-  writeLines(location, config_file)
+  # Create the configuration directory if needed, then write the file in
+  # place. A folder that cannot be created, or a folder or file without write
+  # permission, made dir.create() warn and writeLines() warn "cannot open file
+  # ... Permission denied" and then stop with "cannot open the connection"
+  # (measured 2026-10-18). Both are caught here and become one tidymedia error,
+  # and the warnings are muffled, because the error names the same failure
+  # (M143). A file the caller made read-only is refused, not replaced: there is
+  # no write-elsewhere-then-rename step. The capability memo stays, because
+  # the remembered location did not change.
+  written <- tryCatch(
+    withCallingHandlers(
+      {
+        if (!dir.exists(config_dir)) dir.create(config_dir, recursive = TRUE)
+        writeLines(location, config_file)
+        TRUE
+      },
+      warning = function(w) invokeRestart("muffleWarning")
+    ),
+    error = function(e) FALSE
+  )
+  if (!written) {
+    cli::cli_abort(
+      c(
+        "Can't save the location of {program}.",
+        "x" = "{.file {config_file}}",
+        "i" = "Check that you can write to that file and to the folder \\
+               holding it."
+      ),
+      class = "tidymedia_location_not_written",
+      tm_program = program,
+      tm_file = config_file,
+      call = call
+    )
+  }
 
   # Pointing at a different binary invalidates everything remembered about the
   # old one, so the session memo goes with it (M67/D044). Unconditional across

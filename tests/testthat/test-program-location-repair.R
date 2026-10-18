@@ -730,6 +730,79 @@ test_that("set_program() stops when the empty folder will not go", {
   expect_length(list.files(path, all.files = TRUE, no.. = TRUE), 0L)
 })
 
+# set_program(): a location it cannot write ----------------------------------
+
+# Run a set_program() call that must stop, and hand back the error and every
+# warning raised before it. Before M143 base R's "cannot open file" warning
+# came first, then its "cannot open the connection" error.
+tm_set_refusal <- function(expr) {
+  warns <- list()
+  condition <- tryCatch(
+    withCallingHandlers(
+      expr,
+      warning = function(w) {
+        warns[[length(warns) + 1L]] <<- w
+        invokeRestart("muffleWarning")
+      }
+    ),
+    error = function(e) e
+  )
+  list(condition = condition, warnings = warns)
+}
+
+test_that("set_program() refuses a location file it cannot write", {
+  # M143 AC1. Mode 0444 takes away write permission on Unix to anyone but
+  # root, and Windows has no such mode. The file keeps its line: the call
+  # writes in place and does not replace a file the caller made read-only.
+  skip_on_os("windows")
+  dirs <- tm_redirect_config()
+  path <- tm_config_file("ffmpeg", dirs$new)
+  writeLines("/the/old/ffmpeg", path)
+  Sys.chmod(path, "0444")
+  withr::defer(Sys.chmod(path, "0644"))
+  skip_if(file.access(path, 2L) == 0L, "the process can write a mode-0444 file")
+
+  result <- tm_set_refusal(
+    set_program("ffmpeg", tm_stub_executable(), confirm = FALSE)
+  )
+  expect_length(result$warnings, 0L)
+  expect_s3_class(result$condition, "tidymedia_location_not_written")
+  expect_identical(result$condition$tm_program, "ffmpeg")
+  expect_identical(result$condition$tm_file, path)
+  expect_identical(readLines(path), "/the/old/ffmpeg")
+})
+
+test_that("set_program() refuses a location folder it cannot create or write in", {
+  # M143 AC2. Case "parent": the folder for the location file is not there,
+  # and the folder above it has no write permission, so dir.create() fails.
+  # Case "folder": the folder is there without write permission and holds no
+  # location file, so writeLines() fails.
+  skip_on_os("windows")
+  for (case in c("parent", "folder")) {
+    dirs <- tm_redirect_config()
+    path <- tm_config_file("ffmpeg", dirs$new)
+    if (case == "parent") {
+      unlink(dirs$new, recursive = TRUE)
+      shut <- dirname(dirs$new)
+    } else {
+      shut <- dirs$new
+    }
+    Sys.chmod(shut, "0555")
+    withr::defer(Sys.chmod(shut, "0755"))
+    skip_if(file.access(shut, 2L) == 0L, "the process can write a mode-0555 folder")
+
+    result <- tm_set_refusal(
+      set_program("ffmpeg", tm_stub_executable(), confirm = FALSE)
+    )
+    expect_length(result$warnings, 0L)
+    expect_s3_class(result$condition, "tidymedia_location_not_written")
+    expect_identical(result$condition$tm_program, "ffmpeg", info = case)
+    expect_identical(result$condition$tm_file, path, info = case)
+    expect_false(file.exists(path), info = case)
+    if (case == "parent") expect_false(dir.exists(dirs$new))
+  }
+})
+
 
 # unset_program(): a folder where the location file should be ----------------
 

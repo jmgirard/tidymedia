@@ -32,7 +32,7 @@ unquoted by the double quotes and are not claimed.
 
 ## Acceptance criteria
 
-- [ ] AC1: For each program `find_program()` accepts (`ffmpeg`, `ffprobe`,
+- [x] AC1: For each program `find_program()` accepts (`ffmpeg`, `ffprobe`,
       `ffplay`, `mediainfo`), when that program's remembered-location path is a
       folder and the program is not found on `PATH`, its lookup returns `NULL`
       with a warning of class `tidymedia_location_unreadable` whose `tm_file`
@@ -40,29 +40,29 @@ unquoted by the double quotes and are not claimed.
       current path, and for a folder at the pre-0.2.0 path while no current file
       exists. A test under `tm_redirect_config()` asserts the return value, the
       class and the field for each program at both paths.
-- [ ] AC2: That warning's message contains the folder's path and the word
+- [x] AC2: That warning's message contains the folder's path and the word
       "Delete", and does not contain `unset_program`. The AC1 test asserts both
       with `cli.width` set wide enough that the path is not wrapped.
-- [ ] AC3: With a folder at `ffmpeg`'s current path, `program_status()` returns
+- [x] AC3: With a folder at `ffmpeg`'s current path, `program_status()` returns
       its table with one row for each of the four programs and raises exactly one
       warning, of class `tidymedia_location_unreadable`, instead of stopping. A
       test asserts the table's `program` column and the one warning's class.
-- [ ] AC4: `ffmpeg()` passes the resolved location to the shell inside double
+- [x] AC4: `ffmpeg()` passes the resolved location to the shell inside double
       quotes, as `ffprobe()` and `mediainfo()` do, so a location under a folder
       whose name holds a space runs. A test with a stub `ffmpeg` that uses only
       shell builtins, under such a folder and with the lookup pointed at it,
       asserts that `ffmpeg("-version")` returns the stub's output. The test skips
       on Windows and its skip message says why.
-- [ ] AC5: `?find_ffmpeg` and `?program_status` describe the folder case and say
+- [x] AC5: `?find_ffmpeg` and `?program_status` describe the folder case and say
       to delete the folder by hand, and no sentence on either page says that
       `unset_program()` forgets a location in that case.
-- [ ] AC6: `NEWS.md`'s development-version section has two entries. One says the
+- [x] AC6: `NEWS.md`'s development-version section has two entries. One says the
       program lookups and `program_status()` warn instead of stopping when a
       remembered-location path is a folder, and that the warning says to delete
       it. The other says `ffmpeg()`, and so `ffmpeg_codecs()` and
       `ffmpeg_encoders()`, quote the program's location, so a location holding a
       space runs. Neither entry names Windows or any character other than a space.
-- [ ] AC7: The profile's verify slot is clean: `devtools::test()` passes and
+- [x] AC7: The profile's verify slot is clean: `devtools::test()` passes and
       `devtools::check()` reports 0 errors and 0 warnings.
 
 ## Coverage
@@ -130,3 +130,32 @@ unquoted by the double quotes and are not claimed.
 ## Decisions
 
 ## Review
+
+Pass 1, 2026-10-17, on `m140-folder-config-and-spaced-ffmpeg` at `0f5fac71`; master had not moved since the branch was cut.
+
+- AC1: `test-program-location-repair.R`, "a folder at a remembered-location path warns and returns NULL", run under `NOT_CRAN=true`: 64 expectations, 0 failed, not skipped (4 programs x current and pre-0.2.0 path x class, `tm_program`, `tm_file`, message, no error, `NULL`).
+- AC2: the same test asserts the message holds the path and "Delete" and not `unset_program`, under `cli.width = 1000`; passed. `program_status()`'s warning now also asserts "Delete" (review fix).
+- AC3: "program_status() reports a folder at a remembered-location path": 4 expectations, 0 failed (`program` column equals the four programs, exactly one warning, class `tidymedia_location_unreadable`, "Delete").
+- AC4: `test-ffmpeg.R`, "ffmpeg() runs a program whose location holds a space": 1 expectation, 0 failed under `NOT_CRAN=true`; skipped under `NOT_CRAN=false` (the review's `skip_on_cran()`); its Windows `skip()` names the POSIX stub as the reason. `R/ffmpeg.R` builds `"\"{find_ffmpeg()}\" {command}"`. The macOS and Linux CI-leg log is quoted at step 8.
+- AC5: read `man/find_ffmpeg.Rd` and `man/program_status.Rd`: both describe a folder where the file belongs and say to delete it by hand, then use `set_program()`; the sentences naming `unset_program()` as forgetting a location are scoped to the other cases or are general See Also lines. A new test, "neither unset_program() nor set_program() clears a folder at the current path", backs the pages' claim (4 expectations, 0 failed).
+- AC6: read `NEWS.md` "tidymedia (development version)" > "Bug fixes": two entries with the required content; neither names Windows or a character other than a space.
+- AC7: `devtools::test()` 0 failed, 0 errors, 7 skipped, 1820 tests; `devtools::check()` 0 errors, 0 warnings, 0 notes.
+- Consistency gate: `cairn_validate` all checks passed; `devtools::document()` no diff; `pkgdown::check_pkgdown()` no problems; no new top-level files; README untouched; NEWS names no milestone. No principle changed, so `cairn_impact` was not run.
+- spawned: diff-bug, blame-history, prior-review
+- diff-bug #1: D103 says `set_program()` cannot write over a folder, true only at the current path — fix now, fixed 0f5fac71
+- diff-bug #2: deleting the folder is more than needed at the pre-0.2.0 path, where `set_program()` alone hides it — reject, false: the pages say neither function clears a folder, which holds at both paths, and deleting is correct at both
+- diff-bug #3: the pages' claim that neither function clears a folder has no test — fix now, fixed 0f5fac71
+- diff-bug #4: the message-path match may fail on Windows separators — reject, false until shown: the test is not skipped on Windows, so the Windows CI leg at step 8 settles it, and a red leg returns the milestone
+- diff-bug #5: the class assertion in the loop has no `info =` — reject, style
+- diff-bug #6: `has_encoder()` and `ffm_run()` on a folder change behavior with no NEWS line — reject, planned change: the entry names the `find_*()` lookups those callers go through
+- diff-bug #7: the source ROADMAP row still lists (b) and (c) — reject, planned change: post-merge hygiene narrows it
+- diff-bug #8: a location file without read permission still stops the lookup — follow-up, new row "Unreadable location file"
+- diff-bug #9: double quotes do not protect `$`, a backtick or `"` — reject, planned change: Scope Out names them
+- blame-history #1: a folder at the current path stops the fallback to a usable pre-0.2.0 file — follow-up, absorbed into "Folder at a remembered-location path in set and unset"
+- blame-history #2: double quotes are a partial fix next to D031's `shQuote()` — reject, planned change: Scope Out, and the form matches `ffprobe()` and `mediainfo()`
+- blame-history #3: `unset_program()` on a folder gives write-access advice — follow-up, already on "Folder at a remembered-location path in set and unset"
+- blame-history #4: `ffmpeg()` with no location ends in a generic `system()` error — follow-up, already on the unclassed-aborts row (`ffmpeg_encoders()` with no FFmpeg)
+- prior-review #1: the stub test spawns a child process on CRAN (D090) — fix now, fixed 0f5fac71
+- prior-review #2: the archive records shell quoting as platform-dependent and deferred — reject, planned change: Scope Out
+- prior-review #3: NEWS frames the bullet as "Before, ..." — reject, style
+- prior-review #4: the `program_status()` folder test checks no advice — fix now, fixed 0f5fac71

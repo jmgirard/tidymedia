@@ -131,6 +131,7 @@ edit it.
 - re-audit: AC1 (full) — 3 findings, all fixed in the wording: the draft named the item's opening sentence, which does not state the reading (the `\code{NULL} (default)` sentence does); "no third statement" named no procedure, now a search for `NULL` in each item; "no longer states the reading" was reader-dependent.
 - re-audit: AC1 (full) — no blocking finding; HEAD meets it (`normalize_audio.Rd:82` and `normalize_audio_batch.Rd:106`: the default sentence and the first-track family sentence; the other `NULL` hits name no tracks). Two minor points answered without change, since a further rewording would need a third reader: "the shared family sentence" is singular where the helper gives two sentences (the first-track one is the one that names `normalize_audio()`), and "the only ones" would still hold with the default sentence deleted (a narrower promise, kept).
 - 2026-10-18: amendment return: AC1 — "For (d), within the `audio_stream` item of `man/normalize_audio.Rd` and of `man/normalize_audio_batch.Rd`, of the sentences that a search for `NULL` in that item finds, the only ones that say which tracks `NULL` selects are the `\code{NULL} (default)` sentence and the shared family sentence."
+- 2026-10-18: step-7 approval: m144-setup-audio-help-claims approved for merge
 
 ## Decisions
 

@@ -752,7 +752,8 @@ tm_set_refusal <- function(expr) {
 
 test_that("set_program() refuses a location file it cannot write", {
   # M143 AC1. Mode 0444 takes away write permission on Unix to anyone but
-  # root, and Windows has no such mode. The file keeps its line: the call
+  # root. On Windows Sys.chmod() sets only the read-only attribute, so the
+  # test runs on Unix only. The file keeps its line: the call
   # writes in place and does not replace a file the caller made read-only.
   skip_on_os("windows")
   dirs <- tm_redirect_config()

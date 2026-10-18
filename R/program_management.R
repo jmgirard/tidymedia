@@ -1157,8 +1157,9 @@ find_ffplay <- function() {
 #'
 #' If the call cannot write the location file, it gives a
 #' `tidymedia_location_not_written` error. This happens when the file is there
-#' without write permission, when the folder that holds it has no write
-#' permission, or when that folder is missing and cannot be created. The error
+#' without write permission. It also happens when the file is not there and
+#' its folder has no write permission, or when that folder is missing and
+#' cannot be created. The error
 #' names the file in its message and in `tm_file`. The call does not replace a
 #' file that it cannot write, so the file keeps the location it held.
 #'
@@ -1515,7 +1516,7 @@ tm_unset_program <- function(program, call) {
                leaves {?it/them} alone. Until you delete \\
                {?it/them} by hand, {.fn find_{program}} warns about \\
                {cli::qty(length(full))}{?it/them} when {program} is not \\
-               on the {.envvar PATH}."
+               on the {.envvar PATH} and no location file is saved."
       ),
       class = "tidymedia_location_folder_kept",
       tm_program = program,

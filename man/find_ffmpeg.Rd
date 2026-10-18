@@ -47,8 +47,11 @@ own \code{Sys.which()} reads it, except that a folder never counts and a
 leading \code{~} is expanded.
 \item \code{tidymedia_location_unreadable}: the file does not hold exactly one
 location. It is empty, has more than one line, or has one empty line. Or
-a folder is where that file belongs. The condition holds the program name
-in \code{tm_program} and the file's path in \code{tm_file}.
+the package cannot read the file, because it has no read permission. Or
+a folder is where that file belongs, and no file for the program is in
+either place. The condition holds the program name in \code{tm_program} and the
+path in \code{tm_file}. For folders, that is the first folder the function
+looked in.
 }
 
 A line that holds only spaces counts as a location. So it gives
@@ -57,8 +60,17 @@ A line that holds only spaces counts as a location. So it gives
 To fix a location that is gone or cannot be run, or a file that does not
 hold one location, forget the location with \code{\link[=unset_program]{unset_program()}}, or replace it
 with \code{\link[=set_program]{set_program()}}. A file that cannot be run can also be fixed by giving
-it permission to execute. Neither function can clear a folder where the file
-belongs. Delete the folder by hand, then use \code{\link[=set_program]{set_program()}}.
+it permission to execute. A file the package cannot read can be fixed by
+giving it read permission, or removed with \code{\link[=unset_program]{unset_program()}}.
+
+\code{\link[=unset_program]{unset_program()}} removes an empty folder where the file belongs, in either
+folder, and \code{\link[=set_program]{set_program()}} removes one in the current folder. A folder
+counts as empty only when it holds nothing, not even a hidden file or an
+empty folder. A folder the package cannot read never counts as empty. Both
+functions leave a folder that is not empty, and they give an error. The
+warning says which case you have: it advises
+\code{\link[=unset_program]{unset_program()}} when every folder it found is empty, and otherwise it
+names each folder to delete by hand.
 }
 
 \section{Locations saved by earlier versions}{
@@ -66,8 +78,9 @@ belongs. Delete the folder by hand, then use \code{\link[=set_program]{set_progr
 Versions of the package before 0.2.0 saved locations in a different folder,
 \code{rappdirs::user_config_dir("tidymedia", "R")}. The functions still read a
 file in that folder. They read it only when the current folder has no file
-for the program. \code{\link[=program_status]{program_status()}} looks in the same places, in the same
-order.
+for the program. A folder in the place of the current file does not count
+as a file, so the old file is still read. \code{\link[=program_status]{program_status()}} looks in the
+same places, in the same order.
 
 A \code{tidymedia_location_unreadable} warning names the file that the function
 read. That file can be the one in the old folder.

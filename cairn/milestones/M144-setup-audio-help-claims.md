@@ -75,7 +75,7 @@ edit it.
 - [x] AC4: `NEWS.md` has one bullet under a `## Documentation` heading in the development
       version section that names the corrected functions or groups of functions, and it
       names no milestone.
-- [ ] AC5: `devtools::document()` leaves no diff, `devtools::test()` passes, and
+- [x] AC5: `devtools::document()` leaves no diff, `devtools::test()` passes, and
       `devtools::check()` gives 0 errors and 0 warnings.
 
 ## Coverage
@@ -170,3 +170,6 @@ Pass 2, 2026-10-18, on head 5b643faa after the AC1 amendment; `git diff 53e8baf4
 - prior-review #1: the manifest sentence lost the `run = TRUE` condition that M133's review O1 restored, and the manifest is attached only inside `if (run)` (`R/ffm_batch.R:190`, `:343`) — fix now: "A run also attaches a provenance manifest".
 - prior-review #2: the `?install_on_win` Value sentence ran to 31 words and put an error class in Value, against the plain-docs rules — fix now: Value is back to its base sentence and the `set_program()` errors are a bullet in Errors.
 - The stale `devtools::check()` on 53e8baf4 was stopped before it finished; AC5 runs on the fixed head.
+- Fix-now commits: diff-bug #1, #2, #4, #6, #7, #8 (wording), #9; blame-history #1, #3, #6; prior-review #1, #2, fixed aca7db40. After them AC1 (d)'s `NULL` sentences and AC3's hunk kinds were re-read: unchanged and met.
+- AC5: met on aca7db40. `devtools::document()` leaves no diff; `devtools::test()`: FAIL 0, WARN 12, SKIP 7, PASS 18801; `devtools::check()`: 0 errors, 0 warnings, 0 notes in devtools' summary. R CMD check's own "1 NOTE" is the `spelling.Rout` mismatch over `encodable` and `filesystem`, both on master before the branch.
+- Gate: `cairn_validate.py` all checks passed; no principle changed, so `cairn_impact` was skipped; no new top-level file; README and `_pkgdown.yml` untouched; NEWS has the entry (AC4).

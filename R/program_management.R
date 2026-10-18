@@ -895,13 +895,16 @@ install_on_win <- function(download_url = NULL,
 #'   run. Give it permission to execute, or save another copy. This case does
 #'   not arise on Windows, which has no execute bit.
 #' * `tidymedia_location_unreadable`: the file that stores the location does
-#'   not hold exactly one location, or a folder is where that file belongs.
+#'   not hold exactly one location, or the package cannot read it, or a folder
+#'   is where that file belongs.
 #'
 #' In all three cases, the row has `NA` in both columns. For a location that is
 #' gone or cannot be run, or a file that does not hold one location,
 #' [unset_program()] forgets the location, and [set_program()] replaces it.
-#' Neither can clear a folder. Delete the folder by hand, then use
-#' [set_program()].
+#' For a file the package cannot read, give the file read permission, or use
+#' [unset_program()] to remove it. [unset_program()] and [set_program()] also
+#' remove an empty folder where the file belongs. They leave a folder that
+#' holds anything, so delete that folder by hand.
 #'
 #' The version is what the program reports about itself. For `ffmpeg`,
 #' `ffprobe` and `ffplay`, it is the FFmpeg build number. For `mediainfo`, it is
@@ -1023,8 +1026,11 @@ tm_na_string <- function(x) {
 #'   leading `~` is expanded.
 #' * `tidymedia_location_unreadable`: the file does not hold exactly one
 #'   location. It is empty, has more than one line, or has one empty line. Or
-#'   a folder is where that file belongs. The condition holds the program name
-#'   in `tm_program` and the file's path in `tm_file`.
+#'   the package cannot read the file, because it has no read permission. Or
+#'   a folder is where that file belongs, and no file for the program is in
+#'   either place. The condition holds the program name in `tm_program` and the
+#'   path in `tm_file`. For folders, that is the first folder the function
+#'   looked in.
 #'
 #' A line that holds only spaces counts as a location. So it gives
 #' `tidymedia_location_gone`, not `tidymedia_location_unreadable`.
@@ -1032,15 +1038,23 @@ tm_na_string <- function(x) {
 #' To fix a location that is gone or cannot be run, or a file that does not
 #' hold one location, forget the location with [unset_program()], or replace it
 #' with [set_program()]. A file that cannot be run can also be fixed by giving
-#' it permission to execute. Neither function can clear a folder where the file
-#' belongs. Delete the folder by hand, then use [set_program()].
+#' it permission to execute. A file the package cannot read can be fixed by
+#' giving it read permission, or removed with [unset_program()].
+#'
+#' [unset_program()] and [set_program()] remove an empty folder where the file
+#' belongs. A folder counts as empty only when it holds nothing, not even a
+#' hidden file or an empty folder. They leave a folder that holds anything, and
+#' they give an error. The warning says which case you have: it advises
+#' [unset_program()] when every folder it found is empty, and otherwise it
+#' names each folder to delete by hand.
 #'
 #' @section Locations saved by earlier versions:
 #' Versions of the package before 0.2.0 saved locations in a different folder,
 #' `rappdirs::user_config_dir("tidymedia", "R")`. The functions still read a
 #' file in that folder. They read it only when the current folder has no file
-#' for the program. [program_status()] looks in the same places, in the same
-#' order.
+#' for the program. A folder in the place of the current file does not count
+#' as a file, so the old file is still read. [program_status()] looks in the
+#' same places, in the same order.
 #'
 #' A `tidymedia_location_unreadable` warning names the file that the function
 #' read. That file can be the one in the old folder.
@@ -1114,6 +1128,14 @@ find_ffplay <- function() {
 #' In a session where no one can answer, the call gives an error. Pass
 #' `confirm = FALSE` to write without the question, for example in a script
 #' that runs on its own.
+#'
+#' A folder can be where the location file goes. If the folder is empty, the
+#' call removes it before it writes the file, and the question names the
+#' folder. A folder counts as empty only when it holds nothing, not even a
+#' hidden file or an empty folder. If the folder holds anything, the call gives
+#' a `tidymedia_location_folder` error before it asks, and it changes nothing.
+#' The error names the folder in its message and in `tm_files`. Delete the
+#' folder by hand, then call again.
 #'
 #' For locations saved by versions before 0.2.0, see the section "Locations
 #' saved by earlier versions" in [find_ffmpeg()].
@@ -1301,11 +1323,19 @@ set_ffplay <- function(location, confirm = TRUE) {
 #' The call also clears a location saved by a version before 0.2.0. See the
 #' section "Locations saved by earlier versions" in [find_ffmpeg()].
 #'
+#' A folder can be where a location file goes, in the current folder or the
+#' one before 0.2.0. If the folder is empty, the call removes it with the
+#' files. A folder counts as empty only when it holds nothing, not even a
+#' hidden file or an empty folder. If a folder holds anything, the call gives a
+#' `tidymedia_location_folder` error and removes nothing, not even a file at
+#' the other path. The error lists each such folder in its message and in
+#' `tm_files`. Delete those folders by hand, then call again.
+#'
 #' @param program A string naming the program to forget. One of `"ffmpeg"`,
 #'   `"ffprobe"`, `"ffplay"` or `"mediainfo"`. There is no default, because the
 #'   call deletes a file. A call that names no program gives an error.
-#' @return Invisibly, `TRUE` when the call removed a saved location, and `FALSE`
-#'   when there was none to remove.
+#' @return Invisibly, `TRUE` when the call removed a saved location or an empty
+#'   folder, and `FALSE` when there was nothing to remove.
 #' @seealso [set_program()] to save a location, and [program_status()] to see
 #'   where the package finds each program.
 #' @family program management functions
@@ -1338,10 +1368,7 @@ tm_unset_program <- function(program, call) {
   # Both files, in the order find_program() reads them. Deleting only the
   # current one would leave a pre-0.2.0 location that find_program() then
   # starts answering with, which is the opposite of forgetting.
-  files <- c(
-    tm_config_file(program),
-    tm_config_file(program, tm_legacy_config_dir())
-  )
+  files <- tm_config_paths(program)
   present <- files[file.exists(files)]
 
   if (!length(present)) {
@@ -1357,11 +1384,21 @@ tm_unset_program <- function(program, call) {
     return(invisible(FALSE))
   }
 
+  # A folder at either path is removed only when it is empty, hidden entries
+  # included. One that holds anything is the caller's, so the call refuses
+  # before it removes anything: a partial unset would change which location
+  # the lookup answers with (M141, D104).
+  folders <- present[dir.exists(present)]
+  full <- folders[!tm_folder_empty(folders)]
+  if (length(full)) tm_abort_location_folder(program, full, call)
+
   # Through the tm_unlink() seam, and answered by a third look at the
   # filesystem rather than by the removal's own return value: `unlink()`
   # reports one status for the whole call and no names, so which files are
   # still there is a question only the filesystem can answer (M103's shape).
-  tm_unlink(present)
+  # `recursive` is what lets unlink() remove a folder at all, and every folder
+  # left in `present` was just found empty.
+  tm_unlink(present, recursive = length(folders) > 0L)
   left <- present[file.exists(present)]
 
   # What tidymedia remembers about an FFmpeg build was memoized against the
@@ -1374,8 +1411,11 @@ tm_unset_program <- function(program, call) {
   # already stale by the time the refusal is raised; dropping it only on the
   # success path left it describing a build the lookups had stopped resolving
   # to (D089). A run that removed nothing skips it: nothing about the resolved
-  # binary changed, and a discard there costs a re-probe for no reason.
-  if (length(left) < length(present)) forget_ffmpeg_capabilities()
+  # binary changed, and a discard there costs a re-probe for no reason. So
+  # does a run that removed only empty folders, because a folder never names
+  # the binary the lookup resolves to (D104).
+  removed_files <- setdiff(present, c(folders, left))
+  if (length(removed_files)) forget_ffmpeg_capabilities()
 
   if (length(left)) {
     cli::cli_abort(

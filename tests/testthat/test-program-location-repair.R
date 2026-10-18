@@ -635,6 +635,112 @@ test_that("set_program() stops when the empty folder will not go", {
   expect_length(list.files(path, all.files = TRUE, no.. = TRUE), 0L)
 })
 
+
+# unset_program(): a folder where the location file should be ----------------
+
+# Lay out what each of the two paths holds: "location" (a location file), "empty"
+# or another tm_folder_shapes name (a folder), or nothing when absent.
+tm_lay_out <- function(dirs, program, layout, stub) {
+  paths <- c(
+    new = tm_config_file(program, dirs$new),
+    legacy = tm_config_file(program, dirs$legacy)
+  )
+  for (w in names(layout)) {
+    if (layout[[w]] == "location") {
+      writeLines(stub, paths[[w]])
+    } else {
+      tm_folder_shapes[[layout[[w]]]](paths[[w]])
+    }
+  }
+  paths
+}
+
+# Everything at or under both paths, for "nothing changed" assertions.
+tm_tree <- function(paths) {
+  unlist(lapply(unname(paths), function(p) {
+    c(p[file.exists(p)], list.files(p, all.files = TRUE, no.. = TRUE,
+                                    recursive = TRUE, include.dirs = TRUE,
+                                    full.names = TRUE))
+  }))
+}
+
+test_that("unset_program() removes empty folders with the location files", {
+  # M141 AC4. Before M141 it removed files only, and refused a folder with
+  # advice about write access. Every layout of empty folders and files across
+  # the two paths, both orientations.
+  layouts <- list(
+    c(new = "empty"),
+    c(legacy = "empty"),
+    c(new = "empty", legacy = "empty"),
+    c(new = "empty", legacy = "location"),
+    c(new = "location", legacy = "empty")
+  )
+  for (program in tm_program_vocabulary) {
+    for (layout in layouts) {
+      dirs <- tm_redirect_config()
+      paths <- tm_lay_out(dirs, program, layout, tm_stub_executable())
+      info <- paste(program, paste(names(layout), layout, collapse = " "))
+
+      expect_true(expect_invisible(unset_program(program)), info = info)
+      expect_false(any(file.exists(paths)), info = info)
+    }
+  }
+})
+
+test_that("unset_program() refuses a folder that holds anything, before it removes anything", {
+  # M141 AC4. Each non-empty shape at each path, beside a file, an empty
+  # folder, a second non-empty folder, or nothing at the other path. The
+  # refusal lists every non-empty folder, and both paths stay as they were.
+  # "full" puts a second folder of the same shape at the other path, so
+  # tm_files must list both.
+  others <- c("none", "location", "empty", "full")
+  for (shape in setdiff(names(tm_folder_shapes), "empty")) {
+    for (where in c("new", "legacy")) {
+      for (other in others) {
+        dirs <- tm_redirect_config()
+        layout <- stats::setNames(shape, where)
+        other_where <- setdiff(c("new", "legacy"), where)
+        if (other == "full") {
+          layout[[other_where]] <- shape
+        } else if (other != "none") {
+          layout[[other_where]] <- other
+        }
+        paths <- tm_lay_out(dirs, "ffmpeg", layout, tm_stub_executable())
+        before <- tm_tree(paths)
+        info <- paste(shape, where, other)
+
+        condition <- expect_error(
+          unset_program("ffmpeg"),
+          class = "tidymedia_location_folder"
+        )
+        expect_identical(condition$tm_program, "ffmpeg", info = info)
+        full <- unname(paths[names(layout)[layout == shape]])
+        full <- full[order(match(full, paths))]
+        expect_identical(condition$tm_files, full, info = info)
+        expect_identical(tm_tree(paths), before, info = info)
+      }
+    }
+  }
+})
+
+test_that("unset_program() keeps the memo when it removes only empty folders", {
+  # M141 AC4 and D104. A folder never names the binary the lookup resolves to,
+  # so removing one leaves the capability memo alone. A location file removed
+  # in the same call still drops it (D089).
+  dirs <- tm_redirect_config()
+  tm_lay_out(dirs, "ffmpeg", c(new = "empty", legacy = "empty"), "unused")
+  tm_seed_capability_memo()
+  expect_true(unset_program("ffmpeg"))
+  expect_false(tm_memo_is_empty())
+
+  dirs <- tm_redirect_config()
+  tm_lay_out(dirs, "ffmpeg", c(new = "empty", legacy = "location"),
+             tm_stub_executable())
+  tm_seed_capability_memo()
+  expect_true(unset_program("ffmpeg"))
+  expect_true(tm_memo_is_empty())
+})
+
 test_that("program_status() stays silent when nothing is configured at all", {
   # The case the surfacing must not reach. Four programs, none found, no
   # config files: four plain not-found warnings, none of which the caller

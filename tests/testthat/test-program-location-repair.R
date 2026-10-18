@@ -855,13 +855,72 @@ test_that("unset_program() removes empty folders with the location files", {
   }
 })
 
-test_that("unset_program() refuses a folder that holds anything, before it removes anything", {
-  # M141 AC4. Each non-empty shape at each path, beside a file, an empty
-  # folder, a second non-empty folder, or nothing at the other path. The
+test_that("unset_program() removes the rest and keeps a folder that holds anything", {
+  # M143 AC3 and D105. Each non-empty shape at each path, beside a location
+  # file or an empty folder at the other path. Before M143 the call refused
+  # and removed nothing, so a location file beside such a folder could not be
+  # forgotten. Now the file or empty folder goes, the full folder and its
+  # entries stay, and a warning of its own class names the folder after the
+  # removal. The memo goes with a removed location file only (D089, D104).
+  for (shape in setdiff(names(tm_folder_shapes), "empty")) {
+    for (where in c("new", "legacy")) {
+      for (other in c("location", "empty")) {
+        dirs <- tm_redirect_config()
+        other_where <- setdiff(c("new", "legacy"), where)
+        layout <- stats::setNames(c(shape, other), c(where, other_where))
+        paths <- tm_lay_out(dirs, "ffmpeg", layout, tm_stub_executable())
+        full <- paths[[where]]
+        kept <- tm_tree(full)
+        tm_seed_capability_memo()
+        info <- paste(shape, where, other)
+
+        result <- tm_collect_warnings(
+          expect_invisible(unset_program("ffmpeg"))
+        )
+        expect_true(result$value, info = info)
+        expect_length(result$warnings, 1L)
+        warning <- result$warnings[[1]]
+        expect_s3_class(warning, "tidymedia_location_folder_kept")
+        expect_identical(warning$tm_program, "ffmpeg", info = info)
+        expect_identical(warning$tm_files, full, info = info)
+        expect_false(file.exists(paths[[other_where]]), info = info)
+        expect_identical(tm_tree(full), kept, info = info)
+        expect_identical(tm_memo_is_empty(), other == "location", info = info)
+      }
+    }
+  }
+})
+
+test_that("unset_program() keeps a folder it cannot read beside a location file", {
+  # M143 AC3. A folder the process cannot read never counts as empty (M141),
+  # so it stays and the warning names it. Mode 0333 takes away read
+  # permission on Unix to anyone but root, and Windows has no such mode.
+  skip_on_os("windows")
+  dirs <- tm_redirect_config()
+  paths <- tm_lay_out(dirs, "ffmpeg", c(legacy = "location"),
+                      tm_stub_executable())
+  dir.create(paths[["new"]])
+  Sys.chmod(paths[["new"]], "0333")
+  withr::defer(Sys.chmod(paths[["new"]], "0755"))
+  skip_if(file.access(paths[["new"]], 4L) == 0L,
+          "the process can read a mode-0333 folder")
+
+  result <- tm_collect_warnings(unset_program("ffmpeg"))
+  expect_true(result$value)
+  expect_length(result$warnings, 1L)
+  expect_s3_class(result$warnings[[1]], "tidymedia_location_folder_kept")
+  expect_identical(result$warnings[[1]]$tm_files, paths[["new"]])
+  expect_true(dir.exists(paths[["new"]]))
+  expect_false(file.exists(paths[["legacy"]]))
+})
+
+test_that("unset_program() refuses when every path that holds anything holds a full folder", {
+  # M141 AC4, narrowed by M143 AC4 and D105. Each non-empty shape at each
+  # path, with nothing or a second non-empty folder at the other path. The
   # refusal lists every non-empty folder, and both paths stay as they were.
   # "full" puts a second folder of the same shape at the other path, so
   # tm_files must list both.
-  others <- c("none", "location", "empty", "full")
+  others <- c("none", "full")
   for (shape in setdiff(names(tm_folder_shapes), "empty")) {
     for (where in c("new", "legacy")) {
       for (other in others) {

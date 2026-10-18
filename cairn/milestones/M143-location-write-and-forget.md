@@ -118,7 +118,7 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
       not reach the caller. Write the file in place, with no
       temp-then-rename step, so a mode-0444 file is refused and not
       replaced. Leave the capability memo alone on that path.
-- [ ] T2: Rewrite the M141 test at
+- [x] T2: Rewrite the M141 test at
       `tests/testthat/test-program-location-repair.R:785-818`, whose
       location-file and empty-folder cases now contradict AC3, into the
       AC3 and AC4 tests, and add the mode-0333 case. See them fail. Then
@@ -149,6 +149,8 @@ at `R/program_management.R:179-183`, `NEWS.md`, and a new D-entry, D105.
 - 2026-10-18: plan gate chose refusing an unwritable file over removing it and writing a new one, because the caller set the permission; falsified by a caller who expects `set_program()` to replace a read-only location file.
 - 2026-10-18: implement started on branch m143-location-write-and-forget, cut from master at f80dd15b.
 - 2026-10-18: T1 done: AC1 and AC2 tests failed first (base `simpleError` plus one base warning), then `tm_set_program()` catches the `dir.create()`/`writeLines()` failure as `tidymedia_location_not_written` with the warnings muffled; the `find_program()` comment citing the row now names the class; full `devtools::test()` clean.
+- 2026-10-18: T2 done: M141's refuse-before-removing test rewritten into the AC3 test (3 shapes x 2 paths x file or empty folder, memo asserted), a mode-0333 case, and the AC4 test (nothing or a second full folder); both new tests failed first; `tm_unset_program()` now refuses only when every present path is a full folder, removes the rest, and warns `tidymedia_location_folder_kept` after the removal; full `devtools::test()` clean.
+- 2026-10-18: the folder-kept warning says `find_<program>()` warns about the folder while the program is not on the `PATH`, read from an executed `unset_program()` then `find_ffmpeg()` with `PATH` empty.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

@@ -1429,12 +1429,20 @@ tm_unset_program <- function(program, call) {
   }
 
   # A folder at either path is removed only when it is empty, hidden entries
-  # included. One that holds anything is the caller's, so the call refuses
-  # before it removes anything: a partial unset would change which location
-  # the lookup answers with (M141, D104).
+  # included. One that holds anything is the caller's, so it stays (M141,
+  # D104). Everything else at the two paths is removed: before M143 the call
+  # refused and removed nothing, so a location file beside such a folder could
+  # not be forgotten, and the lookup warnings' unset_program() advice failed
+  # there. Removing that file leaves the lookup with no location, which is
+  # what forgetting means (D105). With nothing else to remove, the call still
+  # refuses.
   folders <- present[dir.exists(present)]
   full <- folders[!tm_folder_empty(folders)]
-  if (length(full)) tm_abort_location_folder(program, full, call)
+  if (length(full) == length(present)) {
+    tm_abort_location_folder(program, full, call)
+  }
+  present <- setdiff(present, full)
+  folders <- setdiff(folders, full)
 
   # Through the tm_unlink() seam, and answered by a third look at the
   # filesystem rather than by the removal's own return value: `unlink()`
@@ -1471,6 +1479,30 @@ tm_unset_program <- function(program, call) {
       class = "tidymedia_location_not_removed",
       tm_program = program,
       tm_files = left,
+      call = call
+    )
+  }
+
+  # After the removal took, so a handler that unwinds on the warning still
+  # leaves the location forgotten. Its own class, because a handler written
+  # for the `tidymedia_location_folder` refusal would otherwise unwind here
+  # too (D105).
+  if (length(full)) {
+    cli::cli_warn(
+      c(
+        "{cli::qty(length(full))}Kept the {?folder/folders} at the \\
+         remembered-location {?path/paths} for {program}.",
+        "x" = "{.file {full}}",
+        "i" = "{cli::qty(length(full))}{?The folder holds/Each folder holds} \\
+               files or folders, or tidymedia cannot read it, so tidymedia \\
+               leaves {?it/them} alone. Until you delete \\
+               {?it/them} by hand, {.fn find_{program}} warns about \\
+               {cli::qty(length(full))}{?it/them} when {program} is not \\
+               on the {.envvar PATH}."
+      ),
+      class = "tidymedia_location_folder_kept",
+      tm_program = program,
+      tm_files = full,
       call = call
     )
   }

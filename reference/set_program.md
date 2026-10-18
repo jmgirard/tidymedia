@@ -78,6 +78,14 @@ file saved before 0.2.0 stays, and
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
 removes it when it is empty.
 
+If the call cannot write the location file, it gives a
+`tidymedia_location_not_written` error. This happens when the file is
+there without write permission. It also happens when the file is not
+there and its folder has no write permission, or when that folder is
+missing and cannot be created. The error names the file in its message
+and in `tm_file`. The call does not replace a file without write
+permission, so that file keeps the location it held.
+
 For locations saved by versions before 0.2.0, see the section "Locations
 saved by earlier versions" in
 [`find_ffmpeg()`](https://jmgirard.github.io/tidymedia/reference/find_ffmpeg.md).

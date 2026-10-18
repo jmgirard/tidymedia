@@ -75,8 +75,17 @@ removes an empty folder where the file belongs, in either folder, and
 removes one in the current folder. A folder counts as empty only when it
 holds nothing, not even a hidden file or an empty folder. A folder the
 package cannot read never counts as empty. Both functions leave a folder
-that is not empty, and they give an error. The warning says which case
-you have: it advises
+that is not empty.
+[`set_program()`](https://jmgirard.github.io/tidymedia/reference/set_program.md)
+gives a `tidymedia_location_folder` error for one in the current folder.
+[`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
+removes the location files and empty folders at the two paths, and gives
+a `tidymedia_location_folder_kept` warning for the folder it leaves. If
+each path that holds something holds a folder that is not empty,
+[`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
+gives the `tidymedia_location_folder` error and removes nothing. The
+warning from the `find_*()` functions says which case you have: it
+advises
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
 when every folder it found is empty, and otherwise it names each folder
 to delete by hand.

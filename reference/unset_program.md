@@ -44,10 +44,14 @@ A folder can be where a location file goes, in the current folder or the
 one before 0.2.0. If the folder is empty, the call removes it with the
 files. A folder counts as empty only when it holds nothing, not even a
 hidden file or an empty folder, and a folder the package cannot read
-never counts as empty. If a folder is not empty, the call gives a
-`tidymedia_location_folder` error and removes nothing, not even a file
-at the other path. The error lists each such folder in its message and
-in `tm_files`. Delete those folders by hand, then call again.
+never counts as empty. A folder that is not empty stays. The call
+removes the file or the empty folder at the other path, and then gives a
+`tidymedia_location_folder_kept` warning. The warning names the folder
+that stays in its message and in `tm_files`. If each path that holds
+something holds a folder that is not empty, the call gives a
+`tidymedia_location_folder` error and removes nothing. The error lists
+each such folder in its message and in `tm_files`. Delete those folders
+by hand, then call again.
 
 ## See also
 

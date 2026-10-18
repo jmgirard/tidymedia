@@ -105,8 +105,15 @@ giving it read permission, or removed with <code><a href="unset_program.html">un
 folder, and <code><a href="set_program.html">set_program()</a></code> removes one in the current folder. A folder
 counts as empty only when it holds nothing, not even a hidden file or an
 empty folder. A folder the package cannot read never counts as empty. Both
-functions leave a folder that is not empty, and they give an error. The
-warning says which case you have: it advises
+functions leave a folder that is not empty. <code><a href="set_program.html">set_program()</a></code> gives a
+<code>tidymedia_location_folder</code> error for one in the current folder.
+<code><a href="unset_program.html">unset_program()</a></code> removes the
+location files and empty folders at the two paths, and gives a
+<code>tidymedia_location_folder_kept</code> warning for the folder it leaves. If each
+path that holds something holds a folder that is not empty,
+<code><a href="unset_program.html">unset_program()</a></code> gives the <code>tidymedia_location_folder</code> error and removes
+nothing. The warning from the <code>find_*()</code> functions says which case you
+have: it advises
 <code><a href="unset_program.html">unset_program()</a></code> when every folder it found is empty, and otherwise it
 names each folder to delete by hand.</p>
     </div>

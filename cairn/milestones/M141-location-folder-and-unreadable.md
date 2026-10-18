@@ -79,3 +79,28 @@ Evidence gathered 2026-10-17 on branch head 0dcaf9b0, master unmoved. `test-prog
 - AC3: `:525` (12), `:541` (42), `:604` (10), `:632` (4) and `:651` (5) pass. An empty folder is replaced with `confirm = FALSE`. Three non-empty shapes give `tidymedia_location_folder` with `tm_program` and `tm_files` and the text "by hand", under `confirm = TRUE` with no one to ask, so before the prompt, and the contents stay. Approve writes the file, and decline keeps the folder. The prompt and the refusal both name the empty folder. A `tm_unlink` that removes nothing gives `tidymedia_location_not_removed`, and nothing is written.
 - AC4: `:700` (60), `:723` (96) and `:759` (4) pass. Five layouts of empty folders and files are all removed with `TRUE`. Three non-empty shapes at each path, beside nothing, a file, an empty folder or a second non-empty folder, give `tidymedia_location_folder`, `tm_files` lists every non-empty folder, and the trees are unchanged. An empty-folder-only removal keeps the memo, and one with a file drops it.
 - AC5: `:114` passes. When every folder is empty, the warning holds `unset_program("<program>")` and not "by hand". When any folder holds something, it names each such folder and "by hand", and not `unset_program`.
+- Gate: `cairn_validate.py` all checks passed. `devtools::document()` writes nothing. `pkgdown::check_pkgdown()` finds no problems. README is not touched. No principle changed, so `cairn_impact` is skipped. NEWS.md has entries for the user-visible changes.
+- spawned: diff-bug, blame-history, prior-review
+
+Findings (20) and dispositions:
+
+- diff-bug #1: the unreadable, malformed, not-executable and gone warnings advise `unset_program()`, which refuses when the other path holds a non-empty folder — follow-up ("Location folder edges after M141" row, item a). The refusal names the folder, so the caller still has a next step.
+- diff-bug #2: the emptiness check and the recursive removal leave a window in which a new entry is deleted, and `unset_program()` has no second check — follow-up (row item b). It needs a removal that fails on a non-empty folder on every OS.
+- diff-bug #3: if the folder vanishes during the prompt, the second check refuses with "a folder is there" — fix now.
+- diff-bug #4: no test reaches the second check after consent — fix now.
+- diff-bug #5: the folder error is singular when it lists two folders — fix now.
+- diff-bug #6: `?set_program` leaves out the `tidymedia_location_not_removed` stop for a folder that will not go — fix now.
+- diff-bug #7: NEWS says both functions remove an empty folder without saying `set_program()` clears the current path only, and one NEWS line runs past 100 characters — fix now.
+- diff-bug #8: the read-permission tests skip under root — reject (false as a defect): no test can make a file unreadable to root, and the GitHub runners are not root.
+- diff-bug #9: the prompt test matches the path, which the "By writing:" line also holds — fix now.
+- diff-bug #10: a link to a folder is handled as the folder, and the prompt says "Remove the empty folder" when only the link goes — follow-up (row item d). Both outcomes are safe.
+- diff-bug #11: a FIFO or socket at a location path counts as a file, and `readLines()` on a FIFO blocks — follow-up (row item e). This predates M141.
+- diff-bug #12: the empty-folder advice says `unset_program()` then `set_*()`, though `set_*()` alone works — fix now.
+- blame-history #1: a non-empty folder at the current path no longer warns when a pre-0.2.0 file is read — reject (planned change): AC1 promises the fallback for any folder there, and `?find_ffmpeg` states it.
+- blame-history #2: `unset_program()` cannot forget a valid current file while the other path holds a non-empty folder — follow-up (row item a), the falsifier the plan recorded for refusing before any removal.
+- blame-history #3: `unset_program()` has no second emptiness check — follow-up (row item b), the same as diff-bug #2.
+- blame-history #4: `install_on_win()` can stop after the first program on a non-empty folder at a later path, and its prompt does not name an empty-folder removal — follow-up (row item c). Before M141 it stopped there too, with R's error.
+- prior-review #1: the same `install_on_win()` point, against M104's all-or-none registration and M110's prompt — follow-up (row item c).
+- prior-review #2: M097's fallback was keyed on existence, and a folder now falls through — reject (planned change): AC1.
+- prior-review #3: the read-permission tests skip under root — reject (false as a defect), as diff-bug #8.
+- prior-review #4: the memo is kept on a folder-only removal, narrower than D089 — reject (planned change): AC4 and D104 record it.

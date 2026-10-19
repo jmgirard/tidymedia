@@ -1439,8 +1439,10 @@ crop_video_pipeline <- function(input, output, width, height,
 #' @param video_codec `r video_codec_unset_param()`
 #' @param audio_codec A string naming the output audio codec.
 #'   `r audio_codec_copy_sentences("the audio")` Stream-copying fails if
-#'   the output container cannot hold the source audio codec, for example FLAC
-#'   in \code{.mp4}. In that case, name an encoder.
+#'   the output container cannot hold the source audio codec. In that case,
+#'   name an encoder. With FFmpeg 9.0.2 on macOS, a FLAC track from an
+#'   \code{.mkv} file was copied into \code{.mp4} without error. Other FFmpeg
+#'   versions can differ.
 #' @param hardware `r hardware_param(null_default = TRUE)`
 #' @param fallback `r fallback_param("software", unset = "picking")`
 #' @param quality `r quality_param()`
@@ -1448,8 +1450,8 @@ crop_video_pipeline <- function(input, output, width, height,
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return `r command_return()`
-#' @seealso [ffm_crop()], the pipeline function it wraps;
-#'   [has_hardware_encoder()] for the \code{hardware} toggle;
+#' @seealso [ffm_files()], [ffm_crop()] and [ffm_map()], among the pipeline
+#'   functions it wraps; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [crop_video_batch()] for the many-file form.
 #' @family task functions
 #' @family audio selection functions
@@ -1506,9 +1508,11 @@ crop_video <- function(infile, outfile, width, height,
 # format_for_web() --------------------------------------------------------
 
 # Shared recipe behind format_for_web() and format_for_web_batch(): the fixed
-# web-delivery re-encode (H.264 + yuv420p + AAC + faststart), padding odd
-# dimensions down to even as the codec requires. No per-row knobs — every input
-# gets the same recipe. Command assembly stays in Layer 1 (IP1/D002).
+# web-delivery re-encode (H.264 + yuv420p + AAC + faststart), cropping odd
+# dimensions down to even as the codec requires. The codecs and the crop are the
+# same for every input; the knobs are `hardware`, `fallback`, `audio_stream` and
+# `quality`, and the batch form reads the last two per row. Command assembly
+# stays in Layer 1 (IP1/D002).
 format_for_web_pipeline <- function(input, output, hardware = "none",
                                     fallback = FALSE, audio_stream = NULL,
                                     quality = NULL,
@@ -1546,8 +1550,9 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #' Re-encode a video for web playback
 #'
 #' Re-encode a video into a widely compatible, web-friendly form: H.264 video
-#' with \code{yuv420p} and \code{+faststart}, and AAC audio. Odd dimensions are
-#' padded down to even values, as the codec requires. The glossary in
+#' with \code{yuv420p} and \code{+faststart}, and AAC audio. An odd width or
+#' height is cropped down to the even value below it, as the codec requires. The
+#' glossary in
 #' \code{vignette("tidymedia")} explains media terms such as codec, pixel format
 #' and re-encode.
 #'
@@ -1612,8 +1617,10 @@ strip_metadata_pipeline <- function(input, output) {
   p <- ffm_copy(p)
   # -map_metadata -1 drops global tags (creation_time, location/GPS, make/model,
   # title, comment); -map_chapters -1 drops chapters; -fflags +bitexact stops the
-  # muxer writing a fresh creation_time and an encoder=Lavf... tag. Per-stream
-  # tags (handler_name, language) and codec-embedded identifiers survive a copy.
+  # muxer writing a fresh creation_time and an encoder=Lavf... tag. With FFmpeg
+  # 9.0.2 on macOS, -map_metadata -1 also reset the per-stream handler_name and
+  # language tags to the muxer's generic values in an .mp4 and dropped them
+  # from an .mkv (M146); codec-embedded identifiers survive a copy.
   ffm_output_options(
     p, "-map_metadata -1", "-map_chapters -1", "-fflags +bitexact"
   )
@@ -1637,12 +1644,18 @@ strip_metadata_pipeline <- function(input, output) {
 #' \code{encoder} tag that names its own version. Either tag would defeat
 #' de-identification and reproducibility.
 #'
-#' Because the streams are copied and not re-encoded, some data is not removed.
-#' Those are identifiers **inside** the encoded bitstream, and per-stream
-#' metadata such as \code{handler_name} or \code{language}. Removing them would
-#' require one of two things. One is re-encoding, which is out of scope for this
-#' function, so use the direct command \code{\link{ffmpeg}} for it. The other
-#' is per-stream metadata mapping that must probe the file first.
+#' Because the streams are copied and not re-encoded, identifiers **inside**
+#' the encoded bitstream are not removed. Removing them requires re-encoding,
+#' which is out of scope for this function, so use the direct command
+#' \code{\link{ffmpeg}} for it.
+#'
+#' With FFmpeg 9.0.2 on macOS, the source values of per-stream tags such as
+#' \code{handler_name} and \code{language} did not reach the output. An
+#' \code{.mp4} output still had both tags, with generic values:
+#' \code{handler_name} was \code{VideoHandler} or \code{SoundHandler}, and
+#' \code{language} was \code{und}. An \code{.mkv} output had neither tag.
+#' Other FFmpeg versions can differ, so if these tags matter, check them in the
+#' output with \code{\link{probe_streams}}.
 #'
 #' @inheritParams extract_audio
 #' @param outfile A string containing the path of the de-identified file to
@@ -1680,9 +1693,10 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #' Re-encode a video to a consistent, reproducible format for analysis. The
 #' format is one video codec and pixel format, and optionally a resolution and
 #' frame rate, with \code{+faststart} for smooth playback.
-#' \code{\link{format_for_web}} uses a fixed recipe for web delivery. Here,
-#' every part of the standard is an argument. So a lab can set its own house
-#' format once and apply it across a dataset. The glossary in
+#' \code{\link{format_for_web}} uses a fixed recipe for web delivery. Here, the
+#' video and audio codecs, pixel format, resolution and frame rate are
+#' arguments, and \code{+faststart} is always set. So a lab can set its own
+#' house format once and apply it across a dataset. The glossary in
 #' \code{vignette("tidymedia")} explains media terms such as codec, pixel format
 #' and frame rate.
 #'
@@ -4045,7 +4059,10 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #'   `r audio_codec_copy_sentences("the audio")` A stream copy
 #'   (\code{reencode = FALSE}) always copies the audio, so any other value is an
 #'   error there. Stream-copying fails if the output container cannot hold the
-#'   source audio codec (e.g. FLAC in \code{.mp4}). Name an encoder instead.
+#'   source audio codec. Name an encoder instead. With FFmpeg 9.0.2 on macOS,
+#'   a FLAC track from an \code{.mkv} file was copied into \code{.mp4}
+#'   segments without error, with \code{reencode = TRUE} and with
+#'   \code{reencode = FALSE}. Other FFmpeg versions can differ.
 #' @param hardware `r hardware_param(null_default = TRUE)`
 #'   `r encoder_check_sentences()` `r contradiction_sentences("cut")`
 #'   The stream-copy conflict named under \code{reencode} is caught first, so
@@ -4983,8 +5000,8 @@ derive_standardized_names <- function(input) {
 #' @return `r batch_return("output")`
 #' @seealso [standardize_video()] for the single-input form; [ffm_batch()] for
 #'   the batch runner and the arguments forwarded through \code{...};
-#'   [segment_video_batch()] and [extract_frame_batch()] for the other batch
-#'   task functions.
+#'   [segment_video_batch()] and [extract_frame_batch()], two other batch task
+#'   functions.
 #' @family task functions
 #' @family audio selection functions
 #' @examples
@@ -5252,8 +5269,8 @@ derive_stripped_names <- function(input) {
 #' @return `r batch_return("output")`
 #' @seealso [strip_metadata()] for the single-input form; [ffm_batch()] for the
 #'   batch runner and the arguments forwarded through \code{...};
-#'   [standardize_video_batch()] and [anonymize_video_batch()] for the other
-#'   batch task functions.
+#'   [standardize_video_batch()] and [anonymize_video_batch()], two other batch
+#'   task functions.
 #' @family task functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -6556,14 +6573,21 @@ derive_web_names <- function(input) {
 #'   encoder.
 #' @param hardware,fallback `r batch_hardware_param("crop_video")`
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
-#'   A call can also have a per-row \code{width} or \code{height} that is
-#'   neither a positive number nor an FFmpeg expression. Such a call is refused
-#'   for the value first, whether or not this machine has the encoder.
+#'   A \code{width} or \code{height} is refused when it is \code{NA}, a number
+#'   that is not positive, or an integer such as \code{5L}. It is also refused
+#'   when it is not a single string or a single double. This holds for each
+#'   row of a column, and for the argument when \code{jobs} has no column of
+#'   that name. Such a call is refused for the value first,
+#'   whether or not this machine has the encoder. Any other single string
+#'   passes unchecked, as an
+#'   FFmpeg expression: a formula that FFmpeg works out, such as
+#'   \code{"in_w/2"}.
 #' @param quality `r batch_quality_param("crop_video")`
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @inheritParams extract_audio_batch
 #' @return `r jobs_return()`
-#' @seealso [crop_video()], the single-input form it wraps; [ffm_batch()],
+#' @seealso [crop_video()], the single-input form, which uses the same command
+#'   recipe; [ffm_batch()],
 #'   the batch runner; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [standardize_video_batch()] to re-encode in batch.
 #' @family task functions
@@ -6707,8 +6731,10 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' have more than one file. Each row is one input. The function is a thin
 #' wrapper over \code{\link{ffm_batch}}. It builds one reproducible command for
 #' each input. Each command uses the same fixed H.264, AAC and
-#' \code{+faststart} steps as \code{format_for_web()}, with no per-row settings.
-#' The glossary in \code{vignette("tidymedia")} explains media terms such as
+#' \code{+faststart} steps as \code{format_for_web()}. Besides the input and
+#' output paths, the only per-row settings of each command are the optional
+#' \code{audio_stream} and \code{quality} columns of \code{jobs}. The glossary
+#' in \code{vignette("tidymedia")} explains media terms such as
 #' codec and re-encode.
 #'
 #' @param jobs A data frame with one row per input. It needs at least an
@@ -6723,11 +6749,10 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   \code{audio_stream} column overrides the \code{audio_stream} argument for
 #'   each row. \code{NA} keeps every audio track in that row. A numeric
 #'   \code{quality} column overrides the \code{quality} argument per row (see
-#'   \code{quality}). Any other columns
-#'   are ignored, \code{video_codec} and \code{audio_codec} included. The
-#'   sibling batch functions read those two columns as per-row overrides, but
-#'   this one does not. The web recipe fixes which codecs the output uses:
-#'   H.264 video and AAC audio. For per-row codecs, use a function that has them, such as
+#'   \code{quality}). Any other columns are ignored, \code{video_codec} and
+#'   \code{audio_codec} included, because the web recipe fixes which codecs
+#'   the output uses: H.264 video and AAC audio. For per-row codecs, use a
+#'   batch function that reads those two columns, such as
 #'   \code{\link{standardize_video_batch}} or \code{\link{crop_video_batch}}.
 #' @param hardware The encoder backend for every row. \code{"none"} (default)
 #'   uses software libx264. \code{"nvenc"} uses NVIDIA GPU H.264 encoding, and
@@ -6740,7 +6765,8 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' @inheritParams extract_audio_batch
 #' @inheritParams format_for_web
 #' @return `r jobs_return()`
-#' @seealso [format_for_web()], the single-input form it wraps;
+#' @seealso [format_for_web()], the single-input form, which uses the same
+#'   command recipe;
 #'   [ffm_batch()], the batch runner; [standardize_video_batch()] for a configurable re-encode.
 #' @family task functions
 #' @family audio selection functions
@@ -6780,8 +6806,8 @@ format_for_web_batch <- function(jobs,
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one web re-encode pipeline per
   # row, sharing format_for_web_pipeline() with format_for_web(). hardware/
-  # fallback are batch-wide; `audio_stream` is the one per-row override this
-  # verb reads, and other extra job columns are still ignored.
+  # fallback are batch-wide; `audio_stream` and `quality` are the per-row
+  # overrides this verb reads, and other extra job columns are still ignored.
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035), immediately before ffm_batch() so
   # every check above still reports first (M41). The web recipe fixes the codec

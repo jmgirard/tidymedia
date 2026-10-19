@@ -60,9 +60,15 @@ encoder.}
 
 \item{hardware, fallback}{The encoder backend and its fallback behavior, applied to the whole batch. They are a property of the machine, not of a row, so neither is read as a \code{jobs} column. See \code{\link[=crop_video]{crop_video()}}.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
-A call can also have a per-row \code{width} or \code{height} that is
-neither a positive number nor an FFmpeg expression. Such a call is refused
-for the value first, whether or not this machine has the encoder.}
+A \code{width} or \code{height} is refused when it is \code{NA}, a number
+that is not positive, or an integer such as \code{5L}. It is also refused
+when it is not a single string or a single double. This holds for each
+row of a column, and for the argument when \code{jobs} has no column of
+that name. Such a call is refused for the value first,
+whether or not this machine has the encoder. Any other single string
+passes unchecked, as an
+FFmpeg expression: a formula that FFmpeg works out, such as
+\code{"in_w/2"}.}
 
 \item{quality}{A number, or \code{NULL} (default), applied to each row unless \code{jobs} carries a numeric \code{quality} column. In that column, \code{NA} leaves that row's encoder default in place, whatever the argument says. The value is the encoder's own rate-control value, passed through unchanged. Each cell is checked against the encoder its own row resolves to. A wrong cell is refused before any row runs, and the error names this function and the row. See \code{\link[=crop_video]{crop_video()}} for the encoders, their flags and ranges, and the values it refuses.}
 
@@ -99,7 +105,8 @@ jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"),
 crop_video_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=crop_video]{crop_video()}}, the single-input form it wraps; \code{\link[=ffm_batch]{ffm_batch()}},
+\code{\link[=crop_video]{crop_video()}}, the single-input form, which uses the same command
+recipe; \code{\link[=ffm_batch]{ffm_batch()}},
 the batch runner; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
 \code{\link[=standardize_video_batch]{standardize_video_batch()}} to re-encode in batch.
 

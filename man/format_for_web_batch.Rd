@@ -28,11 +28,10 @@ two derived names that match. For example, \code{clip.mov} and
 \code{audio_stream} column overrides the \code{audio_stream} argument for
 each row. \code{NA} keeps every audio track in that row. A numeric
 \code{quality} column overrides the \code{quality} argument per row (see
-\code{quality}). Any other columns
-are ignored, \code{video_codec} and \code{audio_codec} included. The
-sibling batch functions read those two columns as per-row overrides, but
-this one does not. The web recipe fixes which codecs the output uses:
-H.264 video and AAC audio. For per-row codecs, use a function that has them, such as
+\code{quality}). Any other columns are ignored, \code{video_codec} and
+\code{audio_codec} included, because the web recipe fixes which codecs
+the output uses: H.264 video and AAC audio. For per-row codecs, use a
+batch function that reads those two columns, such as
 \code{\link{standardize_video_batch}} or \code{\link{crop_video_batch}}.}
 
 \item{hardware}{The encoder backend for every row. \code{"none"} (default)
@@ -67,8 +66,10 @@ jobs table. This is the \strong{batch} form of \code{\link[=format_for_web]{form
 have more than one file. Each row is one input. The function is a thin
 wrapper over \code{\link{ffm_batch}}. It builds one reproducible command for
 each input. Each command uses the same fixed H.264, AAC and
-\code{+faststart} steps as \code{format_for_web()}, with no per-row settings.
-The glossary in \code{vignette("tidymedia")} explains media terms such as
+\code{+faststart} steps as \code{format_for_web()}. Besides the input and
+output paths, the only per-row settings of each command are the optional
+\code{audio_stream} and \code{quality} columns of \code{jobs}. The glossary
+in \code{vignette("tidymedia")} explains media terms such as
 codec and re-encode.
 }
 \examples{
@@ -77,7 +78,8 @@ jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"))
 format_for_web_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=format_for_web]{format_for_web()}}, the single-input form it wraps;
+\code{\link[=format_for_web]{format_for_web()}}, the single-input form, which uses the same
+command recipe;
 \code{\link[=ffm_batch]{ffm_batch()}}, the batch runner; \code{\link[=standardize_video_batch]{standardize_video_batch()}} for a configurable re-encode.
 
 Other task functions:

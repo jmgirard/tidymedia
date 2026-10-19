@@ -1364,9 +1364,12 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   invisible(TRUE)
 }
 
-# The two writes behind set_program(), in one seam so a test can stand in a
-# write that warns without failing (M143 review). Base R's own functions cannot
-# be mocked from the suite.
+# The two writes behind set_program(), in one seam so a test can stand in two
+# writes the filesystem gives only rarely: one that warns without failing
+# (M143 review), and one that fails after it creates the config folder (M147).
+# A stand-in for dir.create() or writeLines() in the base namespace would also
+# stand in for them inside testthat's own diff code (M108), which a seam of the
+# package's own does not.
 tm_save_location <- function(location, config_dir, config_file) {
   if (!dir.exists(config_dir)) dir.create(config_dir, recursive = TRUE)
   writeLines(location, config_file)

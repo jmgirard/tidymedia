@@ -1439,8 +1439,10 @@ crop_video_pipeline <- function(input, output, width, height,
 #' @param video_codec `r video_codec_unset_param()`
 #' @param audio_codec A string naming the output audio codec.
 #'   `r audio_codec_copy_sentences("the audio")` Stream-copying fails if
-#'   the output container cannot hold the source audio codec, for example FLAC
-#'   in \code{.mp4}. In that case, name an encoder.
+#'   the output container cannot hold the source audio codec. In that case,
+#'   name an encoder. With FFmpeg 9.0.2, a FLAC track from an \code{.mkv} file
+#'   was copied into \code{.mp4} without error. Other FFmpeg versions can
+#'   differ.
 #' @param hardware `r hardware_param(null_default = TRUE)`
 #' @param fallback `r fallback_param("software", unset = "picking")`
 #' @param quality `r quality_param()`
@@ -1614,8 +1616,10 @@ strip_metadata_pipeline <- function(input, output) {
   p <- ffm_copy(p)
   # -map_metadata -1 drops global tags (creation_time, location/GPS, make/model,
   # title, comment); -map_chapters -1 drops chapters; -fflags +bitexact stops the
-  # muxer writing a fresh creation_time and an encoder=Lavf... tag. Per-stream
-  # tags (handler_name, language) and codec-embedded identifiers survive a copy.
+  # muxer writing a fresh creation_time and an encoder=Lavf... tag. With FFmpeg
+  # 9.0.2 these options also dropped the per-stream handler_name and language
+  # tags from an .mp4 and an .mkv (M146); codec-embedded identifiers survive a
+  # copy.
   ffm_output_options(
     p, "-map_metadata -1", "-map_chapters -1", "-fflags +bitexact"
   )
@@ -1639,12 +1643,17 @@ strip_metadata_pipeline <- function(input, output) {
 #' \code{encoder} tag that names its own version. Either tag would defeat
 #' de-identification and reproducibility.
 #'
-#' Because the streams are copied and not re-encoded, some data is not removed.
-#' Those are identifiers **inside** the encoded bitstream, and per-stream
-#' metadata such as \code{handler_name} or \code{language}. Removing them would
-#' require one of two things. One is re-encoding, which is out of scope for this
-#' function, so use the direct command \code{\link{ffmpeg}} for it. The other
-#' is per-stream metadata mapping that must probe the file first.
+#' Because the streams are copied and not re-encoded, identifiers **inside**
+#' the encoded bitstream are not removed. Removing them requires re-encoding,
+#' which is out of scope for this function, so use the direct command
+#' \code{\link{ffmpeg}} for it.
+#'
+#' Per-stream tags such as \code{handler_name} and \code{language} were
+#' removed in runs with FFmpeg 9.0.2. From an \code{.mp4} file, the output
+#' kept only generic values: \code{handler_name} was \code{VideoHandler} or
+#' \code{SoundHandler}, and \code{language} was \code{und}. From an
+#' \code{.mkv} file, the output had neither tag. Other FFmpeg versions can
+#' differ.
 #'
 #' @inheritParams extract_audio
 #' @param outfile A string containing the path of the de-identified file to
@@ -4048,7 +4057,10 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #'   `r audio_codec_copy_sentences("the audio")` A stream copy
 #'   (\code{reencode = FALSE}) always copies the audio, so any other value is an
 #'   error there. Stream-copying fails if the output container cannot hold the
-#'   source audio codec (e.g. FLAC in \code{.mp4}). Name an encoder instead.
+#'   source audio codec. Name an encoder instead. With FFmpeg 9.0.2, a FLAC
+#'   track from an \code{.mkv} file was copied into \code{.mp4} segments
+#'   without error, with \code{reencode = TRUE} and with
+#'   \code{reencode = FALSE}. Other FFmpeg versions can differ.
 #' @param hardware `r hardware_param(null_default = TRUE)`
 #'   `r encoder_check_sentences()` `r contradiction_sentences("cut")`
 #'   The stream-copy conflict named under \code{reencode} is caught first, so

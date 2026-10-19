@@ -77,7 +77,7 @@ integer refusal behind (j) → the `check_dim()` candidate row in `cairn/ROADMAP
 ## Tasks
 
 - [x] T1: Correct claims (a), (b), (g) and (h) in `R/ffmpeg.R`, with the comment at `:1509`.
-- [ ] T2: Run `strip_metadata()` on an `.mp4` and an `.mkv` fixture with `handler_name` and
+- [x] T2: Run `strip_metadata()` on an `.mp4` and an `.mkv` fixture with `handler_name` and
       `language` stream tags, and run `crop_video()` and `segment_video(reencode = FALSE)` with
       a FLAC track into `.mp4`. Record each result and the FFmpeg version in the work log, then
       correct claims (e) and (f), with the comment at `:1616`.
@@ -98,6 +98,8 @@ integer refusal behind (j) → the `check_dim()` candidate row in `cairn/ROADMAP
 - 2026-10-18: criteria audit (full mode, fresh Opus reader; logged in full in M144) findings for M146, fixed: (e)'s run covers `.mp4` and `.mkv`, since they store `language` differently; (f)'s run adds `segment_video(reencode = FALSE)`, a different copy path; AC2 names the containers tested; AC3 allows doc-helper literals and re-wrapping; AC4 names functions or groups and no milestone.
 - 2026-10-18: absorbs the M130 part of candidate row "Six help-text claims on the `ffm_*()` input, output and run pages that were false before M128, kept as they were.".
 - 2026-10-18: T1 done: (a) `?format_for_web` says an odd width or height is cropped down; (b) `?format_for_web_batch` names `audio_stream` and `quality` as its per-row settings; (g) `?standardize_video` names its arguments and says `+faststart` is always set; (h) the sibling sentence now says other batch functions read the codec columns, with two named; the recipe comment and the batch body comment that repeated (a)/(b) corrected. Tests: 0 failed, 18801 passed.
+- 2026-10-18: T2 runs, FFmpeg 9.0.2 (Homebrew, macOS; the plan's 9.0.1 is no longer installed), fixtures built with lavfi `testsrc` + `sine`, libx264 + aac, stream tags set by `-metadata:s`: `strip_metadata()` on `.mp4` turned `handler_name` SecretCam/SecretMic into VideoHandler/SoundHandler and `language` fra/deu into und; on `.mkv` both tags were gone (only DURATION left). An h264 + FLAC `.mkv` into `.mp4`: `crop_video()`, `segment_video(reencode = FALSE)` and `segment_video(reencode = TRUE)` each wrote a FLAC track, no error.
+- 2026-10-18: T2 done: (e) `?strip_metadata` Details states the run's per-container result and the version; (f) `?crop_video` and `?segment_video` drop the FLAC example and state the run; the `:1616` comment corrected. Tests: 0 failed, 18801 passed.
 
 ## Decisions
 

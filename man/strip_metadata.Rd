@@ -36,12 +36,17 @@ not stamp the container again with a fresh \code{creation_time}, or with an
 \code{encoder} tag that names its own version. Either tag would defeat
 de-identification and reproducibility.
 
-Because the streams are copied and not re-encoded, some data is not removed.
-Those are identifiers \strong{inside} the encoded bitstream, and per-stream
-metadata such as \code{handler_name} or \code{language}. Removing them would
-require one of two things. One is re-encoding, which is out of scope for this
-function, so use the direct command \code{\link{ffmpeg}} for it. The other
-is per-stream metadata mapping that must probe the file first.
+Because the streams are copied and not re-encoded, identifiers \strong{inside}
+the encoded bitstream are not removed. Removing them requires re-encoding,
+which is out of scope for this function, so use the direct command
+\code{\link{ffmpeg}} for it.
+
+Per-stream tags such as \code{handler_name} and \code{language} were
+removed in runs with FFmpeg 9.0.2. From an \code{.mp4} file, the output
+kept only generic values: \code{handler_name} was \code{VideoHandler} or
+\code{SoundHandler}, and \code{language} was \code{und}. From an
+\code{.mkv} file, the output had neither tag. Other FFmpeg versions can
+differ.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

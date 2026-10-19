@@ -66,7 +66,7 @@ and one NEWS bullet follow.
       kept-folder line to the `tidymedia_location_not_removed` abort in
       `tm_unset_program()` (`R/program_management.R:1511-1523`). Put `{cli::qty(n)}` before
       each `{?}` (M141 lesson).
-- [ ] T2: Write the AC2 tests, cases (i) to (iv), and see them fail. In `tm_set_program()`,
+- [x] T2: Write the AC2 tests, cases (i) to (iv), and see them fail. In `tm_set_program()`,
       record `tm_missing_ancestors(config_dir)` before the seam call
       (`R/program_management.R:1303-1316`). On a failure, call `tm_remove_created_dirs()`,
       then ask `dir.exists()` which ancestors stay, and name them in the
@@ -102,6 +102,7 @@ and one NEWS bullet follow.
 - 2026-10-18: D109 written for the `set_program()` rule.
 - 2026-10-18: implement started on branch m147-location-edges, cut from master at e7e790fc.
 - 2026-10-18: T1 done: the removal abort in `tm_unset_program()` gets a last "Kept the folder" line; the new test (4 layouts and a no-kept case) failed on the missing line before the fix; full `devtools::test()` 0 failures. The line goes after the write-access hint so that hint's "it" still means the file not removed.
+- 2026-10-18: T2 done: `tm_set_program()` reads `tm_missing_ancestors(config_dir)` before the seam, runs `tm_remove_created_dirs()` on a failure, and adds a last "Could not remove the folders it created" line from `dir.exists()`; the four-case test failed before the fix; full `devtools::test()` 0 failures.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

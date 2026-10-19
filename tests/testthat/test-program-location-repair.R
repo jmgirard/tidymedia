@@ -839,6 +839,53 @@ test_that("set_program() refuses a location folder it cannot create or write in"
   }
 })
 
+test_that("a failed write takes back the folders set_program() created", {
+  # M147 AC2 and D109. The config folder and its parent are missing, so the
+  # write has to make both. A stand-in for the tm_save_location() seam makes
+  # them, as the real write does, and then fails. Before M147 both stayed.
+  # Case "plain": both go and the parent above them stays. Case "file": the
+  # stand-in also leaves a file in the config folder, so that folder holds
+  # something and the removal stops there. Cases "status" and "kept": the
+  # tm_unlink() seam fails on the config folder, by its status or by
+  # answering 0 and leaving the folder. In the last three both folders stay,
+  # and the error names both, read from the disk and not from the seam.
+  withr::local_options(cli.width = 1000)
+  for (case in c("plain", "file", "status", "kept")) {
+    dirs <- tm_redirect_config()
+    stub <- tm_stub_executable()
+    upper <- dirname(dirs$new)
+    unlink(upper, recursive = TRUE)
+    created <- c(upper, dirs$new)
+    local_mocked_bindings(
+      tm_save_location = function(location, config_dir, config_file) {
+        dir.create(config_dir, recursive = TRUE)
+        if (case == "file") file.create(file.path(config_dir, "partial"))
+        stop("No space left on device")
+      },
+      tm_unlink = function(path, recursive = FALSE) {
+        if (identical(path, dirs$new) && case == "status") return(1L)
+        if (identical(path, dirs$new) && case == "kept") return(0L)
+        unlink(path, recursive = recursive, expand = FALSE)
+      }
+    )
+
+    result <- tm_set_refusal(set_program("ffmpeg", stub, confirm = FALSE))
+    expect_s3_class(result$condition, "tidymedia_location_not_written")
+    lines <- strsplit(cli::ansi_strip(conditionMessage(result$condition)),
+                      "\n")[[1]]
+    left_line <- grep("Could not remove the", lines, fixed = TRUE, value = TRUE)
+    expect_true(dir.exists(dirs$root), info = case)
+    if (case == "plain") {
+      expect_false(any(dir.exists(created)), info = case)
+      expect_length(left_line, 0L)
+    } else {
+      expect_true(all(dir.exists(created)), info = case)
+      expect_length(left_line, 1L)
+      for (d in created) expect_match(left_line, d, fixed = TRUE, info = case)
+    }
+  }
+})
+
 
 # unset_program(): a folder where the location file should be ----------------
 

@@ -1300,6 +1300,13 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   # file the caller made read-only is refused, not replaced: there is no
   # write-elsewhere-then-rename step. The capability memo stays on the error,
   # because the remembered location did not change.
+  #
+  # The folders missing on the way to the config folder are read before the
+  # write, because after it a folder the write made cannot be told from one
+  # that was there (tm_missing_ancestors()). A failed write removes them, as
+  # a failed install does (D082, D109), and the error names each one that is
+  # still on disk, read from the disk rather than from the removal's status.
+  created <- tm_missing_ancestors(config_dir)
   held <- list()
   failure <- tryCatch(
     withCallingHandlers(
@@ -1315,12 +1322,19 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
     error = function(e) e
   )
   if (!is.null(failure)) {
+    tm_remove_created_dirs(created)
+    stayed <- created[dir.exists(created)]
+    stayed_line <- if (length(stayed)) {
+      c("i" = "{cli::qty(length(stayed))}Could not remove the \\
+               {?folder/folders} it created: {.file {stayed}}.")
+    }
     cli::cli_abort(
       c(
         "Can't save the location of {program}.",
         "x" = "{.file {config_file}}",
         "i" = "Check that you can write to that file and to the folder \\
-               holding it."
+               holding it.",
+        stayed_line
       ),
       class = "tidymedia_location_not_written",
       tm_program = program,

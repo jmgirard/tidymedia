@@ -1506,9 +1506,10 @@ crop_video <- function(infile, outfile, width, height,
 # format_for_web() --------------------------------------------------------
 
 # Shared recipe behind format_for_web() and format_for_web_batch(): the fixed
-# web-delivery re-encode (H.264 + yuv420p + AAC + faststart), padding odd
-# dimensions down to even as the codec requires. No per-row knobs — every input
-# gets the same recipe. Command assembly stays in Layer 1 (IP1/D002).
+# web-delivery re-encode (H.264 + yuv420p + AAC + faststart), cropping odd
+# dimensions down to even as the codec requires. The codecs and the crop are the
+# same for every input; `audio_stream` and `quality` are the only knobs, and the
+# batch form reads both per row. Command assembly stays in Layer 1 (IP1/D002).
 format_for_web_pipeline <- function(input, output, hardware = "none",
                                     fallback = FALSE, audio_stream = NULL,
                                     quality = NULL,
@@ -1546,8 +1547,9 @@ format_for_web_pipeline <- function(input, output, hardware = "none",
 #' Re-encode a video for web playback
 #'
 #' Re-encode a video into a widely compatible, web-friendly form: H.264 video
-#' with \code{yuv420p} and \code{+faststart}, and AAC audio. Odd dimensions are
-#' padded down to even values, as the codec requires. The glossary in
+#' with \code{yuv420p} and \code{+faststart}, and AAC audio. An odd width or
+#' height is cropped down to the even value below it, as the codec requires. The
+#' glossary in
 #' \code{vignette("tidymedia")} explains media terms such as codec, pixel format
 #' and re-encode.
 #'
@@ -1680,8 +1682,9 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #' Re-encode a video to a consistent, reproducible format for analysis. The
 #' format is one video codec and pixel format, and optionally a resolution and
 #' frame rate, with \code{+faststart} for smooth playback.
-#' \code{\link{format_for_web}} uses a fixed recipe for web delivery. Here,
-#' every part of the standard is an argument. So a lab can set its own house
+#' \code{\link{format_for_web}} uses a fixed recipe for web delivery. Here, the
+#' codec, pixel format, resolution and frame rate are arguments, and
+#' \code{+faststart} is always set. So a lab can set its own house
 #' format once and apply it across a dataset. The glossary in
 #' \code{vignette("tidymedia")} explains media terms such as codec, pixel format
 #' and frame rate.
@@ -6707,8 +6710,9 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' have more than one file. Each row is one input. The function is a thin
 #' wrapper over \code{\link{ffm_batch}}. It builds one reproducible command for
 #' each input. Each command uses the same fixed H.264, AAC and
-#' \code{+faststart} steps as \code{format_for_web()}, with no per-row settings.
-#' The glossary in \code{vignette("tidymedia")} explains media terms such as
+#' \code{+faststart} steps as \code{format_for_web()}. The only per-row settings
+#' are the optional \code{audio_stream} and \code{quality} columns of
+#' \code{jobs}. The glossary in \code{vignette("tidymedia")} explains media terms such as
 #' codec and re-encode.
 #'
 #' @param jobs A data frame with one row per input. It needs at least an
@@ -6723,11 +6727,10 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #'   \code{audio_stream} column overrides the \code{audio_stream} argument for
 #'   each row. \code{NA} keeps every audio track in that row. A numeric
 #'   \code{quality} column overrides the \code{quality} argument per row (see
-#'   \code{quality}). Any other columns
-#'   are ignored, \code{video_codec} and \code{audio_codec} included. The
-#'   sibling batch functions read those two columns as per-row overrides, but
-#'   this one does not. The web recipe fixes which codecs the output uses:
-#'   H.264 video and AAC audio. For per-row codecs, use a function that has them, such as
+#'   \code{quality}). Any other columns are ignored, \code{video_codec} and
+#'   \code{audio_codec} included, because the web recipe fixes which codecs
+#'   the output uses: H.264 video and AAC audio. For per-row codecs, use a
+#'   batch function that reads those two columns, such as
 #'   \code{\link{standardize_video_batch}} or \code{\link{crop_video_batch}}.
 #' @param hardware The encoder backend for every row. \code{"none"} (default)
 #'   uses software libx264. \code{"nvenc"} uses NVIDIA GPU H.264 encoding, and
@@ -6780,8 +6783,8 @@ format_for_web_batch <- function(jobs,
 
   # Thin Layer-2 fan-out over ffm_batch (D007): one web re-encode pipeline per
   # row, sharing format_for_web_pipeline() with format_for_web(). hardware/
-  # fallback are batch-wide; `audio_stream` is the one per-row override this
-  # verb reads, and other extra job columns are still ignored.
+  # fallback are batch-wide; `audio_stream` and `quality` are the per-row
+  # overrides this verb reads, and other extra job columns are still ignored.
   # nvenc availability, re-checked here so an unavailable encoder blames this
   # verb instead of purrr::pmap() (M57/D035), immediately before ffm_batch() so
   # every check above still reports first (M41). The web recipe fixes the codec

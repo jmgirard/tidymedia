@@ -46,8 +46,8 @@ With FFmpeg 9.0.2 on macOS, the source values of per-stream tags such as
 \code{.mp4} output still had both tags, with generic values:
 \code{handler_name} was \code{VideoHandler} or \code{SoundHandler}, and
 \code{language} was \code{und}. An \code{.mkv} output had neither tag.
-Other FFmpeg versions can differ, so if these tags matter, read them in the
-output with \code{\link{ffprobe}}.
+Other FFmpeg versions can differ, so if these tags matter, check them in the
+output with \code{\link{probe_streams}}.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

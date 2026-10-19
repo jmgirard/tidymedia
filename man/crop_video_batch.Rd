@@ -62,8 +62,9 @@ encoder.}
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
 A \code{width} or \code{height} is refused when it is \code{NA}, a number
 that is not positive, or an integer such as \code{5L}. It is also refused
-when it is not a single string or a single double. This holds for the
-argument and for each row. Such a call is refused for the value first,
+when it is not a single string or a single double. This holds for each
+row of a column, and for the argument when \code{jobs} has no column of
+that name. Such a call is refused for the value first,
 whether or not this machine has the encoder. Any other single string
 passes unchecked, as an
 FFmpeg expression: a formula that FFmpeg works out, such as

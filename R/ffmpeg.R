@@ -1654,8 +1654,8 @@ strip_metadata_pipeline <- function(input, output) {
 #' \code{.mp4} output still had both tags, with generic values:
 #' \code{handler_name} was \code{VideoHandler} or \code{SoundHandler}, and
 #' \code{language} was \code{und}. An \code{.mkv} output had neither tag.
-#' Other FFmpeg versions can differ, so if these tags matter, read them in the
-#' output with \code{\link{ffprobe}}.
+#' Other FFmpeg versions can differ, so if these tags matter, check them in the
+#' output with \code{\link{probe_streams}}.
 #'
 #' @inheritParams extract_audio
 #' @param outfile A string containing the path of the de-identified file to
@@ -6575,8 +6575,9 @@ derive_web_names <- function(input) {
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
 #'   A \code{width} or \code{height} is refused when it is \code{NA}, a number
 #'   that is not positive, or an integer such as \code{5L}. It is also refused
-#'   when it is not a single string or a single double. This holds for the
-#'   argument and for each row. Such a call is refused for the value first,
+#'   when it is not a single string or a single double. This holds for each
+#'   row of a column, and for the argument when \code{jobs} has no column of
+#'   that name. Such a call is refused for the value first,
 #'   whether or not this machine has the encoder. Any other single string
 #'   passes unchecked, as an
 #'   FFmpeg expression: a formula that FFmpeg works out, such as

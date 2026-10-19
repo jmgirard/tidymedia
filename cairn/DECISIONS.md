@@ -4784,20 +4784,19 @@ session's memo is filled.
 
 **Context:** D017 names FLAC into `.mp4` as the case where the default
 `audio_codec = "copy"` fails loudly. M146 corrected `?crop_video` and
-`?segment_video`, which gave the same example, after runs showed a newer FFmpeg
-copying that track without error (the runs and their versions are in M146's
-work log).
+`?segment_video`, which gave the same example. Runs with FFmpeg 9.0.2 on macOS
+copied that track without error (M146 work log).
 
 **Decision:** D017's rule is unchanged. Copying a codec that the output
 container cannot hold still fails, and naming an encoder is still the remedy.
 Only the example is version-dependent: whether a container holds a codec is the
-FFmpeg build's answer, not the package's. The help pages state the run's
-result with its FFmpeg version and say that other versions can differ, and they
-give no fixed example.
+FFmpeg build's answer, not the package's. The help pages give no example of a
+codec that fails to copy. They report the FLAC run with its FFmpeg version and
+platform, and say other versions can differ.
 
 **Rejected:** Leaving D017 as it was, which keeps a record that the help pages
 now contradict.
 
-**Falsified by** a run where the default `audio_codec = "copy"` meets a codec
-the output container cannot hold and FFmpeg drops or re-encodes the track
-instead of failing.
+**Falsified by** evidence that FFmpeg versions agree on which audio codecs each
+container can take as a stream copy, so that a fixed example would hold for all
+of them.

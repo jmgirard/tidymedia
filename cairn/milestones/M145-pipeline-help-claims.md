@@ -1,6 +1,6 @@
 # M145: The `ffm_*()` pipeline help pages state what the code does
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M144
 - **Driving RR:** —
@@ -94,7 +94,7 @@ bugs behind (j), (k), (l) and (m) → their own candidate rows in `cairn/ROADMAP
       the code does now and does not promise the fix.
 - [x] T4: Edit the series' `NEWS.md` bullet to name these pages. Avoid the phrases that
       `test-timeout-silence.R` fences out of `NEWS.md`.
-- [ ] T5: Run `devtools::document()`, then the full `devtools::test()` and `devtools::check()`.
+- [x] T5: Run `devtools::document()`, then the full `devtools::test()` and `devtools::check()`.
       Read each changed sentence against its code site and record one line per claim in the
       work log.
 
@@ -117,6 +117,9 @@ bugs behind (j), (k), (l) and (m) → their own candidate rows in `cairn/ROADMAP
 - 2026-10-18: the `devtools::test()` rerun over T1 to T4 passed with no failures.
 - claim audit: 35 claims read, 2 corrected — R/ffm.R, man/ffm_*.Rd, NEWS.md (fresh Opus reader; `?ffm_map` now says `ffm_copy()` with `streams = TRUE` refuses a mapping other than "0" instead of replacing it; `?ffm_loudnorm` now says the audio filter is absent with a stack or overlay in either call order; the reader re-read both once: true).
 - 2026-10-18: claim audit side finding (a SIGTERM that also reaches the `sh` from `system2()` lets `ffm_run()` return with no error) recorded as candidate row "`ffm_run()` signal to the shell"; outside this milestone's scope.
+- 2026-10-18: T5 done at 45494c83: `devtools::document()` left no diff; full `devtools::test()` had no failures; `devtools::check()` gave 0 errors, 0 warnings, 0 notes (the test-output NOTE inside it is the spelling list's pre-existing "encodable" and "filesystem").
+- 2026-10-18: T5 per-claim read against the code at head: (a) appending and replacing verbs match each function's assignment; (b) `ffm_run()` aborts on a status; (c) `run_program()` `shQuote()`s and `system2()` runs `sh` on Unix; (d) only hstack/vstack/overlay set `complex`; (e) `-ss`/`-to` go before `-i`, copy only with `ffm_copy()`; (f) `-vn`/`-an`/`-sn`/`-dn` are output options; (g) and (h) pinned to the T2 runs; (i) `check_dim(inclusive = TRUE)` takes 0; (j) resize graph has no `shortest`; (k) the `complex` branch never reads `filter_audio`; (l) `linear` default true in FFmpeg 9.0.2; (m) `is_double(n = 1)` or `is_character(n = 1)`.
+- 2026-10-18: status review; handing to /milestone-review.
 
 ## Decisions
 

@@ -136,4 +136,5 @@ integer refusal behind (j) → the `check_dim()` candidate row in `cairn/ROADMAP
 - prior-review #5: ragged and long roxygen wraps — reject (style)
 - prior-review #6: NEWS orphan line — reject (style)
 - prior-review #7: "wraps" applied to `crop_video()` — reject (false: `crop_video_pipeline()` calls all three named functions, read at T5 and by the claim auditor)
+- Fix-now edits committed in 739a56b4 (D107 added there). A fresh Opus reader read each changed sentence (D093): 15 of 21 held; it found the "argument and each row" sentence wrong (the argument is read only when `jobs` has no column of that name, confirmed by a run: a `width` column of 100 with `width = 5L` compiled), the `ffprobe()` pointer unclear (`probe_streams()` returns the `TAG:` columns, confirmed by a run), and D107's Context, Decision and Falsified-by lines wrong or unclear. Corrected in fb3fb9f0; the same reader re-read the five corrected sentences once: all hold. Prose sweep at fb3fb9f0: exit 0.
 - Implementer's AC1 grep found the same false claim shapes on four pages outside (a)-(j) — follow-up (new row "Batch See Also claims left after M146")

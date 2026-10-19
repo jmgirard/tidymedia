@@ -76,7 +76,11 @@
   `?audio_stream` and `?hardware_encoder`. These pipeline pages changed too:
   `?ffm_map`, `?ffm_run`, `?ffm_seek`, `?ffm_drop`, `?ffm_crop`,
   `?ffm_scale`, `?ffm_fps`, `?ffm_drawbox`, `?ffm_overlay`, `?ffm_hstack`,
-  `?ffm_vstack` and `?ffm_loudnorm`. The help text also changed for the
+  `?ffm_vstack` and `?ffm_loudnorm`. These task pages changed too:
+  `?crop_video`, `?crop_video_batch`, `?format_for_web`,
+  `?format_for_web_batch`, `?standardize_video`, `?standardize_video_batch`,
+  `?strip_metadata`, `?strip_metadata_batch` and `?segment_video`. The help
+  text also changed for the
   `hardware` argument of the task functions. It changed for the warning about
   dropped audio tracks in `extract_audio()`, `convert_audio()`,
   `normalize_audio()` and their batch forms. It changed for the return value

@@ -120,6 +120,7 @@ bugs behind (j), (k), (l) and (m) → their own candidate rows in `cairn/ROADMAP
 - 2026-10-18: T5 done at 45494c83: `devtools::document()` left no diff; full `devtools::test()` had no failures; `devtools::check()` gave 0 errors, 0 warnings, 0 notes (the test-output NOTE inside it is the spelling list's pre-existing "encodable" and "filesystem").
 - 2026-10-18: T5 per-claim read against the code at head: (a) appending and replacing verbs match each function's assignment; (b) `ffm_run()` aborts on a status; (c) `run_program()` `shQuote()`s and `system2()` runs `sh` on Unix; (d) only hstack/vstack/overlay set `complex`; (e) `-ss`/`-to` go before `-i`, copy only with `ffm_copy()`; (f) `-vn`/`-an`/`-sn`/`-dn` are output options; (g) and (h) pinned to the T2 runs; (i) `check_dim(inclusive = TRUE)` takes 0; (j) resize graph has no `shortest`; (k) the `complex` branch never reads `filter_audio`; (l) `linear` default true in FFmpeg 9.0.2; (m) `is_double(n = 1)` or `is_character(n = 1)`.
 - 2026-10-18: status review; handing to /milestone-review.
+- step-7 approval: m145-pipeline-help-claims approved for merge
 
 ## Decisions
 

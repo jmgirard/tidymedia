@@ -4,7 +4,7 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M147: A failed `unset_program()` removal or `set_program()` write accounts for the folders it touched
 
-- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate -->
@@ -83,7 +83,7 @@ and one NEWS bullet follow.
       `devtools::document()`. Add one NEWS bullet, and avoid the phrases that
       `test-timeout-silence.R` fences out of `NEWS.md` (M143 lesson). Run the claim read of
       AC5 over the diff.
-- [ ] T6: Run the full `devtools::test()` with no other R session working (M124 lesson),
+- [x] T6: Run the full `devtools::test()` with no other R session working (M124 lesson),
       then `devtools::check()`.
 
 ## Work log
@@ -111,6 +111,8 @@ and one NEWS bullet follow.
 - 2026-10-18: substantive amendment: AC5 now has `NEWS.md` edit in place the two development-version bullets that name `tidymedia_location_folder_kept` and `tidymedia_location_not_written`, adds no bullet, and carries the second re-audit's five fixes; the user chose this over the planned new bullet at the stop.
 - 2026-10-18: T5 done: `?set_program`, `?unset_program` and `?find_ffmpeg` roxygen edited and `devtools::document()` run; the two NEWS bullets edited in place, no bullet added; full `devtools::test()` 0 failures, and `test-timeout-silence.R` passes after the last NEWS edit.
 - 2026-10-18: claim audit: 38 claims read, 4 corrected — R/program_management.R (the take-back comment said "removes" for "tries to remove"; `?find_ffmpeg` did not limit the kept-folder sentence to a kept folder; `?set_program`'s "stops at a folder that ... does not go" did not hold where the seam answers 0; the seam comment called waldo testthat's own code).
+- 2026-10-18: T6 done: at 202c31f0, `devtools::check()` 0 errors, 0 warnings, 0 notes, and the full `devtools::test()` (run with no other R session) has no failures; an earlier check before the claim-audit corrections gave the same result.
+- 2026-10-18: implement complete; status set to review.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

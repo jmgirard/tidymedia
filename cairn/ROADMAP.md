@@ -12,7 +12,7 @@ _Last hygiene check: 2026-10-18 (triage: dropped "CRAN skip gaps" on principle; 
 | M144 | The setup, capability and audio help pages state what the code does | done | — | normal | milestones/archive/M144-setup-audio-help-claims.md |
 | M145 | The `ffm_*()` pipeline help pages state what the code does | done | M144 | normal | milestones/archive/M145-pipeline-help-claims.md |
 | M146 | The crop, web-format, standardize and strip-metadata help pages state what the code does | done | M145 | normal | milestones/archive/M146-task-verb-help-claims.md |
-| M147 | A failed `unset_program()` removal or `set_program()` write accounts for the folders it touched | in-progress | — | normal | milestones/M147-location-edges.md |
+| M147 | A failed `unset_program()` removal or `set_program()` write accounts for the folders it touched | review | — | normal | milestones/M147-location-edges.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

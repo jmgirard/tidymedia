@@ -63,7 +63,7 @@ integer refusal behind (j) → the `check_dim()` candidate row in `cairn/ROADMAP
 - [x] AC4: The series' `NEWS.md` bullet under `## Documentation` also names the functions or
       groups of functions this milestone corrects, no second bullet is added, and the bullet
       names no milestone.
-- [ ] AC5: `devtools::document()` leaves no diff, `devtools::test()` passes, and
+- [x] AC5: `devtools::document()` leaves no diff, `devtools::test()` passes, and
       `devtools::check()` gives 0 errors and 0 warnings.
 
 ## Coverage
@@ -137,4 +137,5 @@ integer refusal behind (j) → the `check_dim()` candidate row in `cairn/ROADMAP
 - prior-review #6: NEWS orphan line — reject (style)
 - prior-review #7: "wraps" applied to `crop_video()` — reject (false: `crop_video_pipeline()` calls all three named functions, read at T5 and by the claim auditor)
 - Fix-now edits committed in 739a56b4 (D107 added there). A fresh Opus reader read each changed sentence (D093): 15 of 21 held; it found the "argument and each row" sentence wrong (the argument is read only when `jobs` has no column of that name, confirmed by a run: a `width` column of 100 with `width = 5L` compiled), the `ffprobe()` pointer unclear (`probe_streams()` returns the `TAG:` columns, confirmed by a run), and D107's Context, Decision and Falsified-by lines wrong or unclear. Corrected in fb3fb9f0; the same reader re-read the five corrected sentences once: all hold. Prose sweep at fb3fb9f0: exit 0.
+- AC5 evidence (tree at fb3fb9f0, after every fix): `devtools::document()` wrote 0 files and `git status` was clean; `devtools::test()` 0 failed, 0 errors, 7 skipped, 18801 passed; `devtools::check()` 0 errors, 0 warnings, 0 notes. AC1-AC3 re-read after the fixes: the R/ filter still prints no non-comment line, 9 Rd files, and the (e)/(f) pages still name FFmpeg 9.0.2, the containers and "Other FFmpeg versions can differ". Pass.
 - Implementer's AC1 grep found the same false claim shapes on four pages outside (a)-(j) — follow-up (new row "Batch See Also claims left after M146")

@@ -1057,7 +1057,9 @@ tm_na_string <- function(x) {
 #' `tidymedia_location_folder` error for one in the current folder.
 #' [unset_program()] removes the
 #' location files and empty folders at the two paths, and gives a
-#' `tidymedia_location_folder_kept` warning for the folder it leaves. If each
+#' `tidymedia_location_folder_kept` warning for the folder it leaves. If one of
+#' those removals fails, it gives a `tidymedia_location_not_removed` error
+#' instead, and the error message names the folder it leaves. If each
 #' path that holds something holds a folder that is not empty,
 #' [unset_program()] gives the `tidymedia_location_folder` error and removes
 #' nothing. The warning from the `find_*()` functions says which case you
@@ -1166,6 +1168,13 @@ find_ffplay <- function() {
 #' cannot be created. The error
 #' names the file in its message and in `tm_file`. The call does not replace a
 #' file without write permission, so that file keeps the location it held.
+#'
+#' If the call created the folder for the location file, or folders above it,
+#' and the write then fails, it removes those folders again. It starts with
+#' the deepest and stops at a folder that holds anything. The error message
+#' names each folder that the call created and could not remove. If the call
+#' removed an empty folder where the file goes and the write then fails, that
+#' folder stays removed, and the error message says so.
 #'
 #' For locations saved by versions before 0.2.0, see the section "Locations
 #' saved by earlier versions" in [find_ffmpeg()].
@@ -1435,8 +1444,11 @@ set_ffplay <- function(location, confirm = TRUE) {
 #' counts as empty. A folder that is not empty stays. The call removes the
 #' file or the empty folder at the other path, and then gives a
 #' `tidymedia_location_folder_kept` warning. The warning names the folder that
-#' stays in its message and in `tm_files`. If each path that holds something
-#' holds a folder that is not empty, the call gives a
+#' stays in its message and in `tm_files`. If the removal at the other path
+#' fails, the call gives a `tidymedia_location_not_removed` error in place of
+#' the warning. The error names what it could not remove in its message and in
+#' `tm_files`, and its message also names the folder that stays. If each path
+#' that holds something holds a folder that is not empty, the call gives a
 #' `tidymedia_location_folder` error and removes nothing. The error lists each
 #' such folder in its message and in `tm_files`. Delete those folders by hand,
 #' then call again.

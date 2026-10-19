@@ -105,6 +105,9 @@ and one NEWS bullet follow.
 - 2026-10-18: T2 done: `tm_set_program()` reads `tm_missing_ancestors(config_dir)` before the seam, runs `tm_remove_created_dirs()` on a failure, and adds a last "Could not remove the folders it created" line from `dir.exists()`; the four-case test failed before the fix; full `devtools::test()` 0 failures.
 - 2026-10-18: T3 done: a `removed` flag set where the empty-folder removal runs adds a "Removed the empty folder" line to the write error; only the "removed" case of the three-case test failed before the fix; full `devtools::test()` 0 failures.
 - 2026-10-18: T4 done: the `tm_save_location()` comment names the warning-only and fail-after-create stand-ins and gives the M108 waldo reason for a package seam; comment only, the repair test file still passes.
+- 2026-10-18: T5 found that AC5's new NEWS bullet goes against D091: the kept-folder warning and the `tidymedia_location_not_written` error are new since 0.2.2, so the two development-version bullets that name them are edited in place instead; amendment drafted.
+- 2026-10-18: re-audit: AC5 (full) — 3 findings: the "arrived after the last release" reason is partly false for AC2, "adds" missed rewritten sentences, "It says nothing about AC4" was unclear; all three fixed in the draft.
+- 2026-10-18: re-audit: AC5 (full) — 5 findings: the reason clause was half-wrong, a re-wrap would count as a change, "the error" named no class, "takes back" overstated AC2's cases (ii)-(iv), the AC4 clause was vague; second re-audit on AC5, so the fix goes to the user.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

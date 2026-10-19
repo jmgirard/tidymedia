@@ -78,6 +78,13 @@ cannot be created. The error
 names the file in its message and in \code{tm_file}. The call does not replace a
 file without write permission, so that file keeps the location it held.
 
+If the call created the folder for the location file, or folders above it,
+and the write then fails, it removes those folders again. It starts with
+the deepest and stops at a folder that holds anything. The error message
+names each folder that the call created and could not remove. If the call
+removed an empty folder where the file goes and the write then fails, that
+folder stays removed, and the error message says so.
+
 For locations saved by versions before 0.2.0, see the section "Locations
 saved by earlier versions" in \code{\link[=find_ffmpeg]{find_ffmpeg()}}.
 }

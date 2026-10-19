@@ -51,6 +51,8 @@
   location file or the empty folder at the other path, so a location beside
   such a folder can be forgotten. It then gives the new
   `tidymedia_location_folder_kept` warning, which names the folder it left.
+  If that removal fails, it gives the `tidymedia_location_not_removed` error
+  in place of the warning, and the error message names the folder it left.
   If it has nothing else to remove, it gives the `tidymedia_location_folder`
   error and removes nothing.
 
@@ -60,7 +62,11 @@
   Before, the call stopped with a "Permission denied" warning and R's
   "cannot open the connection" error. It now gives only the
   `tidymedia_location_not_written` error, which names the file in `tm_file`.
-  A file without write permission keeps the location it held.
+  A file without write permission keeps the location it held. If the call
+  created the folder for the file, or folders above it, it tries to remove
+  them after the failed write. The error message names each one that stays.
+  If it removed an empty folder where the file goes, the error message
+  names that folder.
 
 * **`ffmpeg()` now runs a program whose location holds a space.** It put the
   location into the command unquoted, so the shell split it at the space.

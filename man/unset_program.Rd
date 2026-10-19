@@ -41,8 +41,8 @@ file or the empty folder at the other path, and then gives a
 \code{tidymedia_location_folder_kept} warning. The warning names the folder that
 stays in its message and in \code{tm_files}. If the removal at the other path
 fails, the call gives a \code{tidymedia_location_not_removed} error in place of
-the warning. The error names what it could not remove in its message and in
-\code{tm_files}, and its message also names the folder that stays. If each path
+the warning. That error names what the call could not remove in its message
+and in \code{tm_files}, and its message also names the folder that the call kept. If each path
 that holds something holds a folder that is not empty, the call gives a
 \code{tidymedia_location_folder} error and removes nothing. The error lists each
 such folder in its message and in \code{tm_files}. Delete those folders by hand,

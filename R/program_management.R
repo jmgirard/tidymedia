@@ -1170,11 +1170,12 @@ find_ffplay <- function() {
 #' file without write permission, so that file keeps the location it held.
 #'
 #' If the call created the folder for the location file, or folders above it,
-#' and the write then fails, it removes those folders again. It starts with
-#' the deepest and stops at a folder that holds anything. The error message
-#' names each folder that the call created and could not remove. If the call
-#' removed an empty folder where the file goes and the write then fails, that
-#' folder stays removed, and the error message says so.
+#' and the write then fails, it tries to remove those folders. It starts with
+#' the deepest and stops at a folder that holds anything or does not go. The
+#' `tidymedia_location_not_written` error names in its message each of those
+#' folders that stays. If the call removed an empty folder where the file goes
+#' and the write then fails, that folder stays removed, and the error message
+#' names it.
 #'
 #' For locations saved by versions before 0.2.0, see the section "Locations
 #' saved by earlier versions" in [find_ffmpeg()].
@@ -1446,8 +1447,8 @@ set_ffplay <- function(location, confirm = TRUE) {
 #' `tidymedia_location_folder_kept` warning. The warning names the folder that
 #' stays in its message and in `tm_files`. If the removal at the other path
 #' fails, the call gives a `tidymedia_location_not_removed` error in place of
-#' the warning. The error names what it could not remove in its message and in
-#' `tm_files`, and its message also names the folder that stays. If each path
+#' the warning. That error names what the call could not remove in its message
+#' and in `tm_files`, and its message also names the folder that the call kept. If each path
 #' that holds something holds a folder that is not empty, the call gives a
 #' `tidymedia_location_folder` error and removes nothing. The error lists each
 #' such folder in its message and in `tm_files`. Delete those folders by hand,

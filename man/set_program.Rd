@@ -80,7 +80,8 @@ file without write permission, so that file keeps the location it held.
 
 If the call created the folder for the location file, or folders above it,
 and the write then fails, it tries to remove those folders. It starts with
-the deepest and stops at a folder that holds anything or does not go. The
+the deepest, and it removes no folder that holds anything, which includes a
+folder that it could not remove. The
 \code{tidymedia_location_not_written} error names in its message each of those
 folders that stays. If the call removed an empty folder where the file goes
 and the write then fails, that folder stays removed, and the error message

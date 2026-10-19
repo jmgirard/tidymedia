@@ -71,9 +71,10 @@ functions leave a folder that is not empty. \code{\link[=set_program]{set_progra
 \code{tidymedia_location_folder} error for one in the current folder.
 \code{\link[=unset_program]{unset_program()}} removes the
 location files and empty folders at the two paths, and gives a
-\code{tidymedia_location_folder_kept} warning for the folder it leaves. If one of
-those removals fails, it gives a \code{tidymedia_location_not_removed} error
-instead, and the error message names the folder it leaves. If each
+\code{tidymedia_location_folder_kept} warning for the folder it leaves. If it
+keeps such a folder and the removal at the other path fails, it gives a
+\code{tidymedia_location_not_removed} error in place of the warning, and the
+error message names the kept folder. If each
 path that holds something holds a folder that is not empty,
 \code{\link[=unset_program]{unset_program()}} gives the \code{tidymedia_location_folder} error and removes
 nothing. The warning from the \verb{find_*()} functions says which case you

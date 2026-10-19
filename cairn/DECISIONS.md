@@ -4800,3 +4800,30 @@ now contradict.
 **Falsified by** evidence that FFmpeg versions agree on which audio codecs each
 container can take as a stream copy, so that a fixed example would hold for all
 of them.
+
+## D108 — Instrument findings in four candidate rows are pruned under D072, and the CRAN skip-gap row goes with D090's stance (2026-10-18, from a `/cairn-triage` pass, which applies D072 and D090 and supersedes nothing)
+
+**Context:** A `/cairn-triage` pass weighed every ROADMAP candidate row and every
+DESIGN.md Known issues entry, with `ROADMAP.md` over its byte budget. Some rows mixed
+findings about the package's own instruments (tests, CI, developer scripts) with
+findings a user can reach.
+
+**Decision:** The instrument findings are pruned under D072, because no gap they name
+lets a defect in shipped behavior reach a user. The CRAN skip-gap row goes whole: its
+reliance on `NOT_CRAN`, the skip-helper control, the hand-rolled guards and the
+`tools/cran_spawn_check.R` gaps are instrument gaps (M118 review V7, V9, V10-V15), and
+its item on examples and vignettes restates the choice D090 made and D095 narrowed.
+From the M138 leftovers row: the `file.access()` census, the skip helpers that read
+different FFmpeg locations, and the uncached Fedora CI job (M138 review). From the
+shipped-docs row: the vignette chunk-guard child's config seam, the `tools/` scripts
+that drop `/usr/bin`, the broad `.gitignore` patterns, the chunk sweep's `error =
+TRUE` knit, `covered_programs()`'s grep, and the release-notes migration coverage,
+whose 0.2.0 changelog trigger has passed (M114, M115 and M120 reviews). From the
+installer row: the spending stubs that cannot fire, the unobservable `unpacked_here`
+site, `tm_outfiles_baseline()`'s missing generator, and the hardware probe's
+untestable defaultless `call` (M108 review P2, M105 review, M096 review F7, M094
+review H8). The items of those rows that a user can reach stay as candidate rows.
+
+**Consequences:** A new entry that supersedes this one can bring a finding back. The
+evidence for that is a defect that reaches a user through the finding's gap, which is
+D072's own falsifier, or for the examples item a CRAN complaint, which is D090's.

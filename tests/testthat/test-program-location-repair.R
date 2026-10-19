@@ -839,6 +839,42 @@ test_that("set_program() refuses a location folder it cannot create or write in"
   }
 })
 
+test_that("a failed write says that set_program() removed the empty folder", {
+  # M147 AC3 and D109. The call removes an empty folder at the location path
+  # after consent, and the folder stays removed when the write then fails, so
+  # the error says so. Case "none": no folder was there. Case "vanishes": the
+  # folder was there at the first look and went away while the prompt waited,
+  # so the call removed nothing. Neither says so.
+  withr::local_options(cli.width = 1000)
+  for (case in c("removed", "none", "vanishes")) {
+    dirs <- tm_redirect_config()
+    stub <- tm_stub_executable()
+    path <- tm_config_file("ffmpeg", dirs$new)
+    if (case != "none") tm_folder_shapes$empty(path)
+    local_mocked_bindings(
+      tm_confirm = function(prompt, ...) {
+        if (case == "vanishes") unlink(path, recursive = TRUE)
+        TRUE
+      },
+      tm_save_location = function(...) stop("No space left on device")
+    )
+
+    result <- tm_set_refusal(set_program("ffmpeg", stub))
+    expect_s3_class(result$condition, "tidymedia_location_not_written")
+    lines <- strsplit(cli::ansi_strip(conditionMessage(result$condition)),
+                      "\n")[[1]]
+    removed_line <- grep("Removed the empty folder", lines, fixed = TRUE,
+                         value = TRUE)
+    expect_false(dir.exists(path), info = case)
+    if (case == "removed") {
+      expect_length(removed_line, 1L)
+      expect_match(removed_line, path, fixed = TRUE)
+    } else {
+      expect_length(removed_line, 0L)
+    }
+  }
+})
+
 test_that("a failed write takes back the folders set_program() created", {
   # M147 AC2 and D109. The config folder and its parent are missing, so the
   # write has to make both. A stand-in for the tm_save_location() seam makes

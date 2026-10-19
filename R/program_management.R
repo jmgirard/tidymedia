@@ -1267,11 +1267,16 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   # and the removal below is recursive. A folder that went away meanwhile
   # leaves nothing to remove, and tm_folder_empty() answers FALSE for a path
   # that is not there, so that case skips the block rather than refusing.
+  # `removed` records a removal that ran here, so a failed write below can say
+  # the folder is gone. A folder that went away while the prompt waited was
+  # not removed by this call, and the error does not claim it (M147, D109).
+  removed <- FALSE
   if (folder && dir.exists(config_file)) {
     if (!tm_folder_empty(config_file)) {
       tm_abort_location_folder(program, config_file, call)
     }
     tm_unlink(config_file, recursive = TRUE)
+    removed <- TRUE
     if (dir.exists(config_file)) {
       cli::cli_abort(
         c(
@@ -1328,12 +1333,17 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
       c("i" = "{cli::qty(length(stayed))}Could not remove the \\
                {?folder/folders} it created: {.file {stayed}}.")
     }
+    removed_line <- if (removed) {
+      c("i" = "Removed the empty folder that was at {.file {config_file}} \\
+               before the write.")
+    }
     cli::cli_abort(
       c(
         "Can't save the location of {program}.",
         "x" = "{.file {config_file}}",
         "i" = "Check that you can write to that file and to the folder \\
                holding it.",
+        removed_line,
         stayed_line
       ),
       class = "tidymedia_location_not_written",

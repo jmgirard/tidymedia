@@ -72,7 +72,7 @@ and one NEWS bullet follow.
       then ask `dir.exists()` which ancestors stay, and name them in the
       `tidymedia_location_not_written` abort. Mock only package seams, never a base function,
       in a test that compares values (M108 lesson).
-- [ ] T3: Write the AC3 tests, the vanished-folder case included, and see them fail. Record
+- [x] T3: Write the AC3 tests, the vanished-folder case included, and see them fail. Record
       that the removal at `R/program_management.R:1270-1288` ran and took, and add a line
       that names the removed folder to the same abort.
 - [ ] T4: Rewrite the comment above `tm_save_location()` (`R/program_management.R:1343-1345`)
@@ -103,6 +103,7 @@ and one NEWS bullet follow.
 - 2026-10-18: implement started on branch m147-location-edges, cut from master at e7e790fc.
 - 2026-10-18: T1 done: the removal abort in `tm_unset_program()` gets a last "Kept the folder" line; the new test (4 layouts and a no-kept case) failed on the missing line before the fix; full `devtools::test()` 0 failures. The line goes after the write-access hint so that hint's "it" still means the file not removed.
 - 2026-10-18: T2 done: `tm_set_program()` reads `tm_missing_ancestors(config_dir)` before the seam, runs `tm_remove_created_dirs()` on a failure, and adds a last "Could not remove the folders it created" line from `dir.exists()`; the four-case test failed before the fix; full `devtools::test()` 0 failures.
+- 2026-10-18: T3 done: a `removed` flag set where the empty-folder removal runs adds a "Removed the empty folder" line to the write error; only the "removed" case of the three-case test failed before the fix; full `devtools::test()` 0 failures.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

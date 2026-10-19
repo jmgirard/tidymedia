@@ -4,14 +4,14 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M147: A failed `unset_program()` removal or `set_program()` write accounts for the folders it touched
 
-- **Status:** planned   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** review   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Principles touched:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Resolves:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Surface tier:** user-facing — the errors and help pages of the exported `set_program()` and `unset_program()`   <!-- owner: plan · create/amend-via-gate -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m147-location-edges   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 <!-- owner: plan · create; a wrong goal returns to plan, never edited in place -->
@@ -41,12 +41,12 @@ and one NEWS bullet follow.
 ## Acceptance criteria
 <!-- owner: plan · create/amend-via-gate; review reads, never reinterprets. -->
 
-- [ ] AC1: `unset_program()` can keep a folder with contents at one location path and fail to remove the item at the other path. Then its `tidymedia_location_not_removed` error has a line of its own that says the call kept that folder and names it. That line is apart from the `x` line, which names only what the call failed to remove. Tests cross two axes. The kept folder is at the current path or at the pre-0.2.0 path. The item that fails to go is a location file or an empty folder. In each of the four cases the removal fails through the `tm_unlink()` seam. Each test asserts the error class and `tm_files` equal to the path not removed. It also asserts the kept-folder line with the kept path in `conditionMessage()`. A further test has no kept folder and a removal that fails. It asserts that the message has no kept-folder line.
-- [ ] AC2: The ancestors are the directories that are missing on the way to the config folder (`tm_config_dir()`). `set_program()` records them before it calls the `tm_save_location()` seam. If the write then fails, the call tries to remove each ancestor, deepest first. It stops at the first one that holds anything or does not go. Its `tidymedia_location_not_written` error names each ancestor that `dir.exists()` still finds after that removal. The tests replace the seam with a function that makes the config folder by `dir.create(recursive = TRUE)` and then fails. Case (i) has two missing levels. Both are gone afterward, the existing parent is still there, and the message names no directory. In case (ii) the stand-in also writes a file in the config folder before it fails. That folder and its parent stay, and the message names both. In case (iii) the `tm_unlink()` seam returns a status that is not 0 for the deepest level. In case (iv) it returns 0 and leaves the deepest level in place. In cases (iii) and (iv) both levels stay, and the message names both.
-- [ ] AC3: `set_program()` can remove an empty folder at the location path and then fail to write. Then its `tidymedia_location_not_written` error says in its message that the call removed that folder. A test reaches this case through the `tm_save_location()` seam. Two more tests assert that the message does not say so. In the first, no folder is at the path. In the second, the folder is there at the first look and goes away while the prompt waits, so the call removes nothing.
-- [ ] AC4: The comment above `tm_save_location()` in `R/program_management.R` names the two writes that the tests put in its place. One write warns without failing, and one fails after it creates directories. It no longer says that the suite cannot mock base R functions.
-- [ ] AC5: `?unset_program` says that the error names a folder that the call kept. `?set_program` says that a failed write takes back the folders that the call created. It also says that the error names an empty folder that the call removed. A read of `?set_program`, `?unset_program` and `?find_ffmpeg` finds no sentence that AC1, AC2 or AC3 makes false. Each sentence that the branch adds to those pages or to `NEWS.md` describes behavior that a test of AC1, AC2 or AC3 shows. `NEWS.md` gains one bullet under the development version's Bug fixes for AC1 to AC3, and no bullet for AC4.
-- [ ] AC6: On the branch head, `devtools::check()` reports 0 errors and 0 warnings, and `devtools::test()` reports 0 failures.
+- [x] AC1: `unset_program()` can keep a folder with contents at one location path and fail to remove the item at the other path. Then its `tidymedia_location_not_removed` error has a line of its own that says the call kept that folder and names it. That line is apart from the `x` line, which names only what the call failed to remove. Tests cross two axes. The kept folder is at the current path or at the pre-0.2.0 path. The item that fails to go is a location file or an empty folder. In each of the four cases the removal fails through the `tm_unlink()` seam. Each test asserts the error class and `tm_files` equal to the path not removed. It also asserts the kept-folder line with the kept path in `conditionMessage()`. A further test has no kept folder and a removal that fails. It asserts that the message has no kept-folder line.
+- [x] AC2: The ancestors are the directories that are missing on the way to the config folder (`tm_config_dir()`). `set_program()` records them before it calls the `tm_save_location()` seam. If the write then fails, the call tries to remove each ancestor, deepest first. It stops at the first one that holds anything or does not go. Its `tidymedia_location_not_written` error names each ancestor that `dir.exists()` still finds after that removal. The tests replace the seam with a function that makes the config folder by `dir.create(recursive = TRUE)` and then fails. Case (i) has two missing levels. Both are gone afterward, the existing parent is still there, and the message names no directory. In case (ii) the stand-in also writes a file in the config folder before it fails. That folder and its parent stay, and the message names both. In case (iii) the `tm_unlink()` seam returns a status that is not 0 for the deepest level. In case (iv) it returns 0 and leaves the deepest level in place. In cases (iii) and (iv) both levels stay, and the message names both.
+- [x] AC3: `set_program()` can remove an empty folder at the location path and then fail to write. Then its `tidymedia_location_not_written` error says in its message that the call removed that folder. A test reaches this case through the `tm_save_location()` seam. Two more tests assert that the message does not say so. In the first, no folder is at the path. In the second, the folder is there at the first look and goes away while the prompt waits, so the call removes nothing.
+- [x] AC4: The comment above `tm_save_location()` in `R/program_management.R` names the two writes that the tests put in its place. One write warns without failing, and one fails after it creates directories. It no longer says that the suite cannot mock base R functions.
+- [x] AC5: `?unset_program` says that its `tidymedia_location_not_removed` error names a folder that the call kept. `?set_program` says that a failed write tries to remove the folders that the call created. It also says that its `tidymedia_location_not_written` error names each such folder that stays, and names an empty folder that the call removed. A read of `?set_program`, `?unset_program` and `?find_ffmpeg` finds no sentence that AC1, AC2 or AC3 makes false. Each sentence whose wording the branch adds or changes on those pages or in `NEWS.md` describes behavior that a test of AC1, AC2 or AC3 shows. A re-wrap does not count as a change. `NEWS.md` adds no bullet for this milestone. It edits in place the development version's bullet that names `tidymedia_location_folder_kept` for AC1, and the bullet that names `tidymedia_location_not_written` for AC2 and AC3, because the kept folder and that error are both new since 0.2.2 (D091). No `NEWS.md` edit names `tm_save_location()` or a code comment.
+- [x] AC6: On the branch head, `devtools::check()` reports 0 errors and 0 warnings, and `devtools::test()` reports 0 failures.
 
 ## Coverage
 <!-- owner: plan · create/amend-via-gate -->
@@ -61,29 +61,29 @@ and one NEWS bullet follow.
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1: Write the AC1 tests in `tests/testthat/test-program-location-repair.R` (the
+- [x] T1: Write the AC1 tests in `tests/testthat/test-program-location-repair.R` (the
       `tm_lay_out()` helper builds the four layouts) and see them fail. Then add the
       kept-folder line to the `tidymedia_location_not_removed` abort in
       `tm_unset_program()` (`R/program_management.R:1511-1523`). Put `{cli::qty(n)}` before
       each `{?}` (M141 lesson).
-- [ ] T2: Write the AC2 tests, cases (i) to (iv), and see them fail. In `tm_set_program()`,
+- [x] T2: Write the AC2 tests, cases (i) to (iv), and see them fail. In `tm_set_program()`,
       record `tm_missing_ancestors(config_dir)` before the seam call
       (`R/program_management.R:1303-1316`). On a failure, call `tm_remove_created_dirs()`,
       then ask `dir.exists()` which ancestors stay, and name them in the
       `tidymedia_location_not_written` abort. Mock only package seams, never a base function,
       in a test that compares values (M108 lesson).
-- [ ] T3: Write the AC3 tests, the vanished-folder case included, and see them fail. Record
+- [x] T3: Write the AC3 tests, the vanished-folder case included, and see them fail. Record
       that the removal at `R/program_management.R:1270-1288` ran and took, and add a line
       that names the removed folder to the same abort.
-- [ ] T4: Rewrite the comment above `tm_save_location()` (`R/program_management.R:1343-1345`)
+- [x] T4: Rewrite the comment above `tm_save_location()` (`R/program_management.R:1343-1345`)
       for AC4.
-- [ ] T5: Edit the roxygen of `?set_program` (`R/program_management.R:1149-1168`) and
+- [x] T5: Edit the roxygen of `?set_program` (`R/program_management.R:1149-1168`) and
       `?unset_program` (`R/program_management.R:1404-1415`). Read the folder paragraph of
       `?find_ffmpeg` (near `R/program_management.R:1052`) against AC1 to AC3. Run
       `devtools::document()`. Add one NEWS bullet, and avoid the phrases that
       `test-timeout-silence.R` fences out of `NEWS.md` (M143 lesson). Run the claim read of
       AC5 over the diff.
-- [ ] T6: Run the full `devtools::test()` with no other R session working (M124 lesson),
+- [x] T6: Run the full `devtools::test()` with no other R session working (M124 lesson),
       then `devtools::check()`.
 
 ## Work log
@@ -100,9 +100,59 @@ and one NEWS bullet follow.
 - 2026-10-18: plan gate chose a message line for the kept folder over a new `tm_kept` field, because no caller is known to read it in code and a field is one more public promise; falsified by a caller who reads the kept folder from the error in code.
 - 2026-10-18: plan chose taking back the directories a failed write created over only naming them, because D082 already takes back what a failed install created; falsified by a caller who needs those directories kept after a failed write.
 - 2026-10-18: D109 written for the `set_program()` rule.
+- 2026-10-18: implement started on branch m147-location-edges, cut from master at e7e790fc.
+- 2026-10-18: T1 done: the removal abort in `tm_unset_program()` gets a last "Kept the folder" line; the new test (4 layouts and a no-kept case) failed on the missing line before the fix; full `devtools::test()` 0 failures. The line goes after the write-access hint so that hint's "it" still means the file not removed.
+- 2026-10-18: T2 done: `tm_set_program()` reads `tm_missing_ancestors(config_dir)` before the seam, runs `tm_remove_created_dirs()` on a failure, and adds a last "Could not remove the folders it created" line from `dir.exists()`; the four-case test failed before the fix; full `devtools::test()` 0 failures.
+- 2026-10-18: T3 done: a `removed` flag set where the empty-folder removal runs adds a "Removed the empty folder" line to the write error; only the "removed" case of the three-case test failed before the fix; full `devtools::test()` 0 failures.
+- 2026-10-18: T4 done: the `tm_save_location()` comment names the warning-only and fail-after-create stand-ins and gives the M108 waldo reason for a package seam; comment only, the repair test file still passes.
+- 2026-10-18: T5 found that AC5's new NEWS bullet goes against D091: the kept-folder warning and the `tidymedia_location_not_written` error are new since 0.2.2, so the two development-version bullets that name them are edited in place instead; amendment drafted.
+- 2026-10-18: re-audit: AC5 (full) — 3 findings: the "arrived after the last release" reason is partly false for AC2, "adds" missed rewritten sentences, "It says nothing about AC4" was unclear; all three fixed in the draft.
+- 2026-10-18: re-audit: AC5 (full) — 5 findings: the reason clause was half-wrong, a re-wrap would count as a change, "the error" named no class, "takes back" overstated AC2's cases (ii)-(iv), the AC4 clause was vague; second re-audit on AC5, so the fix goes to the user.
+- 2026-10-18: substantive amendment: AC5 now has `NEWS.md` edit in place the two development-version bullets that name `tidymedia_location_folder_kept` and `tidymedia_location_not_written`, adds no bullet, and carries the second re-audit's five fixes; the user chose this over the planned new bullet at the stop.
+- 2026-10-18: T5 done: `?set_program`, `?unset_program` and `?find_ffmpeg` roxygen edited and `devtools::document()` run; the two NEWS bullets edited in place, no bullet added; full `devtools::test()` 0 failures, and `test-timeout-silence.R` passes after the last NEWS edit.
+- 2026-10-18: claim audit: 38 claims read, 4 corrected — R/program_management.R (the take-back comment said "removes" for "tries to remove"; `?find_ffmpeg` did not limit the kept-folder sentence to a kept folder; `?set_program`'s "stops at a folder that ... does not go" did not hold where the seam answers 0; the seam comment called waldo testthat's own code).
+- 2026-10-18: T6 done: at 202c31f0, `devtools::check()` 0 errors, 0 warnings, 0 notes, and the full `devtools::test()` (run with no other R session) has no failures; an earlier check before the claim-audit corrections gave the same result.
+- 2026-10-18: implement complete; status set to review.
+- 2026-10-18: step-7 approval: m147-location-edges approved for merge
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->
 
 ## Review
 <!-- owner: review · exclusive. -->
+
+Review pass 1, 2026-10-18, at a810ba47 (code identical to 202c31f0: `git diff 202c31f0..HEAD -- . ':!cairn'` is empty). Master had not moved (merge base e7e790fc = origin/master). Copilot round off.
+
+- AC1 evidence: `test_file("test-program-location-repair.R")` run in review: "unset_program()'s removal error names a folder it kept" 26 expectations, 0 failed. It crosses kept folder at new/legacy with a failing location file or empty folder through the `tm_unlink()` seam, asserts the class, `tm_files`, the separate "Kept the folder" line naming the kept path and not the other path, and a no-kept case with no such line. The implement log records it red on the missing line before the fix.
+- AC2 evidence: same run: "a failed write takes back the folders set_program() created" 22 expectations, 0 failed. Cases plain (both levels gone, root stays, no "Could not remove" line), file (a file left in the config folder: both stay, both named), status (`tm_unlink()` returns 1 for the deepest), kept (returns 0 and leaves it): both stay and both are named, read by `dir.exists()`. Red before the fix per the implement log.
+- AC3 evidence: same run: "a failed write says that set_program() removed the empty folder" 10 expectations, 0 failed. Case removed has one "Removed the empty folder" line naming the path; cases none and vanishes (folder gone while the prompt waits) have none. Only the removed case was red before the fix.
+- AC4 evidence: `R/program_management.R:1379-1384` names the warning-only write (M143 review) and the write that fails after it creates the config folder (M147); `grep -n 'cannot be mocked' R/program_management.R` finds nothing.
+- AC5 evidence: `man/unset_program.Rd` says its `tidymedia_location_not_removed` error message names the folder the call kept; `man/set_program.Rd:82-88` says a failed write tries to remove the folders it created, that the `tidymedia_location_not_written` error names each that stays, and that it names a removed empty folder; `man/find_ffmpeg.Rd:74-77` limits its error sentence to a kept folder (claim-audit fix). The `git diff master..HEAD -- NEWS.md` adds 0 `* ` bullet lines and edits the bullets naming `tidymedia_location_folder_kept` and `tidymedia_location_not_written`, with 0 added lines naming `tm_save_location` or a comment. The claim audit (38 claims, 4 corrected) read every added sentence against the code and the AC1-AC3 tests.
+
+- AC6 evidence: after the review fixes, at f7c6b82d (code identical at c68bbfa3), `devtools::check()` reports 0 errors, 0 warnings, 0 notes in 7m 16s, and the full `devtools::test()` run with no other R session has no Failed section. R CMD check's own status line shows 1 NOTE from the spelling test's `.Rout.save` comparison ("encodable" in `ffm_batch.Rd`/`ffm_run.Rd`, "filesystem" in NEWS.md's released 0.2.0 section); neither word is in this branch's diff, so it predates M147.
+- Gate: `cairn_validate.py` all checks passed; no principle changed, so no `cairn_impact`; `devtools::document()` leaves no diff; README.Rmd untouched; `pkgdown::check_pkgdown()` no problems; NEWS.md carries the changes in the two edited bullets with no milestone numbers; no new top-level file.
+
+spawned: diff-bug, blame-history, prior-review, ripple
+
+- diff-bug #1: the AC2 test's `tm_unlink()` mock compares `identical(path, dirs$new)`, but the ancestors came from `normalizePath()`, so on Windows the spellings differ and cases status, kept and file fail — fix now (`tm_missing_ancestors(normalize = FALSE)` for `set_program()`), fixed f7c6b82d
+- diff-bug #2: the "Could not remove" line spelled folders by `normalizePath()` while the `x` line and `tm_file` use the raw spelling — fix now (same change), fixed f7c6b82d
+- diff-bug #3: the take-back runs only from `tryCatch(error =)`, so an interrupt leaves created folders — follow-up, row "Location write edges after M147" (a)
+- diff-bug #4: a partial location file in a created folder stops the take-back, and the error does not name the file — follow-up, same row (b)
+- diff-bug #5: a folder another process creates between the ancestor read and the take-back can be removed — follow-up, same row (c)
+- diff-bug #6: `?set_program`'s "removes no folder that holds anything, which includes a folder that it could not remove" reads as if such a folder holds something — fix now (reworded: a folder it could not remove keeps each folder above it), fixed f7c6b82d
+- diff-bug #7: roxygen line 1453 runs to about 94 columns — reject, style
+- diff-bug #8: the AC1 loop's kept-line assertions carry no `info =` — fix now, fixed f7c6b82d
+- diff-bug #9: `removed <- TRUE` is set before the removal is checked — reject, false: a failed removal aborts before the write, as the reviewer also found
+- blame-history #1: "in place of the warning" in NEWS narrates a change inside the cycle, against D091 — reject, false: the same bullet introduces the warning, and the sentence states current behavior, not a rename history
+- blame-history #2: a `\` before a newline in the cli strings may print a backslash — reject, false: the rendered error in implement showed no backslash (glue line continuation)
+- blame-history #3: `tm_remove_created_dirs()` tests emptiness with `list.files()`, not `tm_folder_empty()` — follow-up, row "Location write edges after M147" (d)
+- blame-history #4: the comment "At most one folder is kept on this path" can read as the file path — fix now (reworded to "when this error is reached"), fixed f7c6b82d
+- blame-history #5: the AC1 test never covers one removal taking while the other fails beside a kept folder — reject, false: with a kept folder only the other path is left to remove, so that case cannot occur
+- blame-history #6: the same muddled `?set_program` sentence as diff-bug #6 — fix now, fixed f7c6b82d
+- prior-review #1: a link to an empty folder at the location path gets the new "Removed the empty folder" line though only the link went (M141 review, row item (d)) — follow-up, row "Location write edges after M147", which cross-references that row
+- prior-review #2: the seam comment adds a waldo reason beyond M143's "needs only the seam's purpose" — reject, planned change: AC4 and the claim audit set that wording
+- ripple #1: ROADMAP row "Location edges after M143" still lists (a) to (c) as open — reject, planned change: post-merge hygiene graduates the row
+- ripple #2: `?set_program`'s "The call looks only at the current folder" now reads as a limit on the whole call — fix now (reworded to "looks for such a folder only in the current folder"), fixed f7c6b82d
+- ripple #3: `?program_status` does not mention the take-back of created folders — reject, false: its sentence is about empty folders at the location path and stays true
+- ripple #4: `?find_ffmpeg`'s "`set_program()` writes to the current folder only" — reject, false: still true of where it writes
+- ripple #5: `R/cache.R`'s comment on a `tidymedia_location_not_written` stop — reject, false: still true, the location did not change

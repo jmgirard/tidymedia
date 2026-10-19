@@ -839,6 +839,89 @@ test_that("set_program() refuses a location folder it cannot create or write in"
   }
 })
 
+test_that("a failed write says that set_program() removed the empty folder", {
+  # M147 AC3 and D109. The call removes an empty folder at the location path
+  # after consent, and the folder stays removed when the write then fails, so
+  # the error says so. Case "none": no folder was there. Case "vanishes": the
+  # folder was there at the first look and went away while the prompt waited,
+  # so the call removed nothing. Neither says so.
+  withr::local_options(cli.width = 1000)
+  for (case in c("removed", "none", "vanishes")) {
+    dirs <- tm_redirect_config()
+    stub <- tm_stub_executable()
+    path <- tm_config_file("ffmpeg", dirs$new)
+    if (case != "none") tm_folder_shapes$empty(path)
+    local_mocked_bindings(
+      tm_confirm = function(prompt, ...) {
+        if (case == "vanishes") unlink(path, recursive = TRUE)
+        TRUE
+      },
+      tm_save_location = function(...) stop("No space left on device")
+    )
+
+    result <- tm_set_refusal(set_program("ffmpeg", stub))
+    expect_s3_class(result$condition, "tidymedia_location_not_written")
+    lines <- strsplit(cli::ansi_strip(conditionMessage(result$condition)),
+                      "\n")[[1]]
+    removed_line <- grep("Removed the empty folder", lines, fixed = TRUE,
+                         value = TRUE)
+    expect_false(dir.exists(path), info = case)
+    if (case == "removed") {
+      expect_length(removed_line, 1L)
+      expect_match(removed_line, path, fixed = TRUE)
+    } else {
+      expect_length(removed_line, 0L)
+    }
+  }
+})
+
+test_that("a failed write takes back the folders set_program() created", {
+  # M147 AC2 and D109. The config folder and its parent are missing, so the
+  # write has to make both. A stand-in for the tm_save_location() seam makes
+  # them, as the real write does, and then fails. Before M147 both stayed.
+  # Case "plain": both go and the parent above them stays. Case "file": the
+  # stand-in also leaves a file in the config folder, so that folder holds
+  # something and the removal stops there. Cases "status" and "kept": the
+  # tm_unlink() seam fails on the config folder, by its status or by
+  # answering 0 and leaving the folder. In the last three both folders stay,
+  # and the error names both, read from the disk and not from the seam.
+  withr::local_options(cli.width = 1000)
+  for (case in c("plain", "file", "status", "kept")) {
+    dirs <- tm_redirect_config()
+    stub <- tm_stub_executable()
+    upper <- dirname(dirs$new)
+    unlink(upper, recursive = TRUE)
+    created <- c(upper, dirs$new)
+    local_mocked_bindings(
+      tm_save_location = function(location, config_dir, config_file) {
+        dir.create(config_dir, recursive = TRUE)
+        if (case == "file") file.create(file.path(config_dir, "partial"))
+        stop("No space left on device")
+      },
+      tm_unlink = function(path, recursive = FALSE) {
+        if (identical(path, dirs$new) && case == "status") return(1L)
+        if (identical(path, dirs$new) && case == "kept") return(0L)
+        unlink(path, recursive = recursive, expand = FALSE)
+      }
+    )
+
+    result <- tm_set_refusal(set_program("ffmpeg", stub, confirm = FALSE))
+    expect_s3_class(result$condition, "tidymedia_location_not_written")
+    lines <- strsplit(cli::ansi_strip(conditionMessage(result$condition)),
+                      "\n")[[1]]
+    left_line <- grep("Could not remove the", lines, fixed = TRUE, value = TRUE)
+    expect_true(dir.exists(dirs$root), info = case)
+    if (case == "plain") {
+      expect_false(any(dir.exists(created)), info = case)
+      expect_length(left_line, 0L)
+    } else {
+      expect_true(all(dir.exists(created)), info = case)
+      expect_length(left_line, 1L)
+      for (d in created) expect_match(left_line, d, fixed = TRUE, info = case)
+    }
+  }
+})
+
 
 # unset_program(): a folder where the location file should be ----------------
 
@@ -948,6 +1031,51 @@ test_that("unset_program() keeps a folder it cannot read beside a location file"
   expect_identical(result$warnings[[1]]$tm_files, paths[["new"]])
   expect_true(dir.exists(paths[["new"]]))
   expect_false(file.exists(paths[["legacy"]]))
+})
+
+test_that("unset_program()'s removal error names a folder it kept", {
+  # M147 AC1. A folder with contents at one path stays, and the removal at the
+  # other path fails through the tm_unlink() seam. Before M147 the removal
+  # error came first and the kept folder went unnamed, because the
+  # folder-kept warning is given only after a removal that took. Both paths
+  # for the kept folder, and both forms of the item that fails to go: an empty
+  # folder makes the seam's call recursive.
+  withr::local_options(cli.width = 1000)
+  for (where in c("new", "legacy")) {
+    for (other in c("location", "empty")) {
+      dirs <- tm_redirect_config()
+      other_where <- setdiff(c("new", "legacy"), where)
+      layout <- stats::setNames(c("file", other), c(where, other_where))
+      paths <- tm_lay_out(dirs, "ffmpeg", layout, tm_stub_executable())
+      local_mocked_bindings(tm_unlink = function(path, recursive = FALSE) 1L)
+      info <- paste(where, other)
+
+      condition <- expect_error(
+        unset_program("ffmpeg"),
+        class = "tidymedia_location_not_removed"
+      )
+      expect_identical(condition$tm_files, paths[[other_where]], info = info)
+      lines <- strsplit(cli::ansi_strip(conditionMessage(condition)), "\n")[[1]]
+      kept_line <- grep("Kept the folder", lines, fixed = TRUE, value = TRUE)
+      expect_length(kept_line, 1L)
+      expect_match(kept_line, paths[[where]], fixed = TRUE, info = info)
+      expect_no_match(kept_line, paths[[other_where]], fixed = TRUE,
+                      info = info)
+      expect_true(dir.exists(paths[[where]]), info = info)
+    }
+  }
+
+  # With no folder kept, the error has no such line.
+  dirs <- tm_redirect_config()
+  tm_lay_out(dirs, "ffmpeg", c(new = "location", legacy = "location"),
+             tm_stub_executable())
+  local_mocked_bindings(tm_unlink = function(path, recursive = FALSE) 1L)
+  condition <- expect_error(
+    unset_program("ffmpeg"),
+    class = "tidymedia_location_not_removed"
+  )
+  expect_no_match(cli::ansi_strip(conditionMessage(condition)), "Kept the",
+                  fixed = TRUE)
 })
 
 test_that("unset_program() refuses when every path that holds anything holds a full folder", {

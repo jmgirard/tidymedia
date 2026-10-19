@@ -1057,7 +1057,10 @@ tm_na_string <- function(x) {
 #' `tidymedia_location_folder` error for one in the current folder.
 #' [unset_program()] removes the
 #' location files and empty folders at the two paths, and gives a
-#' `tidymedia_location_folder_kept` warning for the folder it leaves. If each
+#' `tidymedia_location_folder_kept` warning for the folder it leaves. If it
+#' keeps such a folder and the removal at the other path fails, it gives a
+#' `tidymedia_location_not_removed` error in place of the warning, and the
+#' error message names the kept folder. If each
 #' path that holds something holds a folder that is not empty,
 #' [unset_program()] gives the `tidymedia_location_folder` error and removes
 #' nothing. The warning from the `find_*()` functions says which case you
@@ -1156,7 +1159,8 @@ find_ffplay <- function() {
 #' folder by hand, then call again. If an empty folder is still there after
 #' the call tries to remove it, the call gives a
 #' `tidymedia_location_not_removed` error and writes nothing. The call looks
-#' only at the current folder. A folder in the place of a location file saved
+#' for such a folder only in the current folder. A folder in the place of a
+#' location file saved
 #' before 0.2.0 stays, and [unset_program()] removes it when it is empty.
 #'
 #' If the call cannot write the location file, it gives a
@@ -1166,6 +1170,15 @@ find_ffplay <- function() {
 #' cannot be created. The error
 #' names the file in its message and in `tm_file`. The call does not replace a
 #' file without write permission, so that file keeps the location it held.
+#'
+#' If the call created the folder for the location file, or folders above it,
+#' and the write then fails, it tries to remove those folders, starting with
+#' the deepest. It never removes a folder that holds anything, so a folder it
+#' could not remove also keeps each folder above it. The
+#' `tidymedia_location_not_written` error names in its message each of those
+#' folders that stays. If the call removed an empty folder where the file goes
+#' and the write then fails, that folder stays removed, and the error message
+#' names it.
 #'
 #' For locations saved by versions before 0.2.0, see the section "Locations
 #' saved by earlier versions" in [find_ffmpeg()].
@@ -1267,11 +1280,16 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   # and the removal below is recursive. A folder that went away meanwhile
   # leaves nothing to remove, and tm_folder_empty() answers FALSE for a path
   # that is not there, so that case skips the block rather than refusing.
+  # `removed` records a removal that ran here, so a failed write below can say
+  # the folder is gone. A folder that went away while the prompt waited was
+  # not removed by this call, and the error does not claim it (M147, D109).
+  removed <- FALSE
   if (folder && dir.exists(config_file)) {
     if (!tm_folder_empty(config_file)) {
       tm_abort_location_folder(program, config_file, call)
     }
     tm_unlink(config_file, recursive = TRUE)
+    removed <- TRUE
     if (dir.exists(config_file)) {
       cli::cli_abort(
         c(
@@ -1300,6 +1318,13 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   # file the caller made read-only is refused, not replaced: there is no
   # write-elsewhere-then-rename step. The capability memo stays on the error,
   # because the remembered location did not change.
+  #
+  # The folders missing on the way to the config folder are read before the
+  # write, because after it a folder the write made cannot be told from one
+  # that was there (tm_missing_ancestors()). A failed write tries to remove
+  # them, as a failed install does (D082, D109), and the error names each one
+  # still on disk, read from the disk rather than from the removal's status.
+  created <- tm_missing_ancestors(config_dir, normalize = FALSE)
   held <- list()
   failure <- tryCatch(
     withCallingHandlers(
@@ -1315,12 +1340,24 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
     error = function(e) e
   )
   if (!is.null(failure)) {
+    tm_remove_created_dirs(created)
+    stayed <- created[dir.exists(created)]
+    stayed_line <- if (length(stayed)) {
+      c("i" = "{cli::qty(length(stayed))}Could not remove the \\
+               {?folder/folders} it created: {.file {stayed}}.")
+    }
+    removed_line <- if (removed) {
+      c("i" = "Removed the empty folder that was at {.file {config_file}} \\
+               before the write.")
+    }
     cli::cli_abort(
       c(
         "Can't save the location of {program}.",
         "x" = "{.file {config_file}}",
         "i" = "Check that you can write to that file and to the folder \\
-               holding it."
+               holding it.",
+        removed_line,
+        stayed_line
       ),
       class = "tidymedia_location_not_written",
       tm_program = program,
@@ -1340,9 +1377,12 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   invisible(TRUE)
 }
 
-# The two writes behind set_program(), in one seam so a test can stand in a
-# write that warns without failing (M143 review). Base R's own functions cannot
-# be mocked from the suite.
+# The two writes behind set_program(), in one seam so a test can stand in two
+# writes the filesystem gives only rarely: one that warns without failing
+# (M143 review), and one that fails after it creates the config folder (M147).
+# A stand-in for dir.create() or writeLines() in the base namespace would also
+# stand in for them inside waldo, which testthat calls to build a failure's
+# diff (M108). A seam of the package's own does not.
 tm_save_location <- function(location, config_dir, config_file) {
   if (!dir.exists(config_dir)) dir.create(config_dir, recursive = TRUE)
   writeLines(location, config_file)
@@ -1408,8 +1448,11 @@ set_ffplay <- function(location, confirm = TRUE) {
 #' counts as empty. A folder that is not empty stays. The call removes the
 #' file or the empty folder at the other path, and then gives a
 #' `tidymedia_location_folder_kept` warning. The warning names the folder that
-#' stays in its message and in `tm_files`. If each path that holds something
-#' holds a folder that is not empty, the call gives a
+#' stays in its message and in `tm_files`. If the removal at the other path
+#' fails, the call gives a `tidymedia_location_not_removed` error in place of
+#' the warning. That error names what the call could not remove in its message
+#' and in `tm_files`, and its message also names the folder that the call kept. If each path
+#' that holds something holds a folder that is not empty, the call gives a
 #' `tidymedia_location_folder` error and removes nothing. The error lists each
 #' such folder in its message and in `tm_files`. Delete those folders by hand,
 #' then call again.
@@ -1508,12 +1551,22 @@ tm_unset_program <- function(program, call) {
   removed_files <- setdiff(present, c(folders, left))
   if (length(removed_files)) forget_ffmpeg_capabilities()
 
+  # A folder kept beside the failed removal is named here, on a line apart
+  # from the "x" line, because the folder-kept warning below is given only
+  # after a removal that took (M147). At most one folder is kept when this
+  # error is reached: with a full folder at both paths the call refused above.
   if (length(left)) {
+    kept <- if (length(full)) {
+      c("i" = "{cli::qty(length(full))}Kept the {?folder/folders} \\
+               {.file {full}}, which {?holds/hold} files or folders, or \\
+               which tidymedia cannot read.")
+    }
     cli::cli_abort(
       c(
         "Can't remove the remembered location for {program}.",
         "x" = "{.file {left}}",
-        "i" = "Check that you can write to the directory holding it."
+        "i" = "Check that you can write to the directory holding it.",
+        kept
       ),
       class = "tidymedia_location_not_removed",
       tm_program = program,
@@ -1991,9 +2044,14 @@ tm_remove_added <- function(dir, before, after) {
 # a directory the call made from one it found -- and a partially successful
 # recursive create, which makes the parents and then fails on the leaf, leaves
 # a state no later look can attribute.
-tm_missing_ancestors <- function(path) {
+#
+# `normalize = FALSE` keeps the caller's spelling, so set_program() names
+# these folders the way it names the location file beside them. On Windows
+# normalizePath() changes the separators and can lengthen an 8.3 short name,
+# so the two spellings of one folder would differ (M147 review diff-bug #1).
+tm_missing_ancestors <- function(path, normalize = TRUE) {
   out <- character(0)
-  path <- normalizePath(path, winslash = "/", mustWork = FALSE)
+  if (normalize) path <- normalizePath(path, winslash = "/", mustWork = FALSE)
   while (!dir.exists(path)) {
     out <- c(path, out)
     parent <- dirname(path)

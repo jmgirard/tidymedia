@@ -113,6 +113,7 @@ and one NEWS bullet follow.
 - 2026-10-18: claim audit: 38 claims read, 4 corrected — R/program_management.R (the take-back comment said "removes" for "tries to remove"; `?find_ffmpeg` did not limit the kept-folder sentence to a kept folder; `?set_program`'s "stops at a folder that ... does not go" did not hold where the seam answers 0; the seam comment called waldo testthat's own code).
 - 2026-10-18: T6 done: at 202c31f0, `devtools::check()` 0 errors, 0 warnings, 0 notes, and the full `devtools::test()` (run with no other R session) has no failures; an earlier check before the claim-audit corrections gave the same result.
 - 2026-10-18: implement complete; status set to review.
+- 2026-10-18: step-7 approval: m147-location-edges approved for merge
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

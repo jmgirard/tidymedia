@@ -109,7 +109,10 @@ functions leave a folder that is not empty. <code><a href="set_program.html">set
 <code>tidymedia_location_folder</code> error for one in the current folder.
 <code><a href="unset_program.html">unset_program()</a></code> removes the
 location files and empty folders at the two paths, and gives a
-<code>tidymedia_location_folder_kept</code> warning for the folder it leaves. If each
+<code>tidymedia_location_folder_kept</code> warning for the folder it leaves. If it
+keeps such a folder and the removal at the other path fails, it gives a
+<code>tidymedia_location_not_removed</code> error in place of the warning, and the
+error message names the kept folder. If each
 path that holds something holds a folder that is not empty,
 <code><a href="unset_program.html">unset_program()</a></code> gives the <code>tidymedia_location_folder</code> error and removes
 nothing. The warning from the <code>find_*()</code> functions says which case you

@@ -81,7 +81,10 @@ gives a `tidymedia_location_folder` error for one in the current folder.
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
 removes the location files and empty folders at the two paths, and gives
 a `tidymedia_location_folder_kept` warning for the folder it leaves. If
-each path that holds something holds a folder that is not empty,
+it keeps such a folder and the removal at the other path fails, it gives
+a `tidymedia_location_not_removed` error in place of the warning, and
+the error message names the kept folder. If each path that holds
+something holds a folder that is not empty,
 [`unset_program()`](https://jmgirard.github.io/tidymedia/reference/unset_program.md)
 gives the `tidymedia_location_folder` error and removes nothing. The
 warning from the `find_*()` functions says which case you have: it

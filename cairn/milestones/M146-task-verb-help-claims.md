@@ -50,17 +50,17 @@ integer refusal behind (j) → the `check_dim()` candidate row in `cairn/ROADMAP
 
 ## Acceptance criteria
 
-- [ ] AC1: For each claim (a) to (j) under Scope In, the roxygen source and every
+- [x] AC1: For each claim (a) to (j) under Scope In, the roxygen source and every
       `man/*.Rd` page generated from it no longer make the claim, and the replacement text
       states what the code at head does, read against the code site that claim names.
-- [ ] AC2: The replacements for claims (e) and (f) state the behavior that runs on this
+- [x] AC2: The replacements for claims (e) and (f) state the behavior that runs on this
       machine show, name the containers and the FFmpeg version those runs used, and say that
       other FFmpeg versions can differ.
-- [ ] AC3: Every hunk of `git diff <merge-base>..HEAD -- R/ man/` changes, or re-wraps within
+- [x] AC3: Every hunk of `git diff <merge-base>..HEAD -- R/ man/` changes, or re-wraps within
       an edited paragraph, a roxygen line, a code comment, a string literal in a documentation
       helper whose output feeds only roxygen, or a generated Rd line, each carrying one of
       claims (a) to (j) or its replacement. No other R line changes.
-- [ ] AC4: The series' `NEWS.md` bullet under `## Documentation` also names the functions or
+- [x] AC4: The series' `NEWS.md` bullet under `## Documentation` also names the functions or
       groups of functions this milestone corrects, no second bullet is added, and the bullet
       names no milestone.
 - [ ] AC5: `devtools::document()` leaves no diff, `devtools::test()` passes, and
@@ -109,3 +109,9 @@ integer refusal behind (j) → the `check_dim()` candidate row in `cairn/ROADMAP
 ## Decisions
 
 ## Review
+
+- 2026-10-18 review pass 1. Branch synced: merge-base = origin/master = ce2dcf9f, nothing to merge. No PR open, Copilot round off.
+- AC1 evidence: `git grep` at HEAD over R/ and man/ for each claim's base wording (padded down, no per-row settings, sibling batch functions read, single-input form it wraps, for the other batch, FLAC in .mp4, every part of the standard, the pipeline function it wraps, neither a positive number nor an FFmpeg expression) finds none on the nine scoped pages; master has them. The remaining hits are on pages outside (a)-(j): `?anonymize_video_batch`, `?extract_audio_batch`, `?convert_audio_batch`, `?separate_audio_video_batch` (follow-up). Each replacement was read against its code site in the T5 work-log line and by the fresh claim auditor (25 claims, 0 wrong). Pass.
+- AC2 evidence: `man/strip_metadata.Rd` names FFmpeg 9.0.2, the `.mp4` result (VideoHandler/SoundHandler, und) and the `.mkv` result (neither tag), and says other versions can differ; `man/crop_video.Rd` and `man/segment_video.Rd` name FFmpeg 9.0.2, `.mkv` into `.mp4`, and the same sentence. These match the T2 runs on this machine (FFmpeg 9.0.2). Pass.
+- AC3 evidence: `git diff master...HEAD -- R/` filtered to +/- lines that do not start with `#` after whitespace prints nothing, so every changed R line is roxygen or a comment. The three comment hunks carry (a)/(b), (e) and (b); every roxygen hunk carries one of (a)-(j). The 9 Rd files changed are the nine scoped pages. Pass.
+- AC4 evidence: the dev section's `## Documentation` has 1 bullet (count by awk); the diff adds one sentence to it naming the nine task pages; no `M<NN>` token in the dev section. Pass.

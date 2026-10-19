@@ -115,3 +115,25 @@ integer refusal behind (j) → the `check_dim()` candidate row in `cairn/ROADMAP
 - AC2 evidence: `man/strip_metadata.Rd` names FFmpeg 9.0.2, the `.mp4` result (VideoHandler/SoundHandler, und) and the `.mkv` result (neither tag), and says other versions can differ; `man/crop_video.Rd` and `man/segment_video.Rd` name FFmpeg 9.0.2, `.mkv` into `.mp4`, and the same sentence. These match the T2 runs on this machine (FFmpeg 9.0.2). Pass.
 - AC3 evidence: `git diff master...HEAD -- R/` filtered to +/- lines that do not start with `#` after whitespace prints nothing, so every changed R line is roxygen or a comment. The three comment hunks carry (a)/(b), (e) and (b); every roxygen hunk carries one of (a)-(j). The 9 Rd files changed are the nine scoped pages. Pass.
 - AC4 evidence: the dev section's `## Documentation` has 1 bullet (count by awk); the diff adds one sentence to it naming the nine task pages; no `M<NN>` token in the dev section. Pass.
+- Gate: `cairn_validate.py` all checks passed (exit 0); no DESIGN principle changed, so no `cairn_impact`; `pkgdown::check_pkgdown()` no problems; README.Rmd not touched; no new top-level file; changelog entry present (AC4). Prose sweep (`tools/doc_prose_report.R`) over the nine pages: base 0 findings, head 1 (`[41 words]`, prior-review #1), after the fix 0, exit 0.
+- spawned: diff-bug, blame-history, prior-review
+- diff-bug #1: `?strip_metadata` says the tags "were removed", then that the `.mp4` output kept generic values — fix now (reworded: source values did not reach the output; `.mp4` had generic values, `.mkv` neither tag)
+- diff-bug #2: the `:1620` comment says the options "dropped" the tags from `.mp4` too — fix now (names `-map_metadata -1`, reset in `.mp4`, dropped in `.mkv`)
+- diff-bug #3: "the only per-row settings" overreaches, since `ffm_batch()`'s `verify` can read job columns — fix now ("the only per-row settings of each command")
+- diff-bug #4: the (j) refusal list sits under `@param hardware,fallback`, not `width,height` — follow-up (placement predates the branch; row "Batch See Also claims left after M146")
+- diff-bug #5: "the codec" is singular though both codecs are arguments; the even-crop step is not named — fix now for the first half ("the video and audio codecs"); reject the second half (false: the sentence does not claim to list every step, and Details states the crop)
+- diff-bug #6: FFmpeg-version sentences omit the platform that M145's pages name — fix now ("on macOS" added on all three pages and the comment)
+- diff-bug #7: ragged or long roxygen and NEWS wraps — reject (style; the 140-character line was re-wrapped by fix #3 anyway)
+- blame-history #1: D017 names FLAC into `.mp4` as its failing example, which the new help text contradicts — fix now (D107 annotates D017)
+- blame-history #2: `?strip_metadata` no longer says the function does not ensure per-stream removal or what a user can do — fix now (adds "Other FFmpeg versions can differ, so if these tags matter, read them in the output with `ffprobe()`")
+- blame-history #3: the comment contradicts the doc on `.mp4` — fix now (same fix as diff-bug #2)
+- blame-history #4: the (j) text documents a gap that #62's hotfix listed as refused — follow-up (existing row "`check_dim()` integer refusal")
+- blame-history #5: the explicit "sibling batch functions … this one does not" contrast was folded away — reject (planned change: that contrast was claim (h), which was false)
+- prior-review #1: the new (j) sentence is 41 words, over the plain-docs 25-word cap — fix now (split into four sentences; sweep clean)
+- prior-review #2: "were removed" vs "kept generic values" on `?strip_metadata` and the comment — fix now (same fix as diff-bug #1, #2)
+- prior-review #3: platform omitted from the FFmpeg-version sentences — fix now (same fix as diff-bug #6)
+- prior-review #4: measured run results in user docs, against plain-docs rule 4 — reject (planned change: AC2 requires the version and containers on the page)
+- prior-review #5: ragged and long roxygen wraps — reject (style)
+- prior-review #6: NEWS orphan line — reject (style)
+- prior-review #7: "wraps" applied to `crop_video()` — reject (false: `crop_video_pipeline()` calls all three named functions, read at T5 and by the claim auditor)
+- Implementer's AC1 grep found the same false claim shapes on four pages outside (a)-(j) — follow-up (new row "Batch See Also claims left after M146")

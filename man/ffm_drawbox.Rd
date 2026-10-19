@@ -37,8 +37,9 @@ reference link below explains that syntax. With the special value
 \code{"invert"}, the box has the color of the video with inverted luma. The
 default is \code{"black"}.}
 
-\item{thickness}{The thickness of the box edge, in pixels. The value
-\code{"fill"} draws a filled box. The default is \code{"fill"}.}
+\item{thickness}{The thickness of the box edge, in pixels. Give a positive
+double or a string. The value \code{"fill"} draws a filled box. The
+default is \code{"fill"}.}
 }
 \value{
 \code{object} with an added instruction to apply the \code{drawbox}

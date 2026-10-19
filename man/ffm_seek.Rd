@@ -44,8 +44,8 @@ keyframe at or before \code{start}. So the output can begin earlier and
 run longer than you asked. In runs with FFmpeg 9.0.2 on macOS
 (2026-10-18), a copy cut from 3.8 to 7 seconds of a file with a keyframe
 every 2 seconds started at the keyframe at 2 seconds. It ended at 7
-seconds when the file had no B-frames, and 2 frames after 7 seconds when
-it had them. Without
+seconds when the file had no B-frames. When the file had them, the cut
+held 2 more frames and ended just after 7 seconds. Without
 \code{ffm_copy()}, FFmpeg re-encodes the section.
 }
 }

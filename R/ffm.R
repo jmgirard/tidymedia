@@ -164,8 +164,8 @@ ffm_trim <- function(object,
 #'     run longer than you asked. In runs with FFmpeg 9.0.2 on macOS
 #'     (2026-10-18), a copy cut from 3.8 to 7 seconds of a file with a keyframe
 #'     every 2 seconds started at the keyframe at 2 seconds. It ended at 7
-#'     seconds when the file had no B-frames, and 2 frames after 7 seconds when
-#'     it had them. Without
+#'     seconds when the file had no B-frames. When the file had them, the cut
+#'     held 2 more frames and ended just after 7 seconds. Without
 #'     \code{ffm_copy()}, FFmpeg re-encodes the section.
 #' }
 #'
@@ -1115,8 +1115,9 @@ ffm_concat <- function(object) {
 #'   reference link below explains that syntax. With the special value
 #'   \code{"invert"}, the box has the color of the video with inverted luma. The
 #'   default is \code{"black"}.
-#' @param thickness The thickness of the box edge, in pixels. The value
-#'   \code{"fill"} draws a filled box. The default is \code{"fill"}.
+#' @param thickness The thickness of the box edge, in pixels. Give a positive
+#'   double or a string. The value \code{"fill"} draws a filled box. The
+#'   default is \code{"fill"}.
 #' @return \code{object} with an added instruction to apply the \code{drawbox}
 #'   filter.
 #' @seealso [anonymize_video()], the task function that uses

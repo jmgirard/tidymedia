@@ -210,7 +210,9 @@ ffm_files(video, "web.mp4") |>
 
 You can cut a clip in two ways. An exact cut [re-encodes](#glossary) the
 video, which is slower. A fast cut uses a [stream copy](#glossary),
-which keeps the quality but starts at the nearest [keyframe](#glossary).
+which keeps the quality but starts at the [keyframe](#glossary) at or
+before the start you ask for (see
+[`?ffm_seek`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md)).
 
 [`ffm_seek()`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md)
 does both. Set `reencode = FALSE` and add

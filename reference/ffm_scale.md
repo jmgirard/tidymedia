@@ -18,17 +18,24 @@ ffm_scale(object, width, height)
 
 - width:
 
-  The width of the output video, in pixels. Give a positive real number
-  or a string that contains an FFmpeg expression.
+  The width of the output video, in pixels. Give a positive double or a
+  string, such as an FFmpeg expression.
 
 - height:
 
-  The height of the output video, in pixels. Give a positive real number
-  or a string that contains an FFmpeg expression.
+  The height of the output video, in pixels. Give a positive double or a
+  string, such as an FFmpeg expression.
 
 ## Value
 
 `object` with an added instruction to resize the frames.
+
+## Details
+
+Each size argument takes one double (an R number such as `160`) or one
+string. An integer such as `160L` is refused, and so is `NA`. Any other
+string is not checked, and it goes into the FFmpeg command as written,
+so it can hold an FFmpeg expression.
 
 ## See also
 

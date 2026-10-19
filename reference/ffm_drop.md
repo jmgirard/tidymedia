@@ -1,8 +1,8 @@
 # Drop Streams from an FFmpeg Pipeline
 
-Remove one or more streams from the media file. For example, remove the
-video, audio, subtitles or data stream from a media file. The glossary
-in
+Leave one or more kinds of stream out of the output file. For example,
+leave out the video, audio, subtitles or data streams. The input file
+does not change. The glossary in
 [`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
 explains media terms such as stream.
 

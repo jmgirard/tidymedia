@@ -218,7 +218,8 @@ right place in the command:</p>
 </h2>
 <p>You can cut a clip in two ways. An exact cut <a href="#glossary">re-encodes</a> the video, which is slower. A fast cut
 uses a <a href="#glossary">stream copy</a>, which keeps the quality but
-starts at the nearest <a href="#glossary">keyframe</a>.</p>
+starts at the <a href="#glossary">keyframe</a> at or before the start
+you ask for (see <code><a href="../reference/ffm_seek.html">?ffm_seek</a></code>).</p>
 <p><code><a href="../reference/ffm_seek.html">ffm_seek()</a></code> does both. Set <code>reencode = FALSE</code>
 and add <code><a href="../reference/ffm_copy.html">ffm_copy()</a></code> for a fast cut:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">

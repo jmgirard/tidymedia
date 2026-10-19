@@ -30,10 +30,14 @@ ffm_run(object, verify = NULL)
 ## Value
 
 FFmpeg's standard output as a character vector, returned invisibly. On a
-non-zero exit it has a `status` attribute. You call `ffm_run()` to write
-the output file, not for its return value. The pipeline runs as a vector
-of arguments and never through a shell. So paths with spaces or special
-characters are safe.
+non-zero exit `ffm_run()` gives an error instead of returning (see the
+section below). You call `ffm_run()` to write the output file, not for
+its return value. Each argument of the command is quoted with
+[`shQuote()`](https://rdrr.io/r/base/shQuote.html) before
+[`system2()`](https://rdrr.io/r/base/system2.html) runs it, and on Unix
+[`system2()`](https://rdrr.io/r/base/system2.html) passes the command to
+a shell. The quoting makes paths with spaces or special characters reach
+FFmpeg as written.
 
 ## When FFmpeg exits non-zero
 
@@ -49,9 +53,11 @@ the error text:
 
 The `tm_status` field is one integer, the exit status exactly as
 [`system2()`](https://rdrr.io/r/base/system2.html) reported it. If a
-signal stopped FFmpeg, the field holds the shell's number, 128 plus the
-signal number, unchanged. That number stands for the signal, not for a
-status FFmpeg chose to return.
+signal stopped FFmpeg, the value depends on the signal and the platform.
+In runs with FFmpeg 9.0.2 on macOS (2026-10-18), `SIGTERM`, which FFmpeg
+catches, gave 255, the status FFmpeg chose when it stopped. `SIGKILL`,
+which no program can catch, gave 137, the shell's 128 plus the signal
+number 9.
 
 Two other paths give this class and carry this field, so one handler
 covers all three:

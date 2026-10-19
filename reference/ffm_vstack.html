@@ -64,7 +64,9 @@ the other). It can also resize the videos to the same width.</p>
 
 <dt id="arg-shortest">shortest<a class="anchor" aria-label="anchor" href="#arg-shortest"></a></dt>
 <dd><p>A logical that says whether to trim the duration of all
-videos to that of the shortest video. The default is <code>FALSE</code>.</p></dd>
+videos to that of the shortest video. The default is <code>FALSE</code>. With
+<code>resize = TRUE</code>, it does nothing: the filters that resize and stack
+the videos do not get the setting, and no error says so.</p></dd>
 
 
 <dt id="arg-resize">resize<a class="anchor" aria-label="anchor" href="#arg-resize"></a></dt>

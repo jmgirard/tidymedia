@@ -127,6 +127,20 @@
   [`?audio_stream`](https://jmgirard.github.io/tidymedia/reference/audio_stream.md)
   and
   [`?hardware_encoder`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md).
+  These pipeline pages changed too:
+  [`?ffm_map`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md),
+  [`?ffm_run`](https://jmgirard.github.io/tidymedia/reference/ffm_run.md),
+  [`?ffm_seek`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md),
+  [`?ffm_drop`](https://jmgirard.github.io/tidymedia/reference/ffm_drop.md),
+  [`?ffm_crop`](https://jmgirard.github.io/tidymedia/reference/ffm_crop.md),
+  [`?ffm_scale`](https://jmgirard.github.io/tidymedia/reference/ffm_scale.md),
+  [`?ffm_fps`](https://jmgirard.github.io/tidymedia/reference/ffm_fps.md),
+  [`?ffm_drawbox`](https://jmgirard.github.io/tidymedia/reference/ffm_drawbox.md),
+  [`?ffm_overlay`](https://jmgirard.github.io/tidymedia/reference/ffm_overlay.md),
+  [`?ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md),
+  [`?ffm_vstack`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md)
+  and
+  [`?ffm_loudnorm`](https://jmgirard.github.io/tidymedia/reference/ffm_loudnorm.md).
   The help text also changed for the `hardware` argument of the task
   functions. It changed for the warning about dropped audio tracks in
   [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),

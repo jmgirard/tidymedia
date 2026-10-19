@@ -34,8 +34,9 @@ ffm_seek(object, start = NULL, end = NULL, reencode = TRUE)
 - reencode:
 
   A logical. `TRUE` (the default) re-encodes for a frame-accurate cut.
-  `FALSE` makes a fast seek that is safe to copy, and its cut points
-  move to keyframes.
+  `FALSE` makes a fast seek that is safe to copy. With
+  [`ffm_copy`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md),
+  its start moves back to a keyframe.
 
 ## Value
 
@@ -49,11 +50,19 @@ The `reencode` argument trades accuracy against speed:
   re-encoded, so it starts and ends on the exact frames you ask for.
   This is the safe default.
 
-- `reencode = FALSE` is a **fast, lossless copy**. But the cut points
-  move to the nearest keyframes. So the output duration can differ from
-  the request by up to the gap between two keyframes. Use it with
-  [`ffm_copy`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
-  for the fastest path.
+- `reencode = FALSE` puts `-ss` and `-to` before `-i`, so FFmpeg seeks
+  in the input. With
+  [`ffm_copy`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md),
+  this is a **fast, lossless copy**. But the start moves back to the
+  keyframe at or before `start`. So the output can begin earlier and run
+  longer than you asked. In runs with FFmpeg 9.0.2 on macOS
+  (2026-10-18), a copy cut from 3.8 to 7 seconds of a file with a
+  keyframe every 2 seconds started at the keyframe at 2 seconds. It
+  ended at 7 seconds when the file had no B-frames. When the file had
+  them, the cut held 2 more frames and ended just after 7 seconds.
+  Without
+  [`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md),
+  FFmpeg re-encodes the section.
 
 ## References
 
@@ -96,7 +105,7 @@ Other pipeline functions:
 
 ``` r
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
-# Fast, lossless copy cut (snaps to keyframes)
+# Fast, lossless copy cut (the start moves back to a keyframe)
 ffm_files(video, "output.mp4") |>
   ffm_seek(start = 1, end = 5, reencode = FALSE) |>
   ffm_copy() |>

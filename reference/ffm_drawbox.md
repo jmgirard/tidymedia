@@ -26,24 +26,24 @@ ffm_drawbox(
 - x:
 
   The horizontal position of the left edge of the box, in pixels of the
-  input video. Give a nonnegative real number or a string that contains
-  an FFmpeg expression. The default is `0`.
+  input video. Give a double of zero or more, or a string, such as an
+  FFmpeg expression. The default is `0`.
 
 - y:
 
   The vertical position of the top edge of the box, in pixels of the
-  input video. Give a nonnegative real number or a string that contains
-  an FFmpeg expression. The default is `0`.
+  input video. Give a double of zero or more, or a string, such as an
+  FFmpeg expression. The default is `0`.
 
 - width:
 
-  The width of the box, in pixels. Give a positive real number or a
-  string that contains an FFmpeg expression. The default is `"in_w"`.
+  The width of the box, in pixels. Give a positive double or a string,
+  such as an FFmpeg expression. The default is `"in_w"`.
 
 - height:
 
-  The height of the box, in pixels. Give a positive real number or a
-  string that contains an FFmpeg expression. The default is `"in_h"`.
+  The height of the box, in pixels. Give a positive double or a string,
+  such as an FFmpeg expression. The default is `"in_h"`.
 
 - color:
 
@@ -54,12 +54,20 @@ ffm_drawbox(
 
 - thickness:
 
-  The thickness of the box edge, in pixels. The value `"fill"` draws a
-  filled box. The default is `"fill"`.
+  The thickness of the box edge, in pixels. Give a positive double or a
+  string. The value `"fill"` draws a filled box. The default is
+  `"fill"`.
 
 ## Value
 
 `object` with an added instruction to apply the `drawbox` filter.
+
+## Details
+
+Each size and position argument, `thickness` included, takes one double
+(an R number such as `160`) or one string. An integer such as `160L` is
+refused, and so is `NA`. Any other string is not checked, and it goes
+into the FFmpeg command as written, so it can hold an FFmpeg expression.
 
 ## References
 

@@ -88,14 +88,19 @@ keeps the video and the <em>second</em> audio track of the input.</p>
 not replace them. Pass <code>replace = TRUE</code> to discard them instead. That is
 how you narrow the all-streams map that <code><a href="ffm_copy.html">ffm_copy</a></code> sets. Adding
 to that map puts the stream in the output twice, and does not select it.</p>
-<p><code>ffm_map()</code> is the only pipeline function that adds to earlier calls.
-Every other <code>ffm_*</code> function that sets a value, <code><a href="ffm_copy.html">ffm_copy</a></code>
-included, replaces it. <code>ffm_map()</code> is different because its arguments
-are <em>partial</em> choices that combine. For example, you keep the video,
-then name one audio track.</p>
-<p>When the pipeline uses a function with several inputs, such as
-<code><a href="ffm_hstack.html">ffm_hstack</a></code>, your mapping is added <em>beside</em> the automatic
-<code>-map "[vout]"</code> of the filtered stream. For example,
+<p>Other pipeline functions also add to earlier calls. Each function that adds
+a filter, such as <code><a href="ffm_crop.html">ffm_crop</a></code> or <code><a href="ffm_loudnorm.html">ffm_loudnorm</a></code>, puts
+its filter after the filters already set. <code><a href="ffm_output_options.html">ffm_output_options</a></code>
+puts its options after the options already set. <code><a href="ffm_seek.html">ffm_seek</a></code>,
+<code><a href="ffm_drop.html">ffm_drop</a></code>, <code><a href="ffm_codec.html">ffm_codec</a></code>,
+<code><a href="ffm_pixel_format.html">ffm_pixel_format</a></code> and <code><a href="ffm_copy.html">ffm_copy</a></code> replace the values
+they set. But with its default <code>streams = TRUE</code>, <code><a href="ffm_copy.html">ffm_copy()</a></code>
+gives an error rather than replace a mapping other than <code>"0"</code>.
+<code>ffm_map()</code> adds because its arguments are <em>partial</em> choices that
+combine. For example, you keep the video, then name one audio track.</p>
+<p>When the pipeline uses <code><a href="ffm_hstack.html">ffm_hstack</a></code>, <code><a href="ffm_vstack.html">ffm_vstack</a></code>
+or <code><a href="ffm_overlay.html">ffm_overlay</a></code>, your mapping is added <em>beside</em> the
+automatic <code>-map "[vout]"</code> of the filtered stream. For example,
 <code>ffm_map(object, "0:a")</code> keeps the audio of the first input next to the
 stacked video.</p>
     </div>

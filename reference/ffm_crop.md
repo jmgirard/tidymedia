@@ -17,29 +17,36 @@ ffm_crop(object, width, height, x = "(in_w-out_w)/2", y = "(in_h-out_h)/2")
 
 - width:
 
-  The width of the output video, in pixels. Give a positive real number
-  or a string that contains an FFmpeg expression.
+  The width of the output video, in pixels. Give a positive double or a
+  string, such as an FFmpeg expression.
 
 - height:
 
-  The height of the output video, in pixels. Give a positive real number
-  or a string that contains an FFmpeg expression.
+  The height of the output video, in pixels. Give a positive double or a
+  string, such as an FFmpeg expression.
 
 - x:
 
   The horizontal position of the left edge of the output video, in
-  pixels of the input video. Give a positive real number or a string
-  that contains an FFmpeg expression. The default is `"(in_w-out_w)/2"`.
+  pixels of the input video. Give a double of zero or more, or a string,
+  such as an FFmpeg expression. The default is `"(in_w-out_w)/2"`.
 
 - y:
 
   The vertical position of the top edge of the output video, in pixels
-  of the input video. Give a positive real number or a string that
-  contains an FFmpeg expression. The default is `"(in_h-out_h)/2"`.
+  of the input video. Give a double of zero or more, or a string, such
+  as an FFmpeg expression. The default is `"(in_h-out_h)/2"`.
 
 ## Value
 
 `object` with an added instruction to crop the frames.
+
+## Details
+
+Each size and position argument takes one double (an R number such as
+`160`) or one string. An integer such as `160L` is refused, and so is
+`NA`. Any other string is not checked, and it goes into the FFmpeg
+command as written, so it can hold an FFmpeg expression.
 
 ## References
 

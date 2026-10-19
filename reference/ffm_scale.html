@@ -63,18 +63,25 @@ with an FFmpeg expression.</p>
 
 
 <dt id="arg-width">width<a class="anchor" aria-label="anchor" href="#arg-width"></a></dt>
-<dd><p>The width of the output video, in pixels. Give a positive real
-number or a string that contains an FFmpeg expression.</p></dd>
+<dd><p>The width of the output video, in pixels. Give a positive
+double or a string, such as an FFmpeg expression.</p></dd>
 
 
 <dt id="arg-height">height<a class="anchor" aria-label="anchor" href="#arg-height"></a></dt>
 <dd><p>The height of the output video, in pixels. Give a positive
-real number or a string that contains an FFmpeg expression.</p></dd>
+double or a string, such as an FFmpeg expression.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>object</code> with an added instruction to resize the frames.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Each size argument takes one double (an R number such as <code>160</code>) or one
+string. An integer such as <code>160L</code> is refused, and so is <code>NA</code>. Any
+other string is not checked, and it goes into the FFmpeg command as written,
+so it can hold an FFmpeg expression.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

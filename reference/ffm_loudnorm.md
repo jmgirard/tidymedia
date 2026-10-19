@@ -2,9 +2,15 @@
 
 Add FFmpeg's `loudnorm` (EBU R128) audio filter. It normalizes the
 input's perceived loudness toward a target integrated loudness,
-true-peak ceiling and loudness range. The filter compiles to `-af`, or
-joins an existing audio filter chain in the order the filters were
-added. The glossary in
+true-peak ceiling and loudness range. The filter joins the audio filter
+chain in the order the filters were added, and the chain compiles to
+`-af`. In a pipeline that also uses
+[`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md),
+[`ffm_vstack`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md)
+or
+[`ffm_overlay`](https://jmgirard.github.io/tidymedia/reference/ffm_overlay.md),
+before or after this function, the compiled command has no audio filter,
+and no error says so. The glossary in
 [`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
 explains media terms such as LUFS and true peak.
 
@@ -67,8 +73,10 @@ ffm_loudnorm(
 
   A logical. `TRUE` requests linear normalization (`linear=true`), which
   needs the measured values to hit the target precisely. `FALSE` (the
-  default) leaves out the option, so the single-pass dynamic behavior
-  does not change.
+  default) leaves out the option. FFmpeg's own default for `linear` is
+  true (FFmpeg 9.0.2, `ffmpeg -h filter=loudnorm`, 2026-10-18). So with
+  the measured values given, FFmpeg still normalizes linearly where it
+  can.
 
 - print_format:
 

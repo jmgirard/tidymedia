@@ -26,13 +26,13 @@ ffm_overlay(object, x = 0, y = 0, shortest = FALSE, scale = NULL)
 
 - x:
 
-  The horizontal position of the overlay's left edge, as a number of
-  pixels or an FFmpeg expression. The default is `0`.
+  The horizontal position of the overlay's left edge, in pixels, as a
+  double or a string, such as an FFmpeg expression. The default is `0`.
 
 - y:
 
-  The vertical position of the overlay's top edge, as a number of pixels
-  or an FFmpeg expression. The default is `0`.
+  The vertical position of the overlay's top edge, in pixels, as a
+  double or a string, such as an FFmpeg expression. The default is `0`.
 
 - shortest:
 
@@ -54,10 +54,13 @@ first.
 
 ## Details
 
-`x` and `y` accept plain numbers or FFmpeg overlay expressions. A plain
-number counts pixels from the top-left of the main video. In an
-expression, `main_w` and `main_h` are the main video's dimensions.
-`overlay_w` and `overlay_h` are the overlay's dimensions. For example,
+`x` and `y` each take one double (an R number such as `16`) of zero or
+more, or one string, such as an FFmpeg overlay expression. An integer
+such as `16L` is refused, and so is `NA`. Any other string is not
+checked, and it goes into the FFmpeg command as written. A number counts
+pixels from the top-left of the main video. In an expression, `main_w`
+and `main_h` are the main video's dimensions. `overlay_w` and
+`overlay_h` are the overlay's dimensions. For example,
 `x = "main_w-overlay_w-16"` puts the overlay 16 pixels from the right
 edge.
 

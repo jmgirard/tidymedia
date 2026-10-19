@@ -46,15 +46,31 @@ you narrow the all-streams map that
 sets. Adding to that map puts the stream in the output twice, and does
 not select it.
 
-`ffm_map()` is the only pipeline function that adds to earlier calls.
-Every other `ffm_*` function that sets a value,
+Other pipeline functions also add to earlier calls. Each function that
+adds a filter, such as
+[`ffm_crop`](https://jmgirard.github.io/tidymedia/reference/ffm_crop.md)
+or
+[`ffm_loudnorm`](https://jmgirard.github.io/tidymedia/reference/ffm_loudnorm.md),
+puts its filter after the filters already set.
+[`ffm_output_options`](https://jmgirard.github.io/tidymedia/reference/ffm_output_options.md)
+puts its options after the options already set.
+[`ffm_seek`](https://jmgirard.github.io/tidymedia/reference/ffm_seek.md),
+[`ffm_drop`](https://jmgirard.github.io/tidymedia/reference/ffm_drop.md),
+[`ffm_codec`](https://jmgirard.github.io/tidymedia/reference/ffm_codec.md),
+[`ffm_pixel_format`](https://jmgirard.github.io/tidymedia/reference/ffm_pixel_format.md)
+and
 [`ffm_copy`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
-included, replaces it. `ffm_map()` is different because its arguments
-are *partial* choices that combine. For example, you keep the video,
-then name one audio track.
+replace the values they set. But with its default `streams = TRUE`,
+[`ffm_copy()`](https://jmgirard.github.io/tidymedia/reference/ffm_copy.md)
+gives an error rather than replace a mapping other than `"0"`.
+`ffm_map()` adds because its arguments are *partial* choices that
+combine. For example, you keep the video, then name one audio track.
 
-When the pipeline uses a function with several inputs, such as
+When the pipeline uses
 [`ffm_hstack`](https://jmgirard.github.io/tidymedia/reference/ffm_hstack.md),
+[`ffm_vstack`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md)
+or
+[`ffm_overlay`](https://jmgirard.github.io/tidymedia/reference/ffm_overlay.md),
 your mapping is added *beside* the automatic `-map "[vout]"` of the
 filtered stream. For example, `ffm_map(object, "0:a")` keeps the audio
 of the first input next to the stacked video.

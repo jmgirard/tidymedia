@@ -78,13 +78,15 @@ terms such as stream.</p>
 
 
 <dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>The horizontal position of the overlay's left edge, as a number of
-pixels or an FFmpeg expression. The default is <code>0</code>.</p></dd>
+<dd><p>The horizontal position of the overlay's left edge, in pixels, as a
+double or a string, such as an FFmpeg expression. The default is
+<code>0</code>.</p></dd>
 
 
 <dt id="arg-y">y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
-<dd><p>The vertical position of the overlay's top edge, as a number of
-pixels or an FFmpeg expression. The default is <code>0</code>.</p></dd>
+<dd><p>The vertical position of the overlay's top edge, in pixels, as a
+double or a string, such as an FFmpeg expression. The default is
+<code>0</code>.</p></dd>
 
 
 <dt id="arg-shortest">shortest<a class="anchor" aria-label="anchor" href="#arg-shortest"></a></dt>
@@ -107,8 +109,11 @@ the first.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><code>x</code> and <code>y</code> accept plain numbers or FFmpeg overlay expressions. A
-plain number counts pixels from the top-left of the main video. In an
+    <p><code>x</code> and <code>y</code> each take one double (an R number such as <code>16</code>)
+of zero or more, or one string, such as an FFmpeg overlay expression. An
+integer such as <code>16L</code> is refused, and so is <code>NA</code>. Any other string
+is not checked, and it goes into the FFmpeg command as written. A number
+counts pixels from the top-left of the main video. In an
 expression, <code>main_w</code> and <code>main_h</code> are the main video's dimensions.
 <code>overlay_w</code> and <code>overlay_h</code> are the overlay's dimensions. For
 example, <code>x = "main_w-overlay_w-16"</code> puts the overlay 16 pixels from the

@@ -19,7 +19,9 @@ ffm_vstack(object, shortest = FALSE, resize = FALSE)
 - shortest:
 
   A logical that says whether to trim the duration of all videos to that
-  of the shortest video. The default is `FALSE`.
+  of the shortest video. The default is `FALSE`. With `resize = TRUE`,
+  it does nothing: the filters that resize and stack the videos do not
+  get the setting, and no error says so.
 
 - resize:
 

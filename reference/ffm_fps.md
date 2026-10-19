@@ -22,9 +22,11 @@ ffm_fps(object, fps)
 
 - fps:
 
-  The target frame rate. Give a positive real number of frames per
-  second, or a string that contains an FFmpeg frame rate expression. For
-  example, `"30000/1001"` is the NTSC rate.
+  The target frame rate. Give a positive double (an R number such as
+  `30`) of frames per second, or a string, such as an FFmpeg frame rate
+  expression. For example, `"30000/1001"` is the NTSC rate. An integer
+  such as `30L` is refused, and so is `NA`. Any other string is not
+  checked, and it goes into the FFmpeg command as written.
 
 ## Value
 

@@ -19,32 +19,48 @@ realtime/streaming, and full filtergraph DAGs.
 
 - **Layer 0 — escape hatch:** `ffmpeg()`, `ffprobe()`, `mediainfo()` — raw
   argument passthrough to the CLIs. The only "faithful wrapper" (D002).
-- **Layer 1 — engine (`ffm_*`):** the pipe builder (`R/ffm.R`, `R/ffm_oop.R`)
-  and batch runner (`R/ffm_batch.R`). Construction/compilation (`ffm`,
-  `ffm_compile`, `ffm_run`, `ffm_batch`), input/output (`ffm_copy`, `ffm_seek`,
-  `ffm_map`, `ffm_drop`, `ffm_files`, `ffm_codec`, `ffm_pixel_format`,
-  `ffm_output_options`), filters (`ffm_trim`, `ffm_crop`, `ffm_scale`,
-  `ffm_fps`, `ffm_drawbox`, and the first audio filter `ffm_loudnorm`), and
-  blessed multi-input verbs (`ffm_hstack`, `ffm_vstack`, `ffm_overlay`,
-  `ffm_concat`).
-- **Layer 2 — task verbs:** `extract_audio`, `extract_frame`, `crop_video`,
-  `segment_video`, `separate_audio_video`, `concatenate_videos`,
-  `format_for_web`, `standardize_video`, `normalize_audio`, `audio_as_mp3`,
-  `compare_videos`, `picture_in_picture` — thin wrappers over Layer 1.
+- **Layer 1 — engine (`ffm_*`):** the pipe builder (`R/ffm.R`, `R/ffm_oop.R`),
+  the batch runner (`R/ffm_batch.R`), and the jobs-table functions around it
+  (D092). Construction/compilation (`ffm_files`, `ffm_compile`, `ffm_run`),
+  input/output (`ffm_copy`, `ffm_seek`, `ffm_map`, `ffm_drop`, `ffm_codec`,
+  `ffm_pixel_format`, `ffm_output_options`), filters (`ffm_trim`, `ffm_crop`,
+  `ffm_scale`, `ffm_fps`, `ffm_drawbox`, `ffm_loudnorm`), blessed multi-input
+  verbs (`ffm_hstack`, `ffm_vstack`, `ffm_overlay`, `ffm_concat`), and the jobs
+  table (`ffm_jobs`, `ffm_batch`, `ffm_manifest`).
+- **Layer 2 — task verbs:** `anonymize_video`, `compare_videos`,
+  `concatenate_videos`, `convert_audio`, `crop_video`, `extract_audio`,
+  `extract_frame`, `format_for_web`, `normalize_audio`, `picture_in_picture`,
+  `sample_frames`, `segment_video`, `separate_audio_video`,
+  `standardize_video`, `strip_metadata`, each with a `<verb>_batch` sibling —
+  thin wrappers over Layer 1 (IP1).
 - **Metadata:** `probe_all/container/streams/video/audio` (ffprobe → tibbles),
-  the `mediainfo_*` family, and `get_duration/framerate/height/width/samplingrate`.
+  `mediainfo_query/parameter/template` (MediaInfo), and the per-file scalars
+  `get_duration/frame_rate/height/sample_rate/width`.
+- **Verification:** `verify_media()` (`R/verify.R`), outside the engine (D011).
+- **Capability queries:** `ffmpeg_codecs`, `ffmpeg_encoders`, `has_encoder`,
+  `has_hardware_encoder`, `hardware_encoder` (`R/ffmpeg.R`), and
+  `refresh_ffmpeg_capabilities` (`R/cache.R`), which forgets their cache.
 - **Program management (`R/program_management.R`):** `find_*`/`set_*` locators
-  for ffmpeg/ffprobe/ffplay/mediainfo, `set_program`, `get_codecs`,
-  `get_encoders`, `install_on_win`.
-- **Tidy-eval reexports & utils:** `enquo`/`enquos`/`as_label`/`as_name`/`:=`/
-  `.data`; `pad_integers`, `convert_fractions` (flagged for cleanup by the M22
-  naming/docs audit — the four quoting reexports + `:=` have no internal use;
-  `.data` is used internally and stays).
+  for ffmpeg/ffprobe/ffplay/mediainfo, `set_program`, `unset_program`,
+  `program_status`, `install_on_win`.
+- **Session options:** `with_timeout()` for one call and `local_timeout()` for a
+  scope (`R/timeout.R`; D051).
+- **Reexport:** `.data` only; D014 dropped the tidy-eval quoting helpers.
 
 ## Conventions
 
 - User-facing conditions use `cli::cli_abort()` / rlang checks; assertthat is
   being retired — never add new assertthat calls (D004).
+- Names follow D014, widened by D078 and read for `ffm_*` by D092. Task verbs
+  are `verb_object` with a `<verb>_batch` sibling; `ffm_*` is Layer 1 only;
+  `get_*` is reserved for per-file metadata scalars, so capability queries take
+  other names; `probe_*` and `mediainfo_*` name their backend. Arguments use
+  `infile`/`outfile`/`infiles` for transforms and `file` for read-only metadata,
+  full-word compounds (`audio_codec`, `pixel_format`, `sample_rate`), and
+  `start`/`end` for time bounds. No export or argument names one member of an
+  open vocabulary such as a codec, backend or container (D078). Condition
+  classes are `tidymedia_<event>` and their data fields carry `tm_` (D062).
+  D014's clean-break rename window closed when 0.2.0 reached CRAN (D077).
 - Command **compilation** is pure and CI-safe (no binaries). `run = FALSE`
   promises a *command*, not a binary-free call: a probe whose result enters the
   compiled command runs when the pipeline is built, `run` notwithstanding —

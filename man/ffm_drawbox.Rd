@@ -48,9 +48,11 @@ filter.
 Add a video filter that draws a colored rectangle on the input video.
 }
 \details{
-Each size and position argument takes one double or one string. An integer
-such as \code{160L} is refused. A string is not checked, and it goes into
-the FFmpeg command as written, so it can hold an FFmpeg expression.
+Each size and position argument, \code{thickness} included, takes one
+double (an R number such as \code{160}) or one string. An integer such as
+\code{160L} is refused, and so is \code{NA}. Any other string is not
+checked, and it goes into the FFmpeg command as written, so it can hold an
+FFmpeg expression.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

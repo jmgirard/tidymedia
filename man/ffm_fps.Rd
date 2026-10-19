@@ -10,11 +10,11 @@ ffm_fps(object, fps)
 \item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{fps}{The target frame rate. Give a positive double of frames per
-second, or a string, such as an FFmpeg frame rate expression. For
-example, \code{"30000/1001"} is the NTSC rate. An integer such as
-\code{30L} is refused. A string is not checked, and it goes into the
-FFmpeg command as written.}
+\item{fps}{The target frame rate. Give a positive double (an R number such
+as \code{30}) of frames per second, or a string, such as an FFmpeg frame
+rate expression. For example, \code{"30000/1001"} is the NTSC rate. An
+integer such as \code{30L} is refused, and so is \code{NA}. Any other
+string is not checked, and it goes into the FFmpeg command as written.}
 }
 \value{
 \code{object} with an added instruction to resample the frame rate.

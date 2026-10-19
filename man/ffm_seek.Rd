@@ -41,10 +41,11 @@ for. This is the safe default.
 \code{-i}, so FFmpeg seeks in the input. With \code{\link{ffm_copy}},
 this is a \strong{fast, lossless copy}. But the start moves back to the
 keyframe at or before \code{start}. So the output can begin earlier and
-run longer than you asked, by less than the gap between two keyframes.
-In a run with FFmpeg 9.0.2 on macOS (2026-10-18), a copy cut from 3.8 to
-7 seconds of a file with a keyframe every 2 seconds started at the
-keyframe at 2 seconds and ended at 7 seconds. Without
+run longer than you asked. In runs with FFmpeg 9.0.2 on macOS
+(2026-10-18), a copy cut from 3.8 to 7 seconds of a file with a keyframe
+every 2 seconds started at the keyframe at 2 seconds. It ended at 7
+seconds when the file had no B-frames, and 2 frames after 7 seconds when
+it had them. Without
 \code{ffm_copy()}, FFmpeg re-encodes the section.
 }
 }

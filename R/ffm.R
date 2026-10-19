@@ -161,10 +161,11 @@ ffm_trim <- function(object,
 #'     \code{-i}, so FFmpeg seeks in the input. With \code{\link{ffm_copy}},
 #'     this is a \strong{fast, lossless copy}. But the start moves back to the
 #'     keyframe at or before \code{start}. So the output can begin earlier and
-#'     run longer than you asked, by less than the gap between two keyframes.
-#'     In a run with FFmpeg 9.0.2 on macOS (2026-10-18), a copy cut from 3.8 to
-#'     7 seconds of a file with a keyframe every 2 seconds started at the
-#'     keyframe at 2 seconds and ended at 7 seconds. Without
+#'     run longer than you asked. In runs with FFmpeg 9.0.2 on macOS
+#'     (2026-10-18), a copy cut from 3.8 to 7 seconds of a file with a keyframe
+#'     every 2 seconds started at the keyframe at 2 seconds. It ended at 7
+#'     seconds when the file had no B-frames, and 2 frames after 7 seconds when
+#'     it had them. Without
 #'     \code{ffm_copy()}, FFmpeg re-encodes the section.
 #' }
 #'
@@ -255,9 +256,10 @@ ffm_drop <- function(object,
 #'
 #' Make the video's frames smaller by cropping them.
 #'
-#' Each size and position argument takes one double or one string. An integer
-#' such as \code{160L} is refused. A string is not checked, and it goes into
-#' the FFmpeg command as written, so it can hold an FFmpeg expression.
+#' Each size and position argument takes one double (an R number such as
+#' \code{160}) or one string. An integer such as \code{160L} is refused, and so
+#' is \code{NA}. Any other string is not checked, and it goes into the FFmpeg
+#' command as written, so it can hold an FFmpeg expression.
 #'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
@@ -308,9 +310,10 @@ ffm_crop <- function(object,
 #' Scale (resize) the input video's frames to a width and height in pixels, or
 #' with an FFmpeg expression.
 #'
-#' Each size argument takes one double or one string. An integer such as
-#' \code{160L} is refused. A string is not checked, and it goes into the FFmpeg
-#' command as written, so it can hold an FFmpeg expression.
+#' Each size argument takes one double (an R number such as \code{160}) or one
+#' string. An integer such as \code{160L} is refused, and so is \code{NA}. Any
+#' other string is not checked, and it goes into the FFmpeg command as written,
+#' so it can hold an FFmpeg expression.
 #'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
@@ -351,11 +354,11 @@ ffm_scale <- function(object, width, height) {
 #'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.
-#' @param fps The target frame rate. Give a positive double of frames per
-#'   second, or a string, such as an FFmpeg frame rate expression. For
-#'   example, \code{"30000/1001"} is the NTSC rate. An integer such as
-#'   \code{30L} is refused. A string is not checked, and it goes into the
-#'   FFmpeg command as written.
+#' @param fps The target frame rate. Give a positive double (an R number such
+#'   as \code{30}) of frames per second, or a string, such as an FFmpeg frame
+#'   rate expression. For example, \code{"30000/1001"} is the NTSC rate. An
+#'   integer such as \code{30L} is refused, and so is \code{NA}. Any other
+#'   string is not checked, and it goes into the FFmpeg command as written.
 #' @return \code{object} with an added instruction to resample the frame rate.
 #' @seealso [standardize_video()], the task function that uses \code{ffm_fps()}
 #'   to set the frame rate.
@@ -803,8 +806,8 @@ ffm_pixel_format <- function(object, format) {
 #'   \code{ffm_files()}.
 #' @param shortest A logical that says whether to trim the duration of all
 #'   videos to that of the shortest video. The default is \code{FALSE}. With
-#'   \code{resize = TRUE}, it does nothing: the resize graph has no
-#'   \code{shortest} term, and no error says so.
+#'   \code{resize = TRUE}, it does nothing: the filters that resize and stack
+#'   the videos do not get the setting, and no error says so.
 #' @param resize A logical that says whether to resize the input videos to the
 #'   same height. Resizing takes longer, and for now it works only with two
 #'   inputs. It fits both inputs to the same aspect ratio, so it assumes the
@@ -875,8 +878,8 @@ ffm_hstack <- function(object,
 #'   \code{ffm_files()}.
 #' @param shortest A logical that says whether to trim the duration of all
 #'   videos to that of the shortest video. The default is \code{FALSE}. With
-#'   \code{resize = TRUE}, it does nothing: the resize graph has no
-#'   \code{shortest} term, and no error says so.
+#'   \code{resize = TRUE}, it does nothing: the filters that resize and stack
+#'   the videos do not get the setting, and no error says so.
 #' @param resize A logical that says whether to resize the input videos to the
 #'   same width. Resizing takes longer, and for now it works only with two
 #'   inputs. It fits both inputs to the same aspect ratio, so it assumes the
@@ -942,10 +945,11 @@ ffm_vstack <- function(object,
 #' drawn over it. The glossary in \code{vignette("tidymedia")} explains media
 #' terms such as stream.
 #'
-#' \code{x} and \code{y} each take one double of zero or more, or one string,
-#' such as an FFmpeg overlay expression. An integer such as \code{16L} is
-#' refused. A string is not checked, and it goes into the FFmpeg command as
-#' written. A number counts pixels from the top-left of the main video. In an
+#' \code{x} and \code{y} each take one double (an R number such as \code{16})
+#' of zero or more, or one string, such as an FFmpeg overlay expression. An
+#' integer such as \code{16L} is refused, and so is \code{NA}. Any other string
+#' is not checked, and it goes into the FFmpeg command as written. A number
+#' counts pixels from the top-left of the main video. In an
 #' expression, \code{main_w} and \code{main_h} are the main video's dimensions.
 #' \code{overlay_w} and \code{overlay_h} are the overlay's dimensions. For
 #' example, \code{x = "main_w-overlay_w-16"} puts the overlay 16 pixels from the
@@ -958,11 +962,11 @@ ffm_vstack <- function(object,
 #'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()} with exactly two input files.
-#' @param x The horizontal position of the overlay's left edge, as a double of
-#'   pixels or a string, such as an FFmpeg expression. The default is
+#' @param x The horizontal position of the overlay's left edge, in pixels, as a
+#'   double or a string, such as an FFmpeg expression. The default is
 #'   \code{0}.
-#' @param y The vertical position of the overlay's top edge, as a double of
-#'   pixels or a string, such as an FFmpeg expression. The default is
+#' @param y The vertical position of the overlay's top edge, in pixels, as a
+#'   double or a string, such as an FFmpeg expression. The default is
 #'   \code{0}.
 #' @param shortest A logical that says whether to end the output when the
 #'   shorter input ends. The default is \code{FALSE}.
@@ -1089,9 +1093,11 @@ ffm_concat <- function(object) {
 #'
 #' Add a video filter that draws a colored rectangle on the input video.
 #'
-#' Each size and position argument takes one double or one string. An integer
-#' such as \code{160L} is refused. A string is not checked, and it goes into
-#' the FFmpeg command as written, so it can hold an FFmpeg expression.
+#' Each size and position argument, \code{thickness} included, takes one
+#' double (an R number such as \code{160}) or one string. An integer such as
+#' \code{160L} is refused, and so is \code{NA}. Any other string is not
+#' checked, and it goes into the FFmpeg command as written, so it can hold an
+#' FFmpeg expression.
 #'
 #' @param object An FFmpeg pipeline (\code{ffm}) object created by
 #'   \code{ffm_files()}.

@@ -71,7 +71,7 @@ bugs behind (j), (k), (l) and (m) → their own candidate rows in `cairn/ROADMAP
 - [x] AC4: The series' `NEWS.md` bullet under `## Documentation` also names the functions or
       groups of functions this milestone corrects, no second bullet is added, and the bullet
       names no milestone.
-- [ ] AC5: `devtools::document()` leaves no diff, `devtools::test()` passes, and
+- [x] AC5: `devtools::document()` leaves no diff, `devtools::test()` passes, and
       `devtools::check()` gives 0 errors and 0 warnings.
 
 ## Coverage
@@ -158,4 +158,6 @@ Review pass 1, 2026-10-18, at 193ad31d (master 9c857bd2 unmoved, no sync needed)
 - prior-review #4: ROADMAP row "`ffm_loudnorm()` linear FALSE" says FFmpeg 9.0.1 where 9.0.2 is installed — reject, false: the row records a read made at planning, and the default it reports is the same in both versions.
 - prior-review #5: the string-not-checked text documents M07's open hardening — follow-up, absorbed by row "`check_dim()` integer refusal".
 - prior-review side note: `?ffm_run` has no caveat for a SIGTERM that also reaches `sh` — follow-up, row "`ffm_run()` signal to the shell".
-- Fix-now edits committed at 4e03ea68, verify re-run before the merge question (AC5 below). Fresh Opus reader of those edits (D093): 15 claims, none false; 2 refined: the B-frame end now reads "held 2 more frames and ended just after 7 seconds" (frames matched by hash: 2.00 s to 7.08 s with 7.04 s skipped), and `@param thickness` now says a positive double or a string (`thickness = 0` refused, confirmed).
+- Fix-now edits committed at 4e03ea68, verify re-run before the merge question (AC5 below). Fresh Opus reader of those edits (D093): 15 claims, none false; 2 refined: the B-frame end now reads "held 2 more frames and ended just after 7 seconds" (frames matched by hash: 2.00 s to 7.08 s with 7.04 s skipped), and `@param thickness` now says a positive double or a string (`thickness = 0` refused, confirmed). The same reader re-read both once: true.
+- AC5 evidence: at d9ad7eca, `devtools::document()` left no diff in `R/`, `man/` or `NAMESPACE`; full `devtools::test()` reached DONE with no Failed section; `devtools::check()` gave 0 errors, 0 warnings, 0 notes (the test-output NOTE inside it is the spelling list's pre-existing "encodable" and "filesystem"). This run also confirms AC3's twelve `.Rd` pages are generated.
+- Dispositions: 25 lens findings; 7 fix now (diff-bug #1-#5, #10; blame-history #5, same as diff-bug #4), 5 follow-up, 13 rejected. No criterion or scope amendment in the work log.

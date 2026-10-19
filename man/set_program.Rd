@@ -67,7 +67,8 @@ The error names the folder in its message and in \code{tm_files}. Delete the
 folder by hand, then call again. If an empty folder is still there after
 the call tries to remove it, the call gives a
 \code{tidymedia_location_not_removed} error and writes nothing. The call looks
-only at the current folder. A folder in the place of a location file saved
+for such a folder only in the current folder. A folder in the place of a
+location file saved
 before 0.2.0 stays, and \code{\link[=unset_program]{unset_program()}} removes it when it is empty.
 
 If the call cannot write the location file, it gives a
@@ -79,9 +80,9 @@ names the file in its message and in \code{tm_file}. The call does not replace a
 file without write permission, so that file keeps the location it held.
 
 If the call created the folder for the location file, or folders above it,
-and the write then fails, it tries to remove those folders. It starts with
-the deepest, and it removes no folder that holds anything, which includes a
-folder that it could not remove. The
+and the write then fails, it tries to remove those folders, starting with
+the deepest. It never removes a folder that holds anything, so a folder it
+could not remove also keeps each folder above it. The
 \code{tidymedia_location_not_written} error names in its message each of those
 folders that stays. If the call removed an empty folder where the file goes
 and the write then fails, that folder stays removed, and the error message

@@ -1159,7 +1159,8 @@ find_ffplay <- function() {
 #' folder by hand, then call again. If an empty folder is still there after
 #' the call tries to remove it, the call gives a
 #' `tidymedia_location_not_removed` error and writes nothing. The call looks
-#' only at the current folder. A folder in the place of a location file saved
+#' for such a folder only in the current folder. A folder in the place of a
+#' location file saved
 #' before 0.2.0 stays, and [unset_program()] removes it when it is empty.
 #'
 #' If the call cannot write the location file, it gives a
@@ -1171,9 +1172,9 @@ find_ffplay <- function() {
 #' file without write permission, so that file keeps the location it held.
 #'
 #' If the call created the folder for the location file, or folders above it,
-#' and the write then fails, it tries to remove those folders. It starts with
-#' the deepest, and it removes no folder that holds anything, which includes a
-#' folder that it could not remove. The
+#' and the write then fails, it tries to remove those folders, starting with
+#' the deepest. It never removes a folder that holds anything, so a folder it
+#' could not remove also keeps each folder above it. The
 #' `tidymedia_location_not_written` error names in its message each of those
 #' folders that stays. If the call removed an empty folder where the file goes
 #' and the write then fails, that folder stays removed, and the error message
@@ -1323,7 +1324,7 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   # that was there (tm_missing_ancestors()). A failed write tries to remove
   # them, as a failed install does (D082, D109), and the error names each one
   # still on disk, read from the disk rather than from the removal's status.
-  created <- tm_missing_ancestors(config_dir)
+  created <- tm_missing_ancestors(config_dir, normalize = FALSE)
   held <- list()
   failure <- tryCatch(
     withCallingHandlers(
@@ -1552,8 +1553,8 @@ tm_unset_program <- function(program, call) {
 
   # A folder kept beside the failed removal is named here, on a line apart
   # from the "x" line, because the folder-kept warning below is given only
-  # after a removal that took (M147). At most one folder is kept on this
-  # path: with a full folder at both paths the call refused above.
+  # after a removal that took (M147). At most one folder is kept when this
+  # error is reached: with a full folder at both paths the call refused above.
   if (length(left)) {
     kept <- if (length(full)) {
       c("i" = "{cli::qty(length(full))}Kept the {?folder/folders} \\
@@ -2043,9 +2044,14 @@ tm_remove_added <- function(dir, before, after) {
 # a directory the call made from one it found -- and a partially successful
 # recursive create, which makes the parents and then fails on the leaf, leaves
 # a state no later look can attribute.
-tm_missing_ancestors <- function(path) {
+#
+# `normalize = FALSE` keeps the caller's spelling, so set_program() names
+# these folders the way it names the location file beside them. On Windows
+# normalizePath() changes the separators and can lengthen an 8.3 short name,
+# so the two spellings of one folder would differ (M147 review diff-bug #1).
+tm_missing_ancestors <- function(path, normalize = TRUE) {
   out <- character(0)
-  path <- normalizePath(path, winslash = "/", mustWork = FALSE)
+  if (normalize) path <- normalizePath(path, winslash = "/", mustWork = FALSE)
   while (!dir.exists(path)) {
     out <- c(path, out)
     parent <- dirname(path)

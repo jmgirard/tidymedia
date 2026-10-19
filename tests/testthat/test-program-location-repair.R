@@ -1058,8 +1058,9 @@ test_that("unset_program()'s removal error names a folder it kept", {
       lines <- strsplit(cli::ansi_strip(conditionMessage(condition)), "\n")[[1]]
       kept_line <- grep("Kept the folder", lines, fixed = TRUE, value = TRUE)
       expect_length(kept_line, 1L)
-      expect_match(kept_line, paths[[where]], fixed = TRUE)
-      expect_no_match(kept_line, paths[[other_where]], fixed = TRUE)
+      expect_match(kept_line, paths[[where]], fixed = TRUE, info = info)
+      expect_no_match(kept_line, paths[[other_where]], fixed = TRUE,
+                      info = info)
       expect_true(dir.exists(paths[[where]]), info = info)
     }
   }

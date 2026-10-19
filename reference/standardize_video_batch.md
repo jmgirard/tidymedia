@@ -204,8 +204,8 @@ for the single-input form;
 for the batch runner and the arguments forwarded through `...`;
 [`segment_video_batch()`](https://jmgirard.github.io/tidymedia/reference/segment_video_batch.md)
 and
-[`extract_frame_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md)
-for the other batch task functions.
+[`extract_frame_batch()`](https://jmgirard.github.io/tidymedia/reference/extract_frame_batch.md),
+two other batch task functions.
 
 Other task functions:
 [`anonymize_video()`](https://jmgirard.github.io/tidymedia/reference/anonymize_video.md),

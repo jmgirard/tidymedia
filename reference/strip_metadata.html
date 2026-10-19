@@ -103,12 +103,17 @@ or return the compiled command without running it (<code>FALSE</code>).</p></dd>
 not stamp the container again with a fresh <code>creation_time</code>, or with an
 <code>encoder</code> tag that names its own version. Either tag would defeat
 de-identification and reproducibility.</p>
-<p>Because the streams are copied and not re-encoded, some data is not removed.
-Those are identifiers <strong>inside</strong> the encoded bitstream, and per-stream
-metadata such as <code>handler_name</code> or <code>language</code>. Removing them would
-require one of two things. One is re-encoding, which is out of scope for this
-function, so use the direct command <code><a href="ffmpeg.html">ffmpeg</a></code> for it. The other
-is per-stream metadata mapping that must probe the file first.</p>
+<p>Because the streams are copied and not re-encoded, identifiers <strong>inside</strong>
+the encoded bitstream are not removed. Removing them requires re-encoding,
+which is out of scope for this function, so use the direct command
+<code><a href="ffmpeg.html">ffmpeg</a></code> for it.</p>
+<p>With FFmpeg 9.0.2 on macOS, the source values of per-stream tags such as
+<code>handler_name</code> and <code>language</code> did not reach the output. An
+<code>.mp4</code> output still had both tags, with generic values:
+<code>handler_name</code> was <code>VideoHandler</code> or <code>SoundHandler</code>, and
+<code>language</code> was <code>und</code>. An <code>.mkv</code> output had neither tag.
+Other FFmpeg versions can differ, so if these tags matter, check them in the
+output with <code><a href="probe_container.html">probe_streams</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

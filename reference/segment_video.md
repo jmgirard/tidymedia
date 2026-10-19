@@ -84,7 +84,10 @@ segment_video(
   container's default encoder is used. A stream copy
   (`reencode = FALSE`) always copies the audio, so any other value is an
   error there. Stream-copying fails if the output container cannot hold
-  the source audio codec (e.g. FLAC in `.mp4`). Name an encoder instead.
+  the source audio codec. Name an encoder instead. With FFmpeg 9.0.2 on
+  macOS, a FLAC track from an `.mkv` file was copied into `.mp4`
+  segments without error, with `reencode = TRUE` and with
+  `reencode = FALSE`. Other FFmpeg versions can differ.
 
 - hardware:
 

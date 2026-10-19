@@ -133,7 +133,10 @@ encoder, so naming a codec (or a <code>hardware</code> backend) alongside
 <code>"copy"</code> (default) stream-copies the audio through untouched. Name an encoder, such as <code>"aac"</code>, to transcode it. <code>NULL</code> leaves the codec unset, so the output container's default encoder is used. A stream copy
 (<code>reencode = FALSE</code>) always copies the audio, so any other value is an
 error there. Stream-copying fails if the output container cannot hold the
-source audio codec (e.g. FLAC in <code>.mp4</code>). Name an encoder instead.</p></dd>
+source audio codec. Name an encoder instead. With FFmpeg 9.0.2 on macOS,
+a FLAC track from an <code>.mkv</code> file was copied into <code>.mp4</code>
+segments without error, with <code>reencode = TRUE</code> and with
+<code>reencode = FALSE</code>. Other FFmpeg versions can differ.</p></dd>
 
 
 <dt id="arg-hardware">hardware<a class="anchor" aria-label="anchor" href="#arg-hardware"></a></dt>

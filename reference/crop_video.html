@@ -107,8 +107,10 @@ and stream copy.</p>
 <dt id="arg-audio-codec">audio_codec<a class="anchor" aria-label="anchor" href="#arg-audio-codec"></a></dt>
 <dd><p>A string naming the output audio codec.
 <code>"copy"</code> (default) stream-copies the audio through untouched. Name an encoder, such as <code>"aac"</code>, to transcode it. <code>NULL</code> leaves the codec unset, so the output container's default encoder is used. Stream-copying fails if
-the output container cannot hold the source audio codec, for example FLAC
-in <code>.mp4</code>. In that case, name an encoder.</p></dd>
+the output container cannot hold the source audio codec. In that case,
+name an encoder. With FFmpeg 9.0.2 on macOS, a FLAC track from an
+<code>.mkv</code> file was copied into <code>.mp4</code> without error. Other FFmpeg
+versions can differ.</p></dd>
 
 
 <dt id="arg-hardware">hardware<a class="anchor" aria-label="anchor" href="#arg-hardware"></a></dt>
@@ -138,8 +140,8 @@ or return the compiled command without running it (<code>FALSE</code>).</p></dd>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="ffm_crop.html">ffm_crop()</a></code>, the pipeline function it wraps;
-<code><a href="hardware_encoder.html">has_hardware_encoder()</a></code> for the <code>hardware</code> toggle;
+    <div class="dont-index"><p><code><a href="ffm_files.html">ffm_files()</a></code>, <code><a href="ffm_crop.html">ffm_crop()</a></code> and <code><a href="ffm_map.html">ffm_map()</a></code>, among the pipeline
+functions it wraps; <code><a href="hardware_encoder.html">has_hardware_encoder()</a></code> for the <code>hardware</code> toggle;
 <code><a href="crop_video_batch.html">crop_video_batch()</a></code> for the many-file form.</p>
 <p>Other task functions:
 <code><a href="anonymize_video.html">anonymize_video()</a></code>,

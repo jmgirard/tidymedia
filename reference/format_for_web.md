@@ -1,8 +1,9 @@
 # Re-encode a video for web playback
 
 Re-encode a video into a widely compatible, web-friendly form: H.264
-video with `yuv420p` and `+faststart`, and AAC audio. Odd dimensions are
-padded down to even values, as the codec requires. The glossary in
+video with `yuv420p` and `+faststart`, and AAC audio. An odd width or
+height is cropped down to the even value below it, as the codec
+requires. The glossary in
 [`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
 explains media terms such as codec, pixel format and re-encode.
 

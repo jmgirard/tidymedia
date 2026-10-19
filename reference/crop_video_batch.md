@@ -95,10 +95,14 @@ crop_video_batch(
   [`refresh_ffmpeg_capabilities`](https://jmgirard.github.io/tidymedia/reference/refresh_ffmpeg_capabilities.md)
   to discard it. This function checks that the encoder is available
   before any row runs. So an unavailable encoder aborts naming this
-  function, not the internal step that runs the rows. A call can also
-  have a per-row `width` or `height` that is neither a positive number
-  nor an FFmpeg expression. Such a call is refused for the value first,
-  whether or not this machine has the encoder.
+  function, not the internal step that runs the rows. A `width` or
+  `height` is refused when it is `NA`, a number that is not positive, or
+  an integer such as `5L`. It is also refused when it is not a single
+  string or a single double. This holds for each row of a column, and
+  for the argument when `jobs` has no column of that name. Such a call
+  is refused for the value first, whether or not this machine has the
+  encoder. Any other single string passes unchecked, as an FFmpeg
+  expression: a formula that FFmpeg works out, such as `"in_w/2"`.
 
 - quality:
 
@@ -176,7 +180,7 @@ See
 ## See also
 
 [`crop_video()`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
-the single-input form it wraps;
+the single-input form, which uses the same command recipe;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)

@@ -141,6 +141,17 @@
   [`?ffm_vstack`](https://jmgirard.github.io/tidymedia/reference/ffm_vstack.md)
   and
   [`?ffm_loudnorm`](https://jmgirard.github.io/tidymedia/reference/ffm_loudnorm.md).
+  These task pages changed too:
+  [`?crop_video`](https://jmgirard.github.io/tidymedia/reference/crop_video.md),
+  [`?crop_video_batch`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md),
+  [`?format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
+  [`?format_for_web_batch`](https://jmgirard.github.io/tidymedia/reference/format_for_web_batch.md),
+  [`?standardize_video`](https://jmgirard.github.io/tidymedia/reference/standardize_video.md),
+  [`?standardize_video_batch`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md),
+  [`?strip_metadata`](https://jmgirard.github.io/tidymedia/reference/strip_metadata.md),
+  [`?strip_metadata_batch`](https://jmgirard.github.io/tidymedia/reference/strip_metadata_batch.md)
+  and
+  [`?segment_video`](https://jmgirard.github.io/tidymedia/reference/segment_video.md).
   The help text also changed for the `hardware` argument of the task
   functions. It changed for the warning about dropped audio tracks in
   [`extract_audio()`](https://jmgirard.github.io/tidymedia/reference/extract_audio.md),

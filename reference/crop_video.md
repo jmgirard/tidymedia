@@ -64,8 +64,10 @@ crop_video(
   stream-copies the audio through untouched. Name an encoder, such as
   `"aac"`, to transcode it. `NULL` leaves the codec unset, so the output
   container's default encoder is used. Stream-copying fails if the
-  output container cannot hold the source audio codec, for example FLAC
-  in `.mp4`. In that case, name an encoder.
+  output container cannot hold the source audio codec. In that case,
+  name an encoder. With FFmpeg 9.0.2 on macOS, a FLAC track from an
+  `.mkv` file was copied into `.mp4` without error. Other FFmpeg
+  versions can differ.
 
 - hardware:
 
@@ -153,8 +155,11 @@ The compiled FFmpeg command (invisibly when `run = TRUE`).
 
 ## See also
 
-[`ffm_crop()`](https://jmgirard.github.io/tidymedia/reference/ffm_crop.md),
-the pipeline function it wraps;
+[`ffm_files()`](https://jmgirard.github.io/tidymedia/reference/ffm_files.md),
+[`ffm_crop()`](https://jmgirard.github.io/tidymedia/reference/ffm_crop.md)
+and
+[`ffm_map()`](https://jmgirard.github.io/tidymedia/reference/ffm_map.md),
+among the pipeline functions it wraps;
 [`has_hardware_encoder()`](https://jmgirard.github.io/tidymedia/reference/hardware_encoder.md)
 for the `hardware` toggle;
 [`crop_video_batch()`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md)

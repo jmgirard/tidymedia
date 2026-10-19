@@ -46,14 +46,20 @@ not stamp the container again with a fresh `creation_time`, or with an
 `encoder` tag that names its own version. Either tag would defeat
 de-identification and reproducibility.
 
-Because the streams are copied and not re-encoded, some data is not
-removed. Those are identifiers **inside** the encoded bitstream, and
-per-stream metadata such as `handler_name` or `language`. Removing them
-would require one of two things. One is re-encoding, which is out of
-scope for this function, so use the direct command
+Because the streams are copied and not re-encoded, identifiers
+**inside** the encoded bitstream are not removed. Removing them requires
+re-encoding, which is out of scope for this function, so use the direct
+command
 [`ffmpeg`](https://jmgirard.github.io/tidymedia/reference/ffmpeg.md) for
-it. The other is per-stream metadata mapping that must probe the file
-first.
+it.
+
+With FFmpeg 9.0.2 on macOS, the source values of per-stream tags such as
+`handler_name` and `language` did not reach the output. An `.mp4` output
+still had both tags, with generic values: `handler_name` was
+`VideoHandler` or `SoundHandler`, and `language` was `und`. An `.mkv`
+output had neither tag. Other FFmpeg versions can differ, so if these
+tags matter, check them in the output with
+[`probe_streams`](https://jmgirard.github.io/tidymedia/reference/probe_container.md).
 
 ## See also
 

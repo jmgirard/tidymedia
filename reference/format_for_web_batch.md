@@ -8,8 +8,10 @@ function is a thin wrapper over
 [`ffm_batch`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md).
 It builds one reproducible command for each input. Each command uses the
 same fixed H.264, AAC and `+faststart` steps as
-[`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
-with no per-row settings. The glossary in
+[`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md).
+Besides the input and output paths, the only per-row settings of each
+command are the optional `audio_stream` and `quality` columns of `jobs`.
+The glossary in
 [`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
 explains media terms such as codec and re-encode.
 
@@ -44,10 +46,9 @@ format_for_web_batch(
   the `audio_stream` argument for each row. `NA` keeps every audio track
   in that row. A numeric `quality` column overrides the `quality`
   argument per row (see `quality`). Any other columns are ignored,
-  `video_codec` and `audio_codec` included. The sibling batch functions
-  read those two columns as per-row overrides, but this one does not.
-  The web recipe fixes which codecs the output uses: H.264 video and AAC
-  audio. For per-row codecs, use a function that has them, such as
+  `video_codec` and `audio_codec` included, because the web recipe fixes
+  which codecs the output uses: H.264 video and AAC audio. For per-row
+  codecs, use a batch function that reads those two columns, such as
   [`standardize_video_batch`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)
   or
   [`crop_video_batch`](https://jmgirard.github.io/tidymedia/reference/crop_video_batch.md).
@@ -152,7 +153,7 @@ See
 ## See also
 
 [`format_for_web()`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md),
-the single-input form it wraps;
+the single-input form, which uses the same command recipe;
 [`ffm_batch()`](https://jmgirard.github.io/tidymedia/reference/ffm_batch.md),
 the batch runner;
 [`standardize_video_batch()`](https://jmgirard.github.io/tidymedia/reference/standardize_video_batch.md)

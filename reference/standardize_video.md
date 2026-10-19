@@ -4,8 +4,9 @@ Re-encode a video to a consistent, reproducible format for analysis. The
 format is one video codec and pixel format, and optionally a resolution
 and frame rate, with `+faststart` for smooth playback.
 [`format_for_web`](https://jmgirard.github.io/tidymedia/reference/format_for_web.md)
-uses a fixed recipe for web delivery. Here, every part of the standard
-is an argument. So a lab can set its own house format once and apply it
+uses a fixed recipe for web delivery. Here, the video and audio codecs,
+pixel format, resolution and frame rate are arguments, and `+faststart`
+is always set. So a lab can set its own house format once and apply it
 across a dataset. The glossary in
 [`vignette("tidymedia")`](https://jmgirard.github.io/tidymedia/articles/tidymedia.md)
 explains media terms such as codec, pixel format and frame rate.

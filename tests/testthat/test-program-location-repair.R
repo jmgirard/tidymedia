@@ -950,6 +950,50 @@ test_that("unset_program() keeps a folder it cannot read beside a location file"
   expect_false(file.exists(paths[["legacy"]]))
 })
 
+test_that("unset_program()'s removal error names a folder it kept", {
+  # M147 AC1. A folder with contents at one path stays, and the removal at the
+  # other path fails through the tm_unlink() seam. Before M147 the removal
+  # error came first and the kept folder went unnamed, because the
+  # folder-kept warning is given only after a removal that took. Both paths
+  # for the kept folder, and both forms of the item that fails to go: an empty
+  # folder makes the seam's call recursive.
+  withr::local_options(cli.width = 1000)
+  for (where in c("new", "legacy")) {
+    for (other in c("location", "empty")) {
+      dirs <- tm_redirect_config()
+      other_where <- setdiff(c("new", "legacy"), where)
+      layout <- stats::setNames(c("file", other), c(where, other_where))
+      paths <- tm_lay_out(dirs, "ffmpeg", layout, tm_stub_executable())
+      local_mocked_bindings(tm_unlink = function(path, recursive = FALSE) 1L)
+      info <- paste(where, other)
+
+      condition <- expect_error(
+        unset_program("ffmpeg"),
+        class = "tidymedia_location_not_removed"
+      )
+      expect_identical(condition$tm_files, paths[[other_where]], info = info)
+      lines <- strsplit(cli::ansi_strip(conditionMessage(condition)), "\n")[[1]]
+      kept_line <- grep("Kept the folder", lines, fixed = TRUE, value = TRUE)
+      expect_length(kept_line, 1L)
+      expect_match(kept_line, paths[[where]], fixed = TRUE)
+      expect_no_match(kept_line, paths[[other_where]], fixed = TRUE)
+      expect_true(dir.exists(paths[[where]]), info = info)
+    }
+  }
+
+  # With no folder kept, the error has no such line.
+  dirs <- tm_redirect_config()
+  tm_lay_out(dirs, "ffmpeg", c(new = "location", legacy = "location"),
+             tm_stub_executable())
+  local_mocked_bindings(tm_unlink = function(path, recursive = FALSE) 1L)
+  condition <- expect_error(
+    unset_program("ffmpeg"),
+    class = "tidymedia_location_not_removed"
+  )
+  expect_no_match(cli::ansi_strip(conditionMessage(condition)), "Kept the",
+                  fixed = TRUE)
+})
+
 test_that("unset_program() refuses when every path that holds anything holds a full folder", {
   # M141 AC4, narrowed by M143 AC4 and D105. Each non-empty shape at each
   # path, with nothing or a second non-empty folder at the other path. The

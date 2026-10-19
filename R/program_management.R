@@ -1508,12 +1508,22 @@ tm_unset_program <- function(program, call) {
   removed_files <- setdiff(present, c(folders, left))
   if (length(removed_files)) forget_ffmpeg_capabilities()
 
+  # A folder kept beside the failed removal is named here, on a line apart
+  # from the "x" line, because the folder-kept warning below is given only
+  # after a removal that took (M147). At most one folder is kept on this
+  # path: with a full folder at both paths the call refused above.
   if (length(left)) {
+    kept <- if (length(full)) {
+      c("i" = "{cli::qty(length(full))}Kept the {?folder/folders} \\
+               {.file {full}}, which {?holds/hold} files or folders, or \\
+               which tidymedia cannot read.")
+    }
     cli::cli_abort(
       c(
         "Can't remove the remembered location for {program}.",
         "x" = "{.file {left}}",
-        "i" = "Check that you can write to the directory holding it."
+        "i" = "Check that you can write to the directory holding it.",
+        kept
       ),
       class = "tidymedia_location_not_removed",
       tm_program = program,

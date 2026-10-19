@@ -4,14 +4,14 @@
      cairn_validate's <150 over the plan-owned body. -->
 # M147: A failed `unset_program()` removal or `set_program()` write accounts for the folders it touched
 
-- **Status:** planned   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
+- **Status:** in-progress   <!-- owner: transitioning skill · mirror-update; cairn/ROADMAP.md is the authority -->
 - **Priority:** normal   <!-- owner: plan · create/amend-via-gate; high | normal | low -->
 - **Depends on:** —   <!-- owner: plan · create/amend-via-gate; M<xx>, M<yy> or — -->
 - **Driving RR:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Principles touched:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Resolves:** —   <!-- owner: plan · create/amend-via-gate -->
 - **Surface tier:** user-facing — the errors and help pages of the exported `set_program()` and `unset_program()`   <!-- owner: plan · create/amend-via-gate -->
-- **Branch/PR:** —   <!-- owner: implement (branch) / review (PR URL) · create -->
+- **Branch/PR:** m147-location-edges   <!-- owner: implement (branch) / review (PR URL) · create -->
 
 ## Goal
 <!-- owner: plan · create; a wrong goal returns to plan, never edited in place -->
@@ -61,7 +61,7 @@ and one NEWS bullet follow.
 ## Tasks
 <!-- owner: plan (create) / implement (check-off, minor edits) -->
 
-- [ ] T1: Write the AC1 tests in `tests/testthat/test-program-location-repair.R` (the
+- [x] T1: Write the AC1 tests in `tests/testthat/test-program-location-repair.R` (the
       `tm_lay_out()` helper builds the four layouts) and see them fail. Then add the
       kept-folder line to the `tidymedia_location_not_removed` abort in
       `tm_unset_program()` (`R/program_management.R:1511-1523`). Put `{cli::qty(n)}` before
@@ -100,6 +100,8 @@ and one NEWS bullet follow.
 - 2026-10-18: plan gate chose a message line for the kept folder over a new `tm_kept` field, because no caller is known to read it in code and a field is one more public promise; falsified by a caller who reads the kept folder from the error in code.
 - 2026-10-18: plan chose taking back the directories a failed write created over only naming them, because D082 already takes back what a failed install created; falsified by a caller who needs those directories kept after a failed write.
 - 2026-10-18: D109 written for the `set_program()` rule.
+- 2026-10-18: implement started on branch m147-location-edges, cut from master at e7e790fc.
+- 2026-10-18: T1 done: the removal abort in `tm_unset_program()` gets a last "Kept the folder" line; the new test (4 layouts and a no-kept case) failed on the missing line before the fix; full `devtools::test()` 0 failures. The line goes after the write-access hint so that hint's "it" still means the file not removed.
 
 ## Decisions
 <!-- owner: implement / review · append-only; milestone-local. -->

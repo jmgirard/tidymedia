@@ -127,3 +127,28 @@ Review pass 1, 2026-10-18, at a810ba47 (code identical to 202c31f0: `git diff 20
 - AC3 evidence: same run: "a failed write says that set_program() removed the empty folder" 10 expectations, 0 failed. Case removed has one "Removed the empty folder" line naming the path; cases none and vanishes (folder gone while the prompt waits) have none. Only the removed case was red before the fix.
 - AC4 evidence: `R/program_management.R:1379-1384` names the warning-only write (M143 review) and the write that fails after it creates the config folder (M147); `grep -n 'cannot be mocked' R/program_management.R` finds nothing.
 - AC5 evidence: `man/unset_program.Rd` says its `tidymedia_location_not_removed` error message names the folder the call kept; `man/set_program.Rd:82-88` says a failed write tries to remove the folders it created, that the `tidymedia_location_not_written` error names each that stays, and that it names a removed empty folder; `man/find_ffmpeg.Rd:74-77` limits its error sentence to a kept folder (claim-audit fix). The `git diff master..HEAD -- NEWS.md` adds 0 `* ` bullet lines and edits the bullets naming `tidymedia_location_folder_kept` and `tidymedia_location_not_written`, with 0 added lines naming `tm_save_location` or a comment. The claim audit (38 claims, 4 corrected) read every added sentence against the code and the AC1-AC3 tests.
+
+spawned: diff-bug, blame-history, prior-review, ripple
+
+- diff-bug #1: the AC2 test's `tm_unlink()` mock compares `identical(path, dirs$new)`, but the ancestors came from `normalizePath()`, so on Windows the spellings differ and cases status, kept and file fail — fix now (`tm_missing_ancestors(normalize = FALSE)` for `set_program()`), fixed f7c6b82d
+- diff-bug #2: the "Could not remove" line spelled folders by `normalizePath()` while the `x` line and `tm_file` use the raw spelling — fix now (same change), fixed f7c6b82d
+- diff-bug #3: the take-back runs only from `tryCatch(error =)`, so an interrupt leaves created folders — follow-up, row "Location write edges after M147" (a)
+- diff-bug #4: a partial location file in a created folder stops the take-back, and the error does not name the file — follow-up, same row (b)
+- diff-bug #5: a folder another process creates between the ancestor read and the take-back can be removed — follow-up, same row (c)
+- diff-bug #6: `?set_program`'s "removes no folder that holds anything, which includes a folder that it could not remove" reads as if such a folder holds something — fix now (reworded: a folder it could not remove keeps each folder above it), fixed f7c6b82d
+- diff-bug #7: roxygen line 1453 runs to about 94 columns — reject, style
+- diff-bug #8: the AC1 loop's kept-line assertions carry no `info =` — fix now, fixed f7c6b82d
+- diff-bug #9: `removed <- TRUE` is set before the removal is checked — reject, false: a failed removal aborts before the write, as the reviewer also found
+- blame-history #1: "in place of the warning" in NEWS narrates a change inside the cycle, against D091 — reject, false: the same bullet introduces the warning, and the sentence states current behavior, not a rename history
+- blame-history #2: a `\` before a newline in the cli strings may print a backslash — reject, false: the rendered error in implement showed no backslash (glue line continuation)
+- blame-history #3: `tm_remove_created_dirs()` tests emptiness with `list.files()`, not `tm_folder_empty()` — follow-up, row "Location write edges after M147" (d)
+- blame-history #4: the comment "At most one folder is kept on this path" can read as the file path — fix now (reworded to "when this error is reached"), fixed f7c6b82d
+- blame-history #5: the AC1 test never covers one removal taking while the other fails beside a kept folder — reject, false: with a kept folder only the other path is left to remove, so that case cannot occur
+- blame-history #6: the same muddled `?set_program` sentence as diff-bug #6 — fix now, fixed f7c6b82d
+- prior-review #1: a link to an empty folder at the location path gets the new "Removed the empty folder" line though only the link went (M141 review, row item (d)) — follow-up, row "Location write edges after M147", which cross-references that row
+- prior-review #2: the seam comment adds a waldo reason beyond M143's "needs only the seam's purpose" — reject, planned change: AC4 and the claim audit set that wording
+- ripple #1: ROADMAP row "Location edges after M143" still lists (a) to (c) as open — reject, planned change: post-merge hygiene graduates the row
+- ripple #2: `?set_program`'s "The call looks only at the current folder" now reads as a limit on the whole call — fix now (reworded to "looks for such a folder only in the current folder"), fixed f7c6b82d
+- ripple #3: `?program_status` does not mention the take-back of created folders — reject, false: its sentence is about empty folders at the location path and stays true
+- ripple #4: `?find_ffmpeg`'s "`set_program()` writes to the current folder only" — reject, false: still true of where it writes
+- ripple #5: `R/cache.R`'s comment on a `tidymedia_location_not_written` stop — reject, false: still true, the location did not change

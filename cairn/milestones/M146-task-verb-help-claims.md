@@ -1,6 +1,6 @@
 # M146: The crop, web-format, standardize and strip-metadata help pages state what the code does
 
-- **Status:** in-progress
+- **Status:** review
 - **Priority:** normal
 - **Depends on:** M145
 - **Driving RR:** —
@@ -84,7 +84,7 @@ integer refusal behind (j) → the `check_dim()` candidate row in `cairn/ROADMAP
 - [x] T3: Correct claims (c), (d), (i) and (j) in `R/ffmpeg.R`.
 - [x] T4: Edit the series' `NEWS.md` bullet to name these pages. Avoid the phrases that
       `test-timeout-silence.R` fences out of `NEWS.md`.
-- [ ] T5: Run `devtools::document()`, then the full `devtools::test()` and `devtools::check()`.
+- [x] T5: Run `devtools::document()`, then the full `devtools::test()` and `devtools::check()`.
       Read each changed sentence against its code site and record one line per claim in the
       work log.
 
@@ -104,6 +104,7 @@ integer refusal behind (j) → the `check_dim()` candidate row in `cairn/ROADMAP
 - 2026-10-18: T4 done: one sentence added to the series bullet naming the nine task pages; no fenced phrase and no milestone number in `NEWS.md`; no behavior claim added, so no test is owed. The simple-english hook flagged 211 hits over the whole file, all in older entries outside AC3's scope; left unchanged. Tests: 0 failed, 18801 passed.
 - 2026-10-18: T5 read, one line per claim against code at head: (a) `ffm_crop(width = "floor(in_w/2)*2", …)` is w-1 for odd w, so "cropped down to the even value below it" holds; (b) the batch fan-out reads `quality` and `audio_stream` from the row, other picks absent, so the per-row sentence holds once it excepts the paths (refined); (c) both batch bodies call the shared `*_pipeline()`; (d) "two other" holds over 15 batch functions; (e) per the T2 runs; (f) per the T2 runs; (g) `ffm_output_options(p, "-movflags +faststart")` is unconditional in `standardize_pipeline()`; (h) `standardize_video_batch()` and `crop_video_batch()` both pick `video_codec` and `audio_codec`; (i) `crop_video_pipeline()` calls `ffm_files()`, `ffm_crop()`, `ffm_map()`; (j) per the T3 run and `check_dim()`. The recipe comment's "only knobs" now names `hardware` and `fallback` too (refined).
 - 2026-10-18: claim audit: 25 claims read, 0 corrected — R/ffmpeg.R, man/crop_video.Rd, man/crop_video_batch.Rd, man/format_for_web.Rd, man/format_for_web_batch.Rd, man/segment_video.Rd, man/standardize_video.Rd, man/standardize_video_batch.Rd, man/strip_metadata.Rd, man/strip_metadata_batch.Rd, NEWS.md (fresh Opus reader; it also re-ran FFmpeg 9.0.2 and found `-map_metadata -1` is the option that resets the `.mp4` stream tags).
+- 2026-10-18: T5 done: `devtools::document()` run twice, the second wrote nothing; `devtools::test()` 0 failed, 18801 passed; `devtools::check()` 0 errors, 0 warnings, 0 notes in its summary. The spelling test's Rout differs on "encodable" (`ffm_batch.Rd`, `ffm_run.Rd`) and "filesystem" (`NEWS.md` 0.2.2 entry), all present on master, so not from this branch. Status → review.
 
 ## Decisions
 

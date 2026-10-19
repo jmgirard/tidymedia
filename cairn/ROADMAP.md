@@ -12,7 +12,7 @@ _Last hygiene check: 2026-10-18 (M145 post-merge: archived, the table keeps M143
 | M143 | `unset_program()` forgets a location file beside a folder with contents, and `set_program()` reports an unwritable location | done | — | normal | milestones/archive/M143-location-write-and-forget.md |
 | M144 | The setup, capability and audio help pages state what the code does | done | — | normal | milestones/archive/M144-setup-audio-help-claims.md |
 | M145 | The `ffm_*()` pipeline help pages state what the code does | done | M144 | normal | milestones/archive/M145-pipeline-help-claims.md |
-| M146 | The crop, web-format, standardize and strip-metadata help pages state what the code does | in-progress | M145 | normal | milestones/M146-task-verb-help-claims.md |
+| M146 | The crop, web-format, standardize and strip-metadata help pages state what the code does | review | M145 | normal | milestones/M146-task-verb-help-claims.md |
 
 ## Candidates
 <!-- unnumbered ideas; one line each: idea — added YYYY-MM-DD — links -->

@@ -1057,9 +1057,10 @@ tm_na_string <- function(x) {
 #' `tidymedia_location_folder` error for one in the current folder.
 #' [unset_program()] removes the
 #' location files and empty folders at the two paths, and gives a
-#' `tidymedia_location_folder_kept` warning for the folder it leaves. If one of
-#' those removals fails, it gives a `tidymedia_location_not_removed` error
-#' instead, and the error message names the folder it leaves. If each
+#' `tidymedia_location_folder_kept` warning for the folder it leaves. If it
+#' keeps such a folder and the removal at the other path fails, it gives a
+#' `tidymedia_location_not_removed` error in place of the warning, and the
+#' error message names the kept folder. If each
 #' path that holds something holds a folder that is not empty,
 #' [unset_program()] gives the `tidymedia_location_folder` error and removes
 #' nothing. The warning from the `find_*()` functions says which case you
@@ -1171,7 +1172,8 @@ find_ffplay <- function() {
 #'
 #' If the call created the folder for the location file, or folders above it,
 #' and the write then fails, it tries to remove those folders. It starts with
-#' the deepest and stops at a folder that holds anything or does not go. The
+#' the deepest, and it removes no folder that holds anything, which includes a
+#' folder that it could not remove. The
 #' `tidymedia_location_not_written` error names in its message each of those
 #' folders that stays. If the call removed an empty folder where the file goes
 #' and the write then fails, that folder stays removed, and the error message
@@ -1318,8 +1320,8 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
   #
   # The folders missing on the way to the config folder are read before the
   # write, because after it a folder the write made cannot be told from one
-  # that was there (tm_missing_ancestors()). A failed write removes them, as
-  # a failed install does (D082, D109), and the error names each one that is
+  # that was there (tm_missing_ancestors()). A failed write tries to remove
+  # them, as a failed install does (D082, D109), and the error names each one
   # still on disk, read from the disk rather than from the removal's status.
   created <- tm_missing_ancestors(config_dir)
   held <- list()
@@ -1378,8 +1380,8 @@ tm_set_program <- function(program = c("ffmpeg", "ffprobe", "ffplay", "mediainfo
 # writes the filesystem gives only rarely: one that warns without failing
 # (M143 review), and one that fails after it creates the config folder (M147).
 # A stand-in for dir.create() or writeLines() in the base namespace would also
-# stand in for them inside testthat's own diff code (M108), which a seam of the
-# package's own does not.
+# stand in for them inside waldo, which testthat calls to build a failure's
+# diff (M108). A seam of the package's own does not.
 tm_save_location <- function(location, config_dir, config_file) {
   if (!dir.exists(config_dir)) dir.create(config_dir, recursive = TRUE)
   writeLines(location, config_file)

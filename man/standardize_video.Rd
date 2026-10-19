@@ -71,9 +71,9 @@ Re-encode a video to a consistent, reproducible format for analysis. The
 format is one video codec and pixel format, and optionally a resolution and
 frame rate, with \code{+faststart} for smooth playback.
 \code{\link{format_for_web}} uses a fixed recipe for web delivery. Here, the
-codec, pixel format, resolution and frame rate are arguments, and
-\code{+faststart} is always set. So a lab can set its own house
-format once and apply it across a dataset. The glossary in
+video and audio codecs, pixel format, resolution and frame rate are
+arguments, and \code{+faststart} is always set. So a lab can set its own
+house format once and apply it across a dataset. The glossary in
 \code{vignette("tidymedia")} explains media terms such as codec, pixel format
 and frame rate.
 }

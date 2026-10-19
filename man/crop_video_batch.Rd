@@ -60,11 +60,12 @@ encoder.}
 
 \item{hardware, fallback}{The encoder backend and its fallback behavior, applied to the whole batch. They are a property of the machine, not of a row, so neither is read as a \code{jobs} column. See \code{\link[=crop_video]{crop_video()}}.
 Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it. This function checks that the encoder is available before any row runs. So an unavailable encoder aborts naming this function, not the internal step that runs the rows.
-A call can also have a \code{width} or \code{height}, as an argument or
-in a row, that is \code{NA}, a number that is not positive, an integer
-such as \code{5L}, or anything other than a single string or a single
-double. Such a call is refused for the value first, whether or not this
-machine has the encoder. Any other single string passes unchecked, as an
+A \code{width} or \code{height} is refused when it is \code{NA}, a number
+that is not positive, or an integer such as \code{5L}. It is also refused
+when it is not a single string or a single double. This holds for the
+argument and for each row. Such a call is refused for the value first,
+whether or not this machine has the encoder. Any other single string
+passes unchecked, as an
 FFmpeg expression: a formula that FFmpeg works out, such as
 \code{"in_w/2"}.}
 

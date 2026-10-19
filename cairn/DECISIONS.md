@@ -4779,3 +4779,25 @@ the code and the help page now contradict.
 
 **Falsified by** a forked worker that starts with an empty memo while the
 session's memo is filled.
+
+## D107 — D017's accepted trap stands, but its FLAC-into-`.mp4` example depends on the FFmpeg version (2026-10-18, from M146's review; annotates D017 and leaves its default, its trap and its remedy standing)
+
+**Context:** D017 names FLAC into `.mp4` as the case where the default
+`audio_codec = "copy"` fails loudly. M146 corrected `?crop_video` and
+`?segment_video`, which gave the same example, after runs showed a newer FFmpeg
+copying that track without error (the runs and their versions are in M146's
+work log).
+
+**Decision:** D017's rule is unchanged. Copying a codec that the output
+container cannot hold still fails, and naming an encoder is still the remedy.
+Only the example is version-dependent: whether a container holds a codec is the
+FFmpeg build's answer, not the package's. The help pages state the run's
+result with its FFmpeg version and say that other versions can differ, and they
+give no fixed example.
+
+**Rejected:** Leaving D017 as it was, which keeps a record that the help pages
+now contradict.
+
+**Falsified by** a run where the default `audio_codec = "copy"` meets a codec
+the output container cannot hold and FFmpeg drops or re-encodes the track
+instead of failing.

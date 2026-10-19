@@ -1440,9 +1440,9 @@ crop_video_pipeline <- function(input, output, width, height,
 #' @param audio_codec A string naming the output audio codec.
 #'   `r audio_codec_copy_sentences("the audio")` Stream-copying fails if
 #'   the output container cannot hold the source audio codec. In that case,
-#'   name an encoder. With FFmpeg 9.0.2, a FLAC track from an \code{.mkv} file
-#'   was copied into \code{.mp4} without error. Other FFmpeg versions can
-#'   differ.
+#'   name an encoder. With FFmpeg 9.0.2 on macOS, a FLAC track from an
+#'   \code{.mkv} file was copied into \code{.mp4} without error. Other FFmpeg
+#'   versions can differ.
 #' @param hardware `r hardware_param(null_default = TRUE)`
 #' @param fallback `r fallback_param("software", unset = "picking")`
 #' @param quality `r quality_param()`
@@ -1618,9 +1618,9 @@ strip_metadata_pipeline <- function(input, output) {
   # -map_metadata -1 drops global tags (creation_time, location/GPS, make/model,
   # title, comment); -map_chapters -1 drops chapters; -fflags +bitexact stops the
   # muxer writing a fresh creation_time and an encoder=Lavf... tag. With FFmpeg
-  # 9.0.2 these options also dropped the per-stream handler_name and language
-  # tags from an .mp4 and an .mkv (M146); codec-embedded identifiers survive a
-  # copy.
+  # 9.0.2 on macOS, -map_metadata -1 also reset the per-stream handler_name and
+  # language tags to the muxer's generic values in an .mp4 and dropped them
+  # from an .mkv (M146); codec-embedded identifiers survive a copy.
   ffm_output_options(
     p, "-map_metadata -1", "-map_chapters -1", "-fflags +bitexact"
   )
@@ -1649,12 +1649,13 @@ strip_metadata_pipeline <- function(input, output) {
 #' which is out of scope for this function, so use the direct command
 #' \code{\link{ffmpeg}} for it.
 #'
-#' Per-stream tags such as \code{handler_name} and \code{language} were
-#' removed in runs with FFmpeg 9.0.2. From an \code{.mp4} file, the output
-#' kept only generic values: \code{handler_name} was \code{VideoHandler} or
-#' \code{SoundHandler}, and \code{language} was \code{und}. From an
-#' \code{.mkv} file, the output had neither tag. Other FFmpeg versions can
-#' differ.
+#' With FFmpeg 9.0.2 on macOS, the source values of per-stream tags such as
+#' \code{handler_name} and \code{language} did not reach the output. An
+#' \code{.mp4} output still had both tags, with generic values:
+#' \code{handler_name} was \code{VideoHandler} or \code{SoundHandler}, and
+#' \code{language} was \code{und}. An \code{.mkv} output had neither tag.
+#' Other FFmpeg versions can differ, so if these tags matter, read them in the
+#' output with \code{\link{ffprobe}}.
 #'
 #' @inheritParams extract_audio
 #' @param outfile A string containing the path of the de-identified file to
@@ -1693,9 +1694,9 @@ strip_metadata <- function(infile, outfile, run = TRUE) {
 #' format is one video codec and pixel format, and optionally a resolution and
 #' frame rate, with \code{+faststart} for smooth playback.
 #' \code{\link{format_for_web}} uses a fixed recipe for web delivery. Here, the
-#' codec, pixel format, resolution and frame rate are arguments, and
-#' \code{+faststart} is always set. So a lab can set its own house
-#' format once and apply it across a dataset. The glossary in
+#' video and audio codecs, pixel format, resolution and frame rate are
+#' arguments, and \code{+faststart} is always set. So a lab can set its own
+#' house format once and apply it across a dataset. The glossary in
 #' \code{vignette("tidymedia")} explains media terms such as codec, pixel format
 #' and frame rate.
 #'
@@ -4058,9 +4059,9 @@ check_vocab_arg <- function(value, values, arg, call = rlang::caller_env()) {
 #'   `r audio_codec_copy_sentences("the audio")` A stream copy
 #'   (\code{reencode = FALSE}) always copies the audio, so any other value is an
 #'   error there. Stream-copying fails if the output container cannot hold the
-#'   source audio codec. Name an encoder instead. With FFmpeg 9.0.2, a FLAC
-#'   track from an \code{.mkv} file was copied into \code{.mp4} segments
-#'   without error, with \code{reencode = TRUE} and with
+#'   source audio codec. Name an encoder instead. With FFmpeg 9.0.2 on macOS,
+#'   a FLAC track from an \code{.mkv} file was copied into \code{.mp4}
+#'   segments without error, with \code{reencode = TRUE} and with
 #'   \code{reencode = FALSE}. Other FFmpeg versions can differ.
 #' @param hardware `r hardware_param(null_default = TRUE)`
 #'   `r encoder_check_sentences()` `r contradiction_sentences("cut")`
@@ -6572,11 +6573,12 @@ derive_web_names <- function(input) {
 #'   encoder.
 #' @param hardware,fallback `r batch_hardware_param("crop_video")`
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
-#'   A call can also have a \code{width} or \code{height}, as an argument or
-#'   in a row, that is \code{NA}, a number that is not positive, an integer
-#'   such as \code{5L}, or anything other than a single string or a single
-#'   double. Such a call is refused for the value first, whether or not this
-#'   machine has the encoder. Any other single string passes unchecked, as an
+#'   A \code{width} or \code{height} is refused when it is \code{NA}, a number
+#'   that is not positive, or an integer such as \code{5L}. It is also refused
+#'   when it is not a single string or a single double. This holds for the
+#'   argument and for each row. Such a call is refused for the value first,
+#'   whether or not this machine has the encoder. Any other single string
+#'   passes unchecked, as an
 #'   FFmpeg expression: a formula that FFmpeg works out, such as
 #'   \code{"in_w/2"}.
 #' @param quality `r batch_quality_param("crop_video")`
@@ -6729,8 +6731,9 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' wrapper over \code{\link{ffm_batch}}. It builds one reproducible command for
 #' each input. Each command uses the same fixed H.264, AAC and
 #' \code{+faststart} steps as \code{format_for_web()}. Besides the input and
-#' output paths, the only per-row settings are the optional
-#' \code{audio_stream} and \code{quality} columns of \code{jobs}. The glossary in \code{vignette("tidymedia")} explains media terms such as
+#' output paths, the only per-row settings of each command are the optional
+#' \code{audio_stream} and \code{quality} columns of \code{jobs}. The glossary
+#' in \code{vignette("tidymedia")} explains media terms such as
 #' codec and re-encode.
 #'
 #' @param jobs A data frame with one row per input. It needs at least an

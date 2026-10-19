@@ -67,8 +67,9 @@ have more than one file. Each row is one input. The function is a thin
 wrapper over \code{\link{ffm_batch}}. It builds one reproducible command for
 each input. Each command uses the same fixed H.264, AAC and
 \code{+faststart} steps as \code{format_for_web()}. Besides the input and
-output paths, the only per-row settings are the optional
-\code{audio_stream} and \code{quality} columns of \code{jobs}. The glossary in \code{vignette("tidymedia")} explains media terms such as
+output paths, the only per-row settings of each command are the optional
+\code{audio_stream} and \code{quality} columns of \code{jobs}. The glossary
+in \code{vignette("tidymedia")} explains media terms such as
 codec and re-encode.
 }
 \examples{

@@ -55,9 +55,9 @@ encoder, so naming a codec (or a \code{hardware} backend) alongside
 \code{"copy"} (default) stream-copies the audio through untouched. Name an encoder, such as \code{"aac"}, to transcode it. \code{NULL} leaves the codec unset, so the output container's default encoder is used. A stream copy
 (\code{reencode = FALSE}) always copies the audio, so any other value is an
 error there. Stream-copying fails if the output container cannot hold the
-source audio codec. Name an encoder instead. With FFmpeg 9.0.2, a FLAC
-track from an \code{.mkv} file was copied into \code{.mp4} segments
-without error, with \code{reencode = TRUE} and with
+source audio codec. Name an encoder instead. With FFmpeg 9.0.2 on macOS,
+a FLAC track from an \code{.mkv} file was copied into \code{.mp4}
+segments without error, with \code{reencode = TRUE} and with
 \code{reencode = FALSE}. Other FFmpeg versions can differ.}
 
 \item{hardware}{The encoder backend. \code{"none"} (default) uses the software \code{video_codec}. \code{"nvenc"} uses NVIDIA GPU encoding (H.264, HEVC and AV1), and \code{"videotoolbox"} uses Apple GPU encoding (H.264 and HEVC). A backend uses its own encoder for the family of \code{video_codec}. For example, \code{"libx264"} becomes \code{"h264_nvenc"} or \code{"h264_videotoolbox"}. With the default \code{video_codec = NULL}, the H.264 family is assumed. So a container that does not take H.264 needs an explicit \code{video_codec} of a family it takes. \code{.webm} takes neither H.264 nor HEVC, so it needs an AV1-family \code{video_codec}, which works only under \code{"nvenc"}. See \code{\link{has_hardware_encoder}} for availability and its caveats. Resolving a hardware backend asks this FFmpeg build which encoders it has. So the first such call that re-encodes the video runs FFmpeg while the command is built, even under \code{run = FALSE}. The answer is remembered for the rest of the R session. See \code{\link{refresh_ffmpeg_capabilities}} to discard it.

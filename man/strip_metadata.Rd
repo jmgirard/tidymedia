@@ -41,12 +41,13 @@ the encoded bitstream are not removed. Removing them requires re-encoding,
 which is out of scope for this function, so use the direct command
 \code{\link{ffmpeg}} for it.
 
-Per-stream tags such as \code{handler_name} and \code{language} were
-removed in runs with FFmpeg 9.0.2. From an \code{.mp4} file, the output
-kept only generic values: \code{handler_name} was \code{VideoHandler} or
-\code{SoundHandler}, and \code{language} was \code{und}. From an
-\code{.mkv} file, the output had neither tag. Other FFmpeg versions can
-differ.
+With FFmpeg 9.0.2 on macOS, the source values of per-stream tags such as
+\code{handler_name} and \code{language} did not reach the output. An
+\code{.mp4} output still had both tags, with generic values:
+\code{handler_name} was \code{VideoHandler} or \code{SoundHandler}, and
+\code{language} was \code{und}. An \code{.mkv} output had neither tag.
+Other FFmpeg versions can differ, so if these tags matter, read them in the
+output with \code{\link{ffprobe}}.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

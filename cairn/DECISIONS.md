@@ -4827,3 +4827,22 @@ review H8). The items of those rows that a user can reach stay as candidate rows
 **Consequences:** A new entry that supersedes this one can bring a finding back. The
 evidence for that is a defect that reaches a user through the finding's gap, which is
 D072's own falsifier, or for the examples item a CRAN complaint, which is D090's.
+
+## D109 — A failed `set_program()` write takes back the folders it created and leaves a removed empty folder removed (2026-10-18, from M147's plan gate; extends D082 from `install_on_win()` to `set_program()`, and leaves D104 and D105 standing)
+
+**Context:** `set_program()` can create the config folder and its missing parents, or
+remove an empty folder at the location path after the caller agrees, and then fail to
+write the location file. Before M147 the error said nothing about either change.
+
+**Decision:** The call records the folders that are missing on the way to the config
+folder before it writes. If the write fails, it removes them deepest first and stops at
+the first one that holds anything or does not go, as D082 does for an install. The
+`tidymedia_location_not_written` error names each such folder that is still there. An
+empty folder that the call removed stays removed, and the error says that the call
+removed it.
+
+**Rejected:** Putting the empty folder back. The caller agreed to its removal, and a
+recreate can collide with a partial file that the failed write left at that path.
+
+**Falsified by** a caller who needs the removed folder back after a failed write, or one
+who needs the created folders kept.

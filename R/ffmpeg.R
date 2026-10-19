@@ -1510,8 +1510,9 @@ crop_video <- function(infile, outfile, width, height,
 # Shared recipe behind format_for_web() and format_for_web_batch(): the fixed
 # web-delivery re-encode (H.264 + yuv420p + AAC + faststart), cropping odd
 # dimensions down to even as the codec requires. The codecs and the crop are the
-# same for every input; `audio_stream` and `quality` are the only knobs, and the
-# batch form reads both per row. Command assembly stays in Layer 1 (IP1/D002).
+# same for every input; the knobs are `hardware`, `fallback`, `audio_stream` and
+# `quality`, and the batch form reads the last two per row. Command assembly
+# stays in Layer 1 (IP1/D002).
 format_for_web_pipeline <- function(input, output, hardware = "none",
                                     fallback = FALSE, audio_stream = NULL,
                                     quality = NULL,
@@ -6727,9 +6728,9 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' have more than one file. Each row is one input. The function is a thin
 #' wrapper over \code{\link{ffm_batch}}. It builds one reproducible command for
 #' each input. Each command uses the same fixed H.264, AAC and
-#' \code{+faststart} steps as \code{format_for_web()}. The only per-row settings
-#' are the optional \code{audio_stream} and \code{quality} columns of
-#' \code{jobs}. The glossary in \code{vignette("tidymedia")} explains media terms such as
+#' \code{+faststart} steps as \code{format_for_web()}. Besides the input and
+#' output paths, the only per-row settings are the optional
+#' \code{audio_stream} and \code{quality} columns of \code{jobs}. The glossary in \code{vignette("tidymedia")} explains media terms such as
 #' codec and re-encode.
 #'
 #' @param jobs A data frame with one row per input. It needs at least an

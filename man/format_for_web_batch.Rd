@@ -77,7 +77,8 @@ jobs <- tibble::tibble(input = c(video, video), output = c("a.mp4", "b.mp4"))
 format_for_web_batch(jobs, run = FALSE)
 }
 \seealso{
-\code{\link[=format_for_web]{format_for_web()}}, the single-input form it wraps;
+\code{\link[=format_for_web]{format_for_web()}}, the single-input form, which uses the same
+command recipe;
 \code{\link[=ffm_batch]{ffm_batch()}}, the batch runner; \code{\link[=standardize_video_batch]{standardize_video_batch()}} for a configurable re-encode.
 
 Other task functions:

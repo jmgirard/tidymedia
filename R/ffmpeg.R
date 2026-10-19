@@ -1450,8 +1450,8 @@ crop_video_pipeline <- function(input, output, width, height,
 #' @param run A logical: run the command through FFmpeg (\code{TRUE}, default)
 #'   or return the compiled command without running it (\code{FALSE}).
 #' @return `r command_return()`
-#' @seealso [ffm_crop()], the pipeline function it wraps;
-#'   [has_hardware_encoder()] for the \code{hardware} toggle;
+#' @seealso [ffm_files()], [ffm_crop()] and [ffm_map()], among the pipeline
+#'   functions it wraps; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [crop_video_batch()] for the many-file form.
 #' @family task functions
 #' @family audio selection functions
@@ -4998,8 +4998,8 @@ derive_standardized_names <- function(input) {
 #' @return `r batch_return("output")`
 #' @seealso [standardize_video()] for the single-input form; [ffm_batch()] for
 #'   the batch runner and the arguments forwarded through \code{...};
-#'   [segment_video_batch()] and [extract_frame_batch()] for the other batch
-#'   task functions.
+#'   [segment_video_batch()] and [extract_frame_batch()], two other batch task
+#'   functions.
 #' @family task functions
 #' @family audio selection functions
 #' @examples
@@ -5267,8 +5267,8 @@ derive_stripped_names <- function(input) {
 #' @return `r batch_return("output")`
 #' @seealso [strip_metadata()] for the single-input form; [ffm_batch()] for the
 #'   batch runner and the arguments forwarded through \code{...};
-#'   [standardize_video_batch()] and [anonymize_video_batch()] for the other
-#'   batch task functions.
+#'   [standardize_video_batch()] and [anonymize_video_batch()], two other batch
+#'   task functions.
 #' @family task functions
 #' @examples
 #' video <- system.file("extdata", "sample.mp4", package = "tidymedia")
@@ -6571,14 +6571,19 @@ derive_web_names <- function(input) {
 #'   encoder.
 #' @param hardware,fallback `r batch_hardware_param("crop_video")`
 #'   `r hardware_probe_sentences()` `r encoder_check_sentences()`
-#'   A call can also have a per-row \code{width} or \code{height} that is
-#'   neither a positive number nor an FFmpeg expression. Such a call is refused
-#'   for the value first, whether or not this machine has the encoder.
+#'   A call can also have a \code{width} or \code{height}, as an argument or
+#'   in a row, that is \code{NA}, a number that is not positive, an integer
+#'   such as \code{5L}, or anything other than a single string or a single
+#'   double. Such a call is refused for the value first, whether or not this
+#'   machine has the encoder. Any other single string passes unchecked, as an
+#'   FFmpeg expression: a formula that FFmpeg works out, such as
+#'   \code{"in_w/2"}.
 #' @param quality `r batch_quality_param("crop_video")`
 #' @param audio_stream `r audio_stream_param("carry into each output", "carries", "every", batch = TRUE, extra = audio_stream_extras$passthrough_subtitles)`
 #' @inheritParams extract_audio_batch
 #' @return `r jobs_return()`
-#' @seealso [crop_video()], the single-input form it wraps; [ffm_batch()],
+#' @seealso [crop_video()], the single-input form, which uses the same command
+#'   recipe; [ffm_batch()],
 #'   the batch runner; [has_hardware_encoder()] for the \code{hardware} toggle;
 #'   [standardize_video_batch()] to re-encode in batch.
 #' @family task functions
@@ -6755,7 +6760,8 @@ crop_video_batch <- function(jobs, width = NULL, height = NULL,
 #' @inheritParams extract_audio_batch
 #' @inheritParams format_for_web
 #' @return `r jobs_return()`
-#' @seealso [format_for_web()], the single-input form it wraps;
+#' @seealso [format_for_web()], the single-input form, which uses the same
+#'   command recipe;
 #'   [ffm_batch()], the batch runner; [standardize_video_batch()] for a configurable re-encode.
 #' @family task functions
 #' @family audio selection functions

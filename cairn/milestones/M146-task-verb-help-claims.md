@@ -81,7 +81,7 @@ integer refusal behind (j) → the `check_dim()` candidate row in `cairn/ROADMAP
       `language` stream tags, and run `crop_video()` and `segment_video(reencode = FALSE)` with
       a FLAC track into `.mp4`. Record each result and the FFmpeg version in the work log, then
       correct claims (e) and (f), with the comment at `:1616`.
-- [ ] T3: Correct claims (c), (d), (i) and (j) in `R/ffmpeg.R`.
+- [x] T3: Correct claims (c), (d), (i) and (j) in `R/ffmpeg.R`.
 - [ ] T4: Edit the series' `NEWS.md` bullet to name these pages. Avoid the phrases that
       `test-timeout-silence.R` fences out of `NEWS.md`.
 - [ ] T5: Run `devtools::document()`, then the full `devtools::test()` and `devtools::check()`.
@@ -100,6 +100,7 @@ integer refusal behind (j) → the `check_dim()` candidate row in `cairn/ROADMAP
 - 2026-10-18: T1 done: (a) `?format_for_web` says an odd width or height is cropped down; (b) `?format_for_web_batch` names `audio_stream` and `quality` as its per-row settings; (g) `?standardize_video` names its arguments and says `+faststart` is always set; (h) the sibling sentence now says other batch functions read the codec columns, with two named; the recipe comment and the batch body comment that repeated (a)/(b) corrected. Tests: 0 failed, 18801 passed.
 - 2026-10-18: T2 runs, FFmpeg 9.0.2 (Homebrew, macOS; the plan's 9.0.1 is no longer installed), fixtures built with lavfi `testsrc` + `sine`, libx264 + aac, stream tags set by `-metadata:s`: `strip_metadata()` on `.mp4` turned `handler_name` SecretCam/SecretMic into VideoHandler/SoundHandler and `language` fra/deu into und; on `.mkv` both tags were gone (only DURATION left). An h264 + FLAC `.mkv` into `.mp4`: `crop_video()`, `segment_video(reencode = FALSE)` and `segment_video(reencode = TRUE)` each wrote a FLAC track, no error.
 - 2026-10-18: T2 done: (e) `?strip_metadata` Details states the run's per-container result and the version; (f) `?crop_video` and `?segment_video` drop the FLAC example and state the run; the `:1616` comment corrected. Tests: 0 failed, 18801 passed.
+- 2026-10-18: T3 done: (c) both batch See Also lines say the single-input form "uses the same command recipe"; (d) "two other batch task functions"; (i) `?crop_video` names `ffm_files()`, `ffm_crop()`, `ffm_map()` "among the pipeline functions it wraps", matching `?format_for_web`'s phrasing; (j) lists the refused values and defines an FFmpeg expression. (j) read by a run: 5L, NA, -1, 0 refused, "in_w/2", "banana", 5 accepted, as column and argument. Tests: 0 failed, 18801 passed.
 
 ## Decisions
 

@@ -68,8 +68,8 @@ video <- system.file("extdata", "sample.mp4", package = "tidymedia")
 crop_video(video, "cropped.mp4", width = 160, height = 120, run = FALSE)
 }
 \seealso{
-\code{\link[=ffm_crop]{ffm_crop()}}, the pipeline function it wraps;
-\code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
+\code{\link[=ffm_files]{ffm_files()}}, \code{\link[=ffm_crop]{ffm_crop()}} and \code{\link[=ffm_map]{ffm_map()}}, among the pipeline
+functions it wraps; \code{\link[=has_hardware_encoder]{has_hardware_encoder()}} for the \code{hardware} toggle;
 \code{\link[=crop_video_batch]{crop_video_batch()}} for the many-file form.
 
 Other task functions:

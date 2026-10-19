@@ -18,8 +18,9 @@ ffm_drop(object, streams = c("video", "audio", "subtitles", "data"))
 the output file when the pipeline runs.
 }
 \description{
-Remove one or more streams from the media file. For example, remove the
-video, audio, subtitles or data stream from a media file. The glossary in
+Leave one or more kinds of stream out of the output file. For example, leave
+out the video, audio, subtitles or data streams. The input file does not
+change. The glossary in
 \code{vignette("tidymedia")} explains media terms such as stream.
 }
 \examples{

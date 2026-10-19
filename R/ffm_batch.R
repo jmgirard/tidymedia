@@ -188,9 +188,9 @@ ffm_batch <- function(jobs, .f, ..., run = TRUE, parallel = FALSE,
   )
 
   if (run) {
-    # Execute each pipeline's argument vector (shell-free, hostile-path-safe;
-    # M06) rather than the display string. ffm_run()'s result carries a
-    # "status" attribute on a non-zero exit; a hard failure throws.
+    # Execute each pipeline's argument vector (each token shQuote()d by
+    # run_program(), hostile-path-safe; M06) rather than the display string.
+    # ffm_run() throws on a non-zero exit, so `res` is then the error.
     # Each job reports whether it succeeded AND whether the limit is why it did
     # not. A bare logical cannot carry the second fact: `success` is a
     # documented logical column, and an attribute on it would not survive

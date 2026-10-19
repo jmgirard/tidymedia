@@ -19,27 +19,27 @@ ffm_drawbox(
 \code{ffm_files()}.}
 
 \item{x}{The horizontal position of the left edge of the box, in pixels of
-the input video. Give a nonnegative real number or a string that contains
-an FFmpeg expression. The default is \code{0}.}
-
-\item{y}{The vertical position of the top edge of the box, in pixels of the
-input video. Give a nonnegative real number or a string that contains an
+the input video. Give a double of zero or more, or a string, such as an
 FFmpeg expression. The default is \code{0}.}
 
-\item{width}{The width of the box, in pixels. Give a positive real number or
-a string that contains an FFmpeg expression. The default is \code{"in_w"}.}
+\item{y}{The vertical position of the top edge of the box, in pixels of the
+input video. Give a double of zero or more, or a string, such as an FFmpeg
+expression. The default is \code{0}.}
 
-\item{height}{The height of the box, in pixels. Give a positive real number
-or a string that contains an FFmpeg expression. The default is
-\code{"in_h"}.}
+\item{width}{The width of the box, in pixels. Give a positive double or a
+string, such as an FFmpeg expression. The default is \code{"in_w"}.}
+
+\item{height}{The height of the box, in pixels. Give a positive double or a
+string, such as an FFmpeg expression. The default is \code{"in_h"}.}
 
 \item{color}{A string with the color of the box, in FFmpeg color syntax. The
 reference link below explains that syntax. With the special value
 \code{"invert"}, the box has the color of the video with inverted luma. The
 default is \code{"black"}.}
 
-\item{thickness}{The thickness of the box edge, in pixels. The value
-\code{"fill"} draws a filled box. The default is \code{"fill"}.}
+\item{thickness}{The thickness of the box edge, in pixels. Give a positive
+double or a string. The value \code{"fill"} draws a filled box. The
+default is \code{"fill"}.}
 }
 \value{
 \code{object} with an added instruction to apply the \code{drawbox}
@@ -47,6 +47,13 @@ filter.
 }
 \description{
 Add a video filter that draws a colored rectangle on the input video.
+}
+\details{
+Each size and position argument, \code{thickness} included, takes one
+double (an R number such as \code{160}) or one string. An integer such as
+\code{160L} is refused, and so is \code{NA}. Any other string is not
+checked, and it goes into the FFmpeg command as written, so it can hold an
+FFmpeg expression.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")

@@ -10,11 +10,13 @@ ffm_overlay(object, x = 0, y = 0, shortest = FALSE, scale = NULL)
 \item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()} with exactly two input files.}
 
-\item{x}{The horizontal position of the overlay's left edge, as a number of
-pixels or an FFmpeg expression. The default is \code{0}.}
+\item{x}{The horizontal position of the overlay's left edge, in pixels, as a
+double or a string, such as an FFmpeg expression. The default is
+\code{0}.}
 
-\item{y}{The vertical position of the overlay's top edge, as a number of
-pixels or an FFmpeg expression. The default is \code{0}.}
+\item{y}{The vertical position of the overlay's top edge, in pixels, as a
+double or a string, such as an FFmpeg expression. The default is
+\code{0}.}
 
 \item{shortest}{A logical that says whether to end the output when the
 shorter input ends. The default is \code{FALSE}.}
@@ -39,8 +41,11 @@ drawn over it. The glossary in \code{vignette("tidymedia")} explains media
 terms such as stream.
 }
 \details{
-\code{x} and \code{y} accept plain numbers or FFmpeg overlay expressions. A
-plain number counts pixels from the top-left of the main video. In an
+\code{x} and \code{y} each take one double (an R number such as \code{16})
+of zero or more, or one string, such as an FFmpeg overlay expression. An
+integer such as \code{16L} is refused, and so is \code{NA}. Any other string
+is not checked, and it goes into the FFmpeg command as written. A number
+counts pixels from the top-left of the main video. In an
 expression, \code{main_w} and \code{main_h} are the main video's dimensions.
 \code{overlay_w} and \code{overlay_h} are the overlay's dimensions. For
 example, \code{x = "main_w-overlay_w-16"} puts the overlay 16 pixels from the

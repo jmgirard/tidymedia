@@ -10,11 +10,11 @@ ffm_scale(object, width, height)
 \item{object}{An FFmpeg pipeline (\code{ffm}) object created by
 \code{ffm_files()}.}
 
-\item{width}{The width of the output video, in pixels. Give a positive real
-number or a string that contains an FFmpeg expression.}
+\item{width}{The width of the output video, in pixels. Give a positive
+double or a string, such as an FFmpeg expression.}
 
 \item{height}{The height of the output video, in pixels. Give a positive
-real number or a string that contains an FFmpeg expression.}
+double or a string, such as an FFmpeg expression.}
 }
 \value{
 \code{object} with an added instruction to resize the frames.
@@ -22,6 +22,12 @@ real number or a string that contains an FFmpeg expression.}
 \description{
 Scale (resize) the input video's frames to a width and height in pixels, or
 with an FFmpeg expression.
+}
+\details{
+Each size argument takes one double (an R number such as \code{160}) or one
+string. An integer such as \code{160L} is refused, and so is \code{NA}. Any
+other string is not checked, and it goes into the FFmpeg command as written,
+so it can hold an FFmpeg expression.
 }
 \examples{
 video <- system.file("extdata", "sample.mp4", package = "tidymedia")
